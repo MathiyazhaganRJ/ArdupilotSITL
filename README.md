@@ -10,7 +10,7 @@ pip install pymavlink websockets
 ```
 
 **2. Start ArduPilot SITL:**
-Start your simulation (forward MAVLink telemetry to UDP `127.0.0.1:14555`).
+Start your simulation (forward MAVLink telemetry to UDP `127.0.0.1:14551`).
 Example Quadplane start command:
 ```bash
 Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane --console --map
