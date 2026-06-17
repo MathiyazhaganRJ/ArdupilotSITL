@@ -255,18 +255,18 @@
 
         const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2), matCarbon);
         twinMotorL.rotation.x = Math.PI / 2;
-        twinMotorL.position.set(-0.4, 0.1, -0.05);
+        twinMotorL.position.set(-0.4, 0.1, -0.15);
         twinGroup.add(twinMotorL);
         const twinPropL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropL.position.set(-0.4, 0.1, -0.16);
+        twinPropL.position.set(-0.4, 0.1, -0.26);
         twinGroup.add(twinPropL);
 
         const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2), matCarbon);
         twinMotorR.rotation.x = Math.PI / 2;
-        twinMotorR.position.set(0.4, 0.1, -0.05);
+        twinMotorR.position.set(0.4, 0.1, -0.15);
         twinGroup.add(twinMotorR);
         const twinPropR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropR.position.set(0.4, 0.1, -0.16);
+        twinPropR.position.set(0.4, 0.1, -0.26);
         twinGroup.add(twinPropR);
 
         const props = [];
