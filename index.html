@@ -253,20 +253,20 @@
         vtolGroup.add(twinGroup);
         twinGroup.visible = false;
 
-        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.1), matCarbon);
+        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2), matCarbon);
         twinMotorL.rotation.x = Math.PI / 2;
-        twinMotorL.position.set(-0.5, 0.05, -0.2);
+        twinMotorL.position.set(-0.4, 0.1, -0.05);
         twinGroup.add(twinMotorL);
         const twinPropL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropL.position.set(-0.5, 0.05, -0.26);
+        twinPropL.position.set(-0.4, 0.1, -0.16);
         twinGroup.add(twinPropL);
 
-        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.1), matCarbon);
+        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2), matCarbon);
         twinMotorR.rotation.x = Math.PI / 2;
-        twinMotorR.position.set(0.5, 0.05, -0.2);
+        twinMotorR.position.set(0.4, 0.1, -0.05);
         twinGroup.add(twinMotorR);
         const twinPropR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropR.position.set(0.5, 0.05, -0.26);
+        twinPropR.position.set(0.4, 0.1, -0.16);
         twinGroup.add(twinPropR);
 
         const props = [];
