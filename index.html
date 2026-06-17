@@ -364,6 +364,15 @@
         let servoSpeeds = [0,0,0,0,0,0,0,0];
         let targetPos = new THREE.Vector3(), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
 
+        ws.onopen = () => {
+            document.getElementById('status').innerText = "Connected";
+            document.getElementById('status').style.color = "var(--success)";
+        };
+        ws.onclose = () => {
+            document.getElementById('status').innerText = "Offline";
+            document.getElementById('status').style.color = "var(--danger)";
+        };
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'HEARTBEAT') {
