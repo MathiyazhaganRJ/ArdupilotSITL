@@ -27,7 +27,7 @@ Simply double-click `index.html` to view the 3D simulation in your web browser.
 
 ---
 
-## 🚁 ArduPilot SITL Command Cheat Sheet
+## ArduPilot SITL Commands
 
 Run these commands from inside your `~/ardupilot` directory in WSL.
 
