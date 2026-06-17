@@ -415,13 +415,13 @@
                 m_push = parseInt(document.getElementById('m_push').value), m_tl = parseInt(document.getElementById('m_twin_l').value),
                 m_tr = parseInt(document.getElementById('m_twin_r').value);
 
-            props[0].rotation.y += ((servoSpeeds[m_fr] - 1000) / 1000) * 2.0;
-            props[1].rotation.y += ((servoSpeeds[m_bl] - 1000) / 1000) * 2.0;
-            props[2].rotation.y += ((servoSpeeds[m_br] - 1000) / 1000) * 2.0;
-            props[3].rotation.y += ((servoSpeeds[m_fl] - 1000) / 1000) * 2.0;
-            pusherProp.rotation.z += ((servoSpeeds[m_push] - 1000) / 1000) * 2.0;
-            twinPropL.rotation.z += ((servoSpeeds[m_tl] - 1000) / 1000) * 2.0;
-            twinPropR.rotation.z += ((servoSpeeds[m_tr] - 1000) / 1000) * 2.0;
+            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * 2.0;
+            props[1].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * 2.0;
+            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * 2.0;
+            props[3].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * 2.0;
+            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 2.0;
+            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 2.0;
+            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 2.0;
 
             renderer.render(scene, camera);
         }
