@@ -59,7 +59,7 @@ Tools/autotest/sim_vehicle.py -v ArduPlane -L KSFO --console --map
 ```
 
 **Spawn at Custom GPS Coordinates:**
-*(Format: Latitude, Longitude, Altitude, Heading)*
+*(Format MUST be exactly 4 values: Latitude, Longitude, Altitude, Heading)*
 ```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane --custom-location="37.7749,-122.4194,10,270" --console --map
+Tools/autotest/sim_vehicle.py -v ArduPlane --custom-location="8.37074,77.36632,0,270" --console --map
 ```
