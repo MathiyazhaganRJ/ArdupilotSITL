@@ -3,7 +3,7 @@ import websockets
 import json
 from pymavlink import mavutil
 
-MAVLINK_URL = 'udpin:127.0.0.1:14555'
+MAVLINK_URL = 'udpin:127.0.0.1:14551'
 connection = mavutil.mavlink_connection(MAVLINK_URL)
 
 clients = set()
