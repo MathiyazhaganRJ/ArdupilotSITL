@@ -24,3 +24,42 @@ python server.py
 
 **4. Open the Visualizer:**
 Simply double-click `index.html` to view the 3D simulation in your web browser.
+
+---
+
+## 🚁 ArduPilot SITL Command Cheat Sheet
+
+Run these commands from inside your `~/ardupilot` directory in WSL.
+
+**Standard Fixed Wing (Pusher):**
+```bash
+Tools/autotest/sim_vehicle.py -v ArduPlane --console --map
+```
+
+**QuadPlane (VTOL):**
+```bash
+Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane --console --map
+```
+
+**Quadcopter:**
+```bash
+Tools/autotest/sim_vehicle.py -v ArduCopter --console --map
+```
+
+**Wipe Parameters (Factory Reset):**
+*(Use this if the plane is acting crazy or you are switching from Copters to Planes)*
+```bash
+Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane -w --console --map
+```
+
+**Spawn at a Specific Airport/Location (`-L` flag):**
+*(e.g., KSFO for San Francisco Airport, or CMAC for the test field)*
+```bash
+Tools/autotest/sim_vehicle.py -v ArduPlane -L KSFO --console --map
+```
+
+**Spawn at Custom GPS Coordinates:**
+*(Format: Latitude, Longitude, Altitude, Heading)*
+```bash
+Tools/autotest/sim_vehicle.py -v ArduPlane --custom-location="37.7749,-122.4194,10,270" --console --map
+```
