@@ -392,7 +392,8 @@
         // ==========================================
         const CONFIG = {
             modelFile: 'models/Endurance.glb',
-            modelBaseScale:0, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelBaseScale: 0, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelRotation: { x: 0, y: -90, z: 0 }, // Euler angles (in degrees) to align raw CAD models. Three.js Forward is -Z.
             modelColor: 0xff5500, // Vibrant Orange
 
             cruisePropColor: 0x34c759, // Green
@@ -452,7 +453,12 @@
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
-            model.rotation.y = -Math.PI / 2; // Rotate -90deg so nose points forward (-Z)
+            // Apply 3-axis base rotation from CONFIG (convert degrees to radians)
+            model.rotation.set(
+                CONFIG.modelRotation.x * Math.PI / 180,
+                CONFIG.modelRotation.y * Math.PI / 180,
+                CONFIG.modelRotation.z * Math.PI / 180
+            );
             model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
 
             // Dynamic Model Scaling
