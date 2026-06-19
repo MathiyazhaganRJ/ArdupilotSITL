@@ -392,6 +392,7 @@
         // ==========================================
         const CONFIG = {
             modelFile: 'models/Endurance.glb',
+            modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
             modelColor: 0xff5500, // Vibrant Orange
 
             cruisePropColor: 0x34c759, // Green
@@ -452,6 +453,7 @@
         loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
             model.rotation.y = -Math.PI / 2; // Rotate -90deg so nose points forward (-Z)
+            model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
 
             // Dynamic Model Scaling
             function updateModelScale() {
