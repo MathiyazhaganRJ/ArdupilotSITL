@@ -392,8 +392,8 @@
         // ==========================================
         const CONFIG = {
             modelFile: 'models/Endurance.glb',
-            modelBaseScale: 0, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
-            modelRotation: { x: 0, y: -90, z: 0 }, // Euler angles (in degrees) to align raw CAD models. Three.js Forward is -Z.
+            modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelRotation: { roll: 90, pitch: 0, yaw: -90 }, // Intuitive Aviation Degrees
             modelColor: 0xff5500, // Vibrant Orange
 
             cruisePropColor: 0x34c759, // Green
@@ -453,12 +453,15 @@
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
-            // Apply 3-axis base rotation from CONFIG (convert degrees to radians)
+            
+            // Map user-friendly aviation terms (Roll, Pitch, Yaw) to proper Three.js world axes
             model.rotation.set(
-                CONFIG.modelRotation.x * Math.PI / 180,
-                CONFIG.modelRotation.y * Math.PI / 180,
-                CONFIG.modelRotation.z * Math.PI / 180
+                (CONFIG.modelRotation.pitch || 0) * Math.PI / 180, // X-axis controls Pitch
+                (CONFIG.modelRotation.yaw || 0) * Math.PI / 180,   // Y-axis controls Yaw
+                (CONFIG.modelRotation.roll || 0) * Math.PI / 180,  // Z-axis controls Roll
+                'YXZ' // Apply Yaw first, then Pitch, then Roll to prevent gimbal lock
             );
+            
             model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
 
             // Dynamic Model Scaling
