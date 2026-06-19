@@ -399,19 +399,19 @@
             cruisePropColor: 0x34c759, // Green
             cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
             cruisePropBlades: 2,  // Number of blades for cruise propellers
+            cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
             pusherPos: { x: 0.5, y: 0, z: 0 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
             twinPosL: { x: -0.1, y: -0.4, z: 0 }, // Left twin engine (negative X is forward)
             twinPosR: { x: -0.1, y: 0.4, z: 0 },  // Right twin engine
+            twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
 
             vtolPropColor: 0xff9500, // Orange
             vtolPropDia: 0.3, // Diameter of the quad propellers
             vtolPropBlades: 2, // Number of blades for VTOL propellers
             vtolPropDir: [1, 0, 0, 1], // 0=CW, 1=CCW for [FrontRight, FrontLeft, BackRight, BackLeft] (Default Quad-X)
-            cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
-            twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
             vtolBoomZ: -0.08, // Z-level of VTOL booms (negative = below wing)
             vtolBoomXOffset: -0.05, // X-offset for entire boom (shift forward/backward)
             vtolArmY: 0.3,    // Y-distance from centerline to boom
