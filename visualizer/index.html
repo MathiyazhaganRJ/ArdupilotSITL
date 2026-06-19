@@ -392,8 +392,8 @@
         // ==========================================
         const CONFIG = {
             modelFile: 'models/Endurance.glb',
-            modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
-            modelRotation: { roll: 90, pitch: 0, yaw: -90 }, // Intuitive Aviation Degrees
+            modelBaseScale: 1, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelRotation: { roll: 0, pitch: 0, yaw: -90 }, // Intuitive Aviation Degrees
             modelColor: 0xff5500, // Vibrant Orange
 
             cruisePropColor: 0x34c759, // Green
@@ -625,14 +625,20 @@
         let firstPos = false;
 
         ws.onopen = () => {
-            document.getElementById('status').innerText = "Connected";
-            document.getElementById('status').style.color = "var(--success)";
+            document.getElementById('status').innerText = "Waiting for Vehicle...";
+            document.getElementById('status').style.color = "var(--text-secondary)";
         };
         ws.onclose = () => {
             document.getElementById('status').innerText = "Offline";
             document.getElementById('status').style.color = "var(--danger)";
         };
+        let vehicleConnected = false;
         ws.onmessage = (event) => {
+            if (!vehicleConnected) {
+                document.getElementById('status').innerText = "Connected";
+                document.getElementById('status').style.color = "var(--success)";
+                vehicleConnected = true;
+            }
             const data = JSON.parse(event.data);
             if (data.type === 'HEARTBEAT') {
                 if (data.mode) document.getElementById('f_mode').innerText = data.mode;
