@@ -621,7 +621,8 @@
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
         const ws = new WebSocket(`ws://${window.location.hostname}:8766`);
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
-        let targetPos = new THREE.Vector3(), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
+        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3(); 
+        let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
 
         ws.onopen = () => {
@@ -647,12 +648,13 @@
                 document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
             } else if (data.type === 'ATTITUDE') {
-                targetRot.set(data.pitch, -data.yaw, -data.roll);
+                rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
-                targetPos.set(data.y, data.z, -data.x);
+                rawTargetPos.set(data.y, data.z, -data.x);
                 if (!firstPos) {
-                    vtolGroup.position.copy(targetPos);
+                    targetPos.copy(rawTargetPos);
+                    vtolGroup.position.copy(rawTargetPos);
                     vtolGroup.updateMatrixWorld(true);
                     trackPoint.getWorldPosition(currentTrackPos);
                     lastPlanePos.copy(targetPos);
@@ -674,10 +676,17 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Heavy low-pass filter to erase 10Hz network stutter
-            vtolGroup.position.lerp(targetPos, 0.02);
-            let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.02);
-            vtolGroup.setRotationFromQuaternion(q);
+            // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
+            // This guarantees C1 continuity (smooth velocity), completely erasing 10Hz polygon corners
+            targetPos.lerp(rawTargetPos, 0.05);
+            vtolGroup.position.lerp(targetPos, 0.05);
+
+            let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, 0.05);
+            targetRot.setFromQuaternion(qTarget);
+            
+            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, 0.05);
+            vtolGroup.setRotationFromQuaternion(qFinal);
 
             if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
