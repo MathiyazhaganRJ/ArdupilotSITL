@@ -591,7 +591,7 @@
         document.getElementById('m_twin_l').value = 2;
         document.getElementById('m_twin_r').value = 3;
 
-        const maxTrailPoints = 2000;
+        const maxTrailPoints = 10000; // Increased for high-resolution curves
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
@@ -689,7 +689,7 @@
 
             trackPoint.getWorldPosition(currentTrackPos);
 
-            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.5) {
+            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.1) {
                 if (trailCount < maxTrailPoints - 1) { // Reserve 1 point for the dynamic tip
                     trailCount++; 
                 } else {
