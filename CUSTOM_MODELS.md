@@ -32,20 +32,31 @@ const CONFIG = {
     modelFile: 'models/YourNewModel.glb', // Change to your .glb file name
     modelColor: 0xff5500,                 // Hex color for the airplane body
     
-    // CRUISE PROPELLERS (Pusher & Twin)
+    // COORDINATE SYSTEM: OpenVSP / XFLR5 Standard
+    // X = Forward/Backward (-X is Nose, +X is Tail)
+    // Y = Left/Right (+Y is Right Wing, -Y is Left Wing)
+    // Z = Top/Bottom (+Z is Top, -Z is Bottom)
+    
+    cruisePropColor: 0x34c759,              // Hex color of forward flight props
     cruisePropDia: 0.3,                     // Diameter of forward-flight props
-    pusherPos: { x: 0, y: -0.05, z: 0.45 }, // z: 0.45 places it roughly on a 0.9m tail
+    pusherPos: { x: 0.45, y: 0, z: -0.05 }, // x: 0.45 places it roughly on a 0.9m tail
     
     // TWIN ENGINES
-    twinPosL: { x: -0.4, y: 0.05, z: -0.15 }, // Left nacelle
-    twinPosR: { x: 0.4, y: 0.05, z: -0.15 },  // Right nacelle
+    twinMotorDia: 0.04,                       // Diameter of the engine nacelle cylinder
+    twinMotorLength: 0.3,                     // Length of the nacelle (prop mounts to front)
+    twinPosL: { x: -0.15, y: -0.4, z: 0.08 }, // Center position of Left nacelle
+    twinPosR: { x: -0.15, y: 0.4, z: 0.05 },  // Center position of Right nacelle
     
     // VTOL QUAD MOTORS
-    vtolPropDia: 0.3, // Diameter of quadplane lift props
-    vtolBoomY: -0.08, // Negative value mounts the boom beneath the wing
-    vtolArmX: 0.5,    // Distance from centerline to the left/right booms
-    vtolMotorZ: 0.35  // Distance from CG to the front/rear motors. 
-                      // Note: The carbon boom length automatically scales to fit this!
+    vtolPropColor: 0xff9500, // Hex color of quadplane lift props
+    vtolPropDia: 0.3,   // Diameter of quadplane lift props
+    vtolBoomZ: -0.08,   // Z-level of VTOL booms (negative = below wing)
+    vtolBoomXOffset: 0, // X-offset for entire boom (shift forward/backward)
+    vtolArmY: 0.5,      // Y-distance from centerline to the left/right booms
+    vtolMotorX: 0.35,   // X-distance from the boom center to the front/rear motors. 
+                        // Note: The carbon boom length automatically scales to fit this!
+                        
+    trackColor: 0xff00ff // Color of the GPS trail line
 };
 // ==========================================
 ```

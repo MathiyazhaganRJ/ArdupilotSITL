@@ -367,7 +367,6 @@
 
         const matBody = new THREE.MeshPhongMaterial({ color: 0x0071e3 });
         const matCarbon = new THREE.MeshPhongMaterial({ color: 0x333333 });
-        const matProp = new THREE.MeshBasicMaterial({ color: 0xff9500, transparent: true, opacity: 0.8 });
 
         const aeroGroup = new THREE.Group();
         vtolGroup.add(aeroGroup);
@@ -376,18 +375,40 @@
         // AIRCRAFT GEOMETRY CONFIGURATION
         // ==========================================
         const CONFIG = {
-            modelFile: 'models/Endurance.glb',
+            modelFile: 'models/Test.glb',
             modelColor: 0xff5500, // Vibrant Orange
-            cruisePropDia: 0.3,   // Diameter for Pusher and Twin propellers
-            pusherPos: { x: 0, y: -0.05, z: 0.4 }, // Tail pusher propeller
-            twinPosL: { x: -0.4, y: 0.08, z: -0.15 }, // Left twin engine
-            twinPosR: { x: 0.4, y: 0.05, z: -0.15 },  // Right twin engine
+
+            // COORDINATE SYSTEM: OpenVSP / XFLR5 Standard
+            // X = Forward/Backward (-X is Nose, +X is Tail)
+            // Y = Left/Right (+Y is Right Wing, -Y is Left Wing)
+            // Z = Top/Bottom (+Z is Top, -Z is Bottom)
+
+            cruisePropColor: 0x34c759, // Green
+            cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
+            pusherPos: { x: 0.4, y: 0, z: -0.05 }, // Tail pusher propeller
+
+            twinMotorDia: 0.02,   // Diameter of twin engine nacelle
+            twinMotorLength: 0.1, // Length of twin engine nacelle
+            twinPosL: { x: -0.15, y: -0.4, z: 0.08 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.15, y: 0.4, z: 0.05 },  // Right twin engine
+
+            vtolPropColor: 0xff9500, // Orange
             vtolPropDia: 0.3, // Diameter of the quad propellers
-            vtolBoomY: -0.08, // Y-level of VTOL booms (negative = below wing)
-            vtolArmX: 0.3,    // X-distance from centerline to boom
-            vtolMotorZ: 0.8  // Z-distance from CG to front/back quad motor. (Boom length will auto-scale to fit this)
+            vtolBoomZ: -0.08, // Z-level of VTOL booms (negative = below wing)
+            vtolBoomXOffset: -0.2, // X-offset for entire boom (shift forward/backward)
+            vtolArmY: 0.3,    // Y-distance from centerline to boom
+            vtolMotorX: 0.3,  // X-distance from Boom Center to front/back quad motor
+
+            trackColor: 0xff00ff // Color of the GPS trail line
         };
         // ==========================================
+
+        const matProp = new THREE.MeshBasicMaterial({ color: CONFIG.vtolPropColor, transparent: true, opacity: 0.8 });
+
+        // Helper to convert Aviation Coords to Three.js Web Coords
+        function vspToThree(pos) {
+            return new THREE.Vector3(pos.y, pos.z, pos.x); // X mappings flipped (-X Nose, +X Tail)
+        }
 
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
@@ -411,9 +432,10 @@
 
         // Better looking propeller
         const pusherProp = new THREE.Group();
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        pusherProp.position.set(CONFIG.pusherPos.x, CONFIG.pusherPos.y, CONFIG.pusherPos.z);
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        const push3D = vspToThree(CONFIG.pusherPos);
+        pusherProp.position.copy(push3D);
         vtolGroup.add(pusherProp);
 
         const quadGroup = new THREE.Group();
@@ -423,50 +445,55 @@
         vtolGroup.add(twinGroup);
         twinGroup.visible = false;
 
-        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
+        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(CONFIG.twinMotorDia, CONFIG.twinMotorDia, CONFIG.twinMotorLength), matCarbon);
         twinMotorL.rotation.x = Math.PI / 2;
-        twinMotorL.position.set(CONFIG.twinPosL.x, CONFIG.twinPosL.y, CONFIG.twinPosL.z);
+        const twinL3D = vspToThree(CONFIG.twinPosL);
+        twinMotorL.position.copy(twinL3D);
         twinGroup.add(twinMotorL);
         const twinPropL = new THREE.Group();
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        twinPropL.position.set(CONFIG.twinPosL.x, CONFIG.twinPosL.y, CONFIG.twinPosL.z - 0.15);
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        twinPropL.position.set(twinL3D.x, twinL3D.y, twinL3D.z - (CONFIG.twinMotorLength / 2));
         twinGroup.add(twinPropL);
 
-        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
+        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(CONFIG.twinMotorDia, CONFIG.twinMotorDia, CONFIG.twinMotorLength), matCarbon);
         twinMotorR.rotation.x = Math.PI / 2;
-        twinMotorR.position.set(CONFIG.twinPosR.x, CONFIG.twinPosR.y, CONFIG.twinPosR.z);
+        const twinR3D = vspToThree(CONFIG.twinPosR);
+        twinMotorR.position.copy(twinR3D);
         twinGroup.add(twinMotorR);
         const twinPropR = new THREE.Group();
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
-        twinPropR.position.set(CONFIG.twinPosR.x, CONFIG.twinPosR.y, CONFIG.twinPosR.z - 0.15);
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        twinPropR.position.set(twinR3D.x, twinR3D.y, twinR3D.z - (CONFIG.twinMotorLength / 2));
         twinGroup.add(twinPropR);
 
         const props = [];
+        const xFront = CONFIG.vtolBoomXOffset + CONFIG.vtolMotorX;
+        const xBack = CONFIG.vtolBoomXOffset - CONFIG.vtolMotorX;
         const armPositions = [
-            { x: CONFIG.vtolArmX, z: -CONFIG.vtolMotorZ },
-            { x: -CONFIG.vtolArmX, z: CONFIG.vtolMotorZ },
-            { x: CONFIG.vtolArmX, z: CONFIG.vtolMotorZ },
-            { x: -CONFIG.vtolArmX, z: -CONFIG.vtolMotorZ }
+            { x: xFront, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Front Right
+            { x: xFront, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Front Left
+            { x: xBack, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Back Right
+            { x: xBack, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ } // Back Left
         ];
 
         armPositions.forEach(pos => {
-            const boomLength = (CONFIG.vtolMotorZ * 2) + 0.05; // Auto-scale boom length to motor spread
+            const pos3D = vspToThree(pos);
+            const boomLength = (CONFIG.vtolMotorX * 2) + 0.05; // Auto-scale boom length to motor spread
             const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, boomLength), matCarbon);
             boom.rotation.x = Math.PI / 2;
-            boom.position.set(pos.x, CONFIG.vtolBoomY, 0);
+            boom.position.set(pos3D.x, pos3D.y, CONFIG.vtolBoomXOffset); // Center of boom
             quadGroup.add(boom);
 
             const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06), matCarbon);
-            motor.position.set(pos.x, CONFIG.vtolBoomY + 0.03, pos.z);
+            motor.position.set(pos3D.x, pos3D.y + 0.03, pos3D.z);
             quadGroup.add(motor);
 
             // Better looking VTOL prop (cross)
             const prop = new THREE.Group();
             prop.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.vtolPropDia, 0.01, 0.02), matProp));
             prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, CONFIG.vtolPropDia), matProp));
-            prop.position.set(pos.x, CONFIG.vtolBoomY + 0.06, pos.z);
+            prop.position.set(pos3D.x, pos3D.y + 0.06, pos3D.z);
             quadGroup.add(prop);
             props.push(prop);
         });
@@ -516,7 +543,7 @@
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-        const trailMat = new THREE.LineBasicMaterial({ color: 0x34c759, linewidth: 2 });
+        const trailMat = new THREE.LineBasicMaterial({ color: CONFIG.trackColor, linewidth: 2 });
         const trailLine = new THREE.Line(trailGeo, trailMat);
         trailLine.frustumCulled = false;
         scene.add(trailLine);
