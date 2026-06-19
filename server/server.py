@@ -56,7 +56,7 @@ async def mavlink_listener():
                     try:
                         await client.send(message)
                     except websockets.exceptions.ConnectionClosed:
-                        clients.remove(client)
+                        clients.discard(client)
         await asyncio.sleep(0.005)
 
 async def ws_handler(websocket, path=None):

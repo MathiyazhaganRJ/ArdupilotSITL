@@ -110,6 +110,7 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body class="dark-mode">
     <div id="ui-panel">
@@ -227,23 +228,31 @@
         const aeroGroup = new THREE.Group();
         vtolGroup.add(aeroGroup);
 
-        const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.05, 1.8, 16), matBody);
-        fuselage.rotation.x = Math.PI / 2;
-        aeroGroup.add(fuselage);
-        
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.02, 0.25), matBody);
-        wing.position.set(0, 0.05, -0.2);
-        aeroGroup.add(wing);
+        const loader = new THREE.GLTFLoader();
+        loader.load('models/Endurance.glb', function(gltf) {
+            const model = gltf.scene;
+            model.rotation.y = -Math.PI / 2; // Rotate -90deg so nose points forward (-Z)
+            model.traverse(function(child) {
+                if(child.isMesh) {
+                    child.geometry.computeVertexNormals(); // Fixes black model!
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xff5500, // Vibrant Orange
+                        roughness: 0.4,
+                        metalness: 0.3,
+                        side: THREE.DoubleSide
+                    });
+                }
+            });
+            aeroGroup.add(model);
+        }, undefined, function(error) {
+            console.error('Error loading Endurance.glb:', error);
+        });
 
-        const vTail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.3, 0.2), matBody);
-        vTail.position.set(0, 0.15, 0.8);
-        aeroGroup.add(vTail);
-        const hTail = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.02, 0.15), matBody);
-        hTail.position.set(0, 0.3, 0.8);
-        aeroGroup.add(hTail);
-
-        const pusherProp = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        pusherProp.position.set(0, 0, 0.92);
+        // Better looking propeller
+        const pusherProp = new THREE.Group();
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.3, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        pusherProp.position.set(0, 0, 0.45); // Tail position for 0.9m length plane
         vtolGroup.add(pusherProp);
 
         const quadGroup = new THREE.Group();
@@ -253,39 +262,46 @@
         vtolGroup.add(twinGroup);
         twinGroup.visible = false;
 
-        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4), matCarbon);
+        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
         twinMotorL.rotation.x = Math.PI / 2;
-        twinMotorL.position.set(-0.4, 0.1, -0.25);
+        twinMotorL.position.set(-0.4, 0.05, -0.15);
         twinGroup.add(twinMotorL);
-        const twinPropL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropL.position.set(-0.4, 0.1, -0.46);
+        const twinPropL = new THREE.Group();
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        twinPropL.position.set(-0.4, 0.05, -0.3);
         twinGroup.add(twinPropL);
 
-        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4), matCarbon);
+        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
         twinMotorR.rotation.x = Math.PI / 2;
-        twinMotorR.position.set(0.4, 0.1, -0.25);
+        twinMotorR.position.set(0.4, 0.05, -0.15);
         twinGroup.add(twinMotorR);
-        const twinPropR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.03, 0.01), new THREE.MeshBasicMaterial({color: 0xff3b30}));
-        twinPropR.position.set(0.4, 0.1, -0.46);
+        const twinPropR = new THREE.Group();
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
+        twinPropR.position.set(0.4, 0.05, -0.3);
         twinGroup.add(twinPropR);
 
         const props = [];
         const armPositions = [
-            { x: 0.8, z: -0.5 }, { x: -0.8, z: 0.3 }, { x: 0.8, z: 0.3 }, { x: -0.8, z: -0.5 }
+            { x: 0.5, z: -0.35 }, { x: -0.5, z: 0.35 }, { x: 0.5, z: 0.35 }, { x: -0.5, z: -0.35 }
         ];
 
         armPositions.forEach(pos => {
-            const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.8), matCarbon);
+            const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.75), matCarbon);
             boom.rotation.x = Math.PI / 2;
-            boom.position.set(pos.x, 0.05, -0.1);
+            boom.position.set(pos.x, 0.05, 0);
             quadGroup.add(boom);
             
-            const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08), matCarbon);
-            motor.position.set(pos.x, 0.09, pos.z);
+            const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06), matCarbon);
+            motor.position.set(pos.x, 0.08, pos.z);
             quadGroup.add(motor);
 
-            const prop = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.01, 0.03), matProp);
-            prop.position.set(pos.x, 0.13, pos.z);
+            // Better looking VTOL prop (cross)
+            const prop = new THREE.Group();
+            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.01, 0.02), matProp));
+            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.3), matProp));
+            prop.position.set(pos.x, 0.11, pos.z);
             quadGroup.add(prop);
             props.push(prop);
         });
@@ -363,6 +379,7 @@
         const ws = new WebSocket('ws://127.0.0.1:8766');
         let servoSpeeds = [0,0,0,0,0,0,0,0];
         let targetPos = new THREE.Vector3(), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
+        let firstPos = false;
 
         ws.onopen = () => {
             document.getElementById('status').innerText = "Connected";
@@ -382,7 +399,16 @@
                 document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
             } else if (data.type === 'ATTITUDE') targetRot.set(data.pitch, -data.yaw, -data.roll);
-            else if (data.type === 'LOCAL_POSITION_NED') { document.getElementById('alt').innerText = data.z.toFixed(1) + " m"; targetPos.set(data.y, data.z, -data.x); }
+            else if (data.type === 'LOCAL_POSITION_NED') { 
+                document.getElementById('alt').innerText = data.z.toFixed(1) + " m"; 
+                targetPos.set(data.y, data.z, -data.x); 
+                if(!firstPos) {
+                    vtolGroup.position.copy(targetPos);
+                    lastPlanePos.copy(targetPos);
+                    lastTrailAddPos.copy(targetPos);
+                    firstPos = true;
+                }
+            }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
                 servoSpeeds = data.servos;
                 for(let i=0; i<8; i++) {
@@ -396,13 +422,14 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            vtolGroup.position.lerp(targetPos, 0.08);
-            let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.08);
+            vtolGroup.position.lerp(targetPos, 0.05);
+            let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.05);
             vtolGroup.setRotationFromQuaternion(q);
             
             if (cameraMode === 'follow') {
-                camera.position.add(new THREE.Vector3().subVectors(vtolGroup.position, lastPlanePos));
+                const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
+                camera.position.copy(controls.target).add(offset);
             }
             controls.update();
             lastPlanePos.copy(vtolGroup.position);
@@ -424,13 +451,14 @@
                 m_push = parseInt(document.getElementById('m_push').value), m_tl = parseInt(document.getElementById('m_twin_l').value),
                 m_tr = parseInt(document.getElementById('m_twin_r').value);
 
-            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * 2.0;
-            props[1].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * 2.0;
-            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * 2.0;
-            props[3].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * 2.0;
-            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 2.0;
-            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 2.0;
-            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 2.0;
+            // Use 0.47 instead of 2.0 to avoid stroboscopic "freezing" effect
+            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * 0.47;
+            props[1].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * 0.47;
+            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * 0.47;
+            props[3].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * 0.47;
+            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 0.47;
+            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 0.47;
+            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 0.47;
 
             renderer.render(scene, camera);
         }
