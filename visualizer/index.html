@@ -673,19 +673,25 @@
             }
         };
 
+        const clock = new THREE.Clock();
+
         function animate() {
             requestAnimationFrame(animate);
 
+            // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
+            const dt = Math.min(clock.getDelta(), 0.1); 
+            const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
+
             // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
             // This guarantees C1 continuity (smooth velocity), completely erasing 10Hz polygon corners
-            targetPos.lerp(rawTargetPos, 0.05);
-            vtolGroup.position.lerp(targetPos, 0.05);
+            targetPos.lerp(rawTargetPos, lerpFactor);
+            vtolGroup.position.lerp(targetPos, lerpFactor);
 
             let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, 0.05);
+            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
             targetRot.setFromQuaternion(qTarget);
             
-            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, 0.05);
+            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
 
             if (cameraMode === 'follow') {
