@@ -278,11 +278,12 @@
             <option value="twin">Twin Engine (Fixed Wing)</option>
             <option value="quad">Quadcopter</option>
         </select>
-        
+
         <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
             <div class="map-row" style="margin: 0;">
                 <span>Model Scale</span>
-                <input type="number" id="scale_input" value="1.0" step="0.1" style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+                <input type="number" id="scale_input" value="1.0" step="0.1"
+                    style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
             </div>
         </div>
 
@@ -369,20 +370,6 @@
         scene.add(dirLight);
 
         // --- Home Location Marker ---
-        const homePinGroup = new THREE.Group();
-        const pinMat = new THREE.MeshLambertMaterial({ color: 0x22cc44 }); // Green Tag
-
-        const pinTop = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), pinMat);
-        pinTop.position.y = 1.6;
-        homePinGroup.add(pinTop);
-        
-        const pinBottom = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 16), pinMat);
-        pinBottom.rotation.x = Math.PI; // point down
-        pinBottom.position.y = 1.0;
-        homePinGroup.add(pinBottom);
-        
-        scene.add(homePinGroup);
-        
         const homeRingGeo = new THREE.RingGeometry(0.8, 1.2, 32);
         const homeRingMat = new THREE.MeshBasicMaterial({ color: 0x22cc44, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
         const homeRing = new THREE.Mesh(homeRingGeo, homeRingMat);
@@ -407,37 +394,53 @@
             modelFile: 'models/Endurance.glb',
             modelColor: 0xff5500, // Vibrant Orange
 
-            // COORDINATE SYSTEM: OpenVSP / XFLR5 Standard
-            // X = Forward/Backward (-X is Nose, +X is Tail)
-            // Y = Left/Right (+Y is Right Wing, -Y is Left Wing)
-            // Z = Top/Bottom (+Z is Top, -Z is Bottom)
-
             cruisePropColor: 0x34c759, // Green
             cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
-            pusherPos: { x: 0.6, y: 0, z: -0.1 }, // Tail pusher propeller
+            cruisePropBlades: 3,  // Number of blades for cruise propellers
+            pusherPos: { x: 0.5, y: 0, z: 0 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
-            twinPosL: { x: -0.15, y: -0.4, z: 0.08 }, // Left twin engine (negative X is forward)
-            twinPosR: { x: -0.15, y: 0.4, z: 0.05 },  // Right twin engine
+            twinPosL: { x: -0.1, y: -0.4, z: 0 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.1, y: 0.4, z: 0 },  // Right twin engine
 
             vtolPropColor: 0xff9500, // Orange
             vtolPropDia: 0.3, // Diameter of the quad propellers
+            vtolPropBlades: 2, // Number of blades for VTOL propellers
             vtolBoomZ: -0.08, // Z-level of VTOL booms (negative = below wing)
-            vtolBoomXOffset: -0.2, // X-offset for entire boom (shift forward/backward)
+            vtolBoomXOffset: -0.05, // X-offset for entire boom (shift forward/backward)
             vtolArmY: 0.3,    // Y-distance from centerline to boom
             vtolMotorX: 0.3,  // X-distance from Boom Center to front/back quad motor
 
             trackColor: 0xff00ff, // Color of the GPS trail line
-            trackOrigin: { x: 0, y: 0, z: -0.10 } // Origin point of the GPS trail (e.g., GPS antenna)
+            trackOrigin: { x: 0.5, y: 0, z: 0 } // Origin point of the GPS trail (e.g., GPS antenna)
         };
         // ==========================================
-
-        const matProp = new THREE.MeshBasicMaterial({ color: CONFIG.vtolPropColor, transparent: true, opacity: 0.8 });
 
         // Helper to convert Aviation Coords to Three.js Web Coords
         function vspToThree(pos) {
             return new THREE.Vector3(pos.y, pos.z, pos.x); // X mappings flipped (-X Nose, +X Tail)
+        }
+
+        function createPropeller(diameter, colorHex, blades, axis = 'Z') {
+            const propGroup = new THREE.Group();
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8 });
+            const radius = diameter / 2;
+            
+            for (let i = 0; i < blades; i++) {
+                const depth = axis === 'Z' ? 0.01 : 0.02;
+                const height = axis === 'Z' ? 0.02 : 0.01;
+                
+                const bladeGeo = new THREE.BoxGeometry(radius, height, depth);
+                bladeGeo.translate(radius / 2, 0, 0); 
+                
+                const blade = new THREE.Mesh(bladeGeo, mat);
+                if (axis === 'Z') blade.rotation.z = (i / blades) * Math.PI * 2;
+                else if (axis === 'Y') blade.rotation.y = (i / blades) * Math.PI * 2;
+                
+                propGroup.add(blade);
+            }
+            return propGroup;
         }
 
         const trackPoint = new THREE.Object3D();
@@ -475,10 +478,7 @@
             console.error('Error loading model:', error);
         });
 
-        // Better looking propeller
-        const pusherProp = new THREE.Group();
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        const pusherProp = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
         const push3D = vspToThree(CONFIG.pusherPos);
         pusherProp.position.copy(push3D);
         vtolGroup.add(pusherProp);
@@ -495,9 +495,7 @@
         const twinL3D = vspToThree(CONFIG.twinPosL);
         twinMotorL.position.copy(twinL3D);
         twinGroup.add(twinMotorL);
-        const twinPropL = new THREE.Group();
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        const twinPropL = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
         twinPropL.position.set(twinL3D.x, twinL3D.y, twinL3D.z - (CONFIG.twinMotorLength / 2));
         twinGroup.add(twinPropL);
 
@@ -506,9 +504,7 @@
         const twinR3D = vspToThree(CONFIG.twinPosR);
         twinMotorR.position.copy(twinR3D);
         twinGroup.add(twinMotorR);
-        const twinPropR = new THREE.Group();
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: CONFIG.cruisePropColor })));
+        const twinPropR = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
         twinPropR.position.set(twinR3D.x, twinR3D.y, twinR3D.z - (CONFIG.twinMotorLength / 2));
         twinGroup.add(twinPropR);
 
@@ -534,10 +530,7 @@
             motor.position.set(pos3D.x, pos3D.y + 0.03, pos3D.z);
             quadGroup.add(motor);
 
-            // Better looking VTOL prop (cross)
-            const prop = new THREE.Group();
-            prop.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.vtolPropDia, 0.01, 0.02), matProp));
-            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, CONFIG.vtolPropDia), matProp));
+            const prop = createPropeller(CONFIG.vtolPropDia, CONFIG.vtolPropColor, CONFIG.vtolPropBlades, 'Y');
             prop.position.set(pos3D.x, pos3D.y + 0.06, pos3D.z);
             quadGroup.add(prop);
             props.push(prop);
@@ -660,9 +653,6 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Bobbing animation for Home Marker
-            homePinGroup.position.y = Math.sin(Date.now() * 0.003) * 0.2;
 
             vtolGroup.position.lerp(targetPos, 0.05);
             let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.05);
