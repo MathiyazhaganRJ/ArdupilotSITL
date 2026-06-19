@@ -1,65 +1,62 @@
-# ArduPilot SITL 3D Web Visualizer
+# ArdupilotSITL
 
-A simple 3D flight visualizer for ArduPilot SITL.
+A real-time web visualizer and MAVLink telemetry bridge for ArduPilot Software-In-The-Loop (SITL) simulation.
 
-## How to Run
+## Repository Structure
 
-**1. Install Dependencies:**
-```bash
-pip install pymavlink websockets
+```
+ArdupilotSITL/
+├── visualizer/                  # Three.js / CesiumJS web frontend
+│   ├── index.html               # Main 3D SITL visualizer
+│   └── models/                  # 3D aircraft models (.glb / .gltf)
+│       └── <your_plane>.glb     # OpenVSP exported & converted model
+├── server/
+│   └── server.py                # MAVLink → WebSocket bridge (Python)
+├── docs/                        # Documentation and guides
+│   ├── JSBSIM_GUIDE.md
+│   └── ardupilot_build_cheatsheet.md
+├── .gitignore
+└── README.md
 ```
 
-**2. Start ArduPilot SITL:**
-Start your simulation (forward MAVLink telemetry to UDP `127.0.0.1:14551`).
-Example Quadplane start command:
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane --console --map
+## How It Works
+
+```
+ArduPilot SITL  →  MAVLink (UDP)  →  server.py  →  WebSocket  →  index.html (Browser)
 ```
 
-**3. Start the Python Server:**
-Open a terminal in this directory and run:
+1. Start ArduPilot SITL (with JSBSim backend)
+2. Run `server/server.py` to bridge MAVLink UDP → WebSocket
+3. Open `visualizer/index.html` in your browser
+4. Watch your aircraft fly live in 3D!
+
+## Quick Start
+
 ```bash
-python server.py
+# 1. Start ArduPilot SITL (in WSL/Linux)
+sim_vehicle.py -v ArduPlane -f jsbsim:SharkHawk --out=udp:127.0.0.1:14551
+
+# 2. Start the MAVLink bridge
+python server/server.py
+
+# 3. Open the visualizer
+# Open visualizer/index.html in your browser
 ```
 
-**4. Open the Visualizer:**
-Simply double-click `index.html` to view the 3D simulation in your web browser.
+## Adding a Custom 3D Model (OpenVSP)
 
----
+1. Export your OpenVSP geometry as `.OBJ` or `.STL`
+2. Convert to `.glb` using [Blender](https://www.blender.org/) or an [online converter](https://www.npmjs.com/package/gltf-pipeline)
+3. Place the `.glb` file in `visualizer/models/`
+4. Update the model path in `visualizer/index.html`
 
-## ArduPilot SITL Commands
+> **Note:** `.glb` files are gitignored (too large). Use [Git LFS](https://git-lfs.github.com/) if you need to track them.
 
-Run these commands from inside your `~/ardupilot` directory in WSL.
+## Related Repo
 
-**Standard Fixed Wing (Pusher):**
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane --console --map
-```
+- [JSBSim-Ardupilot](https://github.com/MathiyazhaganRJ/JSBSim-Ardupilot) — Flight physics engine and aircraft XML definitions
 
-**QuadPlane (VTOL):**
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane --console --map
-```
+## Requirements
 
-**Quadcopter:**
-```bash
-Tools/autotest/sim_vehicle.py -v ArduCopter --console --map
-```
-
-**Wipe Parameters (Factory Reset):**
-*(Use this if the plane is acting crazy or you are switching from Copters to Planes)*
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane -f quadplane -w --console --map
-```
-
-**Spawn at a Specific Airport/Location (`-L` flag):**
-*(e.g., KSFO for San Francisco Airport, or CMAC for the test field)*
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane -L KSFO --console --map
-```
-
-**Spawn at Custom GPS Coordinates:**
-*(Format MUST be exactly 4 values: Latitude, Longitude, Altitude, Heading)*
-```bash
-Tools/autotest/sim_vehicle.py -v ArduPlane --custom-location="8.37074,77.36632,0,270" --console --map
-```
+- Python 3.8+ with `pymavlink` and `websockets`
+- Modern web browser (Chrome/Firefox)

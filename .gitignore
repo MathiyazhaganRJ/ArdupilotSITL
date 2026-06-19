@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Large 3D model files (upload manually or via Git LFS)
+visualizer/models/*.glb
+visualizer/models/*.gltf
+visualizer/models/*.obj
+visualizer/models/*.stl
+visualizer/models/*.fbx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
