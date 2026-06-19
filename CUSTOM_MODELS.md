@@ -22,61 +22,42 @@ The visualizer uses the efficient `.glb` (glTF binary) format for 3D models. We 
 4. The script will generate an `Endurance.glb` file.
 
 ## 3. Update the Visualizer Code
-Open `visualizer/index.html` in your code editor and make the following changes:
+Open `visualizer/index.html` in your code editor. Around line 375, you will find the `AIRCRAFT GEOMETRY CONFIGURATION` block. You do not need to dig through the code; simply change the values in this single block to configure your entire aircraft!
 
-### A. Load the New Model
-Find the `GLTFLoader` section (around line 228) and update the file path to your new `.glb` file:
 ```javascript
-loader.load('models/YourModel.glb', function(gltf) {
-    const model = gltf.scene;
+// ==========================================
+// AIRCRAFT GEOMETRY CONFIGURATION
+// ==========================================
+const CONFIG = {
+    modelFile: 'models/YourNewModel.glb', // Change to your .glb file name
+    modelColor: 0xff5500,                 // Hex color for the airplane body
     
-    // OpenVSP uses a different coordinate system. This rotates it so the nose points forward.
-    model.rotation.y = -Math.PI / 2; 
-
-    model.traverse(function(child) {
-        if(child.isMesh) {
-            child.geometry.computeVertexNormals(); // Generates lighting reflections
-            child.material = new THREE.MeshStandardMaterial({
-                color: 0xff5500, // Vibrant Orange (Change this hex code for different colors)
-                roughness: 0.4,
-                metalness: 0.3,
-                side: THREE.DoubleSide
-            });
-        }
-    });
-    aeroGroup.add(model);
-});
+    // CRUISE PROPELLERS (Pusher & Twin)
+    cruisePropDia: 0.3,                     // Diameter of forward-flight props
+    pusherPos: { x: 0, y: -0.05, z: 0.45 }, // z: 0.45 places it roughly on a 0.9m tail
+    
+    // TWIN ENGINES
+    twinPosL: { x: -0.4, y: 0.05, z: -0.15 }, // Left nacelle
+    twinPosR: { x: 0.4, y: 0.05, z: -0.15 },  // Right nacelle
+    
+    // VTOL QUAD MOTORS
+    vtolPropDia: 0.3, // Diameter of quadplane lift props
+    vtolBoomY: -0.08, // Negative value mounts the boom beneath the wing
+    vtolArmX: 0.5,    // Distance from centerline to the left/right booms
+    vtolMotorZ: 0.35  // Distance from CG to the front/rear motors. 
+                      // Note: The carbon boom length automatically scales to fit this!
+};
+// ==========================================
 ```
 
-### B. Adjust Propeller Positions
-Based on the dimensions printed during the Python conversion step, you will need to adjust the X, Y, Z coordinates for your propellers.
-- **X-axis:** Left/Right (Wingspan). `+X` is the right wing, `-X` is the left wing.
-- **Y-axis:** Up/Down. `+Y` is up.
-- **Z-axis:** Forward/Backward (Length). `-Z` is the nose, `+Z` is the tail.
-
-**Cruise Propeller (Pusher)**
-Find `pusherProp.position.set(...)`. If your plane has a length of 0.9m, the tail is roughly at `Z = 0.45`.
-```javascript
-pusherProp.position.set(0, 0, 0.45); // Adjust Z to sit exactly on the tail
-```
-
-**VTOL Quadplane Propellers**
-Find the `armPositions` array. Adjust the X and Z values to place the quad rotors correctly on your wings.
-```javascript
-const armPositions = [
-    { x: 0.5, z: -0.35 }, // Front Right
-    { x: -0.5, z: 0.35 }, // Back Left
-    { x: 0.5, z: 0.35 },  // Back Right
-    { x: -0.5, z: -0.35 } // Front Left
-];
-```
-
-**Twin Engine Propellers**
-If using a twin-engine layout, find `twinMotorL` and `twinMotorR` and adjust their `X` coordinates to match the location of the engine nacelles on the wings.
+### Coordinate System Cheat Sheet:
+- **X-axis (Width):** `+X` is the right wing, `-X` is the left wing.
+- **Y-axis (Height):** `+Y` is up, `-Y` is down (under the wing).
+- **Z-axis (Length):** `-Z` is the nose, `+Z` is the tail.
 
 ## 4. Test It
-Start your local Python web server in the `visualizer` folder:
+Start the visualizer server from the root directory:
 ```powershell
-python -m http.server 8000
+python server/server.py
 ```
-Open `http://localhost:8000` in your browser. Start ArduPilot SITL and verify that the propellers rotate correctly relative to the new 3D model!
+This script will automatically start the websocket bridge, the web server, and open your browser! Start ArduPilot SITL and verify that the propellers rotate correctly relative to the new 3D model.

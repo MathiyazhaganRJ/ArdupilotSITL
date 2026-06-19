@@ -8,8 +8,8 @@ from pygltflib import GLTF2, Scene, Node, Mesh, Primitive, Buffer, BufferView, A
 from pygltflib import FLOAT, UNSIGNED_INT, ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER
 import pygltflib
 
-OBJ_FILE = "Endurance.obj"
-GLB_FILE = "Endurance.glb"
+OBJ_FILE = "Test.obj"
+GLB_FILE = "Test.glb"
 
 print(f"Reading {OBJ_FILE}...")
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>VTOL Visualizer</title>
@@ -13,8 +14,8 @@
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
             --accent: #0071e3;
             --motor-bg: #e5e5ea;
-            --btn-bg: rgba(0,0,0,0.05);
-            --btn-hover: rgba(0,0,0,0.1);
+            --btn-bg: rgba(0, 0, 0, 0.05);
+            --btn-hover: rgba(0, 0, 0, 0.1);
             --danger: #ff3b30;
             --success: #34c759;
             --option-bg: #ffffff;
@@ -30,26 +31,38 @@
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             --accent: #0a84ff;
             --motor-bg: #3a3a3c;
-            --btn-bg: rgba(255,255,255,0.1);
-            --btn-hover: rgba(255,255,255,0.15);
+            --btn-bg: rgba(255, 255, 255, 0.1);
+            --btn-hover: rgba(255, 255, 255, 0.15);
             --danger: #ff453a;
             --success: #30d158;
             --option-bg: #1c1c1e;
             --option-text: #ffffff;
         }
 
-        body { 
-            margin: 0; overflow: hidden; 
-            background-color: var(--bg-color); 
-            color: var(--text-primary); 
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             transition: background-color 0.3s ease;
         }
-        
-        #canvas-container { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
-        
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
         #ui-panel {
-            position: absolute; top: 20px; left: 20px; width: 260px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 260px;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -60,58 +73,182 @@
             z-index: 10;
             transition: all 0.3s ease;
         }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h3 { margin: 0; font-weight: 600; font-size: 18px; letter-spacing: -0.02em; }
-        
-        .icon-btn { 
-            background: var(--btn-bg); border: none; border-radius: 50%; width: 32px; height: 32px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; 
-            font-size: 14px; transition: background 0.2s; color: var(--text-primary);
-        }
-        .icon-btn:hover { background: var(--btn-hover); }
 
-        .data-card { 
-            background: var(--btn-bg); border-radius: 12px; padding: 12px; margin-bottom: 16px;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        .data-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-        .data-row:last-child { margin-bottom: 0; }
-        .data-label { color: var(--text-secondary); font-weight: 500; }
-        .data-val { font-weight: 600; font-variant-numeric: tabular-nums; }
-        
-        .section-title { font-weight: 600; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 10px 0; }
-        
-        select { 
-            background: var(--btn-bg); color: var(--text-primary); border: 1px solid var(--border-color); 
-            border-radius: 6px; padding: 4px; font-family: inherit; font-size: 12px; font-weight: 500; outline: none; width: 100px;
+        h3 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: -0.02em;
         }
+
+        .icon-btn {
+            background: var(--btn-bg);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            color: var(--text-primary);
+        }
+
+        .icon-btn:hover {
+            background: var(--btn-hover);
+        }
+
+        .data-card {
+            background: var(--btn-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .data-val {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 20px 0 10px 0;
+        }
+
+        select {
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            outline: none;
+            width: 100px;
+        }
+
         option {
             background-color: var(--option-bg);
             color: var(--option-text);
         }
-        
-        .map-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 500;}
-        
-        .motor-bar-container { display: flex; justify-content: space-between; height: 85px; margin-top: 10px; }
-        .motor-bar-wrapper { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .pwm-label { font-size: 9px; color: var(--text-secondary); font-weight: 700; }
-        .motor-bar-bg { width: 14px; height: 50px; background: var(--motor-bg); border-radius: 7px; overflow: hidden; position: relative; }
-        .motor-bar-fill { width: 100%; position: absolute; bottom: 0; background: var(--success); transition: height 0.1s, background 0.2s; border-radius: 7px; }
-        .motor-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
-        
-        .btn-group { display: flex; gap: 8px; margin-top: 20px; background: var(--btn-bg); padding: 4px; border-radius: 10px;}
-        .mode-btn { 
-            flex: 1; padding: 6px 0; border: none; border-radius: 6px; cursor: pointer;
-            font-family: inherit; font-weight: 600; font-size: 13px; transition: all 0.2s;
-            background: transparent; color: var(--text-secondary);
+
+        .map-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 500;
         }
-        .btn-active { background: var(--panel-bg); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        .motor-bar-container {
+            display: flex;
+            justify-content: space-between;
+            height: 85px;
+            margin-top: 10px;
+        }
+
+        .motor-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pwm-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .motor-bar-bg {
+            width: 14px;
+            height: 50px;
+            background: var(--motor-bg);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .motor-bar-fill {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background: var(--success);
+            transition: height 0.1s, background 0.2s;
+            border-radius: 7px;
+        }
+
+        .motor-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            background: var(--btn-bg);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 6px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-active {
+            background: var(--panel-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
+
 <body>
     <div id="ui-panel">
         <div class="header">
@@ -120,14 +257,20 @@
         </div>
 
         <div class="data-card">
-            <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val" style="color: var(--danger);">Offline</span></div>
-            <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val" style="color: var(--text-secondary);">---</span></div>
-            <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val" style="color: var(--accent);">UNKNOWN</span></div>
-            <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span></div>
-            <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0 m/s</span></div>
-            <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0 m/s</span></div>
+            <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
+                    style="color: var(--danger);">Offline</span></div>
+            <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
+                    style="color: var(--text-secondary);">---</span></div>
+            <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
+                    style="color: var(--accent);">UNKNOWN</span></div>
+            <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
+            </div>
+            <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
+                    m/s</span></div>
+            <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
+                    m/s</span></div>
         </div>
-        
+
         <div class="section-title">Vehicle Config</div>
         <select id="v_type" style="width: 100%; margin-bottom: 20px; padding: 6px 10px;">
             <option value="vtol">QuadPlane (VTOL)</option>
@@ -153,11 +296,12 @@
 
         <div class="section-title">Motors</div>
         <div class="motor-bar-container" id="motor-bars"></div>
-        
-        <div style="margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
+
+        <div
+            style="margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
             Designed by RJ
         </div>
-        
+
         <div class="btn-group">
             <button id="btn-follow" class="mode-btn btn-active">Follow</button>
             <button id="btn-free" class="mode-btn">Free</button>
@@ -181,7 +325,7 @@
 
         const scene = new THREE.Scene();
         let gridHelper;
-        
+
         function updateSceneTheme() {
             const isDark = document.body.classList.contains('dark-mode');
             const bgHex = isDark ? 0x000000 : 0xf5f5f7;
@@ -191,7 +335,7 @@
             scene.background = new THREE.Color(bgHex);
             scene.fog = new THREE.Fog(bgHex, 20, 200);
 
-            if(gridHelper) scene.remove(gridHelper);
+            if (gridHelper) scene.remove(gridHelper);
             gridHelper = new THREE.GridHelper(200, 200, grid1, grid2);
             gridHelper.position.y = -1;
             scene.add(gridHelper);
@@ -228,15 +372,32 @@
         const aeroGroup = new THREE.Group();
         vtolGroup.add(aeroGroup);
 
+        // ==========================================
+        // AIRCRAFT GEOMETRY CONFIGURATION
+        // ==========================================
+        const CONFIG = {
+            modelFile: 'models/Endurance.glb',
+            modelColor: 0xff5500, // Vibrant Orange
+            cruisePropDia: 0.3,   // Diameter for Pusher and Twin propellers
+            pusherPos: { x: 0, y: -0.05, z: 0.4 }, // Tail pusher propeller
+            twinPosL: { x: -0.4, y: 0.08, z: -0.15 }, // Left twin engine
+            twinPosR: { x: 0.4, y: 0.05, z: -0.15 },  // Right twin engine
+            vtolPropDia: 0.3, // Diameter of the quad propellers
+            vtolBoomY: -0.08, // Y-level of VTOL booms (negative = below wing)
+            vtolArmX: 0.3,    // X-distance from centerline to boom
+            vtolMotorZ: 0.8  // Z-distance from CG to front/back quad motor. (Boom length will auto-scale to fit this)
+        };
+        // ==========================================
+
         const loader = new THREE.GLTFLoader();
-        loader.load('models/Endurance.glb', function(gltf) {
+        loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
             model.rotation.y = -Math.PI / 2; // Rotate -90deg so nose points forward (-Z)
-            model.traverse(function(child) {
-                if(child.isMesh) {
+            model.traverse(function (child) {
+                if (child.isMesh) {
                     child.geometry.computeVertexNormals(); // Fixes black model!
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0xff5500, // Vibrant Orange
+                        color: CONFIG.modelColor,
                         roughness: 0.4,
                         metalness: 0.3,
                         side: THREE.DoubleSide
@@ -244,15 +405,15 @@
                 }
             });
             aeroGroup.add(model);
-        }, undefined, function(error) {
-            console.error('Error loading Endurance.glb:', error);
+        }, undefined, function (error) {
+            console.error('Error loading model:', error);
         });
 
         // Better looking propeller
         const pusherProp = new THREE.Group();
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.3, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        pusherProp.position.set(0, 0, 0.45); // Tail position for 0.9m length plane
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        pusherProp.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        pusherProp.position.set(CONFIG.pusherPos.x, CONFIG.pusherPos.y, CONFIG.pusherPos.z);
         vtolGroup.add(pusherProp);
 
         const quadGroup = new THREE.Group();
@@ -264,44 +425,48 @@
 
         const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
         twinMotorL.rotation.x = Math.PI / 2;
-        twinMotorL.position.set(-0.4, 0.05, -0.15);
+        twinMotorL.position.set(CONFIG.twinPosL.x, CONFIG.twinPosL.y, CONFIG.twinPosL.z);
         twinGroup.add(twinMotorL);
         const twinPropL = new THREE.Group();
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        twinPropL.position.set(-0.4, 0.05, -0.3);
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        twinPropL.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        twinPropL.position.set(CONFIG.twinPosL.x, CONFIG.twinPosL.y, CONFIG.twinPosL.z - 0.15);
         twinGroup.add(twinPropL);
 
         const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3), matCarbon);
         twinMotorR.rotation.x = Math.PI / 2;
-        twinMotorR.position.set(0.4, 0.05, -0.15);
+        twinMotorR.position.set(CONFIG.twinPosR.x, CONFIG.twinPosR.y, CONFIG.twinPosR.z);
         twinGroup.add(twinMotorR);
         const twinPropR = new THREE.Group();
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.01), new THREE.MeshBasicMaterial({color: 0x34c759})));
-        twinPropR.position.set(0.4, 0.05, -0.3);
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.cruisePropDia, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        twinPropR.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, CONFIG.cruisePropDia, 0.01), new THREE.MeshBasicMaterial({ color: 0x34c759 })));
+        twinPropR.position.set(CONFIG.twinPosR.x, CONFIG.twinPosR.y, CONFIG.twinPosR.z - 0.15);
         twinGroup.add(twinPropR);
 
         const props = [];
         const armPositions = [
-            { x: 0.5, z: -0.35 }, { x: -0.5, z: 0.35 }, { x: 0.5, z: 0.35 }, { x: -0.5, z: -0.35 }
+            { x: CONFIG.vtolArmX, z: -CONFIG.vtolMotorZ },
+            { x: -CONFIG.vtolArmX, z: CONFIG.vtolMotorZ },
+            { x: CONFIG.vtolArmX, z: CONFIG.vtolMotorZ },
+            { x: -CONFIG.vtolArmX, z: -CONFIG.vtolMotorZ }
         ];
 
         armPositions.forEach(pos => {
-            const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.75), matCarbon);
+            const boomLength = (CONFIG.vtolMotorZ * 2) + 0.05; // Auto-scale boom length to motor spread
+            const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, boomLength), matCarbon);
             boom.rotation.x = Math.PI / 2;
-            boom.position.set(pos.x, -0.08, 0); // Lowered under the wing
+            boom.position.set(pos.x, CONFIG.vtolBoomY, 0);
             quadGroup.add(boom);
-            
+
             const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06), matCarbon);
-            motor.position.set(pos.x, -0.05, pos.z); // Lowered to match boom
+            motor.position.set(pos.x, CONFIG.vtolBoomY + 0.03, pos.z);
             quadGroup.add(motor);
 
             // Better looking VTOL prop (cross)
             const prop = new THREE.Group();
-            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.01, 0.02), matProp));
-            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.3), matProp));
-            prop.position.set(pos.x, -0.02, pos.z); // Propellers now spin just beneath the wing level
+            prop.add(new THREE.Mesh(new THREE.BoxGeometry(CONFIG.vtolPropDia, 0.01, 0.02), matProp));
+            prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, CONFIG.vtolPropDia), matProp));
+            prop.position.set(pos.x, CONFIG.vtolBoomY + 0.06, pos.z);
             quadGroup.add(prop);
             props.push(prop);
         });
@@ -316,26 +481,26 @@
             document.getElementById('map-vtol').style.display = (type === 'vtol') ? 'block' : 'none';
             document.getElementById('map-single').style.display = (type === 'vtol' || type === 'plane') ? 'flex' : 'none';
             document.getElementById('map-twin').style.display = (type === 'twin') ? 'block' : 'none';
-            
-            if(type === 'quad') {
-                if(!quadGroup.hub) {
+
+            if (type === 'quad') {
+                if (!quadGroup.hub) {
                     const hub = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), matCarbon);
                     hub.position.set(0, 0.05, -0.1);
                     quadGroup.add(hub);
                     quadGroup.hub = hub;
                 }
                 quadGroup.hub.visible = true;
-            } else if(quadGroup.hub) {
+            } else if (quadGroup.hub) {
                 quadGroup.hub.visible = false;
             }
         };
-        
+
         const selects = ['m_fr', 'm_bl', 'm_br', 'm_fl', 'm_push', 'm_twin_l', 'm_twin_r'];
         selects.forEach(id => {
             const el = document.getElementById(id);
-            for(let i=1; i<=8; i++) {
+            for (let i = 1; i <= 8; i++) {
                 const opt = document.createElement('option');
-                opt.value = i-1; opt.innerText = "CH" + i;
+                opt.value = i - 1; opt.innerText = "CH" + i;
                 el.appendChild(opt);
             }
         });
@@ -359,14 +524,14 @@
 
         const motorBarsContainer = document.getElementById('motor-bars');
         const uiFills = [], uiPwms = [];
-        for(let i=0; i<8; i++) {
+        for (let i = 0; i < 8; i++) {
             const wrapper = document.createElement('div');
             wrapper.className = 'motor-bar-wrapper';
             const pwmVal = document.createElement('div'); pwmVal.className = 'pwm-label'; pwmVal.innerText = '1000';
             const bg = document.createElement('div'); bg.className = 'motor-bar-bg';
             const fill = document.createElement('div'); fill.className = 'motor-bar-fill'; fill.style.height = '0%';
             bg.appendChild(fill);
-            const lbl = document.createElement('div'); lbl.innerText = i+1; lbl.className = 'motor-label';
+            const lbl = document.createElement('div'); lbl.innerText = i + 1; lbl.className = 'motor-label';
             wrapper.appendChild(pwmVal); wrapper.appendChild(bg); wrapper.appendChild(lbl);
             motorBarsContainer.appendChild(wrapper);
             uiFills.push(fill); uiPwms.push(pwmVal);
@@ -377,7 +542,7 @@
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
 
         const ws = new WebSocket('ws://127.0.0.1:8766');
-        let servoSpeeds = [0,0,0,0,0,0,0,0];
+        let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let targetPos = new THREE.Vector3(), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
 
@@ -393,16 +558,16 @@
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'HEARTBEAT') {
-                if(data.mode) document.getElementById('f_mode').innerText = data.mode;
-                if(data.firmware) document.getElementById('firmware').innerText = data.firmware;
+                if (data.mode) document.getElementById('f_mode').innerText = data.mode;
+                if (data.firmware) document.getElementById('firmware').innerText = data.firmware;
             } else if (data.type === 'VFR_HUD') {
                 document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
             } else if (data.type === 'ATTITUDE') targetRot.set(data.pitch, -data.yaw, -data.roll);
-            else if (data.type === 'LOCAL_POSITION_NED') { 
-                document.getElementById('alt').innerText = data.z.toFixed(1) + " m"; 
-                targetPos.set(data.y, data.z, -data.x); 
-                if(!firstPos) {
+            else if (data.type === 'LOCAL_POSITION_NED') {
+                document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
+                targetPos.set(data.y, data.z, -data.x);
+                if (!firstPos) {
                     vtolGroup.position.copy(targetPos);
                     lastPlanePos.copy(targetPos);
                     lastTrailAddPos.copy(targetPos);
@@ -411,7 +576,7 @@
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
                 servoSpeeds = data.servos;
-                for(let i=0; i<8; i++) {
+                for (let i = 0; i < 8; i++) {
                     let pwm = servoSpeeds[i]; uiPwms[i].innerText = pwm;
                     let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
                     uiFills[i].style.height = percent + '%';
@@ -425,7 +590,7 @@
             vtolGroup.position.lerp(targetPos, 0.05);
             let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.05);
             vtolGroup.setRotationFromQuaternion(q);
-            
+
             if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
@@ -435,17 +600,17 @@
             lastPlanePos.copy(vtolGroup.position);
 
             if (vtolGroup.position.distanceTo(lastTrailAddPos) > 0.5) {
-                if(trailCount < maxTrailPoints) {
+                if (trailCount < maxTrailPoints) {
                     trailPositions[trailCount * 3] = vtolGroup.position.x; trailPositions[trailCount * 3 + 1] = vtolGroup.position.y; trailPositions[trailCount * 3 + 2] = vtolGroup.position.z;
                     trailCount++; trailGeo.setDrawRange(0, trailCount);
                 } else {
                     trailPositions.copyWithin(0, 3);
-                    trailPositions[(maxTrailPoints-1)*3] = vtolGroup.position.x; trailPositions[(maxTrailPoints-1)*3+1] = vtolGroup.position.y; trailPositions[(maxTrailPoints-1)*3+2] = vtolGroup.position.z;
+                    trailPositions[(maxTrailPoints - 1) * 3] = vtolGroup.position.x; trailPositions[(maxTrailPoints - 1) * 3 + 1] = vtolGroup.position.y; trailPositions[(maxTrailPoints - 1) * 3 + 2] = vtolGroup.position.z;
                 }
                 trailGeo.attributes.position.needsUpdate = true;
                 lastTrailAddPos.copy(vtolGroup.position);
             }
-            
+
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
                 m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
                 m_push = parseInt(document.getElementById('m_push').value), m_tl = parseInt(document.getElementById('m_twin_l').value),
@@ -471,4 +636,5 @@
         });
     </script>
 </body>
+
 </html>
