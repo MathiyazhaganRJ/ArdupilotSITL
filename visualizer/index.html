@@ -112,11 +112,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
-<body class="dark-mode">
+<body>
     <div id="ui-panel">
         <div class="header">
             <h2>ArduPilot SITL</h2>
-            <button id="theme-toggle" class="icon-btn">☀️</button>
+            <button id="theme-toggle" class="icon-btn">🌙</button>
         </div>
 
         <div class="data-card">
@@ -290,18 +290,18 @@
         armPositions.forEach(pos => {
             const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.75), matCarbon);
             boom.rotation.x = Math.PI / 2;
-            boom.position.set(pos.x, 0.05, 0);
+            boom.position.set(pos.x, -0.08, 0); // Lowered under the wing
             quadGroup.add(boom);
             
             const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06), matCarbon);
-            motor.position.set(pos.x, 0.08, pos.z);
+            motor.position.set(pos.x, -0.05, pos.z); // Lowered to match boom
             quadGroup.add(motor);
 
             // Better looking VTOL prop (cross)
             const prop = new THREE.Group();
             prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.01, 0.02), matProp));
             prop.add(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.3), matProp));
-            prop.position.set(pos.x, 0.11, pos.z);
+            prop.position.set(pos.x, -0.02, pos.z); // Propellers now spin just beneath the wing level
             quadGroup.add(prop);
             props.push(prop);
         });
