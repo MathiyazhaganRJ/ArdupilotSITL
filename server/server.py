@@ -77,9 +77,9 @@ def start_http_server():
     class QuietHandler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format, *args): pass
     
-    # Use port 8000 if available, else standard fallback logic could go here
-    with socketserver.TCPServer(("127.0.0.1", 8000), QuietHandler) as httpd:
-        print("HTTP Web Server started on http://127.0.0.1:8000")
+    # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
+    with http.server.ThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
+        print("HTTP Web Server started on port 8000")
         httpd.serve_forever()
 
 async def main():
@@ -89,8 +89,8 @@ async def main():
     # Auto-open the visualizer in the default browser after 1 second
     threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:8000')).start()
 
-    server = await websockets.serve(ws_handler, "127.0.0.1", 8766)
-    print("WebSocket Server started on ws://127.0.0.1:8766")
+    server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
+    print("WebSocket Server started on port 8766")
     await asyncio.gather(server.wait_closed(), mavlink_listener())
 
 if __name__ == "__main__":
