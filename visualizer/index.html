@@ -409,6 +409,9 @@
             vtolPropColor: 0xff9500, // Orange
             vtolPropDia: 0.3, // Diameter of the quad propellers
             vtolPropBlades: 2, // Number of blades for VTOL propellers
+            vtolPropDir: [1, 0, 0, 1], // 0=CW, 1=CCW for [FrontRight, FrontLeft, BackRight, BackLeft] (Default Quad-X)
+            cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
+            twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
             vtolBoomZ: -0.08, // Z-level of VTOL booms (negative = below wing)
             vtolBoomXOffset: -0.05, // X-offset for entire boom (shift forward/backward)
             vtolArmY: 0.3,    // Y-distance from centerline to boom
@@ -698,13 +701,14 @@
                 m_tr = parseInt(document.getElementById('m_twin_r').value);
 
             // Use 0.47 instead of 2.0 to avoid stroboscopic "freezing" effect
-            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * 0.47;
-            props[1].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * 0.47;
-            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * 0.47;
-            props[3].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * 0.47;
-            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 0.47;
-            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 0.47;
-            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 0.47;
+            // Apply directional multiplier (0 = CW = negative rotation, 1 = CCW = positive rotation)
+            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * 0.47 * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            props[1].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * 0.47 * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * 0.47 * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+            props[3].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * 0.47 * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
+            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 0.47 * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
 
             renderer.render(scene, camera);
         }
