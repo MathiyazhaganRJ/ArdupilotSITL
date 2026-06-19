@@ -25,9 +25,15 @@ ArdupilotSITL/
 ArduPilot SITL  →  MAVLink (UDP)  →  server.py  →  WebSocket  →  index.html (Browser)
 ```
 
+To make the visualizer work seamlessly, `server.py` runs **two servers simultaneously** in the background:
+
+1. **MAVLink WebSocket Bridge (`ws://127.0.0.1:8766`)**: This server connects to ArduPilot's UDP stream to read raw MAVLink telemetry (attitude, GPS, servo PWM outputs). It decodes this binary data, converts it into lightweight JSON, and broadcasts it over WebSockets so the Javascript in your browser can animate the 3D model in real-time.
+2. **HTTP Web Server (`http://127.0.0.1:8000`)**: Modern web browsers have strict security rules (CORS) that block 3D models (`.glb` files) from loading if you just double-click an HTML file on your hard drive (`file:///...`). This built-in HTTP server hosts the `visualizer` folder locally, bypassing those restrictions and allowing `Three.js` to securely load the aircraft meshes and textures.
+
+### Workflow
 1. Start ArduPilot SITL (with JSBSim backend)
-2. Run `server/server.py` to bridge MAVLink UDP → WebSocket
-3. Open `visualizer/index.html` in your browser
+2. Run `python server/server.py`
+3. The script will automatically open your default browser to the visualizer!
 4. Watch your aircraft fly live in 3D!
 
 ## Quick Start

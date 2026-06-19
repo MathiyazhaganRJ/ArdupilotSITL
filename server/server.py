@@ -1,6 +1,11 @@
 import asyncio
 import websockets
 import json
+import threading
+import http.server
+import socketserver
+import os
+import webbrowser
 from pymavlink import mavutil
 
 MAVLINK_URL = 'udpin:127.0.0.1:14551'
@@ -64,9 +69,26 @@ async def ws_handler(websocket, path=None):
     try:
         await websocket.wait_closed()
     finally:
-        clients.remove(websocket)
+        clients.discard(websocket)
+
+def start_http_server():
+    vis_dir = os.path.join(os.path.dirname(__file__), '..', 'visualizer')
+    os.chdir(vis_dir)
+    class QuietHandler(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, format, *args): pass
+    
+    # Use port 8000 if available, else standard fallback logic could go here
+    with socketserver.TCPServer(("127.0.0.1", 8000), QuietHandler) as httpd:
+        print("HTTP Web Server started on http://127.0.0.1:8000")
+        httpd.serve_forever()
 
 async def main():
+    # Start the HTTP server in the background
+    threading.Thread(target=start_http_server, daemon=True).start()
+    
+    # Auto-open the visualizer in the default browser after 1 second
+    threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:8000')).start()
+
     server = await websockets.serve(ws_handler, "127.0.0.1", 8766)
     print("WebSocket Server started on ws://127.0.0.1:8766")
     await asyncio.gather(server.wait_closed(), mavlink_listener())
