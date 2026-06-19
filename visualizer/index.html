@@ -396,7 +396,7 @@
 
             cruisePropColor: 0x34c759, // Green
             cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
-            cruisePropBlades: 3,  // Number of blades for cruise propellers
+            cruisePropBlades: 2,  // Number of blades for cruise propellers
             pusherPos: { x: 0.5, y: 0, z: 0 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
@@ -426,18 +426,18 @@
             const propGroup = new THREE.Group();
             const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8 });
             const radius = diameter / 2;
-            
+
             for (let i = 0; i < blades; i++) {
                 const depth = axis === 'Z' ? 0.01 : 0.02;
                 const height = axis === 'Z' ? 0.02 : 0.01;
-                
+
                 const bladeGeo = new THREE.BoxGeometry(radius, height, depth);
-                bladeGeo.translate(radius / 2, 0, 0); 
-                
+                bladeGeo.translate(radius / 2, 0, 0);
+
                 const blade = new THREE.Mesh(bladeGeo, mat);
                 if (axis === 'Z') blade.rotation.z = (i / blades) * Math.PI * 2;
                 else if (axis === 'Y') blade.rotation.y = (i / blades) * Math.PI * 2;
-                
+
                 propGroup.add(blade);
             }
             return propGroup;
@@ -654,8 +654,9 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            vtolGroup.position.lerp(targetPos, 0.05);
-            let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.05);
+            // Heavy low-pass filter to erase 10Hz network stutter
+            vtolGroup.position.lerp(targetPos, 0.02);
+            let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.02);
             vtolGroup.setRotationFromQuaternion(q);
 
             if (cameraMode === 'follow') {
