@@ -690,16 +690,20 @@
             trackPoint.getWorldPosition(currentTrackPos);
 
             if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.5) {
-                if (trailCount < maxTrailPoints) {
-                    trailPositions[trailCount * 3] = currentTrackPos.x; trailPositions[trailCount * 3 + 1] = currentTrackPos.y; trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
-                    trailCount++; trailGeo.setDrawRange(0, trailCount);
+                if (trailCount < maxTrailPoints - 1) { // Reserve 1 point for the dynamic tip
+                    trailCount++; 
                 } else {
                     trailPositions.copyWithin(0, 3);
-                    trailPositions[(maxTrailPoints - 1) * 3] = currentTrackPos.x; trailPositions[(maxTrailPoints - 1) * 3 + 1] = currentTrackPos.y; trailPositions[(maxTrailPoints - 1) * 3 + 2] = currentTrackPos.z;
                 }
-                trailGeo.attributes.position.needsUpdate = true;
                 lastTrailAddPos.copy(currentTrackPos);
             }
+
+            // Always stretch the active tip of the trail to the current smooth plane position
+            trailPositions[trailCount * 3] = currentTrackPos.x; 
+            trailPositions[trailCount * 3 + 1] = currentTrackPos.y; 
+            trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
+            trailGeo.setDrawRange(0, trailCount + 1);
+            trailGeo.attributes.position.needsUpdate = true;
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
                 m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
