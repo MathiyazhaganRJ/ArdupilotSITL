@@ -56,7 +56,8 @@ const CONFIG = {
     vtolMotorX: 0.35,   // X-distance from the boom center to the front/rear motors. 
                         // Note: The carbon boom length automatically scales to fit this!
                         
-    trackColor: 0xff00ff // Color of the GPS trail line
+    trackColor: 0xff00ff, // Color of the GPS trail line
+    trackOrigin: { x: 0, y: 0, z: 0 } // Point where the trail is drawn from (e.g. GPS antenna or Tail)
 };
 // ==========================================
 ```

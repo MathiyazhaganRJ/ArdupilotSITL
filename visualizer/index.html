@@ -385,7 +385,7 @@
 
             cruisePropColor: 0x34c759, // Green
             cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
-            pusherPos: { x: 0.4, y: 0, z: -0.05 }, // Tail pusher propeller
+            pusherPos: { x: 0.6, y: 0, z: -0.1 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
@@ -399,7 +399,8 @@
             vtolArmY: 0.3,    // Y-distance from centerline to boom
             vtolMotorX: 0.3,  // X-distance from Boom Center to front/back quad motor
 
-            trackColor: 0xff00ff // Color of the GPS trail line
+            trackColor: 0xff00ff, // Color of the GPS trail line
+            trackOrigin: { x: 0, y: 0, z: -0.10 } // Origin point of the GPS trail (e.g., GPS antenna)
         };
         // ==========================================
 
@@ -409,6 +410,11 @@
         function vspToThree(pos) {
             return new THREE.Vector3(pos.y, pos.z, pos.x); // X mappings flipped (-X Nose, +X Tail)
         }
+
+        const trackPoint = new THREE.Object3D();
+        trackPoint.position.copy(vspToThree(CONFIG.trackOrigin));
+        vtolGroup.add(trackPoint);
+        const currentTrackPos = new THREE.Vector3();
 
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
@@ -596,8 +602,10 @@
                 targetPos.set(data.y, data.z, -data.x);
                 if (!firstPos) {
                     vtolGroup.position.copy(targetPos);
+                    vtolGroup.updateMatrixWorld(true);
+                    trackPoint.getWorldPosition(currentTrackPos);
                     lastPlanePos.copy(targetPos);
-                    lastTrailAddPos.copy(targetPos);
+                    lastTrailAddPos.copy(currentTrackPos);
                     firstPos = true;
                 }
             }
@@ -626,16 +634,18 @@
             controls.update();
             lastPlanePos.copy(vtolGroup.position);
 
-            if (vtolGroup.position.distanceTo(lastTrailAddPos) > 0.5) {
+            trackPoint.getWorldPosition(currentTrackPos);
+
+            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.5) {
                 if (trailCount < maxTrailPoints) {
-                    trailPositions[trailCount * 3] = vtolGroup.position.x; trailPositions[trailCount * 3 + 1] = vtolGroup.position.y; trailPositions[trailCount * 3 + 2] = vtolGroup.position.z;
+                    trailPositions[trailCount * 3] = currentTrackPos.x; trailPositions[trailCount * 3 + 1] = currentTrackPos.y; trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
                     trailCount++; trailGeo.setDrawRange(0, trailCount);
                 } else {
                     trailPositions.copyWithin(0, 3);
-                    trailPositions[(maxTrailPoints - 1) * 3] = vtolGroup.position.x; trailPositions[(maxTrailPoints - 1) * 3 + 1] = vtolGroup.position.y; trailPositions[(maxTrailPoints - 1) * 3 + 2] = vtolGroup.position.z;
+                    trailPositions[(maxTrailPoints - 1) * 3] = currentTrackPos.x; trailPositions[(maxTrailPoints - 1) * 3 + 1] = currentTrackPos.y; trailPositions[(maxTrailPoints - 1) * 3 + 2] = currentTrackPos.z;
                 }
                 trailGeo.attributes.position.needsUpdate = true;
-                lastTrailAddPos.copy(vtolGroup.position);
+                lastTrailAddPos.copy(currentTrackPos);
             }
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
