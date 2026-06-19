@@ -29,7 +29,7 @@ Open `visualizer/index.html` in your code editor. Around line 375, you will find
 // AIRCRAFT GEOMETRY CONFIGURATION
 // ==========================================
 const CONFIG = {
-    modelFile: 'models/YourNewModel.glb', // Change to your .glb file name
+    modelFile: 'models/Endurance.glb',    // Change to your .glb file name
     modelColor: 0xff5500,                 // Hex color for the airplane body
     
     // COORDINATE SYSTEM: OpenVSP / XFLR5 Standard

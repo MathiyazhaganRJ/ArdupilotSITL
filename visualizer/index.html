@@ -272,12 +272,19 @@
         </div>
 
         <div class="section-title">Vehicle Config</div>
-        <select id="v_type" style="width: 100%; margin-bottom: 20px; padding: 6px 10px;">
+        <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
             <option value="vtol">QuadPlane (VTOL)</option>
             <option value="plane">Fixed Wing (Pusher)</option>
             <option value="twin">Twin Engine (Fixed Wing)</option>
             <option value="quad">Quadcopter</option>
         </select>
+        
+        <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
+            <div class="map-row" style="margin: 0;">
+                <span>Model Scale</span>
+                <input type="number" id="scale_input" value="1.0" step="0.1" style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+            </div>
+        </div>
 
         <div class="data-card">
             <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
@@ -361,6 +368,28 @@
         dirLight.position.set(10, 20, 10);
         scene.add(dirLight);
 
+        // --- Home Location Marker ---
+        const homePinGroup = new THREE.Group();
+        const pinMat = new THREE.MeshLambertMaterial({ color: 0x22cc44 }); // Green Tag
+
+        const pinTop = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), pinMat);
+        pinTop.position.y = 1.6;
+        homePinGroup.add(pinTop);
+        
+        const pinBottom = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 16), pinMat);
+        pinBottom.rotation.x = Math.PI; // point down
+        pinBottom.position.y = 1.0;
+        homePinGroup.add(pinBottom);
+        
+        scene.add(homePinGroup);
+        
+        const homeRingGeo = new THREE.RingGeometry(0.8, 1.2, 32);
+        const homeRingMat = new THREE.MeshBasicMaterial({ color: 0x22cc44, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+        const homeRing = new THREE.Mesh(homeRingGeo, homeRingMat);
+        homeRing.rotation.x = -Math.PI / 2;
+        homeRing.position.y = -0.99; // Hover just slightly above the grid
+        scene.add(homeRing);
+
         const vtolGroup = new THREE.Group();
         vtolGroup.rotation.order = 'YXZ';
         scene.add(vtolGroup);
@@ -375,7 +404,7 @@
         // AIRCRAFT GEOMETRY CONFIGURATION
         // ==========================================
         const CONFIG = {
-            modelFile: 'models/Test.glb',
+            modelFile: 'models/Endurance.glb',
             modelColor: 0xff5500, // Vibrant Orange
 
             // COORDINATE SYSTEM: OpenVSP / XFLR5 Standard
@@ -420,6 +449,16 @@
         loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
             model.rotation.y = -Math.PI / 2; // Rotate -90deg so nose points forward (-Z)
+
+            // Dynamic Model Scaling
+            function updateModelScale() {
+                let scaleVal = parseFloat(document.getElementById('scale_input').value);
+                if (isNaN(scaleVal) || scaleVal <= 0) scaleVal = 1.0; // Fallback to original size if 0 or invalid
+                vtolGroup.scale.set(scaleVal, scaleVal, scaleVal);
+            }
+            updateModelScale();
+            document.getElementById('scale_input').addEventListener('input', updateModelScale);
+
             model.traverse(function (child) {
                 if (child.isMesh) {
                     child.geometry.computeVertexNormals(); // Fixes black model!
@@ -573,7 +612,6 @@
         let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
         document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
-
         const ws = new WebSocket('ws://127.0.0.1:8766');
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let targetPos = new THREE.Vector3(), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -587,7 +625,6 @@
             document.getElementById('status').innerText = "Offline";
             document.getElementById('status').style.color = "var(--danger)";
         };
-
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'HEARTBEAT') {
@@ -596,8 +633,9 @@
             } else if (data.type === 'VFR_HUD') {
                 document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
-            } else if (data.type === 'ATTITUDE') targetRot.set(data.pitch, -data.yaw, -data.roll);
-            else if (data.type === 'LOCAL_POSITION_NED') {
+            } else if (data.type === 'ATTITUDE') {
+                targetRot.set(data.pitch, -data.yaw, -data.roll);
+            } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 targetPos.set(data.y, data.z, -data.x);
                 if (!firstPos) {
@@ -622,6 +660,10 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            
+            // Bobbing animation for Home Marker
+            homePinGroup.position.y = Math.sin(Date.now() * 0.003) * 0.2;
+
             vtolGroup.position.lerp(targetPos, 0.05);
             let q = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(new THREE.Quaternion().setFromEuler(targetRot), 0.05);
             vtolGroup.setRotationFromQuaternion(q);
