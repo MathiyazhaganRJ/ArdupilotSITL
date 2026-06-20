@@ -627,7 +627,7 @@
         scene.add(mapGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 15; // Zoom 15 = ~1.2km/px, massive area coverage
+        const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Ultra High Resolution)
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -649,7 +649,8 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load an 11x11 grid around the plane (covers ~13x13 km area without triggering Google rate limits)
+            // Load an 11x11 grid around the plane. Because we never delete old tiles,
+            // the plane 'paints' a continuous 1.5km wide high-res swath along its flight path!
             for (let dx = -5; dx <= 5; dx++) {
                 for (let dy = -5; dy <= 5; dy++) {
                     const tx = currentTileX + dx;
@@ -666,7 +667,7 @@
                         const loader = new THREE.TextureLoader();
                         loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
                         loader.load(url, (texture) => {
-                            texture.anisotropy = 16; // Prevents the map from looking blurry at flat angles
+                            texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
                             const geo = new THREE.PlaneGeometry(tileSize, tileSize);
                             const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
                             const mesh = new THREE.Mesh(geo, mat);
