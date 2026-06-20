@@ -627,26 +627,31 @@
         scene.add(mapGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 16; // Zoom 16 = ~2.5m/px, perfect balance of quality and massive area
+        const zoomLevel = 15; // Zoom 15 = ~1.2km/px, massive area coverage
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
 
         function updateMap(lat, lon) {
             if (homeLat === null) {
+                if (!firstPos) return; // Wait until physics grid is established!
                 homeLat = lat; homeLon = lon;
                 // Earth circumference at equator = 40075016.686 meters
                 tileSize = 40075016.686 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoomLevel);
                 homeTileXFloat = lon2tileFloat(lon, zoomLevel);
                 homeTileYFloat = lat2tileFloat(lat, zoomLevel);
+
+                // Lock the map origin to the plane's CURRENT physics position!
+                // This fixes the bug where the map renders miles behind the plane if you refresh mid-flight.
+                mapGroup.position.set(rawTargetPos.x, 0, rawTargetPos.z);
             }
 
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load a 19x19 grid around the plane (covers massive 10x10 km area)
-            for (let dx = -9; dx <= 9; dx++) {
-                for (let dy = -9; dy <= 9; dy++) {
+            // Load an 11x11 grid around the plane (covers ~13x13 km area without triggering Google rate limits)
+            for (let dx = -5; dx <= 5; dx++) {
+                for (let dy = -5; dy <= 5; dy++) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
                     const key = `${tx},${ty}`;
