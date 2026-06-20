@@ -483,7 +483,7 @@
             cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
             cruisePropBlades: 2,  // Number of blades for cruise propellers
             cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
-            pusherPos: { x: 0.5, y: 0, z: 0 }, // Tail pusher propeller
+            pusherPos: { x: 0.65, y: 0, z: -0.05 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
@@ -495,10 +495,10 @@
             vtolPropDia: 0.3, // Diameter of the quad propellers
             vtolPropBlades: 2, // Number of blades for VTOL propellers
             vtolPropDir: [1, 0, 0, 1], // 0=CW, 1=CCW for [FrontRight, FrontLeft, BackRight, BackLeft] (Default Quad-X)
-            vtolBoomZ: -0.08, // Z-level of VTOL booms (negative = below wing)
-            vtolBoomXOffset: -0.05, // X-offset for entire boom (shift forward/backward)
-            vtolArmY: 0.3,    // Y-distance from centerline to boom
-            vtolMotorX: 0.3,  // X-distance from Boom Center to front/back quad motor
+            vtolBoomZ: -0.01, // Z-level of VTOL booms (negative = below wing)
+            vtolBoomXOffset:-0.25, // X-offset for entire boom (shift forward/backward)
+            vtolArmY: 0.35,    // Y-distance from centerline to boom
+            vtolMotorX: -0.4,  // X-distance from Boom Center to front/back quad motor
 
             trackColor: 0xff00ff, // Color of the GPS trail line
             trackOrigin: { x: 0, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
