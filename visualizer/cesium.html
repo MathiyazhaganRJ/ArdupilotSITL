@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>VTOL Visualizer</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            --accent: #0071e3;
+            --motor-bg: #e5e5ea;
+            --btn-bg: rgba(0, 0, 0, 0.05);
+            --btn-hover: rgba(0, 0, 0, 0.1);
+            --danger: #ff3b30;
+            --success: #34c759;
+            --option-bg: #ffffff;
+            --option-text: #000000;
+        }
+
+        body.dark-mode {
+            --bg-color: #000000;
+            --panel-bg: rgba(28, 28, 30, 0.75);
+            --text-primary: #f5f5f7;
+            --text-secondary: #98989d;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --accent: #0a84ff;
+            --motor-bg: #3a3a3c;
+            --btn-bg: rgba(255, 255, 255, 0.1);
+            --btn-hover: rgba(255, 255, 255, 0.15);
+            --danger: #ff453a;
+            --success: #30d158;
+            --option-bg: #1c1c1e;
+            --option-text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 260px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        .icon-btn {
+            background: var(--btn-bg);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            color: var(--text-primary);
+        }
+
+        .icon-btn:hover {
+            background: var(--btn-hover);
+        }
+
+        .data-card {
+            background: var(--btn-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .data-val {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 20px 0 10px 0;
+        }
+
+        select {
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            outline: none;
+            width: 100px;
+        }
+
+        option {
+            background-color: var(--option-bg);
+            color: var(--option-text);
+        }
+
+        .map-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .motor-bar-container {
+            display: flex;
+            justify-content: space-between;
+            height: 85px;
+            margin-top: 10px;
+        }
+
+        .motor-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pwm-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .motor-bar-bg {
+            width: 14px;
+            height: 50px;
+            background: var(--motor-bg);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .motor-bar-fill {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background: var(--success);
+            transition: height 0.1s, background 0.2s;
+            border-radius: 7px;
+        }
+
+        .motor-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            background: var(--btn-bg);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 6px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-active {
+            background: var(--panel-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .floating-toolbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 200;
+        }
+
+        .toolbar-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            font-size: 16px;
+            padding: 0;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+
+<body>
+    <!-- Floating Toolbar -->
+    <div class="floating-toolbar">
+        <button class="toolbar-btn" id="btn-toggle-ui" title="Toggle Control Panel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-graph" title="Toggle Terrain Profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-trace" title="Toggle Flight Trace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+    </div>
+
+    <div id="ui-panel">
+        <div class="header">
+            <h2>ArduPilot SITL</h2>
+            <button id="theme-toggle" class="icon-btn">🌙</button>
+        </div>
+
+        <div class="data-card">
+            <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
+                    style="color: var(--danger);">Offline</span></div>
+            <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
+                    style="color: var(--text-secondary);">---</span></div>
+            <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
+                    style="color: var(--accent);">UNKNOWN</span></div>
+            <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
+            </div>
+            <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
+                    m/s</span></div>
+            <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
+                    m/s</span></div>
+        </div>
+
+        <div class="section-title">Vehicle Config</div>
+        <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
+            <option value="vtol">QuadPlane (VTOL)</option>
+            <option value="plane">Fixed Wing (Pusher)</option>
+            <option value="twin">Twin Engine (Fixed Wing)</option>
+            <option value="quad">Quadcopter</option>
+        </select>
+
+        <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
+            <div class="map-row" style="margin: 0;">
+                <span>Model Scale</span>
+                <input type="number" id="scale_input" value="1.0" step="0.1"
+                    style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+            </div>
+            <div class="map-row" style="margin: 10px 0 0 0;">
+                <span>Alt Offset (m)</span>
+                <input type="number" id="alt_offset" value="0" step="1"
+                    style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+            </div>
+        </div>
+
+        <div class="data-card">
+            <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
+            <div id="map-vtol">
+                <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
+                <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
+                <div class="map-row">Motor 3 (FL) <select id="m_fl"></select></div>
+                <div class="map-row">Motor 4 (BR) <select id="m_br"></select></div>
+            </div>
+            <div id="map-single" class="map-row">Cruise <select id="m_push"></select></div>
+            <div id="map-twin" style="display: none;">
+                <div class="map-row">Left Cruise <select id="m_twin_l"></select></div>
+                <div class="map-row">Right Cruise <select id="m_twin_r"></select></div>
+            </div>
+        </div>
+
+        <div class="section-title">Motors</div>
+        <div class="motor-bar-container" id="motor-bars"></div>
+
+        <div
+            style="margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
+            Designed by RJ
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-follow" class="mode-btn btn-active">Follow</button>
+            <button id="btn-free" class="mode-btn">Free</button>
+        </div>
+    </div>
+    </div>
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container"
+        style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        <div
+            style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
+            <span>Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+        </div>
+        <canvas id="terrain-canvas" style="width: 100%; height: 100%;"></canvas>
+    </div>
+
+    <div id="canvas-container"></div>
+    <!-- CesiumJS Imports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.106.0/Cesium.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.106.0/Widgets/widgets.min.css" rel="stylesheet">
+    <style>
+        /* Hide Cesium default UI elements to keep our professional overlay clean */
+        .cesium-viewer-bottom,
+        .cesium-viewer-animationContainer,
+        .cesium-viewer-timelineContainer {
+            display: none !important;
+        }
+    </style>
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.onclick = () => {
+            const isDark = document.body.classList.contains('dark-mode');
+            if (isDark) {
+                document.body.classList.remove('dark-mode');
+                themeToggle.innerText = '🌙';
+            } else {
+                document.body.classList.add('dark-mode');
+                themeToggle.innerText = '☀️';
+            }
+        };
+
+        // UI Panel Toggles
+        const btnToggleUi = document.getElementById('btn-toggle-ui');
+        const uiPanel = document.getElementById('ui-panel');
+        btnToggleUi.onclick = () => {
+            uiPanel.style.display = uiPanel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        const btnToggleGraph = document.getElementById('btn-toggle-graph');
+        const graphContainer = document.getElementById('terrain-graph-container');
+        btnToggleGraph.onclick = () => {
+            graphContainer.style.display = graphContainer.style.display === 'none' ? 'flex' : 'none';
+        };
+
+        // ==========================================
+        // CESIUM ION API KEY REQUIRED FOR 3D TERRAIN
+        // ==========================================
+        // Get a free key at: https://ion.cesium.com/
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4NTc5NWQ2Yy1lYWE3LTQ1OWQtOTY5Ny0xOGVmZmNiY2YzNjAiLCJpZCI6NDQ2ODYzLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODE5NTAxNTJ9.JtfASsFfn58fvA0pTntiGdSorfIa57daBrrkar3Td1k';
+
+        const viewer = new Cesium.Viewer('canvas-container', {
+            terrain: Cesium.Terrain.fromWorldTerrain(),
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            animation: false,
+            timeline: false,
+            fullscreenButton: false
+        });
+
+        // Add 3D Tileset (Buildings) if desired
+        // viewer.scene.primitives.add(Cesium.createOsmBuildingsAsync());
+
+        // Disable Depth Test against Terrain so the plane never clips underground due to GPS/Geoid differences!
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+
+        let currentPosition = Cesium.Cartesian3.fromDegrees(0, 0, 0);
+        let currentOrientation = Cesium.Quaternion.IDENTITY;
+        const trailPositions = [];
+
+        const planeEntity = viewer.entities.add({
+            name: 'UAV',
+            position: new Cesium.CallbackProperty(() => currentPosition, false),
+            orientation: new Cesium.CallbackProperty(() => currentOrientation, false),
+            model: {
+                uri: 'models/Endurance.glb',
+                scale: 1.0,
+                minimumPixelSize: 128, // Ensures it's always visible from afar
+                maximumScale: 20000 // Don't let it get TOO massive
+            },
+            polyline: {
+                positions: new Cesium.CallbackProperty(() => trailPositions, false),
+                material: new Cesium.PolylineGlowMaterialProperty({
+                    glowPower: 0.1,
+                    color: Cesium.Color.FUCHSIA,
+                }),
+                width: 3
+            }
+        });
+
+        viewer.trackedEntity = planeEntity;
+
+        let isFollow = true;
+        document.getElementById('btn-follow').onclick = () => {
+            isFollow = true;
+            viewer.trackedEntity = planeEntity;
+            document.getElementById('btn-follow').classList.add('btn-active');
+            document.getElementById('btn-free').classList.remove('btn-active');
+        };
+        document.getElementById('btn-free').onclick = () => {
+            isFollow = false;
+            viewer.trackedEntity = undefined;
+            document.getElementById('btn-free').classList.add('btn-active');
+            document.getElementById('btn-follow').classList.remove('btn-active');
+        };
+
+        const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
+
+        ws.onopen = () => {
+            document.getElementById('status').innerText = "Waiting for Vehicle...";
+            document.getElementById('status').style.color = "var(--text-secondary)";
+        };
+        ws.onclose = () => {
+            document.getElementById('status').innerText = "Offline";
+            document.getElementById('status').style.color = "var(--danger)";
+        };
+
+        let vehicleConnected = false;
+        let lastLat = 0, lastLon = 0, lastAlt = 0;
+        let lastRoll = 0, lastPitch = 0, lastYaw = 0;
+        let homePosition = null;
+        let enuTransform = null;
+        let altOffset = 0;
+
+        document.getElementById('alt_offset').addEventListener('input', (e) => {
+            altOffset = parseFloat(e.target.value) || 0;
+        });
+
+        ws.onmessage = (event) => {
+            if (!vehicleConnected) {
+                document.getElementById('status').innerText = "Connected";
+                document.getElementById('status').style.color = "var(--success)";
+                vehicleConnected = true;
+            }
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'HEARTBEAT') {
+                if (data.mode) document.getElementById('f_mode').innerText = data.mode;
+                if (data.firmware) document.getElementById('firmware').innerText = data.firmware;
+            } 
+            else if (data.type === 'VFR_HUD') {
+                document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
+                document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
+            } 
+            else if (data.type === 'TERRAIN_REPORT') {
+                document.getElementById('terrain-alt-text').innerText = `AGL: ${data.current_height.toFixed(1)}m`;
+            }
+            else if (data.type === 'ATTITUDE') {
+                lastRoll = data.roll;
+                lastPitch = data.pitch;
+                lastYaw = data.yaw;
+                
+                // Update Cesium Orientation with continuous attitude
+                // Offset heading by -90 degrees (Math.PI / 2) because the Endurance.glb model is exported facing sideways
+                const heading = lastYaw - (Math.PI / 2);
+                const hpr = new Cesium.HeadingPitchRoll(heading, lastPitch, lastRoll);
+                currentOrientation = Cesium.Transforms.headingPitchRollQuaternion(currentPosition, hpr);
+            } 
+            else if (data.type === 'GLOBAL_POSITION_INT') {
+                lastLat = data.lat;
+                lastLon = data.lon;
+                lastAlt = data.alt / 1000.0; // mm to meters
+                document.getElementById('alt').innerText = lastAlt.toFixed(1) + " m";
+
+                if (!homePosition) {
+                    // Capture the very first global coordinate to serve as our local tracking origin
+                    homePosition = Cesium.Cartesian3.fromDegrees(lastLon, lastLat, lastAlt);
+                    enuTransform = Cesium.Transforms.eastNorthUpToFixedFrame(homePosition);
+                    currentPosition = homePosition;
+                }
+            }
+            else if (data.type === 'LOCAL_POSITION_NED') {
+                // High-Frequency Tracking! (30Hz instead of 3Hz)
+                if (enuTransform) {
+                    // LOCAL_POSITION_NED is North(x), East(y), Down(z)
+                    // Cesium ENU Transform expects East(x), North(y), Up(z)
+                    const localOffset = new Cesium.Cartesian3(data.y, data.x, -data.z + altOffset);
+                    
+                    // Convert smooth local offset directly into absolute Global coordinates
+                    Cesium.Matrix4.multiplyByPoint(enuTransform, localOffset, currentPosition);
+
+                    // Add to trail (store up to 10000 points to prevent memory leak)
+                    if (trailPositions.length === 0 || Cesium.Cartesian3.distance(trailPositions[trailPositions.length - 1], currentPosition) > 0.5) {
+                        trailPositions.push(Cesium.Cartesian3.clone(currentPosition));
+                        if (trailPositions.length > 10000) trailPositions.shift();
+                    }
+                }
+            }
+        };
+
+        const btnToggleTrace = document.getElementById('btn-toggle-trace');
+        let showTrace = true;
+        btnToggleTrace.onclick = () => {
+            showTrace = !showTrace;
+            planeEntity.polyline.show = showTrace;
+            const eye = btnToggleTrace.querySelector('svg');
+            if (showTrace) {
+                eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                btnToggleTrace.style.opacity = '1.0';
+            } else {
+                eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                btnToggleTrace.style.opacity = '0.5';
+            }
+        };
+    </script>
+</body>
+
+</html>
