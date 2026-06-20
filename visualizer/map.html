@@ -719,6 +719,7 @@
         // Terrain Graph Variables
         let terrainHistory = [];
         const MAX_HISTORY = 100; 
+        let hasTerrainData = false;
         let currentPlaneAltMSL = 0;
         let currentTerrainAltMSL = 0;
         let currentAGL = 0;
@@ -816,6 +817,7 @@
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
             } else if (data.type === 'TERRAIN_REPORT') {
+                hasTerrainData = true;
                 currentTerrainAltMSL = data.terrain_height;
                 currentAGL = data.current_height;
                 document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
@@ -918,7 +920,7 @@
                 let plotPlane = currentPlaneAltMSL;
                 
                 // Fallback for flat SITL (no terrain data available)
-                if (currentTerrainAltMSL === 0 && currentPlaneAltMSL === 0) {
+                if (!hasTerrainData) {
                     plotPlane = vtolGroup.position.y;
                     plotTerrain = mapGroup.position.y; // Flat virtual map
                     document.getElementById('terrain-alt-text').innerText = `AGL: ${(plotPlane - plotTerrain).toFixed(1)}m`;

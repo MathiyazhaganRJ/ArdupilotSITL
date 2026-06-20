@@ -29,6 +29,13 @@ async def mavlink_listener():
                 connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
                 connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_POSITION, 30, 1) # POS 30Hz
                 connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA2, 10, 1) # VFR_HUD
+                
+                # Explicitly request TERRAIN_REPORT (Msg 136) at 2Hz (500,000 microseconds)
+                connection.mav.command_long_send(
+                    connection.target_system, connection.target_component,
+                    mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                    136, 500000, 0, 0, 0, 0, 0
+                )
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
