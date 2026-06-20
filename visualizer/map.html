@@ -649,10 +649,10 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load an 11x11 grid around the plane. Because we never delete old tiles,
-            // the plane 'paints' a continuous 1.5km wide high-res swath along its flight path!
-            for (let dx = -5; dx <= 5; dx++) {
-                for (let dy = -5; dy <= 5; dy++) {
+            // Load a massive 17x17 grid around the plane. Because we never delete old tiles,
+            // the plane 'paints' a continuous 2.5km wide high-res swath along its flight path!
+            for (let dx = -8; dx <= 8; dx++) {
+                for (let dy = -8; dy <= 8; dy++) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
                     const key = `${tx},${ty}`;
@@ -669,8 +669,13 @@
                         loader.load(url, (texture) => {
                             texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
                             const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                            const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+                            const mat = new THREE.MeshBasicMaterial({ 
+                                map: texture, 
+                                side: THREE.DoubleSide,
+                                depthWrite: false // Prevents airplane from sinking into the map!
+                            });
                             const mesh = new THREE.Mesh(geo, mat);
+                            mesh.renderOrder = -1; // Force the map to render as a background layer
                             mesh.rotation.x = -Math.PI / 2;
                             
                             // Align perfectly with Three.js origin (which is the Home Launch Point)
