@@ -654,7 +654,7 @@
         document.getElementById('m_twin_l').value = 2;
         document.getElementById('m_twin_r').value = 3;
 
-        const maxTrailPoints = 10000; // Increased for high-resolution curves
+        const maxTrailPoints = 500000; // Increased for extremely long range flights (250km buffer)
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
@@ -902,8 +902,37 @@
                     vtolGroup.updateMatrixWorld(true);
                     trackPoint.getWorldPosition(currentTrackPos);
                     lastPlanePos.copy(targetPos);
-                    lastTrailAddPos.copy(currentTrackPos);
+                    lastTrailAddPos.copy(rawTargetPos);
                     firstPos = true;
+                }
+
+                // Background Trail Tracking: Records even when browser is minimized!
+                if (firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
+                    if (trailCount < maxTrailPoints - 1) {
+                        trailCount++;
+                    } else {
+                        trailPositions.copyWithin(0, 3);
+                    }
+                    trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
+                    trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
+                    trailPositions[trailCount * 3 - 1] = rawTargetPos.z;
+                    lastTrailAddPos.copy(rawTargetPos);
+                }
+
+                // Background Terrain Tracking: Records even when browser is minimized!
+                const now = Date.now();
+                if (now - lastGraphUpdate > 500 && firstPos) {
+                    let plotTerrain = currentTerrainAltMSL;
+                    let plotPlane = currentPlaneAltMSL;
+                    if (!hasTerrainData) {
+                        plotPlane = data.z;
+                        plotTerrain = mapGroup.position.y;
+                        document.getElementById('terrain-alt-text').innerText = `AGL: ${(plotPlane - plotTerrain).toFixed(1)}m`;
+                    }
+                    terrainHistory.push({ plane: plotPlane, terrain: plotTerrain });
+                    if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
+                    updateTerrainGraph();
+                    lastGraphUpdate = now;
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
@@ -954,16 +983,8 @@
 
             trackPoint.getWorldPosition(currentTrackPos);
 
-            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.1) {
-                if (trailCount < maxTrailPoints - 1) { // Reserve 1 point for the dynamic tip
-                    trailCount++;
-                } else {
-                    trailPositions.copyWithin(0, 3);
-                }
-                lastTrailAddPos.copy(currentTrackPos);
-            }
-
-            // Always stretch the active tip of the trail to the current smooth plane position
+            // Stretch the active tip of the trail to the current smooth plane position
+            // (The historical points are safely locked-in by the websocket handler)
             trailPositions[trailCount * 3] = currentTrackPos.x;
             trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
             trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
@@ -984,26 +1005,6 @@
             pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 0.47 * (CONFIG.cruisePropDir === 0 ? -1 : 1);
             twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
             twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
-
-            // Update Terrain Graph at 2Hz
-            const now = performance.now();
-            if (now - lastGraphUpdate > 500 && firstPos) {
-                let plotTerrain = currentTerrainAltMSL;
-                let plotPlane = currentPlaneAltMSL;
-                
-                // Fallback for flat SITL (no terrain data available)
-                if (!hasTerrainData) {
-                    plotPlane = vtolGroup.position.y;
-                    plotTerrain = mapGroup.position.y; // Flat virtual map
-                    document.getElementById('terrain-alt-text').innerText = `AGL: ${(plotPlane - plotTerrain).toFixed(1)}m`;
-                }
-
-                terrainHistory.push({ plane: plotPlane, terrain: plotTerrain });
-                if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
-                
-                updateTerrainGraph();
-                lastGraphUpdate = now;
-            }
 
             renderer.render(scene, camera);
         }
