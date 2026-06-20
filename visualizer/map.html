@@ -627,7 +627,7 @@
         scene.add(mapGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Incredibly crisp)
+        const zoomLevel = 17; // Zoom 17 = 1m/px, extremely crisp and globally available
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -656,10 +656,11 @@
                         // Place a placeholder immediately to prevent multiple fetches
                         mapTiles.set(key, true); 
 
-                        // Use Esri World Imagery (Beautiful, label-free satellite map)
-                        const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoomLevel}/${ty}/${tx}`;
+                        // Use Google Pure Satellite (lyrs=s means NO labels, pure earth photograph)
+                        const url = `https://mt1.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
                         
                         const loader = new THREE.TextureLoader();
+                        loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
                         loader.load(url, (texture) => {
                             texture.anisotropy = 16; // Prevents the map from looking blurry at flat angles
                             const geo = new THREE.PlaneGeometry(tileSize, tileSize);
