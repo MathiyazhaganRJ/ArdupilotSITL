@@ -354,40 +354,20 @@
         camera.position.set(0, 3, 6);
         camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        // Advanced Photorealistic Rendering
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Lighting
-        const ambient = new THREE.AmbientLight(0xffffff, 0.6); // Slightly darker ambient for better shadows
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambient);
-        
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2); // Stronger sun
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
         dirLight.position.set(10, 20, 10);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 100;
-        // Keep shadow frustum tight around the plane for crisp shadows
-        dirLight.shadow.camera.left = -15;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.top = 15;
-        dirLight.shadow.camera.bottom = -15;
-        dirLight.shadow.bias = -0.0005;
         scene.add(dirLight);
-        scene.add(dirLight.target);
 
         // --- Home Location Marker ---
         const homeRingGeo = new THREE.RingGeometry(0.8, 1.2, 32);
@@ -460,7 +440,6 @@
                 bladeGeo.translate(radius / 2, 0, 0);
 
                 const blade = new THREE.Mesh(bladeGeo, mat);
-                blade.castShadow = true;
                 if (axis === 'Z') blade.rotation.z = (i / blades) * Math.PI * 2;
                 else if (axis === 'Y') blade.rotation.y = (i / blades) * Math.PI * 2;
 
@@ -499,13 +478,11 @@
 
             model.traverse(function (child) {
                 if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
                     child.geometry.computeVertexNormals(); // Fixes black model!
                     child.material = new THREE.MeshStandardMaterial({
                         color: CONFIG.modelColor,
-                        roughness: 0.3,
-                        metalness: 0.6, // Increased metalness for sky reflection
+                        roughness: 0.4,
+                        metalness: 0.3,
                         side: THREE.DoubleSide
                     });
                 }
@@ -650,7 +627,7 @@
         scene.add(mapGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 17; // Zoom 17 = 1m/px, extremely crisp and globally available
+        const zoomLevel = 16; // Zoom 16 = ~2.5m/px, perfect balance of quality and massive area
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -667,10 +644,9 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load an 11x11 grid around the plane. Because we never delete old tiles, 
-            // as the plane flies it "paints" a permanent high-res map swath along the entire mission path!
-            for (let dx = -5; dx <= 5; dx++) {
-                for (let dy = -5; dy <= 5; dy++) {
+            // Load a 19x19 grid around the plane (covers massive 10x10 km area)
+            for (let dx = -9; dx <= 9; dx++) {
+                for (let dy = -9; dy <= 9; dy++) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
                     const key = `${tx},${ty}`;
@@ -690,7 +666,6 @@
                             const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
                             const mesh = new THREE.Mesh(geo, mat);
                             mesh.rotation.x = -Math.PI / 2;
-                            mesh.receiveShadow = true; // Ground receives shadows!
                             
                             // Align perfectly with Three.js origin (which is the Home Launch Point)
                             // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
@@ -781,10 +756,6 @@
 
             let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
-
-            // Make the sun follow the plane so shadows are always rendered
-            dirLight.position.copy(vtolGroup.position).add(new THREE.Vector3(10, 20, 10));
-            dirLight.target.position.copy(vtolGroup.position);
 
             if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
