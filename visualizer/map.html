@@ -663,6 +663,7 @@
         trailLine.frustumCulled = false;
         scene.add(trailLine);
         let trailCount = 0;
+        let lastRenderTime = Date.now();
 
         const motorBarsContainer = document.getElementById('motor-bars');
         const uiFills = [], uiPwms = [];
@@ -906,8 +907,11 @@
                     firstPos = true;
                 }
 
-                // Background Trail Tracking: Records even when browser is minimized!
-                if (firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
+                // Background Trail Tracking: Records ONLY when browser is minimized!
+                const now = Date.now();
+                const isRendering = (now - lastRenderTime) < 500;
+                
+                if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
                     if (trailCount < maxTrailPoints - 1) {
                         trailCount++;
                     } else {
@@ -951,6 +955,19 @@
         function animate() {
             requestAnimationFrame(animate);
 
+            const now = Date.now();
+            if (now - lastRenderTime > 500 && firstPos) {
+                // Tab just woke up from being minimized!
+                // Instantly snap the plane to the present to avoid dragging a straight line
+                targetPos.copy(rawTargetPos);
+                vtolGroup.position.copy(rawTargetPos);
+                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                targetRot.setFromQuaternion(qRaw);
+                vtolGroup.setRotationFromQuaternion(qRaw);
+                vtolGroup.updateMatrixWorld(true);
+            }
+            lastRenderTime = now;
+
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
             const dt = Math.min(clock.getDelta(), 0.1);
             const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
@@ -982,6 +999,16 @@
             lastPlanePos.copy(vtolGroup.position);
 
             trackPoint.getWorldPosition(currentTrackPos);
+
+            // Active Trail Tracking (High-Res): Records when focused!
+            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.1) {
+                if (trailCount < maxTrailPoints - 1) {
+                    trailCount++;
+                } else {
+                    trailPositions.copyWithin(0, 3);
+                }
+                lastTrailAddPos.copy(currentTrackPos);
+            }
 
             // Stretch the active tip of the trail to the current smooth plane position
             // (The historical points are safely locked-in by the websocket handler)
