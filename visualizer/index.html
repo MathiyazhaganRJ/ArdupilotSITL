@@ -341,16 +341,26 @@
             const grid2 = isDark ? 0x1c1c1e : 0xe5e5ea;
 
             scene.background = new THREE.Color(bgHex);
-            scene.fog = new THREE.Fog(bgHex, 20, 200);
+            // Push fog back to 10km so macro-level flight paths stay visible
+            scene.fog = new THREE.Fog(bgHex, 1000, 10000);
 
             if (gridHelper) scene.remove(gridHelper);
-            gridHelper = new THREE.GridHelper(200, 200, grid1, grid2);
+            gridHelper = new THREE.Group();
+            
+            // Micro grid (1m squares) for close-up monitoring
+            const gMicro = new THREE.GridHelper(200, 200, grid1, grid2);
+            // Macro grid (100m squares) for zoomed-out spatial awareness
+            const gMacro = new THREE.GridHelper(10000, 100, grid1, grid2);
+            
+            gridHelper.add(gMicro);
+            gridHelper.add(gMacro);
             gridHelper.position.y = -1;
             scene.add(gridHelper);
         }
         updateSceneTheme();
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Increase far clipping plane to 50km
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 50000);
         camera.position.set(0, 3, 6);
         camera.lookAt(0, 0, 0);
 
@@ -456,7 +466,7 @@
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
             const model = gltf.scene;
-            
+
             // Map user-friendly aviation terms (Roll, Pitch, Yaw) to proper Three.js world axes
             model.rotation.set(
                 (CONFIG.modelRotation.pitch || 0) * Math.PI / 180, // X-axis controls Pitch
@@ -464,7 +474,7 @@
                 (CONFIG.modelRotation.roll || 0) * Math.PI / 180,  // Z-axis controls Roll
                 'YXZ' // Apply Yaw first, then Pitch, then Roll to prevent gimbal lock
             );
-            
+
             model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
 
             // Dynamic Model Scaling
@@ -621,7 +631,7 @@
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
         const ws = new WebSocket(`ws://${window.location.hostname}:8766`);
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
-        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3(); 
+        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
 
@@ -679,7 +689,7 @@
             requestAnimationFrame(animate);
 
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
-            const dt = Math.min(clock.getDelta(), 0.1); 
+            const dt = Math.min(clock.getDelta(), 0.1);
             const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
 
             // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
@@ -690,7 +700,7 @@
             let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
             let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
             targetRot.setFromQuaternion(qTarget);
-            
+
             let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
 
@@ -706,7 +716,7 @@
 
             if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.1) {
                 if (trailCount < maxTrailPoints - 1) { // Reserve 1 point for the dynamic tip
-                    trailCount++; 
+                    trailCount++;
                 } else {
                     trailPositions.copyWithin(0, 3);
                 }
@@ -714,8 +724,8 @@
             }
 
             // Always stretch the active tip of the trail to the current smooth plane position
-            trailPositions[trailCount * 3] = currentTrackPos.x; 
-            trailPositions[trailCount * 3 + 1] = currentTrackPos.y; 
+            trailPositions[trailCount * 3] = currentTrackPos.x;
+            trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
             trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
             trailGeo.setDrawRange(0, trailCount + 1);
             trailGeo.attributes.position.needsUpdate = true;
