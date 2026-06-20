@@ -629,7 +629,7 @@
         let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
         document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
-        const ws = new WebSocket(`ws://${window.location.hostname}:8766`);
+        const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
