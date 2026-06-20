@@ -36,6 +36,7 @@ async def mavlink_listener():
                     mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                     136, 500000, 0, 0, 0, 0, 0
                 )
+                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 2, 1)
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
@@ -61,6 +62,8 @@ async def mavlink_listener():
             elif msg.get_type() == 'GLOBAL_POSITION_INT':
                 data['lat'] = msg.lat / 1e7
                 data['lon'] = msg.lon / 1e7
+                data['alt'] = msg.alt
+                data['relative_alt'] = msg.relative_alt
             elif msg.get_type() == 'VFR_HUD':
                 data['airspeed'] = msg.airspeed
                 data['groundspeed'] = msg.groundspeed
