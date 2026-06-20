@@ -637,7 +637,7 @@
         scene.add(mapGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 17; // Zoom 17 = ~300m per tile
+        const zoomLevel = 15; // Zoom 15 = ~1.2km per tile
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -654,9 +654,9 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load a 7x7 grid around the current plane position
-            for (let dx = -3; dx <= 3; dx++) {
-                for (let dy = -3; dy <= 3; dy++) {
+            // Load a 15x15 grid around the current plane position (covers ~18x18 km at zoom 15)
+            for (let dx = -7; dx <= 7; dx++) {
+                for (let dy = -7; dy <= 7; dy++) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
                     const key = `${tx},${ty}`;
