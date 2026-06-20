@@ -655,8 +655,8 @@
                         // Place a placeholder immediately to prevent multiple fetches
                         mapTiles.set(key, true); 
 
-                        // Use OpenStreetMap
-                        const url = `https://tile.openstreetmap.org/${zoomLevel}/${tx}/${ty}.png`;
+                        // Use Esri World Imagery (Beautiful, label-free satellite map)
+                        const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoomLevel}/${ty}/${tx}`;
                         
                         const loader = new THREE.TextureLoader();
                         loader.load(url, (texture) => {
