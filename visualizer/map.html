@@ -289,6 +289,9 @@
         <button class="toolbar-btn" id="btn-toggle-graph" title="Toggle Terrain Profile">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-trace" title="Toggle Flight Trace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
     </div>
 
     <div id="ui-panel">
@@ -394,6 +397,21 @@
             graphContainer.style.display = graphContainer.style.display === 'none' ? 'flex' : 'none';
         };
 
+        const btnToggleTrace = document.getElementById('btn-toggle-trace');
+        btnToggleTrace.onclick = () => {
+            if (trailLine) {
+                trailLine.visible = !trailLine.visible;
+                const eye = btnToggleTrace.querySelector('svg');
+                if (trailLine.visible) {
+                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    btnToggleTrace.style.opacity = '1.0';
+                } else {
+                    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                    btnToggleTrace.style.opacity = '0.5';
+                }
+            }
+        };
+
         const scene = new THREE.Scene();
         let gridHelper;
 
@@ -481,7 +499,7 @@
             vtolMotorX: 0.3,  // X-distance from Boom Center to front/back quad motor
 
             trackColor: 0xff00ff, // Color of the GPS trail line
-            trackOrigin: { x: 0.5, y: 0, z: 0 } // Origin point of the GPS trail (e.g., GPS antenna)
+            trackOrigin: { x: 0, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
         };
         // ==========================================
 
@@ -657,11 +675,20 @@
         const maxTrailPoints = 100000; // 50km of tracking
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
-        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-        const trailMat = new THREE.LineBasicMaterial({ color: CONFIG.trackColor, linewidth: 4 });
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3).setUsage(THREE.DynamicDrawUsage));
+        
+        // Due to Windows/ANGLE limitations, native WebGL lines are capped at 1px thickness.
+        const trailMat = new THREE.LineBasicMaterial({ 
+            color: CONFIG.trackColor, 
+            linewidth: 4, // Ignored by Windows, works on Mac/Linux
+            transparent: true,
+            opacity: 0.9
+        });
+        
         const trailLine = new THREE.Line(trailGeo, trailMat);
         trailLine.frustumCulled = false;
         scene.add(trailLine);
+        
         let trailCount = 0;
         let lastRenderTime = Date.now();
 
@@ -845,7 +872,7 @@
             }
             
             ctx.strokeStyle = '#2196F3'; // Telemetry Blue
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 2;
             ctx.stroke();
 
             // 4. Draw Plane Tracker Dot
@@ -909,7 +936,7 @@
 
                 // Background Trail Tracking: Records ONLY when browser is minimized!
                 const now = Date.now();
-                const isRendering = (now - lastRenderTime) < 500;
+                const isRendering = (now - lastRenderTime) < 2000;
                 
                 if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
                     if (trailCount < maxTrailPoints - 1) {
@@ -955,8 +982,8 @@
             requestAnimationFrame(animate);
 
             const now = Date.now();
-            if (now - lastRenderTime > 500 && firstPos) {
-                // Tab just woke up from being minimized!
+            if (now - lastRenderTime > 2000 && firstPos) {
+                // Tab just woke up from being minimized (2 seconds asleep)!
                 // Instantly snap the plane to the present to avoid dragging a straight line
                 targetPos.copy(rawTargetPos);
                 vtolGroup.position.copy(rawTargetPos);
@@ -1000,7 +1027,8 @@
             trackPoint.getWorldPosition(currentTrackPos);
 
             // Active Trail Tracking (High-Res): Records when focused!
-            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.1) {
+            // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
+            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
                 if (trailCount < maxTrailPoints - 1) {
                     trailCount++;
                 } else {
@@ -1014,11 +1042,6 @@
             trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
             trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
             trailGeo.setDrawRange(0, trailCount + 1);
-            
-            // Critical Performance Fix: Only upload the active tip to the GPU, not the entire array!
-            // This restores the butter-smooth 60FPS curve resolution.
-            trailGeo.attributes.position.updateRange.offset = Math.max(0, (trailCount - 1) * 3);
-            trailGeo.attributes.position.updateRange.count = 6;
             trailGeo.attributes.position.needsUpdate = true;
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
