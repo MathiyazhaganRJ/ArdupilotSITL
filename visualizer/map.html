@@ -315,8 +315,27 @@
             <button id="btn-free" class="mode-btn">Free</button>
         </div>
     </div>
-    <div id="canvas-container"></div>
+    </div>
+    
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container" style="position: absolute; bottom: 20px; left: calc(50% + 150px); transform: translateX(-50%); width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        <div style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
+            <span>Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+        </div>
+        <canvas id="terrain-canvas" width="430" height="70" style="width: 100%; height: 100%;"></canvas>
+    </div>
 
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container" style="position: absolute; bottom: 20px; left: calc(50% + 150px); transform: translateX(-50%); width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        <div style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
+            <span>Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+        </div>
+        <canvas id="terrain-canvas" width="430" height="70" style="width: 100%; height: 100%;"></canvas>
+    </div>
+
+    <div id="canvas-container"></div>
     <script>
         const themeToggle = document.getElementById('theme-toggle');
         themeToggle.onclick = () => {
@@ -697,6 +716,78 @@
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
 
+        // Terrain Graph Variables
+        let terrainHistory = [];
+        const MAX_HISTORY = 100; 
+        let currentPlaneAltMSL = 0;
+        let currentTerrainAltMSL = 0;
+        let currentAGL = 0;
+        let lastGraphUpdate = 0;
+
+        function updateTerrainGraph() {
+            const canvas = document.getElementById('terrain-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (terrainHistory.length < 2) return;
+
+            let minAlt = Infinity, maxAlt = -Infinity;
+            for (let pt of terrainHistory) {
+                if (pt.terrain < minAlt) minAlt = pt.terrain;
+                if (pt.plane > maxAlt) maxAlt = pt.plane;
+            }
+            
+            const altRange = Math.max(20, maxAlt - minAlt);
+            const graphMax = maxAlt + (altRange * 0.1);
+            const graphMin = minAlt - (altRange * 0.1);
+            const graphScale = canvas.height / (graphMax - graphMin);
+            const stepX = canvas.width / (MAX_HISTORY - 1);
+
+            // Draw Terrain Area (Filled)
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = canvas.height - ((terrainHistory[i].terrain - graphMin) * graphScale);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo((terrainHistory.length - 1) * stepX, canvas.height);
+            ctx.closePath();
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(100, 150, 100, 0.5)');
+            gradient.addColorStop(1, 'rgba(50, 80, 50, 0.8)');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(150, 200, 150, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw Plane Flight Path (Line)
+            ctx.beginPath();
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = canvas.height - ((terrainHistory[i].plane - graphMin) * graphScale);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw plane dot
+            const lastPt = terrainHistory[terrainHistory.length - 1];
+            const finalX = (terrainHistory.length - 1) * stepX;
+            const finalY = canvas.height - ((lastPt.plane - graphMin) * graphScale);
+            ctx.beginPath();
+            ctx.arc(finalX, finalY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
         ws.onopen = () => {
             document.getElementById('status').innerText = "Waiting for Vehicle...";
             document.getElementById('status').style.color = "var(--text-secondary)";
@@ -723,6 +814,11 @@
                 rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
             } else if (data.type === 'GLOBAL_POSITION_INT') {
                 updateMap(data.lat, data.lon);
+                if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
+            } else if (data.type === 'TERRAIN_REPORT') {
+                currentTerrainAltMSL = data.terrain_height;
+                currentAGL = data.current_height;
+                document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
@@ -814,6 +910,26 @@
             pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * 0.47 * (CONFIG.cruisePropDir === 0 ? -1 : 1);
             twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
             twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * 0.47 * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+
+            // Update Terrain Graph at 2Hz
+            const now = performance.now();
+            if (now - lastGraphUpdate > 500 && firstPos) {
+                let plotTerrain = currentTerrainAltMSL;
+                let plotPlane = currentPlaneAltMSL;
+                
+                // Fallback for flat SITL (no terrain data available)
+                if (currentTerrainAltMSL === 0 && currentPlaneAltMSL === 0) {
+                    plotPlane = vtolGroup.position.y;
+                    plotTerrain = mapGroup.position.y; // Flat virtual map
+                    document.getElementById('terrain-alt-text').innerText = `AGL: ${(plotPlane - plotTerrain).toFixed(1)}m`;
+                }
+
+                terrainHistory.push({ plane: plotPlane, terrain: plotTerrain });
+                if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
+                
+                updateTerrainGraph();
+                lastGraphUpdate = now;
+            }
 
             renderer.render(scene, camera);
         }
