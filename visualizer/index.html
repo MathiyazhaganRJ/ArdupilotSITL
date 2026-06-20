@@ -601,7 +601,7 @@
         document.getElementById('m_twin_l').value = 2;
         document.getElementById('m_twin_r').value = 3;
 
-        const maxTrailPoints = 10000; // Increased for high-resolution curves
+        const maxTrailPoints = 100000; // 50km of tracking
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
@@ -728,6 +728,11 @@
             trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
             trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
             trailGeo.setDrawRange(0, trailCount + 1);
+            
+            // Critical Performance Fix: Only upload the active tip to the GPU, not the entire array!
+            // This restores the butter-smooth 60FPS curve resolution.
+            trailGeo.attributes.position.updateRange.offset = Math.max(0, (trailCount - 1) * 3);
+            trailGeo.attributes.position.updateRange.count = 6;
             trailGeo.attributes.position.needsUpdate = true;
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
