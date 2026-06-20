@@ -768,6 +768,12 @@
             let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
 
+            // Dynamic Floor: Automatically lower the map if the plane flies into a valley, 
+            // ensuring the plane physically never sinks underneath the map imagery.
+            if (vtolGroup.position.y < mapGroup.position.y) {
+                mapGroup.position.y = vtolGroup.position.y;
+            }
+
             if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
