@@ -727,6 +727,14 @@
 
         function updateTerrainGraph() {
             const canvas = document.getElementById('terrain-canvas');
+            
+            // Fix blurriness on High-DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            if (canvas.width !== Math.floor(430 * dpr)) {
+                canvas.width = 430 * dpr;
+                canvas.height = 70 * dpr;
+            }
+
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -761,7 +769,7 @@
             ctx.fillStyle = gradient;
             ctx.fill();
             ctx.strokeStyle = 'rgba(150, 200, 150, 0.8)';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * dpr;
             ctx.stroke();
 
             // Draw Plane Flight Path (Line)
@@ -773,7 +781,7 @@
                 else ctx.lineTo(x, y);
             }
             ctx.strokeStyle = '#00aaff';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * dpr;
             ctx.stroke();
 
             // Draw plane dot
@@ -781,11 +789,11 @@
             const finalX = (terrainHistory.length - 1) * stepX;
             const finalY = canvas.height - ((lastPt.plane - graphMin) * graphScale);
             ctx.beginPath();
-            ctx.arc(finalX, finalY, 4, 0, Math.PI * 2);
+            ctx.arc(finalX, finalY, 4 * dpr, 0, Math.PI * 2);
             ctx.fillStyle = '#fff';
             ctx.fill();
             ctx.strokeStyle = '#00aaff';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 * dpr;
             ctx.stroke();
         }
 
