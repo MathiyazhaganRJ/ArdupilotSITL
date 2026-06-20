@@ -243,6 +243,37 @@
             color: var(--text-primary);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+
+        .floating-toolbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 200;
+        }
+
+        .toolbar-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            font-size: 16px;
+            padding: 0;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -250,6 +281,19 @@
 </head>
 
 <body>
+    <!-- Floating Toolbar -->
+    <div class="floating-toolbar">
+        <button class="toolbar-btn" id="btn-toggle-ui" title="Toggle Control Panel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-graph" title="Toggle Terrain Profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-trace" title="Toggle Flight Trace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+    </div>
+
     <div id="ui-panel">
         <div class="header">
             <h2>ArduPilot SITL</h2>
@@ -287,10 +331,6 @@
                 <input type="number" id="scale_input" value="1.0" step="0.1"
                     style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
             </div>
-            <div class="map-row" style="margin: 10px 0 0 0;">
-                <span>Show Trace</span>
-                <input type="checkbox" id="trace_toggle" checked style="cursor: pointer;">
-            </div>
         </div>
 
         <div class="data-card">
@@ -321,8 +361,17 @@
             <button id="btn-free" class="mode-btn">Free</button>
         </div>
     </div>
-    <div id="canvas-container"></div>
+    </div>
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container" style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        <div style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
+            <span>Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+        </div>
+        <canvas id="terrain-canvas" style="width: 100%; height: 100%;"></canvas>
+    </div>
 
+    <div id="canvas-container"></div>
     <script>
         const themeToggle = document.getElementById('theme-toggle');
         themeToggle.onclick = () => {
@@ -335,6 +384,34 @@
                 themeToggle.innerText = '☀️';
             }
             updateSceneTheme();
+        };
+
+        // UI Panel Toggles
+        const btnToggleUi = document.getElementById('btn-toggle-ui');
+        const uiPanel = document.getElementById('ui-panel');
+        btnToggleUi.onclick = () => {
+            uiPanel.style.display = uiPanel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        const btnToggleGraph = document.getElementById('btn-toggle-graph');
+        const graphContainer = document.getElementById('terrain-graph-container');
+        btnToggleGraph.onclick = () => {
+            graphContainer.style.display = graphContainer.style.display === 'none' ? 'flex' : 'none';
+        };
+
+        const btnToggleTrace = document.getElementById('btn-toggle-trace');
+        btnToggleTrace.onclick = () => {
+            if (trailLine) {
+                trailLine.visible = !trailLine.visible;
+                const eye = btnToggleTrace.querySelector('svg');
+                if (trailLine.visible) {
+                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    btnToggleTrace.style.opacity = '1.0';
+                } else {
+                    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                    btnToggleTrace.style.opacity = '0.5';
+                }
+            }
         };
 
         const scene = new THREE.Scene();
@@ -351,17 +428,7 @@
             scene.fog = new THREE.Fog(bgHex, 1000, 10000);
 
             if (gridHelper) scene.remove(gridHelper);
-            gridHelper = new THREE.Group();
-            
-            // Micro grid (1m squares) for close-up monitoring
-            const gMicro = new THREE.GridHelper(200, 200, grid1, grid2);
-            // Macro grid (100m squares) for zoomed-out spatial awareness
-            const gMacro = new THREE.GridHelper(10000, 100, grid1, grid2);
-            
-            gridHelper.add(gMicro);
-            gridHelper.add(gMacro);
-            gridHelper.position.y = -1;
-            scene.add(gridHelper);
+            // Grid removed because the dynamic map now provides spatial reference
         }
         updateSceneTheme();
 
@@ -407,9 +474,9 @@
         // AIRCRAFT GEOMETRY CONFIGURATION
         // ==========================================
         const CONFIG = {
-            modelFile: 'models/Endurance.glb',
-            modelBaseScale: 1, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
-            modelRotation: { roll: 0, pitch: 0, yaw: -90 }, // Intuitive Aviation Degrees
+            modelFile: 'models/Shark.glb',
+            modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelRotation: { roll: 0, pitch: 90, yaw: 180 }, // Intuitive Aviation Degrees
             modelColor: 0xff5500, // Vibrant Orange
 
             cruisePropColor: 0x34c759, // Green
@@ -420,8 +487,8 @@
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
-            twinPosL: { x: -0.1, y: -0.4, z: 0 }, // Left twin engine (negative X is forward)
-            twinPosR: { x: -0.1, y: 0.4, z: 0 },  // Right twin engine
+            twinPosL: { x: -0.3, y: -0.4, z: 0 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.3, y: 0.4, z: 0 },  // Right twin engine
             twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
 
             vtolPropColor: 0xff9500, // Orange
@@ -491,10 +558,6 @@
             }
             updateModelScale();
             document.getElementById('scale_input').addEventListener('input', updateModelScale);
-
-            document.getElementById('trace_toggle').addEventListener('change', (e) => {
-                if (trailLine) trailLine.visible = e.target.checked;
-            });
 
             model.traverse(function (child) {
                 if (child.isMesh) {
@@ -629,6 +692,7 @@
         scene.add(trailLine);
         
         let trailCount = 0;
+        let lastRenderTime = Date.now();
 
         const motorBarsContainer = document.getElementById('motor-bars');
         const uiFills = [], uiPwms = [];
@@ -648,11 +712,184 @@
         let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
         document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
+        
+        // ==========================================
+        // DYNAMIC SATELLITE MAP ENGINE
+        // ==========================================
+        const mapGroup = new THREE.Group();
+        scene.add(mapGroup);
+        const mapTiles = new Map();
+        let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
+        const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Ultra High Resolution)
+
+        function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
+        function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
+
+        function updateMap(lat, lon) {
+            if (homeLat === null) {
+                if (!firstPos) return; // Wait until physics grid is established!
+                homeLat = lat; homeLon = lon;
+                // Earth circumference at equator = 40075016.686 meters
+                tileSize = 40075016.686 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoomLevel);
+                homeTileXFloat = lon2tileFloat(lon, zoomLevel);
+                homeTileYFloat = lat2tileFloat(lat, zoomLevel);
+
+                // Lock the map origin to the plane's CURRENT physics position!
+                // This fixes the bug where the map renders miles behind the plane if you refresh mid-flight.
+                mapGroup.position.set(rawTargetPos.x, 0, rawTargetPos.z);
+            }
+
+            const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
+            const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
+
+            // Load a massive 17x17 grid around the plane. Because we never delete old tiles,
+            // the plane 'paints' a continuous 2.5km wide high-res swath along its flight path!
+            for (let dx = -8; dx <= 8; dx++) {
+                for (let dy = -8; dy <= 8; dy++) {
+                    const tx = currentTileX + dx;
+                    const ty = currentTileY + dy;
+                    const key = `${tx},${ty}`;
+                    
+                    if (!mapTiles.has(key)) {
+                        // Place a placeholder immediately to prevent multiple fetches
+                        mapTiles.set(key, true); 
+
+                        // Use Google Pure Satellite (lyrs=s means NO labels, pure earth photograph)
+                        const url = `https://mt1.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        
+                        const loader = new THREE.TextureLoader();
+                        loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
+                        loader.load(url, (texture) => {
+                            texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
+                            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                            const mat = new THREE.MeshBasicMaterial({ 
+                                map: texture, 
+                                side: THREE.DoubleSide,
+                                depthWrite: false // Prevents airplane from sinking into the map!
+                            });
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.renderOrder = -1; // Force the map to render as a background layer
+                            mesh.rotation.x = -Math.PI / 2;
+                            
+                            // Align perfectly with Three.js origin (which is the Home Launch Point)
+                            // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
+                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                            mesh.position.y = -2; // Render just below the telemetry grid
+                            
+                            mapGroup.add(mesh);
+                        });
+                    }
+                }
+            }
+        }
+        // ==========================================
         const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
+
+        // Terrain Graph Variables
+        let terrainHistory = [];
+        const MAX_HISTORY = 100; 
+        let hasTerrainData = false;
+        let currentPlaneAltMSL = 0;
+        let currentTerrainAltMSL = 0;
+        let currentAGL = 0;
+        let lastGraphUpdate = 0;
+
+        function updateTerrainGraph() {
+            const canvas = document.getElementById('terrain-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Bulletproof High-DPI Canvas Scaling
+            const cssWidth = 430;
+            const cssHeight = 70;
+            const dpr = window.devicePixelRatio || 1;
+            
+            if (canvas.width !== cssWidth * dpr) {
+                canvas.width = cssWidth * dpr;
+                canvas.height = cssHeight * dpr;
+                ctx.scale(dpr, dpr); // Scale context so drawing commands use CSS pixels
+            }
+
+            ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+            if (terrainHistory.length < 2) return;
+
+            let minAlt = Infinity, maxAlt = -Infinity;
+            for (let pt of terrainHistory) {
+                if (pt.terrain < minAlt) minAlt = pt.terrain;
+                if (pt.plane > maxAlt) maxAlt = pt.plane;
+            }
+            
+            const altRange = Math.max(20, maxAlt - minAlt);
+            const graphMax = maxAlt + (altRange * 0.1);
+            const graphMin = minAlt - (altRange * 0.1);
+            const graphScale = cssHeight / (graphMax - graphMin);
+            const stepX = cssWidth / (MAX_HISTORY - 1);
+
+            // 1. Draw Professional Background Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.setLineDash([2, 2]); // Dashed grid
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 1; i < 4; i++) {
+                let y = (cssHeight / 4) * i;
+                ctx.moveTo(0, y);
+                ctx.lineTo(cssWidth, y);
+            }
+            for (let x = 0; x < cssWidth; x += cssWidth / 10) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cssHeight);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset
+
+            // 2. Draw Terrain Area (Solid Earth Tone)
+            ctx.beginPath();
+            ctx.moveTo(0, cssHeight);
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = cssHeight - ((terrainHistory[i].terrain - graphMin) * graphScale);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo((terrainHistory.length - 1) * stepX, cssHeight);
+            ctx.closePath();
+            
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.2)'; // Translucent green
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)'; // Solid border
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 3. Draw Plane Flight Path (Clean Professional Line)
+            ctx.beginPath();
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = cssHeight - ((terrainHistory[i].plane - graphMin) * graphScale);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            
+            ctx.strokeStyle = '#2196F3'; // Telemetry Blue
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 4. Draw Plane Tracker Dot
+            const lastPt = terrainHistory[terrainHistory.length - 1];
+            const finalX = (terrainHistory.length - 1) * stepX;
+            const finalY = cssHeight - ((lastPt.plane - graphMin) * graphScale);
+
+            ctx.beginPath();
+            ctx.arc(finalX, finalY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#2196F3';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
 
         ws.onopen = () => {
             document.getElementById('status').innerText = "Waiting for Vehicle...";
@@ -678,6 +915,14 @@
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
             } else if (data.type === 'ATTITUDE') {
                 rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
+            } else if (data.type === 'GLOBAL_POSITION_INT') {
+                updateMap(data.lat, data.lon);
+                if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
+            } else if (data.type === 'TERRAIN_REPORT') {
+                hasTerrainData = true;
+                currentTerrainAltMSL = data.terrain_height;
+                currentAGL = data.current_height;
+                document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
@@ -687,15 +932,42 @@
                     vtolGroup.updateMatrixWorld(true);
                     trackPoint.getWorldPosition(currentTrackPos);
                     lastPlanePos.copy(targetPos);
-                    lastTrailAddPos.copy(currentTrackPos);
+                    lastTrailAddPos.copy(rawTargetPos);
                     firstPos = true;
+                }
+
+                // Background Trail Tracking: Records ONLY when browser is minimized!
+                const now = Date.now();
+                const isRendering = (now - lastRenderTime) < 2000;
+                
+                if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
+                    if (trailCount < maxTrailPoints - 1) {
+                        trailCount++;
+                    } else {
+                        trailPositions.copyWithin(0, 3);
+                    }
+                    trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
+                    trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
+                    trailPositions[trailCount * 3 - 1] = rawTargetPos.z;
+                    lastTrailAddPos.copy(rawTargetPos);
+                }
+
+                // Background Terrain Tracking: Records even when browser is minimized!
+                if (now - lastGraphUpdate > 500 && firstPos) {
+                    let plotTerrain = currentTerrainAltMSL;
+                    let plotPlane = currentPlaneAltMSL;
+                    if (!hasTerrainData) {
+                        plotPlane = data.z;
+                        plotTerrain = mapGroup.position.y;
+                        document.getElementById('terrain-alt-text').innerText = `AGL: ${(plotPlane - plotTerrain).toFixed(1)}m`;
+                    }
+                    terrainHistory.push({ plane: plotPlane, terrain: plotTerrain });
+                    if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
+                    updateTerrainGraph();
+                    lastGraphUpdate = now;
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
-                const now = Date.now();
-                if (now - lastRenderTime > 2000 && firstPos) {
-                    // Tab just woke up from being minimized (2 seconds asleep)!
-                }
                 servoSpeeds = data.servos;
                 for (let i = 0; i < 8; i++) {
                     let pwm = servoSpeeds[i]; uiPwms[i].innerText = pwm;
@@ -722,7 +994,19 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            lastRenderTime = Date.now();
+
+            const now = Date.now();
+            if (now - lastRenderTime > 2000 && firstPos) {
+                // Tab just woke up from being minimized (2 seconds asleep)!
+                // Instantly snap the plane to the present to avoid dragging a straight line
+                targetPos.copy(rawTargetPos);
+                vtolGroup.position.copy(rawTargetPos);
+                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                targetRot.setFromQuaternion(qRaw);
+                vtolGroup.setRotationFromQuaternion(qRaw);
+                vtolGroup.updateMatrixWorld(true);
+            }
+            lastRenderTime = now;
 
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
             const dt = Math.min(clock.getDelta(), 0.1);
@@ -740,6 +1024,12 @@
             let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
 
+            // Dynamic Floor: Automatically lower the map if the plane flies into a valley, 
+            // ensuring the plane physically never sinks underneath the map imagery.
+            if (vtolGroup.position.y < mapGroup.position.y) {
+                mapGroup.position.y = vtolGroup.position.y;
+            }
+
             if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
@@ -753,7 +1043,7 @@
             // Active Trail Tracking (High-Res): Records when focused!
             // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
             if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
-                if (trailCount < maxTrailPoints - 1) { // Reserve 1 point for the dynamic tip
+                if (trailCount < maxTrailPoints - 1) {
                     trailCount++;
                 } else {
                     trailPositions.copyWithin(0, 3);
@@ -761,7 +1051,7 @@
                 lastTrailAddPos.copy(currentTrackPos);
             }
 
-            // Always stretch the active tip of the trail to the current smooth plane position
+            // Stretch the active tip of the trail to the current smooth plane position
             trailPositions[trailCount * 3] = currentTrackPos.x;
             trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
             trailPositions[trailCount * 3 + 2] = currentTrackPos.z;

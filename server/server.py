@@ -103,7 +103,7 @@ async def main():
     threading.Thread(target=start_http_server, daemon=True).start()
     
     # Auto-open the visualizer in the default browser after 1 second
-    threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:8000')).start()
+    threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:8000/shark.html')).start()
 
     server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
     print("WebSocket Server started on port 8766")
