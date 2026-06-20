@@ -658,7 +658,7 @@
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-        const trailMat = new THREE.LineBasicMaterial({ color: CONFIG.trackColor, linewidth: 2 });
+        const trailMat = new THREE.LineBasicMaterial({ color: CONFIG.trackColor, linewidth: 4 });
         const trailLine = new THREE.Line(trailGeo, trailMat);
         trailLine.frustumCulled = false;
         scene.add(trailLine);
@@ -845,7 +845,7 @@
             }
             
             ctx.strokeStyle = '#2196F3'; // Telemetry Blue
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             // 4. Draw Plane Tracker Dot
