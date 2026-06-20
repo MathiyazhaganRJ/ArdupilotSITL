@@ -19,7 +19,7 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD'], blocking=False)
+        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT'], blocking=False)
         if msg:
             if not heartbeat_received and msg.get_type() == 'HEARTBEAT':
                 heartbeat_received = True
@@ -51,6 +51,9 @@ async def mavlink_listener():
                 data['x'] = msg.x
                 data['y'] = msg.y
                 data['z'] = -msg.z # Convert down to up
+            elif msg.get_type() == 'GLOBAL_POSITION_INT':
+                data['lat'] = msg.lat / 1e7
+                data['lon'] = msg.lon / 1e7
             elif msg.get_type() == 'VFR_HUD':
                 data['airspeed'] = msg.airspeed
                 data['groundspeed'] = msg.groundspeed
