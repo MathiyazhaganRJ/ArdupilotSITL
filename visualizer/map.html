@@ -345,17 +345,7 @@
             scene.fog = new THREE.Fog(bgHex, 1000, 10000);
 
             if (gridHelper) scene.remove(gridHelper);
-            gridHelper = new THREE.Group();
-            
-            // Micro grid (1m squares) for close-up monitoring
-            const gMicro = new THREE.GridHelper(200, 200, grid1, grid2);
-            // Macro grid (100m squares) for zoomed-out spatial awareness
-            const gMacro = new THREE.GridHelper(10000, 100, grid1, grid2);
-            
-            gridHelper.add(gMicro);
-            gridHelper.add(gMacro);
-            gridHelper.position.y = -1;
-            scene.add(gridHelper);
+            // Grid removed because the dynamic map now provides spatial reference
         }
         updateSceneTheme();
 
@@ -665,8 +655,8 @@
                         // Place a placeholder immediately to prevent multiple fetches
                         mapTiles.set(key, true); 
 
-                        // Use Google Hybrid Satellite map (lyrs=y means satellite + labels)
-                        const url = `https://mt1.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        // Use OpenStreetMap
+                        const url = `https://tile.openstreetmap.org/${zoomLevel}/${tx}/${ty}.png`;
                         
                         const loader = new THREE.TextureLoader();
                         loader.load(url, (texture) => {
