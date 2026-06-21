@@ -330,11 +330,18 @@
         </div>
 
         <div class="section-title">Vehicle Config</div>
+        <!-- 
+          TIP: To hide a vehicle configuration from the user without deleting the code,
+          add the words "hidden disabled" inside the <option> tag.
+          This hides it from the menu and prevents the browser from selecting it by default!
+           <option value="quad" hidden disabled>Quadcopter</option>
+        -->
         <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
             <option value="vtol">QuadPlane (VTOL)</option>
             <option value="plane">Fixed Wing (Pusher)</option>
             <option value="twin">Twin Engine (Fixed Wing)</option>
             <option value="quad">Quadcopter</option>
+            <option value="y3">Y3 Tilt-Rotor</option>
         </select>
 
         <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
@@ -352,11 +359,20 @@
                 <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
                 <div class="map-row">Motor 3 (FL) <select id="m_fl"></select></div>
                 <div class="map-row">Motor 4 (BR) <select id="m_br"></select></div>
+                <div class="map-row quad-tilt-ui">Tilt Servo (Right) <select id="m_quad_tilt_r"></select></div>
+                <div class="map-row quad-tilt-ui">Tilt Servo (Left) <select id="m_quad_tilt_l"></select></div>
             </div>
             <div id="map-single" class="map-row">Cruise <select id="m_push"></select></div>
             <div id="map-twin" style="display: none;">
                 <div class="map-row">Left Cruise <select id="m_twin_l"></select></div>
                 <div class="map-row">Right Cruise <select id="m_twin_r"></select></div>
+            </div>
+            <div id="map-y3" style="display: none;">
+                <div class="map-row">M1 (FR Tilt) <select id="m_y3_fr"></select></div>
+                <div class="map-row">M2 (FL Tilt) <select id="m_y3_fl"></select></div>
+                <div class="map-row">M3 (Rear) <select id="m_y3_r"></select></div>
+                <div class="map-row">Tilt Servo (Right) <select id="m_y3_tilt_r"></select></div>
+                <div class="map-row">Tilt Servo (Left) <select id="m_y3_tilt_l"></select></div>
             </div>
         </div>
 
@@ -480,7 +496,7 @@
         scene.add(vtolGroup);
 
         const matBody = new THREE.MeshPhongMaterial({ color: 0x0071e3 });
-        const matCarbon = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        // matCarbon moved below CONFIG so it can use CONFIG.vtolBoomColor
 
         const aeroGroup = new THREE.Group();
         vtolGroup.add(aeroGroup);
@@ -493,6 +509,11 @@
             modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
             modelRotation: { roll: 0, pitch: 90, yaw: 180 }, // Intuitive Aviation Degrees
 
+            // --- SOFTWARE CG SHIFT ---
+            // If your Fusion 360 model pitches around the nose instead of the CG, use these values to slide the 3D model backwards/forwards!
+            cgOffset: { x: 0.1, y: 0, z: 0 },
+            showPivotAxis: false, // Set to true to draw a giant XYZ axis at the true rotation pivot point. Use this to align your cgOffset!
+
             useOriginalLivery: true, // Set to true to use Fusion 360 colors, false to use a solid color
             modelColor: 0xeeeeee, // Experimental Matte White Livery
 
@@ -504,8 +525,8 @@
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
-            twinPosL: { x: -0, y: -0.4, z: 0 }, // Left twin engine (negative X is forward)
-            twinPosR: { x: -0, y: 0.4, z: 0 },  // Right twin engine
+            twinPosL: { x: -0.1, y: -0.4, z: 0.03 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.1, y: 0.4, z: 0.03 },  // Right twin engine
             twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
 
             vtolPropColor: 0xff9500, // Orange
@@ -516,11 +537,30 @@
             vtolBoomXOffset: -0.25, // X-offset for entire boom (shift forward/backward)
             vtolArmY: 0.35,    // Y-distance from centerline to boom
             vtolMotorX: -0.4,  // X-distance from Boom Center to front/back quad motor
+            vtolMotorDia: 0.08, // Physical diameter of the motor cylinder mesh
+            vtolMotorHeight: 0.06, // Physical height of the motor cylinder mesh
+            vtolBoomColor: 0x333333, // Color of the Carbon Fiber booms and motor cylinders
+
+            // --- CUSTOM HARDWARE OPTIONS ---
+            drawVtolBooms: true, // Set to false if your Fusion 360 model already has the carbon booms and motors drawn!
+            enableTiltRotors: false, // Set to true to tilt the front two VTOL motors forward for forward flight
+            tiltServoChannel: 8, // The ArduPilot RC output channel controlling the quad tilt servo (1-indexed, so 8 = CH8)
+            tiltMaxAngle: 0, // Degrees to tilt forward when servo is at maximum forward PWM
+            tiltHoverPwm: 1500, // PWM when motor points straight UP (Use 1500 for 180-degree vectoring servos, 1000 for 90-degree servos)
+            tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
 
             trackColor: 0xff00ff, // Color of the GPS trail line
-            trackOrigin: { x: 0, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
+            trackOrigin: { x: 1, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
         };
         // ==========================================
+
+        const matCarbon = new THREE.MeshPhongMaterial({ color: CONFIG.vtolBoomColor });
+
+        // Visual Pivot Alignment Tool
+        if (CONFIG.showPivotAxis) {
+            const pivotAxis = new THREE.AxesHelper(2.0); // 2 meters long
+            vtolGroup.add(pivotAxis);
+        }
 
         // Helper to convert Aviation Coords to Three.js Web Coords
         function vspToThree(pos) {
@@ -564,6 +604,11 @@
                 (CONFIG.modelRotation.roll || 0) * Math.PI / 180,  // Z-axis controls Roll
                 'YXZ' // Apply Yaw first, then Pitch, then Roll to prevent gimbal lock
             );
+
+            // SOFTWARE CG SHIFT (Intuitive Aviation Mapping)
+            // X = Forward/Backward, Y = Left/Right, Z = Up/Down
+            // We map this into THREE.js coordinates (X=Right, Y=Up, Z=Back)
+            model.position.set(CONFIG.cgOffset.y, CONFIG.cgOffset.z, -CONFIG.cgOffset.x);
 
             model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
 
@@ -642,34 +687,107 @@
             { x: xBack, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ } // Back Left
         ];
 
-        armPositions.forEach(pos => {
+        const tiltAssemblies = []; // [0] = FR, [1] = FL
+
+        armPositions.forEach((pos, index) => {
             const pos3D = vspToThree(pos);
-            const boomLength = (CONFIG.vtolMotorX * 2) + 0.05; // Auto-scale boom length to motor spread
-            const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, boomLength), matCarbon);
-            boom.rotation.x = Math.PI / 2;
-            boom.position.set(pos3D.x, pos3D.y, CONFIG.vtolBoomXOffset); // Center of boom
-            quadGroup.add(boom);
+            const isFrontRotor = (index === 0 || index === 2); // 0 = FR, 2 = FL
 
-            const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06), matCarbon);
-            motor.position.set(pos3D.x, pos3D.y + 0.03, pos3D.z);
-            quadGroup.add(motor);
+            // Create a pivot group for the entire motor assembly so it can tilt!
+            const motorAssembly = new THREE.Group();
+            motorAssembly.position.set(pos3D.x, pos3D.y, pos3D.z);
+            quadGroup.add(motorAssembly);
 
-            const prop = createPropeller(CONFIG.vtolPropDia, CONFIG.vtolPropColor, CONFIG.vtolPropBlades, 'Y');
-            prop.position.set(pos3D.x, pos3D.y + 0.06, pos3D.z);
-            quadGroup.add(prop);
+            if (CONFIG.enableTiltRotors && isFrontRotor) {
+                tiltAssemblies.push(motorAssembly);
+            }
+
+            if (CONFIG.drawVtolBooms) {
+                const boomLength = (CONFIG.vtolMotorX * 2) + 0.05; // Auto-scale boom length to motor spread
+                const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, boomLength), matCarbon);
+                boom.rotation.x = Math.PI / 2;
+                boom.position.set(pos3D.x, pos3D.y, CONFIG.vtolBoomXOffset); // Center of boom
+                quadGroup.add(boom);
+
+                const motorRadius = CONFIG.vtolMotorDia / 2;
+                const motor = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius, motorRadius, CONFIG.vtolMotorHeight), matCarbon);
+                motor.position.set(0, CONFIG.vtolMotorHeight / 2, 0); // Position relative to assembly pivot
+                motorAssembly.add(motor);
+            }
+
+            const propColor = (CONFIG.enableTiltRotors && isFrontRotor) ? CONFIG.cruisePropColor : CONFIG.vtolPropColor;
+            const prop = createPropeller(CONFIG.vtolPropDia, propColor, CONFIG.vtolPropBlades, 'Y');
+            prop.position.set(0, CONFIG.vtolMotorHeight, 0); // Position perfectly on top of the motor
+            motorAssembly.add(prop);
             props.push(prop);
         });
 
+        // =====================================
+        // Y3 TILT-ROTOR ARCHITECTURE
+        // =====================================
+        const y3Group = new THREE.Group();
+        vtolGroup.add(y3Group);
+        y3Group.visible = false;
+
+        const y3Props = [];
+        const y3TiltAssemblies = [];
+
+        // Y3 positions: Front Right, Front Left, Rear Center
+        // We push the rear motor way back to x: 0.5 so it is visible behind the fuselage!
+        const y3Positions = [
+            { x: xFront, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // FR
+            { x: xFront, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // FL
+            { x: 0.1, y: 0, z: CONFIG.vtolBoomZ } // Rear
+        ];
+
+        y3Positions.forEach((pos, index) => {
+            const pos3D = vspToThree(pos);
+            const motorAssembly = new THREE.Group();
+            motorAssembly.position.set(pos3D.x, pos3D.y, pos3D.z);
+            y3Group.add(motorAssembly);
+
+            const isTiltRotor = (index === 0 || index === 1);
+            if (isTiltRotor) y3TiltAssemblies.push(motorAssembly); // Only front two motors tilt
+
+            if (CONFIG.drawVtolBooms) {
+                // If it's the rear motor, draw a boom going forward to the CG
+                if (!isTiltRotor) {
+                    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5), matCarbon);
+                    boom.rotation.x = Math.PI / 2;
+                    boom.position.set(0, 0, -0.25); // Shift boom forward towards CG
+                    motorAssembly.add(boom);
+                }
+
+                const motorRadius = CONFIG.vtolMotorDia / 2;
+                const motor = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius, motorRadius, CONFIG.vtolMotorHeight), matCarbon);
+                motor.position.set(0, CONFIG.vtolMotorHeight / 2, 0);
+                motorAssembly.add(motor);
+            }
+
+            const propColor = isTiltRotor ? CONFIG.cruisePropColor : CONFIG.vtolPropColor;
+            const prop = createPropeller(CONFIG.vtolPropDia, propColor, CONFIG.vtolPropBlades, 'Y');
+            prop.position.set(0, CONFIG.vtolMotorHeight, 0); // Position perfectly on top of the motor
+            motorAssembly.add(prop);
+            y3Props.push(prop);
+        });
+
+        // Hide quad-tilt UI if tilt is disabled
+        if (!CONFIG.enableTiltRotors) {
+            document.querySelectorAll('.quad-tilt-ui').forEach(el => el.style.display = 'none');
+        }
+
         document.getElementById('v_type').onchange = (e) => {
             const type = e.target.value;
-            aeroGroup.visible = (type === 'vtol' || type === 'plane' || type === 'twin');
+            aeroGroup.visible = (type === 'vtol' || type === 'plane' || type === 'twin' || type === 'y3');
             quadGroup.visible = (type === 'vtol' || type === 'quad');
             pusherProp.visible = (type === 'vtol' || type === 'plane');
             twinGroup.visible = (type === 'twin');
+            y3Group.visible = (type === 'y3');
 
             document.getElementById('map-vtol').style.display = (type === 'vtol') ? 'block' : 'none';
             document.getElementById('map-single').style.display = (type === 'vtol' || type === 'plane') ? 'flex' : 'none';
             document.getElementById('map-twin').style.display = (type === 'twin') ? 'block' : 'none';
+            document.getElementById('map-y3').style.display = (type === 'y3') ? 'block' : 'none';
 
             if (type === 'quad') {
                 if (!quadGroup.hub) {
@@ -683,11 +801,13 @@
                 quadGroup.hub.visible = false;
             }
         };
+        // FORCE THE UI TO UPDATE TO THE DEFAULT SELECTION ON LOAD
+        document.getElementById('v_type').dispatchEvent(new Event('change'));
 
-        const selects = ['m_fr', 'm_bl', 'm_br', 'm_fl', 'm_push', 'm_twin_l', 'm_twin_r'];
+        const selects = ['m_fr', 'm_bl', 'm_br', 'm_fl', 'm_push', 'm_twin_l', 'm_twin_r', 'm_y3_fr', 'm_y3_fl', 'm_y3_r', 'm_y3_tilt_r', 'm_y3_tilt_l', 'm_quad_tilt_r', 'm_quad_tilt_l'];
         selects.forEach(id => {
             const el = document.getElementById(id);
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= 10; i++) {
                 const opt = document.createElement('option');
                 opt.value = i - 1; opt.innerText = "CH" + i;
                 el.appendChild(opt);
@@ -700,6 +820,15 @@
         document.getElementById('m_push').value = 2;
         document.getElementById('m_twin_l').value = 2;
         document.getElementById('m_twin_r').value = 2;
+        document.getElementById('m_quad_tilt_r').value = 7; // CH8
+        document.getElementById('m_quad_tilt_l').value = 8; // CH9
+
+        // Default ArduPilot Y3 Mapping
+        document.getElementById('m_y3_fr').value = 4;
+        document.getElementById('m_y3_fl').value = 6;
+        document.getElementById('m_y3_r').value = 5;
+        document.getElementById('m_y3_tilt_r').value = 7; // Tilt Servo Right on CH8
+        document.getElementById('m_y3_tilt_l').value = 8; // Tilt Servo Left on CH9
 
         const maxTrailPoints = 100000; // 50km of tracking
         const trailPositions = new Float32Array(maxTrailPoints * 3);
@@ -793,7 +922,8 @@
                             const mat = new THREE.MeshBasicMaterial({
                                 map: texture,
                                 side: THREE.DoubleSide,
-                                depthWrite: false // Prevents airplane from sinking into the map!
+                                depthWrite: false, // Prevents airplane from sinking into the map!
+                                fog: false // Keeps the satellite imagery 100% vibrant all the way to the horizon
                             });
                             const mesh = new THREE.Mesh(geo, mat);
                             mesh.renderOrder = -1; // Force the map to render as a background layer
@@ -1089,18 +1219,55 @@
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
                 m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
                 m_push = parseInt(document.getElementById('m_push').value), m_tl = parseInt(document.getElementById('m_twin_l').value),
-                m_tr = parseInt(document.getElementById('m_twin_r').value);
+                m_tr = parseInt(document.getElementById('m_twin_r').value),
+                m_y3_fr = parseInt(document.getElementById('m_y3_fr').value), m_y3_fl = parseInt(document.getElementById('m_y3_fl').value),
+                m_y3_r = parseInt(document.getElementById('m_y3_r').value),
+                m_y3_tilt_r = parseInt(document.getElementById('m_y3_tilt_r').value),
+                m_y3_tilt_l = parseInt(document.getElementById('m_y3_tilt_l').value);
 
             // Enhance visual propeller speed to match the loaded RPM feel
             // Apply directional multiplier (0 = CW = negative rotation, 1 = CCW = positive rotation)
             let visSpeed = 0.8;
-            props[0].rotation.y += Math.max(0, (servoSpeeds[m_fr] - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
-            props[1].rotation.y += Math.max(0, (servoSpeeds[m_fl] - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
-            props[2].rotation.y += Math.max(0, (servoSpeeds[m_br] - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
-            props[3].rotation.y += Math.max(0, (servoSpeeds[m_bl] - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
-            pusherProp.rotation.z += Math.max(0, (servoSpeeds[m_push] - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
-            twinPropL.rotation.z += Math.max(0, (servoSpeeds[m_tl] - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
-            twinPropR.rotation.z += Math.max(0, (servoSpeeds[m_tr] - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+
+            // Apply Y3 Differential Tilt Rotor Physics
+            let y3TiltRPwm = servoSpeeds[m_y3_tilt_r] || CONFIG.tiltHoverPwm;
+            // Calculate percent based on hover PWM (Allows backwards tilt for yaw vectoring!)
+            let y3TiltRPercent = (y3TiltRPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+            y3TiltAssemblies[0].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * y3TiltRPercent; // FR tilts
+
+            let y3TiltLPwm = servoSpeeds[m_y3_tilt_l] || CONFIG.tiltHoverPwm;
+            let y3TiltLPercent = (y3TiltLPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+            y3TiltAssemblies[1].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * y3TiltLPercent; // FL tilts
+
+            // Apply Quad Tilt Rotor Physics
+            if (CONFIG.enableTiltRotors) {
+                let m_quad_tilt_r = parseInt(document.getElementById('m_quad_tilt_r').value);
+                let m_quad_tilt_l = parseInt(document.getElementById('m_quad_tilt_l').value);
+
+                let quadTiltRPwm = servoSpeeds[m_quad_tilt_r] || CONFIG.tiltHoverPwm;
+                let quadTiltRPercent = (quadTiltRPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+                tiltAssemblies[0].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * quadTiltRPercent; // FR
+
+                let quadTiltLPwm = servoSpeeds[m_quad_tilt_l] || CONFIG.tiltHoverPwm;
+                let quadTiltLPercent = (quadTiltLPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+                tiltAssemblies[1].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * quadTiltLPercent; // FL
+            }
+
+            // Spin Quad Props
+            props[0].rotation.y += Math.max(0, ((servoSpeeds[m_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            props[1].rotation.y += Math.max(0, ((servoSpeeds[m_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            props[2].rotation.y += Math.max(0, ((servoSpeeds[m_br] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+            props[3].rotation.y += Math.max(0, ((servoSpeeds[m_bl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
+
+            // Spin Y3 Props
+            y3Props[0].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            y3Props[1].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            y3Props[2].rotation.y += Math.max(0, ((servoSpeeds[m_y3_r] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+
+            // Spin fixed-wing props
+            pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+            twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+            twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
 
             renderer.render(scene, camera);
         }
