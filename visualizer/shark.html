@@ -849,6 +849,8 @@
             let minAlt = Infinity, maxAlt = -Infinity;
             for (let pt of terrainHistory) {
                 if (pt.terrain < minAlt) minAlt = pt.terrain;
+                if (pt.plane < minAlt) minAlt = pt.plane;
+                if (pt.terrain > maxAlt) maxAlt = pt.terrain;
                 if (pt.plane > maxAlt) maxAlt = pt.plane;
             }
 
@@ -947,6 +949,7 @@
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
             } else if (data.type === 'TERRAIN_REPORT') {
+                if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
                 hasTerrainData = true;
                 currentTerrainAltMSL = data.terrain_height;
                 currentAGL = data.current_height;
