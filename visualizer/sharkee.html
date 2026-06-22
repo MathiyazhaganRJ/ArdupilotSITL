@@ -549,7 +549,7 @@
             tiltHoverPwm: 1500, // PWM when motor points straight UP (Use 1500 for 180-degree vectoring servos, 1000 for 90-degree servos)
             tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
 
-            trackColor: 0xdda14, // Color of the GPS trail line
+            trackColor: 0xff00ff, // Color of the GPS trail line
             trackOrigin: { x: 1, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
         };
         // ==========================================
@@ -979,8 +979,6 @@
             let minAlt = Infinity, maxAlt = -Infinity;
             for (let pt of terrainHistory) {
                 if (pt.terrain < minAlt) minAlt = pt.terrain;
-                if (pt.plane < minAlt) minAlt = pt.plane;
-                if (pt.terrain > maxAlt) maxAlt = pt.terrain;
                 if (pt.plane > maxAlt) maxAlt = pt.plane;
             }
 
@@ -1079,7 +1077,6 @@
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
             } else if (data.type === 'TERRAIN_REPORT') {
-                if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
                 hasTerrainData = true;
                 currentTerrainAltMSL = data.terrain_height;
                 currentAGL = data.current_height;
