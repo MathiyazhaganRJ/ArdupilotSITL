@@ -128,9 +128,54 @@
         }
 
         // Variables to store latest telemetry
-        let currentLat = 0, currentLon = 0, currentAltMSL = 0;
-        let currentRoll = 0, currentPitch = 0, currentYaw = 0;
+        let targetLat = 0, targetLon = 0, targetAlt = 0;
+        let smoothLat = 0, smoothLon = 0, smoothAlt = 0;
+        
+        let targetRoll = 0, targetPitch = 0, targetYaw = 0;
+        let smoothRoll = 0, smoothPitch = 0, smoothYaw = 0;
+        
         let hasHome = false;
+        let lastRenderTime = Date.now();
+        let lastTrailAddPos = new Cesium.Cartesian3();
+
+        // High-Frame-Rate Smooth Interpolation (Lerp)
+        viewer.scene.preUpdate.addEventListener(function(scene, time) {
+            if (!hasHome) return;
+            const now = Date.now();
+            const dt = Math.min((now - lastRenderTime) / 1000.0, 0.1);
+            lastRenderTime = now;
+            
+            // 2nd-Order Low-Pass Filter (Critically damped spring)
+            const lerp = 1.0 - Math.exp(-dt * 5.0);
+            
+            smoothLat += (targetLat - smoothLat) * lerp;
+            smoothLon += (targetLon - smoothLon) * lerp;
+            smoothAlt += (targetAlt - smoothAlt) * lerp;
+            
+            smoothRoll += (targetRoll - smoothRoll) * lerp;
+            smoothPitch += (targetPitch - smoothPitch) * lerp;
+            
+            // Prevent 360-degree spin when yaw wraps from -PI to PI
+            let dyaw = targetYaw - smoothYaw;
+            while (dyaw > Math.PI) dyaw -= 2*Math.PI;
+            while (dyaw < -Math.PI) dyaw += 2*Math.PI;
+            smoothYaw += dyaw * lerp;
+
+            // Apply Smooth Position
+            const position = Cesium.Cartesian3.fromDegrees(smoothLon, smoothLat, smoothAlt);
+            planeEntity.position = position;
+
+            // Apply Smooth Orientation
+            const hpr = new Cesium.HeadingPitchRoll(smoothYaw - Math.PI/2, smoothPitch, smoothRoll);
+            planeEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+            // Add to 3D Track history only if we moved more than 1 meter (prevents array bloat)
+            if (Cesium.Cartesian3.distance(position, lastTrailAddPos) > 1.0) {
+                pathPositions.push(position);
+                if (pathPositions.length > 500) pathPositions.shift();
+                lastTrailAddPos = position;
+            }
+        });
 
         // =======================================================
         // WEBSOCKET CONNECTION TO PYTHON SERVER
@@ -146,49 +191,40 @@
             const data = JSON.parse(event.data);
 
             if (data.type === 'GLOBAL_POSITION_INT') {
-                currentLat = data.lat;
-                currentLon = data.lon;
-                currentAltMSL = data.alt / 1000.0; // Convert mm to meters
-
-                // Update the Position
-                const position = Cesium.Cartesian3.fromDegrees(currentLon, currentLat, currentAltMSL);
-                planeEntity.position = position;
-
-                // Add to 3D Track history
-                if (hasHome) { // Only start drawing after we have a valid home
-                    pathPositions.push(position);
-                    if (pathPositions.length > 500) { // Keep roughly 100 seconds of history at 5Hz
-                        pathPositions.shift();
-                    }
-                }
+                targetLat = data.lat;
+                targetLon = data.lon;
+                targetAlt = data.alt / 1000.0; // Convert mm to meters
 
                 if (!hasHome) {
+                    smoothLat = targetLat;
+                    smoothLon = targetLon;
+                    smoothAlt = targetAlt;
                     hasHome = true;
                     // Zoom camera out slightly when first connecting
-                    viewer.zoomTo(planeEntity, new Cesium.HeadingPitchRange(0, -Cesium.Math.PI_OVER_FOUR, 500));
+                    setTimeout(() => {
+                        viewer.zoomTo(planeEntity, new Cesium.HeadingPitchRange(0, -Cesium.Math.PI_OVER_FOUR, 500));
+                    }, 500);
                 }
 
             } else if (data.type === 'ATTITUDE') {
-                currentRoll = data.roll;
-                currentPitch = data.pitch;
-                currentYaw = data.yaw;
-
-                // Update the Orientation
-                if (hasHome) {
-                    const position = Cesium.Cartesian3.fromDegrees(currentLon, currentLat, currentAltMSL);
-                    const hpr = new Cesium.HeadingPitchRoll(currentYaw - Math.PI/2, currentPitch, currentRoll);
-                    const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
-                    planeEntity.orientation = orientation;
+                targetRoll = data.roll;
+                targetPitch = data.pitch;
+                targetYaw = data.yaw;
+                
+                if (!hasHome) {
+                    smoothRoll = targetRoll;
+                    smoothPitch = targetPitch;
+                    smoothYaw = targetYaw;
                 }
 
                 // Update Overlay Text
                 document.getElementById('telemetryOverlay').innerText = 
                     `TERRAIN MAP\n------------------\n` +
-                    `Alt (MSL): ${currentAltMSL.toFixed(1)} m\n` +
-                    `Lat      : ${currentLat.toFixed(5)}\n` +
-                    `Lon      : ${currentLon.toFixed(5)}\n` +
-                    `Pitch    : ${(currentPitch * 180 / Math.PI).toFixed(1)}°\n` +
-                    `Roll     : ${(currentRoll * 180 / Math.PI).toFixed(1)}°`;
+                    `Alt (MSL): ${smoothAlt.toFixed(1)} m\n` +
+                    `Lat      : ${smoothLat.toFixed(5)}\n` +
+                    `Lon      : ${smoothLon.toFixed(5)}\n` +
+                    `Pitch    : ${(smoothPitch * 180 / Math.PI).toFixed(1)}°\n` +
+                    `Roll     : ${(smoothRoll * 180 / Math.PI).toFixed(1)}°`;
             }
         };
 
