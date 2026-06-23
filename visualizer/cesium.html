@@ -24,11 +24,38 @@
             z-index: 10;
             border: 1px solid #00ff00;
         }
+        #cameraControls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background: #222;
+            color: #fff;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+        button:hover { background: #00ff00; color: #000; }
+        .active-btn { background: #00ff00; color: #000; }
     </style>
 </head>
 <body>
     <div id="cesiumContainer"></div>
     <div id="telemetryOverlay">Waiting for SITL Telemetry...</div>
+    <div id="cameraControls">
+        <button id="btnFollow" class="active-btn" onclick="setCameraMode('follow')">FOLLOW PLANE</button>
+        <button id="btnFree" onclick="setCameraMode('free')">FREE CAMERA</button>
+    </div>
 
     <script>
         // =======================================================
@@ -45,7 +72,9 @@
             homeButton: false,
             infoBox: false,
             navigationHelpButton: false,
-            sceneModePicker: false
+            sceneModePicker: false,
+            animation: false, // Removes the play/pause button
+            timeline: false   // Removes the timeline at the bottom
         });
 
         // Enable Lighting (sunlight) and Depth Testing (so the plane hides behind mountains)
@@ -82,8 +111,21 @@
             }
         });
 
-        // Set the camera to follow the plane
+        // Set the camera to follow the plane by default
         viewer.trackedEntity = planeEntity;
+
+        // Camera Mode Toggle Function
+        function setCameraMode(mode) {
+            if (mode === 'follow') {
+                viewer.trackedEntity = planeEntity;
+                document.getElementById('btnFollow').classList.add('active-btn');
+                document.getElementById('btnFree').classList.remove('active-btn');
+            } else {
+                viewer.trackedEntity = undefined;
+                document.getElementById('btnFree').classList.add('active-btn');
+                document.getElementById('btnFollow').classList.remove('active-btn');
+            }
+        }
 
         // Variables to store latest telemetry
         let currentLat = 0, currentLon = 0, currentAltMSL = 0;
@@ -141,7 +183,7 @@
 
                 // Update Overlay Text
                 document.getElementById('telemetryOverlay').innerText = 
-                    `SHARK HAWK TELEMETRY\n------------------\n` +
+                    `TERRAIN MAP\n------------------\n` +
                     `Alt (MSL): ${currentAltMSL.toFixed(1)} m\n` +
                     `Lat      : ${currentLat.toFixed(5)}\n` +
                     `Lon      : ${currentLon.toFixed(5)}\n` +

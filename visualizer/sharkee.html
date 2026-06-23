@@ -1166,6 +1166,10 @@
                 targetRot.setFromQuaternion(qRaw);
                 vtolGroup.setRotationFromQuaternion(qRaw);
                 vtolGroup.updateMatrixWorld(true);
+                
+                // Force the trail to render the background-recorded points!
+                trailGeo.setDrawRange(0, trailCount + 1);
+                trailGeo.attributes.position.needsUpdate = true;
             }
             lastRenderTime = now;
 
