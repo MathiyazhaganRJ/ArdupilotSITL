@@ -52,7 +52,7 @@
         viewer.scene.globe.enableLighting = true;
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
-        // Create the Plane Entity (A glowing dot and a path trail)
+        // Create the Plane Entity (A glowing dot)
         const planeEntity = viewer.entities.add({
             name: 'Shark Hawk',
             position: Cesium.Cartesian3.fromDegrees(0, 0, 0),
@@ -65,16 +65,20 @@
                 color: Cesium.Color.LIME,
                 outlineColor: Cesium.Color.BLACK,
                 outlineWidth: 2
-            },
-            path: {
-                resolution: 1,
-                material: new Cesium.PolylineGlowMaterialProperty({
-                    glowPower: 0.1,
-                    color: Cesium.Color.CYAN
-                }),
+            }
+        });
+
+        // Create the 3D Flight Track (Trail)
+        const pathPositions = [];
+        const pathEntity = viewer.entities.add({
+            name: 'Flight Track',
+            polyline: {
+                positions: new Cesium.CallbackProperty(() => pathPositions, false),
                 width: 5,
-                leadTime: 0,
-                trailTime: 60 // Show 60 seconds of flight history
+                material: new Cesium.PolylineGlowMaterialProperty({
+                    glowPower: 0.2,
+                    color: Cesium.Color.CYAN
+                })
             }
         });
 
@@ -107,6 +111,14 @@
                 // Update the Position
                 const position = Cesium.Cartesian3.fromDegrees(currentLon, currentLat, currentAltMSL);
                 planeEntity.position = position;
+
+                // Add to 3D Track history
+                if (hasHome) { // Only start drawing after we have a valid home
+                    pathPositions.push(position);
+                    if (pathPositions.length > 500) { // Keep roughly 100 seconds of history at 5Hz
+                        pathPositions.shift();
+                    }
+                }
 
                 if (!hasHome) {
                     hasHome = true;
