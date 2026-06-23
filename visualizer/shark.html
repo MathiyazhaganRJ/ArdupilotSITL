@@ -1008,15 +1008,15 @@
                 }
 
                 // Calculate Cruise Pusher RPM based on PWM, Voltage, and KV
-                // Shark Hawk E+ spec: 400KV on 6S (22.2V)
+                // Shark Hawk E+ spec: 400KV on 6S (Fully Charged ~25.2V)
                 const MOTOR_KV = 400;
-                const BATTERY_VOLTAGE = 22.2;
+                const BATTERY_VOLTAGE = 25.2;
                 let throttlePwm = servoSpeeds[2]; // ArduPlane forward throttle is usually Servo 3
                 let throttlePct = Math.max(0, Math.min(1.0, (throttlePwm - 1000) / 1000.0));
 
-                // RPM = KV * V * Throttle%. (Multiplying by 0.45 precisely matches the physical JSBSim aerodynamic load of a 15x10 propeller!)
+                // RPM = KV * V * Throttle%. (Multiplying by 0.90 matches real-world observation of ~4500 RPM at 50% throttle)
                 let maxRpm = MOTOR_KV * BATTERY_VOLTAGE;
-                let currentRpm = maxRpm * throttlePct * 0.45;
+                let currentRpm = maxRpm * throttlePct * 0.90;
                 document.getElementById('pusher-rpm').innerText = Math.round(currentRpm);
             }
         };
