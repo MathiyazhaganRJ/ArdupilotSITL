@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<electric_engine name="electric_motor">
+  <power unit="WATTS"> 800.0 </power>
+  <voltage> 22.2 </voltage>
+  <resistance> 0.05 </resistance>
+  <speedConstant> 400.0 </speedConstant>
+</electric_engine>
