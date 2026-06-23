@@ -47,7 +47,7 @@ try:
                 
                 l_over_d = (lift_kg / drag_kg) if drag_kg > 0 else 0.0
                 g_force = -float(values[12]) # JSBSim Z is down, so invert to make +1G upright
-                output_str += f" || Thrust: {thrust_kg:5.2f} kg | Batt Drain: {electrical_watts:5.0f} W | RPM: {rpm:4.0f} | L/D: {l_over_d:5.1f} | G-Force: {g_force:5.2f} G"
+                output_str += f" || Thrust: {thrust_kg:5.2f} kg | Power: {electrical_watts:5.0f} W | RPM: {rpm:4.0f} | L/D: {l_over_d:5.1f} | G-Force: {g_force:5.2f} G"
                 
             print(output_str)
         else:
