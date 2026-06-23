@@ -126,9 +126,11 @@
 
         // Variables to store latest telemetry
         let targetLat = 0, targetLon = 0, targetAlt = 0;
+        let interLat = 0, interLon = 0, interAlt = 0;
         let smoothLat = 0, smoothLon = 0, smoothAlt = 0;
         
         let targetRoll = 0, targetPitch = 0, targetYaw = 0;
+        let interRoll = 0, interPitch = 0, interYaw = 0;
         let smoothRoll = 0, smoothPitch = 0, smoothYaw = 0;
         
         let hasHome = false;
@@ -146,21 +148,35 @@
             const dt = Math.min((now - lastRenderTime) / 1000.0, 0.1);
             lastRenderTime = now;
             
-            // 2nd-Order Low-Pass Filter (Critically damped spring)
-            const lerp = 1.0 - Math.exp(-dt * 5.0);
+            // True 2nd-Order Low-Pass Filter (Cascaded 1st-Order)
+            // This guarantees C1 continuity (smooth velocity) to completely erase 10Hz stepping
+            const lerp = 1.0 - Math.exp(-dt * 3.0);
             
-            smoothLat += (targetLat - smoothLat) * lerp;
-            smoothLon += (targetLon - smoothLon) * lerp;
-            smoothAlt += (targetAlt - smoothAlt) * lerp;
+            interLat += (targetLat - interLat) * lerp;
+            smoothLat += (interLat - smoothLat) * lerp;
             
-            smoothRoll += (targetRoll - smoothRoll) * lerp;
-            smoothPitch += (targetPitch - smoothPitch) * lerp;
+            interLon += (targetLon - interLon) * lerp;
+            smoothLon += (interLon - smoothLon) * lerp;
+            
+            interAlt += (targetAlt - interAlt) * lerp;
+            smoothAlt += (interAlt - smoothAlt) * lerp;
+            
+            interRoll += (targetRoll - interRoll) * lerp;
+            smoothRoll += (interRoll - smoothRoll) * lerp;
+            
+            interPitch += (targetPitch - interPitch) * lerp;
+            smoothPitch += (interPitch - smoothPitch) * lerp;
             
             // Prevent 360-degree spin when yaw wraps from -PI to PI
-            let dyaw = targetYaw - smoothYaw;
-            while (dyaw > Math.PI) dyaw -= 2*Math.PI;
-            while (dyaw < -Math.PI) dyaw += 2*Math.PI;
-            smoothYaw += dyaw * lerp;
+            let dyaw1 = targetYaw - interYaw;
+            while (dyaw1 > Math.PI) dyaw1 -= 2*Math.PI;
+            while (dyaw1 < -Math.PI) dyaw1 += 2*Math.PI;
+            interYaw += dyaw1 * lerp;
+            
+            let dyaw2 = interYaw - smoothYaw;
+            while (dyaw2 > Math.PI) dyaw2 -= 2*Math.PI;
+            while (dyaw2 < -Math.PI) dyaw2 += 2*Math.PI;
+            smoothYaw += dyaw2 * lerp;
 
             // Apply Smooth Position
             currentCartesianPos = Cesium.Cartesian3.fromDegrees(smoothLon, smoothLat, smoothAlt);
@@ -196,9 +212,15 @@
                 targetAlt = data.alt / 1000.0; // Convert mm to meters
 
                 if (!hasHome) {
+                    interLat = targetLat;
                     smoothLat = targetLat;
+                    
+                    interLon = targetLon;
                     smoothLon = targetLon;
+                    
+                    interAlt = targetAlt;
                     smoothAlt = targetAlt;
+                    
                     hasHome = true;
                     // Zoom camera out slightly when first connecting
                     setTimeout(() => {
@@ -212,8 +234,13 @@
                 targetYaw = data.yaw;
                 
                 if (!hasHome) {
+                    interRoll = targetRoll;
                     smoothRoll = targetRoll;
+                    
+                    interPitch = targetPitch;
                     smoothPitch = targetPitch;
+                    
+                    interYaw = targetYaw;
                     smoothYaw = targetYaw;
                 }
 
