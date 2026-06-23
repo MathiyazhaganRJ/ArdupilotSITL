@@ -29,3 +29,12 @@ Thumbs.db
 
 # Logs
 *.log
+
+# JSBSim Aircraft Configurations
+FW/
+Kannan/
+Mathi/
+VPlane/
+VTOL/
+jsbsim_listener.py
+
