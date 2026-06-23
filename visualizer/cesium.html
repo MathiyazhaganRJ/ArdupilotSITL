@@ -81,6 +81,10 @@
         viewer.scene.globe.enableLighting = true;
         // Disabled depth test so the track never clips into the ground or fades away
         viewer.scene.globe.depthTestAgainstTerrain = false;
+        
+        // Enable High-Quality Hardware Anti-Aliasing (Fixes pixelated lines)
+        viewer.scene.msaaSamples = 4;
+        viewer.scene.postProcessStages.fxaa.enabled = true;
 
         // Create the Plane Entity (A glowing dot)
         const planeEntity = viewer.entities.add({
