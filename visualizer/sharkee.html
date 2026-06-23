@@ -1221,21 +1221,23 @@
 
             // Active Trail Tracking (High-Res): Records when focused!
             // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
-            if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
-                if (trailCount < maxTrailPoints - 1) {
-                    trailCount++;
-                } else {
-                    trailPositions.copyWithin(0, 3);
+            if (firstPos) {
+                if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
+                    if (trailCount < maxTrailPoints - 1) {
+                        trailCount++;
+                    } else {
+                        trailPositions.copyWithin(0, 3);
+                    }
+                    lastTrailAddPos.copy(currentTrackPos);
                 }
-                lastTrailAddPos.copy(currentTrackPos);
-            }
 
-            // Stretch the active tip of the trail to the current smooth plane position
-            trailPositions[trailCount * 3] = currentTrackPos.x;
-            trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
-            trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
-            trailGeo.setDrawRange(0, trailCount + 1);
-            trailGeo.attributes.position.needsUpdate = true;
+                // Stretch the active tip of the trail to the current smooth plane position
+                trailPositions[trailCount * 3] = currentTrackPos.x;
+                trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
+                trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
+                trailGeo.setDrawRange(0, trailCount + 1);
+                trailGeo.attributes.position.needsUpdate = true;
+            }
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
                 m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
