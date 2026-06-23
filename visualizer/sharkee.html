@@ -1093,7 +1093,13 @@
                     vtolGroup.updateMatrixWorld(true);
                     trackPoint.getWorldPosition(currentTrackPos);
                     lastPlanePos.copy(targetPos);
-                    lastTrailAddPos.copy(rawTargetPos);
+                    lastTrailAddPos.copy(currentTrackPos);
+                    
+                    // Seed the very first point of the array to prevent origin (0,0,0) spikes on refresh
+                    trailPositions[0] = currentTrackPos.x;
+                    trailPositions[1] = currentTrackPos.y;
+                    trailPositions[2] = currentTrackPos.z;
+                    
                     firstPos = true;
                 }
 
