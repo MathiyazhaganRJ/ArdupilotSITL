@@ -84,11 +84,8 @@
         // Create the Plane Entity (A glowing dot)
         const planeEntity = viewer.entities.add({
             name: 'Shark Hawk',
-            position: Cesium.Cartesian3.fromDegrees(0, 0, 0),
-            orientation: Cesium.Transforms.headingPitchRollQuaternion(
-                Cesium.Cartesian3.fromDegrees(0, 0, 0),
-                new Cesium.HeadingPitchRoll(0, 0, 0)
-            ),
+            position: new Cesium.CallbackProperty(() => currentCartesianPos, false),
+            orientation: new Cesium.CallbackProperty(() => currentQuatOrientation, false),
             point: {
                 pixelSize: 15,
                 color: Cesium.Color.LIME,
@@ -138,6 +135,10 @@
         let lastRenderTime = Date.now();
         let lastTrailAddPos = new Cesium.Cartesian3();
 
+        // Globals for CallbackProperty
+        let currentCartesianPos = Cesium.Cartesian3.fromDegrees(0, 0, 0);
+        let currentQuatOrientation = Cesium.Quaternion.IDENTITY;
+
         // High-Frame-Rate Smooth Interpolation (Lerp)
         viewer.scene.preUpdate.addEventListener(function(scene, time) {
             if (!hasHome) return;
@@ -162,18 +163,17 @@
             smoothYaw += dyaw * lerp;
 
             // Apply Smooth Position
-            const position = Cesium.Cartesian3.fromDegrees(smoothLon, smoothLat, smoothAlt);
-            planeEntity.position = position;
+            currentCartesianPos = Cesium.Cartesian3.fromDegrees(smoothLon, smoothLat, smoothAlt);
 
             // Apply Smooth Orientation
             const hpr = new Cesium.HeadingPitchRoll(smoothYaw - Math.PI/2, smoothPitch, smoothRoll);
-            planeEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+            currentQuatOrientation = Cesium.Transforms.headingPitchRollQuaternion(currentCartesianPos, hpr);
 
             // Add to 3D Track history only if we moved more than 1 meter (prevents array bloat)
-            if (Cesium.Cartesian3.distance(position, lastTrailAddPos) > 1.0) {
-                pathPositions.push(position);
+            if (Cesium.Cartesian3.distance(currentCartesianPos, lastTrailAddPos) > 1.0) {
+                pathPositions.push(currentCartesianPos);
                 if (pathPositions.length > 500) pathPositions.shift();
-                lastTrailAddPos = position;
+                lastTrailAddPos = currentCartesianPos;
             }
         });
 
