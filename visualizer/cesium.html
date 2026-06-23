@@ -100,11 +100,8 @@
             name: 'Flight Track',
             polyline: {
                 positions: new Cesium.CallbackProperty(() => pathPositions, false),
-                width: 5,
-                material: new Cesium.PolylineGlowMaterialProperty({
-                    glowPower: 0.2,
-                    color: Cesium.Color.LIME
-                })
+                width: 1.5,
+                material: Cesium.Color.LIME
             }
         });
 
