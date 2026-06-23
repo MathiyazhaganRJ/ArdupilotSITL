@@ -37,10 +37,17 @@ try:
             if len(values) >= 13:
                 thrust_kg = float(values[6]) * 0.453592
                 rpm = float(values[7])
-                power_watts = float(values[8]) * 745.7 # Convert HP to Watts
+                
+                # JSBSim 'power-hp' is MECHANICAL SHAFT POWER. It inherently includes
+                # propeller aerodynamic efficiency losses (via the APC tables).
+                # However, it does NOT include motor electrical heat loss or ESC efficiency.
+                # To find true battery draw, we divide the shaft power by the electrical efficiency (~85%).
+                mechanical_watts = float(values[8]) * 745.7 # Convert HP to Watts
+                electrical_watts = mechanical_watts / 0.85  # Factoring in 85% electrical efficiency
+                
                 l_over_d = (lift_kg / drag_kg) if drag_kg > 0 else 0.0
                 g_force = -float(values[12]) # JSBSim Z is down, so invert to make +1G upright
-                output_str += f" || Thrust: {thrust_kg:5.2f} kg | Power: {power_watts:5.0f} W | RPM: {rpm:4.0f} | L/D: {l_over_d:5.1f} | G-Force: {g_force:5.2f} G"
+                output_str += f" || Thrust: {thrust_kg:5.2f} kg | Batt Drain: {electrical_watts:5.0f} W | RPM: {rpm:4.0f} | L/D: {l_over_d:5.1f} | G-Force: {g_force:5.2f} G"
                 
             print(output_str)
         else:
