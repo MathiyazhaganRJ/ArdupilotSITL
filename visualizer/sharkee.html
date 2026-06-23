@@ -1107,9 +1107,17 @@
                     } else {
                         trailPositions.copyWithin(0, 3);
                     }
+                    // Lock the historical point
                     trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
                     trailPositions[trailCount * 3 - 1] = rawTargetPos.z;
+                    
+                    // Crucial: Update the active tip so it doesn't default to 0,0,0!
+                    // Without this, waking up the browser causes permanent origin spikes!
+                    trailPositions[trailCount * 3] = rawTargetPos.x;
+                    trailPositions[trailCount * 3 + 1] = rawTargetPos.y;
+                    trailPositions[trailCount * 3 + 2] = rawTargetPos.z;
+                    
                     lastTrailAddPos.copy(rawTargetPos);
                 }
 
