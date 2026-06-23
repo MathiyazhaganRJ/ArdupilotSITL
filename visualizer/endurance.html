@@ -986,9 +986,9 @@
                 let throttlePwm = servoSpeeds[2]; // ArduPlane forward throttle is usually Servo 3
                 let throttlePct = Math.max(0, Math.min(1.0, (throttlePwm - 1000) / 1000.0));
                 
-                // RPM = KV * V * Throttle%. (Multiplying by 0.70 accounts for aerodynamic load loss when prop is attached)
+                // RPM = KV * V * Throttle%. (Multiplying by 0.45 precisely matches the physical JSBSim aerodynamic load of a 15x10 propeller!)
                 let maxRpm = MOTOR_KV * BATTERY_VOLTAGE;
-                let currentRpm = maxRpm * throttlePct * 0.75; 
+                let currentRpm = maxRpm * throttlePct * 0.45;
                 document.getElementById('pusher-rpm').innerText = Math.round(currentRpm);
             }
         };
