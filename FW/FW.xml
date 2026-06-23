@@ -337,12 +337,23 @@
 
  <!-- Output telemetry directly from JSBSim to server.py -->
  <output name="127.0.0.1" type="SOCKET" port="8999" protocol="UDP" rate="10">
+  <!-- Aerodynamics -->
   <property> forces/fwz-aero-lbs </property> <!-- Lift (Negative Z) -->
   <property> forces/fwx-aero-lbs </property> <!-- Drag (Negative X) -->
   <property> aero/alpha-deg </property>
   <property> aero/beta-deg </property>
   <property> velocities/ve-kts </property>
+  
+  <!-- Propulsion -->
+  <property> propulsion/engine[0]/thrust-lbs </property>
+  <property> propulsion/engine[0]/propeller-rpm </property>
   <property> propulsion/engine[0]/power-hp </property>
+  
+  <!-- Atmosphere & Environment -->
+  <property> atmosphere/wind-mag-fps </property>
+  <property> atmosphere/wind-down-fps </property>
+  <property> atmosphere/rho-slugs_ft3 </property>
+  <property> accelerations/n-pilot-z-norm </property>
  </output>
 
 </fdm_config>
