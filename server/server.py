@@ -5,7 +5,7 @@ import threading
 import http.server
 import socketserver
 import os
-import webbrowser
+import webview
 from pymavlink import mavutil
 
 MAVLINK_URL = 'udpin:127.0.0.1:14551'
@@ -101,13 +101,39 @@ def start_http_server():
 async def main():
     # Start the HTTP server in the background
     threading.Thread(target=start_http_server, daemon=True).start()
-    
-    # Auto-open the visualizer in the default browser after 1 second
-    threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:8000/shark.html')).start()
 
     server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
     print("WebSocket Server started on port 8766")
     await asyncio.gather(server.wait_closed(), mavlink_listener())
 
+def start_asyncio_loop():
+    # Set up a new event loop for this background thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(main())
+
+class Api:
+    def open_cesium(self):
+        webview.create_window(
+            'Cesium 3D Terrain Map', 
+            'http://127.0.0.1:8000/cesium.html', 
+            width=1280, 
+            height=720,
+            background_color='#000000'
+        )
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    api = Api()
+    # 1. Start the asyncio background logic (MAVLink + WebSockets + HTTP server) in a separate thread
+    threading.Thread(target=start_asyncio_loop, daemon=True).start()
+    
+    # 2. Launch the native desktop window on the main thread
+    window = webview.create_window(
+        'Shark Hawk Digital Twin', 
+        'http://127.0.0.1:8000/sharkee.html', 
+        js_api=api,
+        width=1280, 
+        height=720,
+        background_color='#000000'
+    )
+    webview.start()
