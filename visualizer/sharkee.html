@@ -929,33 +929,43 @@
                         // Place a placeholder immediately to prevent multiple fetches
                         mapTiles.set(key, true);
 
-                        // Use Google Pure Satellite (lyrs=s means NO labels, pure earth photograph)
-                        const url = `https://mt1.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        // Cycle through Google's 4 tile servers (mt0 to mt3) to bypass rate limiting
+                        const mt = Math.abs(tx + ty) % 4;
+                        const url = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
 
                         const loader = new THREE.TextureLoader();
                         loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
-                        loader.load(url, (texture) => {
-                            texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
-                            texture.encoding = THREE.sRGBEncoding; // Fixes hazy/washed-out map colors
-                            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                            const mat = new THREE.MeshBasicMaterial({
-                                map: texture,
-                                side: THREE.DoubleSide,
-                                depthWrite: false, // Prevents airplane from sinking into the map!
-                                fog: false // Keeps the satellite imagery 100% vibrant all the way to the horizon
-                            });
-                            const mesh = new THREE.Mesh(geo, mat);
-                            mesh.renderOrder = -1; // Force the map to render as a background layer
-                            mesh.rotation.x = -Math.PI / 2;
+                        loader.load(
+                            url, 
+                            (texture) => {
+                                texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
+                                texture.encoding = THREE.sRGBEncoding; // Fixes hazy/washed-out map colors
+                                const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                                const mat = new THREE.MeshBasicMaterial({
+                                    map: texture,
+                                    side: THREE.DoubleSide,
+                                    depthWrite: false, // Prevents airplane from sinking into the map!
+                                    fog: false // Keeps the satellite imagery 100% vibrant all the way to the horizon
+                                });
+                                const mesh = new THREE.Mesh(geo, mat);
+                                mesh.renderOrder = -1; // Force the map to render as a background layer
+                                mesh.rotation.x = -Math.PI / 2;
 
-                            // Align perfectly with Three.js origin (which is the Home Launch Point)
-                            // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
-                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                            mesh.position.y = -2; // Render just below the telemetry grid
+                                // Align perfectly with Three.js origin (which is the Home Launch Point)
+                                // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
+                                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                                mesh.position.y = -2; // Render just below the telemetry grid
 
-                            mapGroup.add(mesh);
-                        });
+                                mapGroup.add(mesh);
+                            },
+                            undefined, // onProgress
+                            (err) => {
+                                // If tile fetch fails (e.g., rate limit or network drop), remove the placeholder 
+                                // so it can try fetching again in the next frame
+                                mapTiles.delete(key);
+                            }
+                        );
                     }
                 }
             }
