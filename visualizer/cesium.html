@@ -64,6 +64,19 @@
         // =======================================================
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4NTc5NWQ2Yy1lYWE3LTQ1OWQtOTY5Ny0xOGVmZmNiY2YzNjAiLCJpZCI6NDQ2ODYzLCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODE5NTAxNTJ9.JtfASsFfn58fvA0pTntiGdSorfIa57daBrrkar3Td1k';
 
+        // =======================================================
+        // VEHICLE MODEL CONFIGURATION
+        // =======================================================
+        const CONFIG = {
+            modelFile: '',  // Set to '' (empty string) to use a simple glowing dot instead
+            modelScale: 0.001,                // Use 0.001 for Fusion 360 mm, 1.0 for meters
+            modelRotation: {                  // Base CAD model orientation correction (in degrees)
+                roll: 0,
+                pitch:90,
+                yaw: 90,
+            }
+        };
+
         // Initialize the Cesium Viewer with 3D Terrain
         const viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: Cesium.createWorldTerrain(),
@@ -86,17 +99,24 @@
         viewer.scene.msaaSamples = 4;
         viewer.scene.postProcessStages.fxaa.enabled = true;
 
-        // Create the Plane Entity (A glowing dot)
+        // Create the Plane Entity (Using the actual 3D Digital Twin model!)
         const planeEntity = viewer.entities.add({
-            name: 'Shark Hawk',
+            name: 'UAV',
             position: new Cesium.CallbackProperty(() => currentCartesianPos, false),
             orientation: new Cesium.CallbackProperty(() => currentQuatOrientation, false),
-            point: {
+            model: CONFIG.modelFile ? {
+                uri: CONFIG.modelFile,
+                minimumPixelSize: 32,
+                maximumScale: 20000,
+                scale: CONFIG.modelScale 
+            } : undefined,
+            // If no model is provided, use a simple green dot
+            point: !CONFIG.modelFile ? {
                 pixelSize: 15,
                 color: Cesium.Color.LIME,
                 outlineColor: Cesium.Color.BLACK,
                 outlineWidth: 2
-            }
+            } : undefined
         });
 
         // Create the 3D Flight Track (Trail)
@@ -184,8 +204,32 @@
             currentCartesianPos = Cesium.Cartesian3.fromDegrees(smoothLon, smoothLat, smoothAlt);
 
             // Apply Smooth Orientation
-            const hpr = new Cesium.HeadingPitchRoll(smoothYaw - Math.PI/2, smoothPitch, smoothRoll);
-            currentQuatOrientation = Cesium.Transforms.headingPitchRollQuaternion(currentCartesianPos, hpr);
+            // 1. Flight orientation from ArduPilot (Relative to Earth)
+            const flightHpr = new Cesium.HeadingPitchRoll(smoothYaw, smoothPitch, smoothRoll);
+            const flightQuat = Cesium.Transforms.headingPitchRollQuaternion(currentCartesianPos, flightHpr);
+            
+            // 2. Base Rotation (Intrinsic)
+            let pOffset = 0, rOffset = 0, yOffset = 0;
+            if (CONFIG.modelFile) {
+                pOffset = CONFIG.modelRotation.pitch;
+                rOffset = CONFIG.modelRotation.roll;
+                yOffset = -CONFIG.modelRotation.yaw;
+            } else {
+                // The default 3D Cone points straight UP (+Z) natively.
+                // We must pitch it exactly 90 degrees so it points FORWARD (+Y).
+                pOffset = 90; 
+            }
+
+            const qPitch = Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_X, pOffset * Math.PI / 180);
+            const qRoll = Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Y, rOffset * Math.PI / 180);
+            const qYaw = Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Z, yOffset * Math.PI / 180);
+            
+            let cadQuat = new Cesium.Quaternion();
+            Cesium.Quaternion.multiply(qYaw, qPitch, cadQuat);
+            Cesium.Quaternion.multiply(cadQuat, qRoll, cadQuat);
+            
+            // 3. Multiply (flightQuat * cadQuat) applies the offset intrinsically
+            Cesium.Quaternion.multiply(flightQuat, cadQuat, currentQuatOrientation);
 
             // Add to 3D Track history only if we moved more than 1 meter
             if (Cesium.Cartesian3.distance(currentCartesianPos, lastTrailAddPos) > 1.0) {
