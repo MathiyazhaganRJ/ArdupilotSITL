@@ -68,7 +68,10 @@
         // VEHICLE MODEL CONFIGURATION
         // =======================================================
         const CONFIG = {
-            modelFile: '',  // Set to '' (empty string) to use a simple glowing dot instead
+            // Set to a file path (e.g., 'models/Sharkee.glb') to load a 3D CAD model.
+            // If you set this, the green sphere is automatically hidden and replaced by your model!
+            // Set to '' (empty string) to revert back to the lightweight green sphere marker.
+            modelFile: '',  
             modelScale: 0.001,                // Use 0.001 for Fusion 360 mm, 1.0 for meters
             modelRotation: {                  // Base CAD model orientation correction (in degrees)
                 roll: 0,
