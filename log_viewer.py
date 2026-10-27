@@ -203,6 +203,13 @@ def start_asyncio_loop(api_instance):
     loop.run_until_complete(main(api_instance))
 
 if __name__ == "__main__":
+    import argparse
+    import webbrowser
+
+    parser = argparse.ArgumentParser(description="ArduPilot Log Viewer")
+    parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
+    args = parser.parse_args()
+
     # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
     try:
         import ctypes
@@ -213,14 +220,46 @@ if __name__ == "__main__":
     icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app_icon.ico')
 
     api = Api()
-    window = webview.create_window(
-        'Ardupilot Log Viewer', 
-        f'http://127.0.0.1:8000/log_viewer.html?ts={time.time()}', 
-        width=1280, 
-        height=720,
-        background_color='#000000',
-        js_api=api
-    )
-    threading.Thread(target=start_asyncio_loop, args=(api,), daemon=True).start()
-    webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+
+    if args.headless:
+        print("\n[Server] Running in Headless Server Mode (--headless).")
+        print("[Visualizer] Open in your browser at: http://127.0.0.1:8000/log_viewer.html\n")
+        try:
+            webbrowser.open("http://127.0.0.1:8000/log_viewer.html")
+        except Exception:
+            pass
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(main(api))
+        except KeyboardInterrupt:
+            print("\nShutting down log viewer.")
+    else:
+        server_thread = threading.Thread(target=start_asyncio_loop, args=(api,), daemon=True)
+        server_thread.start()
+
+        try:
+            window = webview.create_window(
+                'Ardupilot Log Viewer', 
+                f'http://127.0.0.1:8000/log_viewer.html?ts={time.time()}', 
+                width=1280, 
+                height=720,
+                background_color='#000000',
+                js_api=api
+            )
+            webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+        except Exception as e:
+            print(f"\n[Notice] Native GUI window could not be started: {e}")
+            print("[Server] Falling back to Headless Server Mode.")
+            print("[Visualizer] Access in your browser at: http://127.0.0.1:8000/log_viewer.html\n")
+            try:
+                webbrowser.open("http://127.0.0.1:8000/log_viewer.html")
+            except Exception:
+                pass
+            try:
+                while server_thread.is_alive():
+                    server_thread.join(timeout=1.0)
+            except KeyboardInterrupt:
+                print("\nShutting down log viewer.")
+
 

@@ -123,6 +123,13 @@ class Api:
         )
 
 if __name__ == "__main__":
+    import argparse
+    import webbrowser
+
+    parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
+    parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
+    args = parser.parse_args()
+
     # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
     try:
         import ctypes
@@ -133,17 +140,48 @@ if __name__ == "__main__":
     icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app_icon.ico')
 
     api = Api()
-    # 1. Start the asyncio background logic (MAVLink + WebSockets + HTTP server) in a separate thread
-    threading.Thread(target=start_asyncio_loop, daemon=True).start()
-    
-    # 2. Launch the native desktop window on the main thread
-    window = webview.create_window(
-        'Shark Hawk Digital Twin', 
-        'http://127.0.0.1:8000/sharkee.html', 
-        js_api=api,
-        width=1280, 
-        height=720,
-        background_color='#000000'
-    )
-    webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+
+    if args.headless:
+        print("\n[Server] Running in Headless Server Mode (--headless).")
+        print("[Visualizer] Open in your browser at: http://127.0.0.1:8000/sharkee.html\n")
+        try:
+            webbrowser.open("http://127.0.0.1:8000/sharkee.html")
+        except Exception:
+            pass
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(main())
+        except KeyboardInterrupt:
+            print("\nShutting down server.")
+    else:
+        # 1. Start the asyncio background logic (MAVLink + WebSockets + HTTP server) in a separate thread
+        server_thread = threading.Thread(target=start_asyncio_loop, daemon=True)
+        server_thread.start()
+        
+        # 2. Launch the native desktop window on the main thread (with fallback if GTK/QT unavailable in WSL)
+        try:
+            window = webview.create_window(
+                'Shark Hawk Digital Twin', 
+                'http://127.0.0.1:8000/sharkee.html', 
+                js_api=api,
+                width=1280, 
+                height=720,
+                background_color='#000000'
+            )
+            webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+        except Exception as e:
+            print(f"\n[Notice] Native GUI window could not be started: {e}")
+            print("[Server] Falling back to Headless Server Mode.")
+            print("[Visualizer] Access in your browser at: http://127.0.0.1:8000/sharkee.html\n")
+            try:
+                webbrowser.open("http://127.0.0.1:8000/sharkee.html")
+            except Exception:
+                pass
+            try:
+                while server_thread.is_alive():
+                    server_thread.join(timeout=1.0)
+            except KeyboardInterrupt:
+                print("\nShutting down server.")
+
 
