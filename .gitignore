@@ -38,3 +38,10 @@ VPlane/
 VTOL/
 jsbsim_listener.py
 
+# Scratch / temporary scripts
+patch_*.py
+view.py
+test.js
+log_viewer_test.py
+
+

@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>VTOL Visualizer</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="app_icon.png">
+    <link rel="apple-touch-icon" href="app_icon.png">
     <style>
         :root {
             --bg-color: #f5f5f7;
@@ -252,7 +255,10 @@
 <body>
     <div id="ui-panel">
         <div class="header">
-            <h2>ArduPilot SITL</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="app_icon.png" alt="ArduPilot Mascot" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
+                <h2>ArduPilot SITL</h2>
+            </div>
             <button id="theme-toggle" class="icon-btn">🌙</button>
         </div>
 

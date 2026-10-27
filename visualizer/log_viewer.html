@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ArduPilot Log Viewer</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="app_icon.png">
+    <link rel="apple-touch-icon" href="app_icon.png">
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            --accent: #0071e3;
+            --motor-bg: #e5e5ea;
+            --btn-bg: rgba(0, 0, 0, 0.05);
+            --btn-hover: rgba(0, 0, 0, 0.1);
+            --danger: #ff3b30;
+            --success: #34c759;
+            --option-bg: #ffffff;
+            --option-text: #000000;
+        }
+
+        body.dark-mode {
+            --bg-color: #000000;
+            --panel-bg: rgba(28, 28, 30, 0.75);
+            --text-primary: #f5f5f7;
+            --text-secondary: #98989d;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --accent: #0a84ff;
+            --motor-bg: #3a3a3c;
+            --btn-bg: rgba(255, 255, 255, 0.1);
+            --btn-hover: rgba(255, 255, 255, 0.15);
+            --danger: #ff453a;
+            --success: #30d158;
+            --option-bg: #1c1c1e;
+            --option-text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 260px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        .icon-btn {
+            background: var(--btn-bg);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            color: var(--text-primary);
+        }
+
+        .icon-btn:hover {
+            background: var(--btn-hover);
+        }
+
+        .data-card {
+            background: var(--btn-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .data-val {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 20px 0 10px 0;
+        }
+
+        select {
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            outline: none;
+            width: 100px;
+        }
+
+        option {
+            background-color: var(--option-bg);
+            color: var(--option-text);
+        }
+
+        .map-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .motor-bar-container {
+            display: flex;
+            justify-content: space-between;
+            height: 85px;
+            margin-top: 10px;
+        }
+
+        .motor-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pwm-label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .motor-bar-bg {
+            width: 14px;
+            height: 50px;
+            background: var(--motor-bg);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .motor-bar-fill {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background: var(--success);
+            transition: height 0.1s, background 0.2s;
+            border-radius: 7px;
+        }
+
+        .motor-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            background: var(--btn-bg);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 6px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-active {
+            background: var(--panel-bg);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .floating-toolbar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 200;
+        }
+
+        .toolbar-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            font-size: 16px;
+            padding: 0;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+    
+        #timeline-container { 
+            position: absolute; 
+            bottom: 20px; 
+            left: 350px; 
+            right: 500px; 
+            background: var(--panel-bg); 
+            padding: 15px 20px; 
+            border-radius: 12px; 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            z-index: 10; 
+            box-shadow: var(--shadow); 
+        }
+        .timeline-controls { display: flex; align-items: center; gap: 15px; }
+        input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+
+<body>
+    <!-- Floating Toolbar -->
+    <div class="floating-toolbar">
+        <button class="toolbar-btn" id="btn-open-cesium" title="Open 3D Terrain Map (Cesium)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-ui" title="Toggle Control Panel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-graph" title="Toggle Terrain Profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-trace" title="Toggle Flight Trace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+    </div>
+
+    <div id="ui-panel">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="app_icon.png" alt="ArduPilot Mascot" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
+                <h2>ArduPilot SITL</h2>
+            </div>
+            <button id="btn-load-log" class="icon-btn" style="width: auto; padding: 0 12px; border-radius: 8px; font-weight: 600; background: var(--accent); color: #fff; border: none; cursor: pointer; z-index: 999;">Load Log</button>
+            <button id="theme-toggle" class="icon-btn">🌙</button>
+        </div>
+
+
+        <div class="data-card">
+            <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
+                    style="color: var(--danger);">Offline</span></div>
+            <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
+                    style="color: var(--text-secondary);">---</span></div>
+            <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
+                    style="color: var(--accent);">UNKNOWN</span></div>
+            <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
+            </div>
+            <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
+                    m/s</span></div>
+            <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
+                    m/s</span></div>
+            <div class="data-row"><span class="data-label">RPM (Cruise)</span><span id="pusher-rpm" class="data-val"
+                    style="color: var(--success);">0</span></div>
+        </div>
+
+        <div class="section-title">Vehicle Config</div>
+        <!-- 
+          TIP: To hide a vehicle configuration from the user without deleting the code,
+          add the words "hidden disabled" inside the <option> tag.
+          This hides it from the menu and prevents the browser from selecting it by default!
+           <option value="quad" hidden disabled>Quadcopter</option>
+        -->
+        <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
+            <option value="vtol">QuadPlane (VTOL)</option>
+            <option value="plane">Fixed Wing (Pusher)</option>
+            <option value="twin">Twin Engine (Fixed Wing)</option>
+            <option value="quad">Quadcopter</option>
+            <option value="y3">Y3 Tilt-Rotor</option>
+        </select>
+
+        <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
+            <div class="map-row" style="margin: 0;">
+                <span>Model Scale</span>
+                <input type="number" id="scale_input" value="1.0" step="0.1"
+                    style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+            </div>
+        </div>
+
+        <div class="data-card">
+            <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
+            <div id="map-vtol">
+                <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
+                <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
+                <div class="map-row">Motor 3 (FL) <select id="m_fl"></select></div>
+                <div class="map-row">Motor 4 (BR) <select id="m_br"></select></div>
+                <div class="map-row quad-tilt-ui">Tilt Servo (Right) <select id="m_quad_tilt_r"></select></div>
+                <div class="map-row quad-tilt-ui">Tilt Servo (Left) <select id="m_quad_tilt_l"></select></div>
+            </div>
+            <div id="map-single" class="map-row">Cruise <select id="m_push"></select></div>
+            <div id="map-twin" style="display: none;">
+                <div class="map-row">Left Cruise <select id="m_twin_l"></select></div>
+                <div class="map-row">Right Cruise <select id="m_twin_r"></select></div>
+            </div>
+            <div id="map-y3" style="display: none;">
+                <div class="map-row">M1 (FR Tilt) <select id="m_y3_fr"></select></div>
+                <div class="map-row">M2 (FL Tilt) <select id="m_y3_fl"></select></div>
+                <div class="map-row">M3 (Rear) <select id="m_y3_r"></select></div>
+                <div class="map-row">Tilt Servo (Right) <select id="m_y3_tilt_r"></select></div>
+                <div class="map-row">Tilt Servo (Left) <select id="m_y3_tilt_l"></select></div>
+            </div>
+        </div>
+
+        <div class="section-title">Motors</div>
+        <div class="motor-bar-container" id="motor-bars"></div>
+
+        <div
+            style="margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
+            Designed by RJ
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-follow" class="mode-btn btn-active">Follow</button>
+            <button id="btn-free" class="mode-btn">Free</button>
+            <button id="btn-data" class="mode-btn" style="margin-left: 20px;">All Data</button>
+        </div>
+    </div>
+    </div>
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container"
+        style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        <div
+            style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
+            <span>Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+        </div>
+        <canvas id="terrain-canvas" style="width: 100%; height: 100%;"></canvas>
+    </div>
+
+    <div id="timeline-container">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary);">
+            <span>Start</span>
+            <span id="timeline-pct">0%</span>
+            <span>End</span>
+        </div>
+        <div class="timeline-controls" style="position:relative;">
+            <button class="icon-btn" id="btn-play-pause" style="width: 60px; border-radius: 6px;">Play</button>
+            
+            <div style="flex:1; position:relative; display:flex; align-items:center;">
+                <div id="scrubber-bg" style="position:absolute; width:100%; height:6px; border-radius:3px; background:rgba(255,255,255,0.2); z-index:0; pointer-events:none;"></div>
+                <input type="range" id="scrubber" min="0" max="100" value="0" step="1" style="flex:1; z-index:1; margin:0; opacity:0; cursor:pointer;">
+                <div id="scrubber-thumb" style="position:absolute; width:12px; height:12px; background:var(--accent); border-radius:50%; z-index:2; pointer-events:none; left:0%; transform:translateX(-50%); box-shadow:0 0 8px var(--accent);"></div>
+            </div>
+
+            <select style="background: var(--btn-bg); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px;" id="playback-speed">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1.0x</option>
+                <option value="2">2.0x</option>
+                <option value="4">4.0x</option>
+                <option value="10">10.0x</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.onclick = () => {
+            const isDark = document.body.classList.contains('dark-mode');
+            if (isDark) {
+                document.body.classList.remove('dark-mode');
+                themeToggle.innerText = '🌙';
+            } else {
+                document.body.classList.add('dark-mode');
+                themeToggle.innerText = '☀️';
+            }
+            updateSceneTheme();
+        };
+
+        // UI Panel Toggles
+        
+        document.getElementById('btn-load-log').onclick = async () => {
+            if (window.pywebview) {
+                const res = await window.pywebview.api.load_log();
+                if (res && res.file) {
+                    document.getElementById('status').innerText = "Parsing...";
+                    document.getElementById('status').style.color = "var(--accent)";
+                }
+            }
+        };
+
+        const btnOpenCesium = document.getElementById('btn-open-cesium');
+        btnOpenCesium.onclick = () => {
+            if (window.pywebview) {
+                // If running in the Python Desktop App, tell Python to spawn a new native window
+                window.pywebview.api.open_cesium();
+            } else {
+                // If running in a normal web browser, open a new tab
+                window.open("cesium.html", "_blank");
+            }
+        };
+
+        const btnToggleUi = document.getElementById('btn-toggle-ui');
+        const uiPanel = document.getElementById('ui-panel');
+        btnToggleUi.onclick = () => {
+            uiPanel.style.display = uiPanel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        const btnToggleGraph = document.getElementById('btn-toggle-graph');
+        const graphContainer = document.getElementById('terrain-graph-container');
+        btnToggleGraph.onclick = () => {
+            graphContainer.style.display = graphContainer.style.display === 'none' ? 'flex' : 'none';
+        };
+
+        const btnToggleTrace = document.getElementById('btn-toggle-trace');
+        btnToggleTrace.onclick = () => {
+            if (trailLine) {
+                trailLine.visible = !trailLine.visible;
+                const eye = btnToggleTrace.querySelector('svg');
+                if (trailLine.visible) {
+                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    btnToggleTrace.style.opacity = '1.0';
+                } else {
+                    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                    btnToggleTrace.style.opacity = '0.5';
+                }
+            }
+        };
+
+        const scene = new THREE.Scene();
+        let gridHelper;
+
+        function updateSceneTheme() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const bgHex = isDark ? 0x000000 : 0xf5f5f7;
+            const grid1 = isDark ? 0x333336 : 0xd2d2d7;
+            const grid2 = isDark ? 0x1c1c1e : 0xe5e5ea;
+
+            scene.background = new THREE.Color(bgHex);
+            // Push fog back to 10km so macro-level flight paths stay visible
+            scene.fog = new THREE.Fog(bgHex, 1000, 10000);
+
+            if (gridHelper) scene.remove(gridHelper);
+            // Grid removed because the dynamic map now provides spatial reference
+        }
+        updateSceneTheme();
+
+        // Increase far clipping plane to 50km
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 50000);
+        camera.position.set(0, 3, 6);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding; // Ensures CAD colors aren't overly vibrant
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Home Location Marker ---
+        const homeRingGeo = new THREE.RingGeometry(0.8, 1.2, 32);
+        const homeRingMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 1.0 });
+        const homeRing = new THREE.Mesh(homeRingGeo, homeRingMat);
+        homeRing.rotation.x = -Math.PI / 2;
+        homeRing.position.y = -0.99; // Hover just slightly above the grid
+        scene.add(homeRing);
+
+        const vtolGroup = new THREE.Group();
+        vtolGroup.rotation.order = 'YXZ';
+        scene.add(vtolGroup);
+
+        const matBody = new THREE.MeshPhongMaterial({ color: 0x0071e3 });
+        // matCarbon moved below CONFIG so it can use CONFIG.vtolBoomColor
+
+        const aeroGroup = new THREE.Group();
+        vtolGroup.add(aeroGroup);
+
+        // ==========================================
+        // AIRCRAFT GEOMETRY CONFIGURATION
+        // ==========================================
+        const CONFIG = {
+            modelFile: 'models/Sharkee.glb',
+            modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
+            modelRotation: { roll: 0, pitch: 90, yaw: 180 }, // Intuitive Aviation Degrees
+
+            // --- SOFTWARE CG SHIFT ---
+            // If your Fusion 360 model pitches around the nose instead of the CG, use these values to slide the 3D model backwards/forwards!
+            cgOffset: { x: 0.1, y: 0, z: 0 },
+            showPivotAxis: false, // Set to true to draw a giant XYZ axis at the true rotation pivot point. Use this to align your cgOffset!
+
+            useOriginalLivery: true, // Set to true to use Fusion 360 colors, false to use a solid color
+            modelColor: 0xeeeeee, // Experimental Matte White Livery
+
+            cruisePropColor: 0x34c759, // Green
+            cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
+            cruisePropBlades: 2,  // Number of blades for cruise propellers
+            cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
+            pusherPos: { x: 0.65, y: 0, z: -0.05 }, // Tail pusher propeller
+
+            twinMotorDia: 0.02,   // Diameter of twin engine nacelle
+            twinMotorLength: 0.1, // Length of twin engine nacelle
+            twinPosL: { x: -0.1, y: -0.4, z: 0.03 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.1, y: 0.4, z: 0.03 },  // Right twin engine
+            twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
+
+            vtolPropColor: 0xff9500, // Orange
+            vtolPropDia: 0.3, // Diameter of the quad propellers
+            vtolPropBlades: 2, // Number of blades for VTOL propellers
+            vtolPropDir: [1, 0, 0, 1], // 0=CW, 1=CCW for [FrontRight, FrontLeft, BackRight, BackLeft] (Default Quad-X)
+            vtolBoomZ: -0.01, // Z-level of VTOL booms (negative = below wing)
+            vtolBoomXOffset: -0.25, // X-offset for entire boom (shift forward/backward)
+            vtolArmY: 0.35,    // Y-distance from centerline to boom
+            vtolMotorX: -0.4,  // X-distance from Boom Center to front/back quad motor
+            vtolMotorDia: 0.08, // Physical diameter of the motor cylinder mesh
+            vtolMotorHeight: 0.06, // Physical height of the motor cylinder mesh
+            vtolBoomColor: 0x333333, // Color of the Carbon Fiber booms and motor cylinders
+
+            // --- CUSTOM HARDWARE OPTIONS ---
+            drawVtolBooms: true, // Set to false if your Fusion 360 model already has the carbon booms and motors drawn!
+            enableTiltRotors: false, // Set to true to tilt the front two VTOL motors forward for forward flight
+            tiltServoChannel: 8, // The ArduPilot RC output channel controlling the quad tilt servo (1-indexed, so 8 = CH8)
+            tiltMaxAngle: 0, // Degrees to tilt forward when servo is at maximum forward PWM
+            tiltHoverPwm: 1500, // PWM when motor points straight UP (Use 1500 for 180-degree vectoring servos, 1000 for 90-degree servos)
+            tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
+
+            trackColor: 0xdda14, // Color of the GPS trail line
+            trackOrigin: { x: 1, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
+        };
+        // ==========================================
+
+        const matCarbon = new THREE.MeshPhongMaterial({ color: CONFIG.vtolBoomColor });
+
+        // Visual Pivot Alignment Tool
+        if (CONFIG.showPivotAxis) {
+            const pivotAxis = new THREE.AxesHelper(2.0); // 2 meters long
+            vtolGroup.add(pivotAxis);
+        }
+
+        // Helper to convert Aviation Coords to Three.js Web Coords
+        function vspToThree(pos) {
+            return new THREE.Vector3(pos.y, pos.z, pos.x); // X mappings flipped (-X Nose, +X Tail)
+        }
+
+        function createPropeller(diameter, colorHex, blades, axis = 'Z') {
+            const propGroup = new THREE.Group();
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.8 });
+            const radius = diameter / 2;
+
+            for (let i = 0; i < blades; i++) {
+                const depth = axis === 'Z' ? 0.01 : 0.02;
+                const height = axis === 'Z' ? 0.02 : 0.01;
+
+                const bladeGeo = new THREE.BoxGeometry(radius, height, depth);
+                bladeGeo.translate(radius / 2, 0, 0);
+
+                const blade = new THREE.Mesh(bladeGeo, mat);
+                if (axis === 'Z') blade.rotation.z = (i / blades) * Math.PI * 2;
+                else if (axis === 'Y') blade.rotation.y = (i / blades) * Math.PI * 2;
+
+                propGroup.add(blade);
+            }
+            return propGroup;
+        }
+
+        const trackPoint = new THREE.Object3D();
+        trackPoint.position.copy(vspToThree(CONFIG.trackOrigin));
+        vtolGroup.add(trackPoint);
+        const currentTrackPos = new THREE.Vector3();
+
+        const loader = new THREE.GLTFLoader();
+        loader.load(CONFIG.modelFile, function (gltf) {
+            const model = gltf.scene;
+
+            // Map user-friendly aviation terms (Roll, Pitch, Yaw) to proper Three.js world axes
+            model.rotation.set(
+                (CONFIG.modelRotation.pitch || 0) * Math.PI / 180, // X-axis controls Pitch
+                (CONFIG.modelRotation.yaw || 0) * Math.PI / 180,   // Y-axis controls Yaw
+                (CONFIG.modelRotation.roll || 0) * Math.PI / 180,  // Z-axis controls Roll
+                'YXZ' // Apply Yaw first, then Pitch, then Roll to prevent gimbal lock
+            );
+
+            // SOFTWARE CG SHIFT (Intuitive Aviation Mapping)
+            // X = Forward/Backward, Y = Left/Right, Z = Up/Down
+            // We map this into THREE.js coordinates (X=Right, Y=Up, Z=Back)
+            model.position.set(CONFIG.cgOffset.y, CONFIG.cgOffset.z, -CONFIG.cgOffset.x);
+
+            model.scale.set(CONFIG.modelBaseScale, CONFIG.modelBaseScale, CONFIG.modelBaseScale);
+
+            // Dynamic Model Scaling
+            function updateModelScale() {
+                let scaleVal = parseFloat(document.getElementById('scale_input').value);
+                if (isNaN(scaleVal) || scaleVal <= 0) scaleVal = 1.0; // Fallback to original size if 0 or invalid
+                vtolGroup.scale.set(scaleVal, scaleVal, scaleVal);
+            }
+            updateModelScale();
+            document.getElementById('scale_input').addEventListener('input', updateModelScale);
+
+            model.traverse(function (child) {
+                if (child.isMesh) {
+                    child.geometry.computeVertexNormals(); // Fixes black model!
+
+                    if (CONFIG.useOriginalLivery) {
+                        // Keep the original multi-color Fusion 360 materials
+                        if (child.material) {
+                            child.material.side = THREE.DoubleSide;
+                            child.material.roughness = 0.5; // Ensure it catches the light well
+                        }
+                    } else {
+                        // Override entire model with a single flat color
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: CONFIG.modelColor,
+                            roughness: 0.4,
+                            metalness: 0.3,
+                            side: THREE.DoubleSide
+                        });
+                    }
+                }
+            });
+            aeroGroup.add(model);
+        }, undefined, function (error) {
+            console.error('Error loading model:', error);
+        });
+
+        const pusherProp = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
+        const push3D = vspToThree(CONFIG.pusherPos);
+        pusherProp.position.copy(push3D);
+        vtolGroup.add(pusherProp);
+
+        const quadGroup = new THREE.Group();
+        vtolGroup.add(quadGroup);
+
+        const twinGroup = new THREE.Group();
+        vtolGroup.add(twinGroup);
+        twinGroup.visible = false;
+
+        const twinMotorL = new THREE.Mesh(new THREE.CylinderGeometry(CONFIG.twinMotorDia, CONFIG.twinMotorDia, CONFIG.twinMotorLength), matCarbon);
+        twinMotorL.rotation.x = Math.PI / 2;
+        const twinL3D = vspToThree(CONFIG.twinPosL);
+        twinMotorL.position.copy(twinL3D);
+        twinGroup.add(twinMotorL);
+        const twinPropL = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
+        twinPropL.position.set(twinL3D.x, twinL3D.y, twinL3D.z - (CONFIG.twinMotorLength / 2));
+        twinGroup.add(twinPropL);
+
+        const twinMotorR = new THREE.Mesh(new THREE.CylinderGeometry(CONFIG.twinMotorDia, CONFIG.twinMotorDia, CONFIG.twinMotorLength), matCarbon);
+        twinMotorR.rotation.x = Math.PI / 2;
+        const twinR3D = vspToThree(CONFIG.twinPosR);
+        twinMotorR.position.copy(twinR3D);
+        twinGroup.add(twinMotorR);
+        const twinPropR = createPropeller(CONFIG.cruisePropDia, CONFIG.cruisePropColor, CONFIG.cruisePropBlades, 'Z');
+        twinPropR.position.set(twinR3D.x, twinR3D.y, twinR3D.z - (CONFIG.twinMotorLength / 2));
+        twinGroup.add(twinPropR);
+
+        const props = [];
+        const xFront = CONFIG.vtolBoomXOffset + CONFIG.vtolMotorX;
+        const xBack = CONFIG.vtolBoomXOffset - CONFIG.vtolMotorX;
+        const armPositions = [
+            { x: xFront, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Front Right
+            { x: xFront, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Front Left
+            { x: xBack, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // Back Right
+            { x: xBack, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ } // Back Left
+        ];
+
+        const tiltAssemblies = []; // [0] = FR, [1] = FL
+
+        armPositions.forEach((pos, index) => {
+            const pos3D = vspToThree(pos);
+            const isFrontRotor = (index === 0 || index === 2); // 0 = FR, 2 = FL
+
+            // Create a pivot group for the entire motor assembly so it can tilt!
+            const motorAssembly = new THREE.Group();
+            motorAssembly.position.set(pos3D.x, pos3D.y, pos3D.z);
+            quadGroup.add(motorAssembly);
+
+            if (CONFIG.enableTiltRotors && isFrontRotor) {
+                tiltAssemblies.push(motorAssembly);
+            }
+
+            if (CONFIG.drawVtolBooms) {
+                const boomLength = (CONFIG.vtolMotorX * 2) + 0.05; // Auto-scale boom length to motor spread
+                const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, boomLength), matCarbon);
+                boom.rotation.x = Math.PI / 2;
+                boom.position.set(pos3D.x, pos3D.y, CONFIG.vtolBoomXOffset); // Center of boom
+                quadGroup.add(boom);
+
+                const motorRadius = CONFIG.vtolMotorDia / 2;
+                const motor = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius, motorRadius, CONFIG.vtolMotorHeight), matCarbon);
+                motor.position.set(0, CONFIG.vtolMotorHeight / 2, 0); // Position relative to assembly pivot
+                motorAssembly.add(motor);
+            }
+
+            const propColor = (CONFIG.enableTiltRotors && isFrontRotor) ? CONFIG.cruisePropColor : CONFIG.vtolPropColor;
+            const prop = createPropeller(CONFIG.vtolPropDia, propColor, CONFIG.vtolPropBlades, 'Y');
+            prop.position.set(0, CONFIG.vtolMotorHeight, 0); // Position perfectly on top of the motor
+            motorAssembly.add(prop);
+            props.push(prop);
+        });
+
+        // =====================================
+        // Y3 TILT-ROTOR ARCHITECTURE
+        // =====================================
+        const y3Group = new THREE.Group();
+        vtolGroup.add(y3Group);
+        y3Group.visible = false;
+
+        const y3Props = [];
+        const y3TiltAssemblies = [];
+
+        // Y3 positions: Front Right, Front Left, Rear Center
+        // We push the rear motor way back to x: 0.5 so it is visible behind the fuselage!
+        const y3Positions = [
+            { x: xFront, y: CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // FR
+            { x: xFront, y: -CONFIG.vtolArmY, z: CONFIG.vtolBoomZ }, // FL
+            { x: 0.1, y: 0, z: CONFIG.vtolBoomZ } // Rear
+        ];
+
+        y3Positions.forEach((pos, index) => {
+            const pos3D = vspToThree(pos);
+            const motorAssembly = new THREE.Group();
+            motorAssembly.position.set(pos3D.x, pos3D.y, pos3D.z);
+            y3Group.add(motorAssembly);
+
+            const isTiltRotor = (index === 0 || index === 1);
+            if (isTiltRotor) y3TiltAssemblies.push(motorAssembly); // Only front two motors tilt
+
+            if (CONFIG.drawVtolBooms) {
+                // If it's the rear motor, draw a boom going forward to the CG
+                if (!isTiltRotor) {
+                    const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5), matCarbon);
+                    boom.rotation.x = Math.PI / 2;
+                    boom.position.set(0, 0, -0.25); // Shift boom forward towards CG
+                    motorAssembly.add(boom);
+                }
+
+                const motorRadius = CONFIG.vtolMotorDia / 2;
+                const motor = new THREE.Mesh(new THREE.CylinderGeometry(motorRadius, motorRadius, CONFIG.vtolMotorHeight), matCarbon);
+                motor.position.set(0, CONFIG.vtolMotorHeight / 2, 0);
+                motorAssembly.add(motor);
+            }
+
+            const propColor = isTiltRotor ? CONFIG.cruisePropColor : CONFIG.vtolPropColor;
+            const prop = createPropeller(CONFIG.vtolPropDia, propColor, CONFIG.vtolPropBlades, 'Y');
+            prop.position.set(0, CONFIG.vtolMotorHeight, 0); // Position perfectly on top of the motor
+            motorAssembly.add(prop);
+            y3Props.push(prop);
+        });
+
+        // Hide quad-tilt UI if tilt is disabled
+        if (!CONFIG.enableTiltRotors) {
+            document.querySelectorAll('.quad-tilt-ui').forEach(el => el.style.display = 'none');
+        }
+
+        document.getElementById('v_type').onchange = (e) => {
+            const type = e.target.value;
+            aeroGroup.visible = (type === 'vtol' || type === 'plane' || type === 'twin' || type === 'y3');
+            quadGroup.visible = (type === 'vtol' || type === 'quad');
+            pusherProp.visible = (type === 'vtol' || type === 'plane');
+            twinGroup.visible = (type === 'twin');
+            y3Group.visible = (type === 'y3');
+
+            document.getElementById('map-vtol').style.display = (type === 'vtol') ? 'block' : 'none';
+            document.getElementById('map-single').style.display = (type === 'vtol' || type === 'plane') ? 'flex' : 'none';
+            document.getElementById('map-twin').style.display = (type === 'twin') ? 'block' : 'none';
+            document.getElementById('map-y3').style.display = (type === 'y3') ? 'block' : 'none';
+
+            if (type === 'quad') {
+                if (!quadGroup.hub) {
+                    const hub = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), matCarbon);
+                    hub.position.set(0, 0.05, -0.1);
+                    quadGroup.add(hub);
+                    quadGroup.hub = hub;
+                }
+                quadGroup.hub.visible = true;
+            } else if (quadGroup.hub) {
+                quadGroup.hub.visible = false;
+            }
+        };
+        // FORCE THE UI TO UPDATE TO THE DEFAULT SELECTION ON LOAD
+        document.getElementById('v_type').dispatchEvent(new Event('change'));
+
+        const selects = ['m_fr', 'm_bl', 'm_br', 'm_fl', 'm_push', 'm_twin_l', 'm_twin_r', 'm_y3_fr', 'm_y3_fl', 'm_y3_r', 'm_y3_tilt_r', 'm_y3_tilt_l', 'm_quad_tilt_r', 'm_quad_tilt_l'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            for (let i = 1; i <= 10; i++) {
+                const opt = document.createElement('option');
+                opt.value = i - 1; opt.innerText = "CH" + i;
+                el.appendChild(opt);
+            }
+        });
+        document.getElementById('m_fr').value = 4;
+        document.getElementById('m_bl').value = 5;
+        document.getElementById('m_br').value = 6;
+        document.getElementById('m_fl').value = 7;
+        document.getElementById('m_push').value = 2;
+        document.getElementById('m_twin_l').value = 2;
+        document.getElementById('m_twin_r').value = 2;
+        document.getElementById('m_quad_tilt_r').value = 7; // CH8
+        document.getElementById('m_quad_tilt_l').value = 8; // CH9
+
+        // Default ArduPilot Y3 Mapping
+        document.getElementById('m_y3_fr').value = 4;
+        document.getElementById('m_y3_fl').value = 6;
+        document.getElementById('m_y3_r').value = 5;
+        document.getElementById('m_y3_tilt_r').value = 7; // Tilt Servo Right on CH8
+        document.getElementById('m_y3_tilt_l').value = 8; // Tilt Servo Left on CH9
+
+        const maxTrailPoints = 100000; // 50km of tracking
+        const trailPositions = new Float32Array(maxTrailPoints * 3);
+        const trailGeo = new THREE.BufferGeometry();
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3).setUsage(THREE.DynamicDrawUsage));
+
+        // Due to Windows/ANGLE limitations, native WebGL lines are capped at 1px thickness.
+        const trailMat = new THREE.LineBasicMaterial({
+            color: CONFIG.trackColor,
+            linewidth: 4, // Ignored by Windows, works on Mac/Linux
+            transparent: true,
+            opacity: 0.9
+        });
+
+        const trailLine = new THREE.Line(trailGeo, trailMat);
+        trailLine.frustumCulled = false;
+        scene.add(trailLine);
+
+        let trailCount = 0;
+        let lastRenderTime = Date.now();
+
+        const motorBarsContainer = document.getElementById('motor-bars');
+        const uiFills = [], uiPwms = [];
+        for (let i = 0; i < 8; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'motor-bar-wrapper';
+            const pwmVal = document.createElement('div'); pwmVal.className = 'pwm-label'; pwmVal.innerText = '1000';
+            const bg = document.createElement('div'); bg.className = 'motor-bar-bg';
+            const fill = document.createElement('div'); fill.className = 'motor-bar-fill'; fill.style.height = '0%';
+            bg.appendChild(fill);
+            const lbl = document.createElement('div'); lbl.innerText = i + 1; lbl.className = 'motor-label';
+            wrapper.appendChild(pwmVal); wrapper.appendChild(bg); wrapper.appendChild(lbl);
+            motorBarsContainer.appendChild(wrapper);
+            uiFills.push(fill); uiPwms.push(pwmVal);
+        }
+
+        let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
+        document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
+        document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
+
+        // ==========================================
+        // DYNAMIC SATELLITE MAP ENGINE
+        // ==========================================
+        const mapGroup = new THREE.Group();
+        scene.add(mapGroup);
+        const mapTiles = new Map();
+        let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
+        const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Ultra High Resolution)
+
+        function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
+        function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
+
+        function updateMap(lat, lon) {
+            if (homeLat === null) {
+                if (!firstPos) return; // Wait until physics grid is established!
+                homeLat = lat; homeLon = lon;
+                // Earth circumference at equator = 40075016.686 meters
+                tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoomLevel);
+                homeTileXFloat = lon2tileFloat(lon, zoomLevel);
+                homeTileYFloat = lat2tileFloat(lat, zoomLevel);
+
+                // Lock the map origin to the plane's CURRENT physics position!
+                // This fixes the bug where the map renders miles behind the plane if you refresh mid-flight.
+                mapGroup.position.set(rawTargetPos.x, 0, rawTargetPos.z);
+            }
+
+            const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
+            const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
+
+            // Load a massive 17x17 grid around the plane. Because we never delete old tiles,
+            // the plane 'paints' a continuous 2.5km wide high-res swath along its flight path!
+            for (let dx = -8; dx <= 8; dx++) {
+                for (let dy = -8; dy <= 8; dy++) {
+                    const tx = currentTileX + dx;
+                    const ty = currentTileY + dy;
+                    const key = `${tx},${ty}`;
+
+                    if (!mapTiles.has(key)) {
+                        // Place a placeholder immediately to prevent multiple fetches
+                        mapTiles.set(key, true);
+
+                        // Cycle through Google's 4 tile servers (mt0 to mt3) to bypass rate limiting
+                        const mt = Math.abs(tx + ty) % 4;
+                        const url = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+
+                        const loader = new THREE.TextureLoader();
+                        loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
+                        loader.load(
+                            url, 
+                            (texture) => {
+                                texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
+                                texture.encoding = THREE.sRGBEncoding; // Fixes hazy/washed-out map colors
+                                const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                                const mat = new THREE.MeshBasicMaterial({
+                                    map: texture,
+                                    side: THREE.DoubleSide,
+                                    depthWrite: false, // Prevents airplane from sinking into the map!
+                                    fog: false // Keeps the satellite imagery 100% vibrant all the way to the horizon
+                                });
+                                const mesh = new THREE.Mesh(geo, mat);
+                                mesh.renderOrder = -1; // Force the map to render as a background layer
+                                mesh.rotation.x = -Math.PI / 2;
+
+                                // Align perfectly with Three.js origin (which is the Home Launch Point)
+                                // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
+                                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                                mesh.position.y = -2; // Render just below the telemetry grid
+
+                                mapGroup.add(mesh);
+                            },
+                            undefined, // onProgress
+                            (err) => {
+                                // If tile fetch fails (e.g., rate limit or network drop), remove the placeholder 
+                                // so it can try fetching again in the next frame
+                                mapTiles.delete(key);
+                            }
+                        );
+                    }
+                }
+            }
+        }
+        // ==========================================
+        
+        let fullPath = [];
+        let fullParams = {};
+        let fullPathLine = null;
+        let isPlaying = false;
+        let playIndex = 0;
+        let isScrubbing = false;
+
+        const scrubber = document.getElementById('scrubber');
+        scrubber.addEventListener('input', (e) => {
+            isScrubbing = true;
+            playIndex = parseInt(e.target.value);
+            playIndexFloat = playIndex;
+            const thumbPct = (playIndex / scrubber.max) * 100;
+            document.getElementById('scrubber-thumb').style.left = `${thumbPct}%`;
+            updatePlaneToCurrentIndex();
+        });
+        scrubber.addEventListener('mouseup', () => { isScrubbing = false; });
+        scrubber.addEventListener('touchend', () => { isScrubbing = false; });
+
+        document.getElementById('btn-play-pause').onclick = () => {
+            isPlaying = !isPlaying;
+            document.getElementById('btn-play-pause').innerText = isPlaying ? "Pause" : "Play";
+        };
+
+        let originLat = null, originLon = null;
+        function latLonToMeters(lat, lon) {
+            if (originLat === null) { originLat = lat; originLon = lon; }
+            const r_earth = 6378137.0;
+            const dLat = (lat - originLat) * Math.PI / 180.0;
+            const dLon = (lon - originLon) * Math.PI / 180.0;
+            const x = dLon * Math.cos(originLat * Math.PI / 180.0) * r_earth;
+            const y = dLat * r_earth;
+            return { x, y };
+        }
+
+        let playIndexFloat = 0.0;
+
+        function updatePlaneToCurrentIndex() {
+            if (fullPath.length === 0) return;
+            if (playIndex >= fullPath.length) playIndex = fullPath.length - 1;
+            
+            const pt = fullPath[playIndex];
+            const lat = pt[0], lng = pt[1], alt = pt[2], roll = pt[3], pitch = pt[4], yaw = pt[5];
+            
+            updateMap(lat, lng);
+            
+            const pos = latLonToMeters(lat, lng);
+            vtolGroup.position.set(pos.x, alt, -pos.y);
+            
+            const euler = new THREE.Euler(pitch, -yaw, -roll, 'YXZ');
+            vtolGroup.setRotationFromEuler(euler);
+            
+            if (pt.length > 6) {
+                servoSpeeds = pt[6]; // Update motors
+                for (let i = 0; i < 8; i++) {
+                    let pwm = servoSpeeds[i] || 1000;
+                    uiPwms[i].innerText = pwm;
+                    let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
+                    uiFills[i].style.height = percent + '%';
+                    uiFills[i].style.background = (percent > 80) ? 'var(--danger)' : (percent > 10 ? 'var(--success)' : 'transparent');
+                }
+                
+
+                let throttlePwm = servoSpeeds[2] || 1000;
+                let throttlePct = Math.max(0, Math.min(1.0, (throttlePwm - 1000) / 1000.0));
+                document.getElementById('pusher-rpm').innerText = Math.round(400 * 25.2 * throttlePct * 0.90);
+            }
+            
+            if (pt.length > 7) {
+                const vfr = pt[7];
+                document.getElementById('a_spd').innerText = vfr[0].toFixed(1) + " m/s";
+                document.getElementById('g_spd').innerText = vfr[1].toFixed(1) + " m/s";
+            }
+            if (pt.length > 8) {
+                const mode = pt[8];
+                if (mode && mode !== 'UNKNOWN') document.getElementById('f_mode').innerText = mode;
+            }
+
+
+            document.getElementById('alt').innerText = alt.toFixed(1) + ' m';
+            
+            // Update Graph
+            document.getElementById('terrain-alt-text').innerText = `AGL: ${(alt - mapGroup.position.y).toFixed(1)}m`;
+            terrainHistory = [];
+            let startIdx = Math.max(0, playIndex - 200); // MAX_HISTORY is typically 200
+            for (let i = startIdx; i <= playIndex; i++) {
+                terrainHistory.push({ plane: fullPath[i][2], terrain: mapGroup.position.y });
+            }
+            updateTerrainGraph();
+            
+            
+
+            const pct = (playIndex / (fullPath.length - 1) * 100);
+            
+            // GPS Time formatting
+            let timeStr = `${pct.toFixed(1)}%`;
+            if (pt.length > 9 && pt[9]) {
+                timeStr = pt[9];
+            }
+            document.getElementById('timeline-pct').innerText = timeStr;
+
+            if (!isScrubbing) {
+                scrubber.value = playIndex;
+                const thumbPct = (playIndex / scrubber.max) * 100;
+                document.getElementById('scrubber-thumb').style.left = `${thumbPct}%`;
+            }
+        }
+
+        const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
+        let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
+        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
+        let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
+        let firstPos = false;
+
+        // Terrain Graph Variables
+        let terrainHistory = [];
+        const MAX_HISTORY = 100;
+        let hasTerrainData = false;
+        let currentPlaneAltMSL = 0;
+        let currentTerrainAltMSL = 0;
+        let currentAGL = 0;
+        let lastGraphUpdate = 0;
+
+        function updateTerrainGraph() {
+            const canvas = document.getElementById('terrain-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Bulletproof High-DPI Canvas Scaling
+            const cssWidth = 430;
+            const cssHeight = 70;
+            const dpr = window.devicePixelRatio || 1;
+
+            if (canvas.width !== cssWidth * dpr) {
+                canvas.width = cssWidth * dpr;
+                canvas.height = cssHeight * dpr;
+                ctx.scale(dpr, dpr); // Scale context so drawing commands use CSS pixels
+            }
+
+            ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+            if (terrainHistory.length < 2) return;
+
+            let minAlt = Infinity, maxAlt = -Infinity;
+            for (let pt of terrainHistory) {
+                if (pt.terrain < minAlt) minAlt = pt.terrain;
+                if (pt.plane < minAlt) minAlt = pt.plane;
+                if (pt.terrain > maxAlt) maxAlt = pt.terrain;
+                if (pt.plane > maxAlt) maxAlt = pt.plane;
+            }
+
+            const altRange = Math.max(20, maxAlt - minAlt);
+            const graphMax = maxAlt + (altRange * 0.1);
+            const graphMin = minAlt - (altRange * 0.1);
+            const graphScale = cssHeight / (graphMax - graphMin);
+            const stepX = cssWidth / (MAX_HISTORY - 1);
+
+            // 1. Draw Professional Background Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.setLineDash([2, 2]); // Dashed grid
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 1; i < 4; i++) {
+                let y = (cssHeight / 4) * i;
+                ctx.moveTo(0, y);
+                ctx.lineTo(cssWidth, y);
+            }
+            for (let x = 0; x < cssWidth; x += cssWidth / 10) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, cssHeight);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset
+
+            // 2. Draw Terrain Area (Solid Earth Tone)
+            ctx.beginPath();
+            ctx.moveTo(0, cssHeight);
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = cssHeight - ((terrainHistory[i].terrain - graphMin) * graphScale);
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo((terrainHistory.length - 1) * stepX, cssHeight);
+            ctx.closePath();
+
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.2)'; // Translucent green
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)'; // Solid border
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 3. Draw Plane Flight Path (Clean Professional Line)
+            ctx.beginPath();
+            for (let i = 0; i < terrainHistory.length; i++) {
+                const x = i * stepX;
+                const y = cssHeight - ((terrainHistory[i].plane - graphMin) * graphScale);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+
+            ctx.strokeStyle = '#2196F3'; // Telemetry Blue
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 4. Draw Plane Tracker Dot
+            const lastPt = terrainHistory[terrainHistory.length - 1];
+            const finalX = (terrainHistory.length - 1) * stepX;
+            const finalY = cssHeight - ((lastPt.plane - graphMin) * graphScale);
+
+            ctx.beginPath();
+            ctx.arc(finalX, finalY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#2196F3';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        ws.onopen = () => {
+            document.getElementById('status').innerText = "Waiting for Vehicle...";
+            document.getElementById('status').style.color = "var(--text-secondary)";
+        };
+        ws.onclose = () => {
+            document.getElementById('status').innerText = "Offline";
+            document.getElementById('status').style.color = "var(--danger)";
+        };
+        let vehicleConnected = false;
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'LOADING') {
+                document.getElementById('status').innerText = "Loading and Parsing...";
+                document.getElementById('status').style.color = "var(--accent)";
+            } else if (data.type === 'ERROR') {
+                document.getElementById('status').innerText = "Error: " + data.message;
+                document.getElementById('status').style.color = "#ff5555";
+            } else if (data.type === 'FULL_PATH') {
+                fullPath = data.data;
+                fullParams = data.params || {};
+                document.getElementById('status').innerText = "Loaded: " + fullPath.length + " pts";
+                document.getElementById('status').style.color = "var(--success)";
+                
+                scrubber.max = fullPath.length - 1;
+                playIndex = 0;
+                originLat = null;
+                firstPos = true;
+                
+                // Colorize scrubber track based on flight modes
+                const modeColors = {
+                    'MANUAL': '#e74c3c', 'FBWA': '#f39c12', 'AUTO': '#2ecc71',
+                    'RTL': '#9b59b6', 'CRUISE': '#1abc9c', 'QHOVER': '#f1c40f',
+                    'QLOITER': '#e67e22', 'UNKNOWN': '#95a5a6', '0': '#3498db'
+                };
+                function getModeColor(mode) {
+                    mode = String(mode || 'UNKNOWN');
+                    if (modeColors[mode]) return modeColors[mode];
+                    let hash = 0;
+                    for(let i=0; i<mode.length; i++) hash = mode.charCodeAt(i) + ((hash << 5) - hash);
+                    return `hsl(${Math.abs(hash) % 360}, 70%, 50%)`;
+                }
+                
+                if (fullPath && fullPath.length > 0) {
+                    let gradient = [];
+                    let currentMode = fullPath[0][8];
+                    let startPct = 0;
+                    for (let i = 1; i <= fullPath.length; i++) {
+                        let mode = i < fullPath.length ? fullPath[i][8] : null;
+                        if (mode !== currentMode || i === fullPath.length) {
+                            let endPct = ((i - 1) / (fullPath.length - 1)) * 100;
+                            if (isNaN(endPct)) endPct = 100;
+                            let c = getModeColor(currentMode);
+                            gradient.push(`${c} ${startPct.toFixed(2)}%`, `${c} ${endPct.toFixed(2)}%`);
+                            currentMode = mode;
+                            startPct = endPct;
+                        }
+                    }
+                    if (gradient.length > 0) {
+                        document.getElementById('scrubber-bg').style.background = `linear-gradient(to right, ${gradient.join(', ')})`;
+                    }
+                }
+                
+                if (fullPathLine) scene.remove(fullPathLine);
+                const pts = [];
+                let minAlt = Infinity;
+                for(let i=0; i<fullPath.length; i++){
+                    const pos = latLonToMeters(fullPath[i][0], fullPath[i][1]);
+                    const a = fullPath[i][2];
+                    if (a < minAlt) minAlt = a;
+                    pts.push(new THREE.Vector3(pos.x, a, -pos.y));
+                }
+                
+                if (minAlt !== Infinity) {
+                    mapGroup.position.y = minAlt;
+                }
+                const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                const mat = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2, transparent: true, opacity: 0.8 });
+                fullPathLine = new THREE.Line(geo, mat);
+                scene.add(fullPathLine);
+
+                updatePlaneToCurrentIndex();
+                camera.position.set(0, 50, 50);
+            }
+        };
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const perfNow = performance.now();
+            if(typeof window.lastFrameTime === "undefined") { window.lastFrameTime = perfNow; }
+            const playbackDt = Math.min((perfNow - window.lastFrameTime)/1000.0, 0.1);
+            window.lastFrameTime = perfNow;
+
+            if (isPlaying && fullPath.length > 0 && !isScrubbing) {
+                const speed = parseFloat(document.getElementById('playback-speed').value);
+                const framesToAdvance = playbackDt * 10.0 * speed;
+                playIndexFloat += framesToAdvance;
+                
+                if (playIndexFloat >= fullPath.length - 1) {
+                    playIndexFloat = fullPath.length - 1;
+                    isPlaying = false;
+                    document.getElementById('btn-play-pause').innerText = "Play";
+                }
+                
+                let idx1 = Math.floor(playIndexFloat);
+                if (idx1 !== playIndex) {
+                    playIndex = idx1;
+                    updatePlaneToCurrentIndex();
+                }
+
+                // Sub-frame exact interpolation for butter-smooth 60/144fps playback!
+                if (playIndexFloat < fullPath.length - 1) {
+                    let idx2 = idx1 + 1;
+                    let fraction = playIndexFloat - idx1;
+                    const pt1 = fullPath[idx1];
+                    const pt2 = fullPath[idx2];
+                    
+                    const p1 = latLonToMeters(pt1[0], pt1[1]);
+                    const p2 = latLonToMeters(pt2[0], pt2[1]);
+                    
+                    vtolGroup.position.set(
+                        p1.x + (p2.x - p1.x) * fraction,
+                        pt1[2] + (pt2[2] - pt1[2]) * fraction,
+                        -p1.y + (-p2.y - (-p1.y)) * fraction
+                    );
+                    
+                    let q1 = new THREE.Quaternion().setFromEuler(new THREE.Euler(pt1[4], -pt1[5], -pt1[3], 'YXZ'));
+                    let q2 = new THREE.Quaternion().setFromEuler(new THREE.Euler(pt2[4], -pt2[5], -pt2[3], 'YXZ'));
+                    vtolGroup.quaternion.copy(q1).slerp(q2, fraction);
+                }
+            }
+
+            if (cameraMode === 'follow') {
+                const offset = camera.position.clone().sub(controls.target);
+                controls.target.copy(vtolGroup.position);
+                camera.position.copy(controls.target).add(offset);
+            }
+            controls.update();
+            lastPlanePos.copy(vtolGroup.position);
+
+            let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
+                m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
+                m_push = parseInt(document.getElementById('m_push').value), m_tl = parseInt(document.getElementById('m_twin_l').value),
+                m_tr = parseInt(document.getElementById('m_twin_r').value),
+                m_y3_fr = parseInt(document.getElementById('m_y3_fr').value), m_y3_fl = parseInt(document.getElementById('m_y3_fl').value),
+                m_y3_r = parseInt(document.getElementById('m_y3_r').value),
+                m_y3_tilt_r = parseInt(document.getElementById('m_y3_tilt_r').value),
+                m_y3_tilt_l = parseInt(document.getElementById('m_y3_tilt_l').value);
+
+            // Enhance visual propeller speed to match the loaded RPM feel
+            // Apply directional multiplier (0 = CW = negative rotation, 1 = CCW = positive rotation)
+            let visSpeed = 0.8;
+
+            // Apply Y3 Differential Tilt Rotor Physics
+            let y3TiltRPwm = servoSpeeds[m_y3_tilt_r] || CONFIG.tiltHoverPwm;
+            // Calculate percent based on hover PWM (Allows backwards tilt for yaw vectoring!)
+            let y3TiltRPercent = (y3TiltRPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+            y3TiltAssemblies[0].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * y3TiltRPercent; // FR tilts
+
+            let y3TiltLPwm = servoSpeeds[m_y3_tilt_l] || CONFIG.tiltHoverPwm;
+            let y3TiltLPercent = (y3TiltLPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+            y3TiltAssemblies[1].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * y3TiltLPercent; // FL tilts
+
+            // Apply Quad Tilt Rotor Physics
+            if (CONFIG.enableTiltRotors) {
+                let m_quad_tilt_r = parseInt(document.getElementById('m_quad_tilt_r').value);
+                let m_quad_tilt_l = parseInt(document.getElementById('m_quad_tilt_l').value);
+
+                let quadTiltRPwm = servoSpeeds[m_quad_tilt_r] || CONFIG.tiltHoverPwm;
+                let quadTiltRPercent = (quadTiltRPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+                tiltAssemblies[0].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * quadTiltRPercent; // FR
+
+                let quadTiltLPwm = servoSpeeds[m_quad_tilt_l] || CONFIG.tiltHoverPwm;
+                let quadTiltLPercent = (quadTiltLPwm - CONFIG.tiltHoverPwm) / (CONFIG.tiltMaxPwm - CONFIG.tiltHoverPwm);
+                tiltAssemblies[1].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * quadTiltLPercent; // FL
+            }
+
+            // Spin Quad Props
+            if (props.length >= 5) { props[0].rotation.y += Math.max(0, ((servoSpeeds[m_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            props[1].rotation.y += Math.max(0, ((servoSpeeds[m_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            props[2].rotation.y += Math.max(0, ((servoSpeeds[m_br] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+            props[3].rotation.y += Math.max(0, ((servoSpeeds[m_bl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
+
+            // Spin Y3 Props
+            y3Props[0].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            y3Props[1].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            y3Props[2].rotation.y += Math.max(0, ((servoSpeeds[m_y3_r] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+
+            // Spin fixed-wing props
+            pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+            twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+            twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Data Panel Logic Removed
+</body>
+
+</html>

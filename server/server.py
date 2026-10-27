@@ -123,6 +123,15 @@ class Api:
         )
 
 if __name__ == "__main__":
+    # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('ardupilot.sitl.visualizer.1.0')
+    except Exception:
+        pass
+
+    icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app_icon.ico')
+
     api = Api()
     # 1. Start the asyncio background logic (MAVLink + WebSockets + HTTP server) in a separate thread
     threading.Thread(target=start_asyncio_loop, daemon=True).start()
@@ -136,4 +145,5 @@ if __name__ == "__main__":
         height=720,
         background_color='#000000'
     )
-    webview.start()
+    webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+
