@@ -122,9 +122,43 @@ class Api:
             background_color='#000000'
         )
 
+def open_browser(url):
+    import platform
+    import subprocess
+    import shutil
+    import webbrowser
+
+    # Check if running in Windows Subsystem for Linux (WSL)
+    is_wsl = 'microsoft' in platform.uname().release.lower() or os.path.exists('/proc/sys/fs/binfmt_misc/WSLInterop')
+    if is_wsl:
+        # Launch directly into the user's Windows default browser tab
+        if shutil.which("cmd.exe"):
+            try:
+                subprocess.Popen(["cmd.exe", "/c", "start", "", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+            except Exception:
+                pass
+        if shutil.which("powershell.exe"):
+            try:
+                subprocess.Popen(["powershell.exe", "-NoProfile", "-Command", f"Start-Process '{url}'"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+            except Exception:
+                pass
+        if shutil.which("wslview"):
+            try:
+                subprocess.Popen(["wslview", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+            except Exception:
+                pass
+
+    # Standard browser launch for native Windows/macOS/Linux
+    try:
+        webbrowser.open(url)
+    except Exception:
+        pass
+
 if __name__ == "__main__":
     import argparse
-    import webbrowser
 
     parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
     parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
@@ -143,11 +177,8 @@ if __name__ == "__main__":
 
     if args.headless:
         print("\n[Server] Running in Headless Server Mode (--headless).")
-        print("[Visualizer] Open in your browser at: http://127.0.0.1:8000/sharkee.html\n")
-        try:
-            webbrowser.open("http://127.0.0.1:8000/sharkee.html")
-        except Exception:
-            pass
+        print("[Visualizer] Opening browser tab at: http://127.0.0.1:8000/sharkee.html\n")
+        open_browser("http://127.0.0.1:8000/sharkee.html")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -173,15 +204,13 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"\n[Notice] Native GUI window could not be started: {e}")
             print("[Server] Falling back to Headless Server Mode.")
-            print("[Visualizer] Access in your browser at: http://127.0.0.1:8000/sharkee.html\n")
-            try:
-                webbrowser.open("http://127.0.0.1:8000/sharkee.html")
-            except Exception:
-                pass
+            print("[Visualizer] Opening in your browser tab at: http://127.0.0.1:8000/sharkee.html\n")
+            open_browser("http://127.0.0.1:8000/sharkee.html")
             try:
                 while server_thread.is_alive():
                     server_thread.join(timeout=1.0)
             except KeyboardInterrupt:
                 print("\nShutting down server.")
+
 
 
