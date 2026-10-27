@@ -36,18 +36,58 @@ To make the visualizer work seamlessly, `server.py` runs **two servers simultane
 3. The script will automatically open your default browser to the visualizer!
 4. Watch your aircraft fly live in 3D!
 
-## Quick Start
+## Requirements & Installation
+
+### Python Packages (All Platforms)
 
 ```bash
-# 1. Start ArduPilot SITL (in WSL/Linux)
-sim_vehicle.py -v ArduPlane -f jsbsim:SharkHawk --out=udp:127.0.0.1:14551
-
-# 2. Start the MAVLink bridge
-python server/server.py
-
-# 3. Open the visualizer
-# Open visualizer/index.html in your browser
+pip install -r requirements.txt
 ```
+
+### Ubuntu / Debian / WSL (Native Desktop Window Requirements)
+
+To run the standalone native desktop application window via GTK/WebKit2:
+
+```bash
+# Automated setup:
+chmod +x setup_ubuntu.sh
+./setup_ubuntu.sh
+
+# Or manual apt install:
+sudo apt update
+sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
+# (Use gir1.2-webkit2-4.0 if running Ubuntu 20.04 LTS)
+```
+
+> **Note for WSL**: If running without desktop GUI extensions, the server automatically runs in headless mode and pops open your default Windows browser tab, or you can explicitly run with `python server/server.py --headless`.
+
+---
+
+## Quick Start
+
+### 1. Start ArduPilot SITL (WSL / Linux)
+```bash
+sim_vehicle.py -v ArduPlane -f jsbsim:SharkHawk --out=udp:127.0.0.1:14551
+```
+
+### 2. Start the Telemetry Bridge & Visualizer
+
+- **Standalone Native Desktop App**:
+  ```bash
+  python server/server.py
+  ```
+- **Headless Server Mode** (opens as a browser tab):
+  ```bash
+  python server/server.py --headless
+  ```
+
+### 3. ArduPilot DataFlash Log Viewer
+To inspect `.bin` and `.tlog` flight logs offline in 3D:
+```bash
+python log_viewer.py
+```
+
+---
 
 ## Adding a Custom 3D Model (OpenVSP)
 
@@ -62,7 +102,3 @@ python server/server.py
 
 - [JSBSim-Ardupilot](https://github.com/MathiyazhaganRJ/JSBSim-Ardupilot) — Flight physics engine and aircraft XML definitions
 
-## Requirements
-
-- Python 3.8+ with `pymavlink` and `websockets`
-- Modern web browser (Chrome/Firefox)
