@@ -1093,188 +1093,6 @@
             border-color: #00ff66;
             box-shadow: 0 0 8px #00ff66, 0 0 14px rgba(0, 255, 102, 0.7);
         }
-        /* ============================================================
-           ATIS OPERATIONAL FLIGHT BULLETIN & DEAD RECKONING SOP PANEL
-           Authentic Aviation Briefing Document with Interactive Sim Triggers
-           ============================================================ */
-        #atis-widget {
-            position: absolute;
-            top: 55px;
-            left: 20px;
-            width: 530px;
-            max-height: calc(100vh - 110px);
-            overflow-y: auto;
-            background: linear-gradient(180deg, #181b22 0%, #101318 100%);
-            border: 2px solid #2f3644;
-            border-radius: 8px;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.92), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-            z-index: 160;
-            font-family: 'B612 Mono', 'SF Mono', Consolas, monospace;
-            color: #d1d8e0;
-            padding: 0;
-            user-select: text;
-            box-sizing: border-box;
-            display: none;
-        }
-
-        #atis-widget::-webkit-scrollbar {
-            width: 5px;
-        }
-        #atis-widget::-webkit-scrollbar-thumb {
-            background: #00e5ff;
-            border-radius: 3px;
-        }
-
-        .atis-header-bar {
-            background: #1f2530;
-            border-bottom: 2px solid #00e5ff;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: move;
-        }
-
-        .atis-title {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            color: #00e5ff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .atis-badge {
-            background: #ffb000;
-            color: #000;
-            font-size: 8.5px;
-            font-weight: 900;
-            padding: 1px 5px;
-            border-radius: 2px;
-            letter-spacing: 0.05em;
-        }
-
-        .atis-close-btn {
-            background: #2b3342;
-            border: 1px solid #455066;
-            color: #cbd5e1;
-            font-size: 14px;
-            width: 20px;
-            height: 20px;
-            line-height: 18px;
-            text-align: center;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .atis-close-btn:hover {
-            color: #ff453a;
-            border-color: #ff453a;
-        }
-
-        .atis-body {
-            padding: 14px 16px;
-            font-size: 11px;
-            line-height: 1.5;
-        }
-
-        .atis-meta-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 9.5px;
-            color: #8c9aa8;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 6px;
-            margin-bottom: 12px;
-        }
-
-        .atis-section {
-            margin-bottom: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.35);
-            padding: 10px 12px;
-        }
-
-        .atis-sec-title {
-            font-size: 10.5px;
-            font-weight: 800;
-            color: #00e5ff;
-            letter-spacing: 0.06em;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border-bottom: 1px dashed rgba(0, 229, 255, 0.25);
-            padding-bottom: 4px;
-        }
-
-        .atis-text {
-            font-size: 10.5px;
-            color: #b8c4d2;
-            margin: 0 0 8px 0;
-        }
-
-        .atis-code-inline {
-            color: #00ff66;
-            background: rgba(0, 255, 102, 0.1);
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-weight: 700;
-        }
-
-        .atis-action-btn-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-            margin-bottom: 4px;
-            flex-wrap: wrap;
-        }
-
-        .atis-sim-btn {
-            background: linear-gradient(180deg, #2b3545 0%, #1b222d 100%);
-            border: 1px solid #3d4a60;
-            color: #ffffff;
-            font-family: inherit;
-            font-size: 9.5px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.5);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.12s ease;
-        }
-        .atis-sim-btn:hover {
-            background: linear-gradient(180deg, #374358 0%, #232c3a 100%);
-            border-color: #00e5ff;
-            color: #00e5ff;
-            transform: translateY(-1px);
-        }
-        .atis-sim-btn:active {
-            transform: translateY(1px);
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
-        }
-        .atis-sim-btn.amber {
-            border-color: rgba(255, 176, 0, 0.4);
-            color: #ffb000;
-        }
-        .atis-sim-btn.amber:hover {
-            border-color: #ffb000;
-            color: #ffffff;
-            background: #472d00;
-        }
-        .atis-sim-btn.green {
-            border-color: rgba(0, 255, 102, 0.4);
-            color: #00ff66;
-        }
-        .atis-sim-btn.green:hover {
-            border-color: #00ff66;
-            color: #ffffff;
-            background: #00471a;
-        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -1332,7 +1150,7 @@
                 <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-atis" title="Toggle ATIS Flight Briefing & Dead Reckoning SOP">
+        <button class="toolbar-btn" id="btn-open-atis-pdf" title="Open ATIS EKF3 Dead Reckoning & EW Parameter Manual (PDF)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1784,154 +1602,6 @@
         </div>
     </div>
 
-    <!-- ATIS OPERATIONAL FLIGHT BULLETIN & DEAD RECKONING SOP PANEL -->
-    <div id="atis-widget">
-        <!-- Header / Draggable Bar -->
-        <div class="atis-header-bar">
-            <div class="atis-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                <span>ATIS INFO BRAVO // EKF3-DR SOP</span>
-                <span class="atis-badge">OPS BULLETIN</span>
-            </div>
-            <button id="btn-close-atis" class="atis-close-btn" title="Close ATIS Briefing">&times;</button>
-        </div>
-
-        <div class="atis-body">
-            <!-- Flight Dispatch / Broadcast Meta -->
-            <div class="atis-meta-row">
-                <span>STATION: VAPO SITL</span>
-                <span>ZULU: <b id="atis-zulu-clock">00:00:00Z</b></span>
-                <span>THREAT LVL: CONTESTED EW</span>
-            </div>
-
-            <!-- SECTION 1: TOTAL GNSS DENIAL -->
-            <div class="atis-section">
-                <div class="atis-sec-title">
-                    <span>1. GNSS COMPLETE DENIAL (SATELLITE LOSS)</span>
-                </div>
-                <div class="atis-text">
-                    <b>PHENOMENOLOGY:</b> Complete loss of space vehicle (SV) carrier signals caused by antenna severing, dense urban canyon/tunnel traversal, or counter-space ASAT action. Receiver fix drops from <span class="atis-code-inline">3D FIX</span> to <span class="atis-code-inline">NO FIX</span> with 0 satellites tracked.
-                </div>
-                <div class="atis-text">
-                    <b>ARDUPILOT EKF3 BEHAVIOR:</b> Ceases external position and velocity Kalman updates. Reverts immediately to open-loop inertial Dead Reckoning ($\vec{p}_{est}(t) = \vec{p}_0 + \int \vec{v}\,dt + \iint \vec{a}_{imu}\,dt$). Position covariance expands parabolically as gyro bias drifts unchecked.
-                </div>
-                <div class="atis-action-btn-row">
-                    <button class="atis-sim-btn amber atis-act" data-param="SIM_GPS1_ENABLE" data-val="0" data-label="GPS DENIAL">
-                        ⚡ SIMULATE GPS DENIAL [0]
-                    </button>
-                    <button class="atis-sim-btn green atis-act" data-param="SIM_GPS1_ENABLE" data-val="1" data-label="RESTORE 3D FIX">
-                        ✓ RESTORE 3D FIX [1]
-                    </button>
-                </div>
-            </div>
-
-            <!-- SECTION 2: RF ELECTRONIC JAMMING -->
-            <div class="atis-section">
-                <div class="atis-sec-title">
-                    <span>2. RF ELECTRONIC JAMMING (BROADBAND / NOISE FLOOD)</span>
-                </div>
-                <div class="atis-text">
-                    <b>PHENOMENOLOGY:</b> High-power terrestrial jammers transmit broadband noise or swept continuous-wave (CW) chirps across the GPS L1 (1575.42 MHz) and L2/L5 bands. Receiver front-end low-noise amplifier (LNA) saturates; Carrier-to-Noise density (<span class="atis-code-inline">C/N0</span>) collapses below the ~28 dB-Hz tracking lock threshold.
-                </div>
-                <div class="atis-text">
-                    <b>ARDUPILOT TELEMETRY & DEFENSE:</b> MAVLink <span class="atis-code-inline">GPS_RAW_INT</span> reports high HDOP (&gt;5.0) and rapid sat lock dropping. EKF3 innovation checks fail, discarding corrupted pseudo-ranges and engaging dead reckoning failsafes.
-                </div>
-                <div class="atis-action-btn-row">
-                    <button class="atis-sim-btn amber atis-act" data-param="SIM_GPS1_JAM" data-val="1" data-label="GPS JAMMING">
-                        ⚡ INJECT RF JAMMING [1]
-                    </button>
-                    <button class="atis-sim-btn green atis-act" data-param="SIM_GPS1_JAM" data-val="0" data-label="CLEAR JAMMING">
-                        ✓ CLEAR JAMMING [0]
-                    </button>
-                </div>
-            </div>
-
-            <!-- SECTION 3: GNSS SPOOFING & MEACONING DEFENSE -->
-            <div class="atis-section">
-                <div class="atis-sec-title">
-                    <span>3. GNSS SPOOFING & MEACONING REJECTION</span>
-                </div>
-                <div class="atis-text">
-                    <b>PHENOMENOLOGY:</b> Adversary synthesizes false GNSS RF signals with synchronized PRN codes or delays legitimate satellite transmissions (meaconing) to fool the receiver into reporting a false location, subtly dragging the aircraft off course or inducing CFIT (Controlled Flight Into Terrain).
-                </div>
-                <div class="atis-text">
-                    <b>ARDUPILOT EKF3 GATE DEFENSE:</b> Chi-Square ($\chi^2$) Innovation Gate (<span class="atis-code-inline">EK3_GLITCH_RAD = 25m</span>, <span class="atis-code-inline">FS_EKF_THRESH = 0.8</span>) evaluates normalized residual squared distance:
-                    <div style="font-size: 10px; color: #00e5ff; margin: 4px 0; background: rgba(0,229,255,0.06); padding: 4px; border-radius: 3px;">
-                        $d_M^2 = \mathbf{y}_k^T \mathbf{S}_k^{-1} \mathbf{y}_k \le \text{Gate Threshold}$
-                    </div>
-                    If the spoofed GPS position jumps faster than aerodynamic kinematic limits, EKF3 declares <span class="atis-code-inline">GPS Glitch</span>, rejects the measurement, and maintains inertial course.
-                </div>
-                <div class="atis-action-btn-row">
-                    <button class="atis-sim-btn atis-act" data-param="EK3_GLITCH_RAD" data-val="25" data-label="GLITCH GATE 25M">
-                        ⚡ SET GLITCH GATE (25m)
-                    </button>
-                    <button class="atis-sim-btn atis-act" data-param="FS_EKF_THRESH" data-val="0.8" data-label="FAILSAFE GATE 0.8">
-                        ⚡ SET FAILSAFE GATE (0.8)
-                    </button>
-                    <button class="atis-sim-btn amber atis-act" data-param="AHRS_GPS_USE" data-val="0" data-label="ISOLATE AHRS GPS">
-                        ⚡ ISOLATE AHRS GPS [0]
-                    </button>
-                </div>
-            </div>
-
-            <!-- SECTION 4: DEAD RECKONING SENSOR FUSION & WIND ESTIMATION -->
-            <div class="atis-section">
-                <div class="atis-sec-title">
-                    <span>4. DEAD RECKONING & AERODYNAMIC WIND FUSION</span>
-                </div>
-                <div class="atis-text">
-                    <b>MATHEMATICAL DERIVATION:</b> In GPS-denied cruise, ArduPlane fuses true airspeed ($V_{tas}$) from the pitot tube, magnetometer yaw ($\psi$), and EKF3 wind state estimation:
-                    <div style="font-size: 10px; color: #00e5ff; margin: 4px 0; background: rgba(0,229,255,0.06); padding: 4px; border-radius: 3px;">
-                        $\vec{V}_{ground} = \mathbf{R}_{body}^{NED}(\phi, \theta, \psi) \begin{bmatrix} V_{tas} \\ 0 \\ 0 \end{bmatrix} + \vec{V}_{wind}$
-                    </div>
-                    For VTOL hovering and low altitude, downward Optical Flow (<span class="atis-code-inline">EK3_SRC1_VELXY = 5</span>) measures pixel motion rate $\dot{x}_{opt} = \frac{v_x}{h} - \omega_y$ to hold precise horizontal station without GPS.
-                </div>
-                <div class="atis-action-btn-row">
-                    <button class="atis-sim-btn atis-act" data-param="SIM_FLOW_ENABLE" data-val="1" data-label="OPT FLOW HW">
-                        ⚡ ENGAGE OPT FLOW HW [1]
-                    </button>
-                    <button class="atis-sim-btn atis-act" data-param="EK3_FLOW_USE" data-val="1" data-label="EKF3 FLOW FUSION">
-                        ⚡ FUSE FLOW IN EKF3 [1]
-                    </button>
-                    <button class="atis-sim-btn atis-act" data-param="EK3_SRC1_VELXY" data-val="5" data-label="FLOW VELOCITY">
-                        ⚡ SET VEL SRC TO FLOW [5]
-                    </button>
-                    <button class="atis-sim-btn atis-act" data-param="EK3_SRC_OPTIONS" data-val="1" data-label="FALLBACK SRC">
-                        ⚡ ENABLE SRC FALLBACK [1]
-                    </button>
-                </div>
-            </div>
-
-            <!-- SECTION 5: SOP CHECKLIST & DIRECT MCDU ACTIONS -->
-            <div class="atis-section" style="border-color: rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.04);">
-                <div class="atis-sec-title" style="color: #ffb000; border-color: rgba(255, 176, 0, 0.3);">
-                    <span>5. PILOT CONTINGENCY SOP CHECKLIST & MCDU STAGING</span>
-                </div>
-                <div class="atis-text">
-                    <b>CONTINGENCY WORKFLOW:</b> When GPS denial or EW jamming is detected:
-                    <ol style="margin: 4px 0 6px 16px; padding: 0;">
-                        <li>Verify MCDU Annunciator <span class="atis-code-inline">DR</span> or <span class="atis-code-inline">FAIL</span> illuminated.</li>
-                        <li>Check scratchpad staging; press MCDU <span class="atis-code-inline">EXEC</span> to commit defensive parameters.</li>
-                        <li>Monitor 3D uncertainty disc ($\sigma_{pos}$ grows at ~1.2 m/s).</li>
-                        <li>Execute dead reckoning rally loiter or inertial return-to-launch (RTL).</li>
-                    </ol>
-                </div>
-                <div class="atis-action-btn-row">
-                    <button class="atis-sim-btn green" id="btn-atis-copy-dr-batch">
-                        📋 COPY FULL CONTINGENCY DR CONFIG
-                    </button>
-                    <button class="atis-sim-btn" id="btn-atis-open-mcdu">
-                        🎛️ OPEN MCDU AVIONICS
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
         style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
@@ -2090,69 +1760,11 @@
 
         makeDraggable(fmsWidget, fmsWidget.querySelector('.cdu-bezel-top') || fmsWidget);
 
-        // ATIS Operational Flight Bulletin & SOP Panel Toggle
-        const btnToggleAtis = document.getElementById('btn-toggle-atis');
-        const atisWidget = document.getElementById('atis-widget');
-        const btnCloseAtis = document.getElementById('btn-close-atis');
-
-        function toggleAtisPanel(forceState) {
-            const shouldShow = (forceState !== undefined) ? forceState : (atisWidget.style.display === 'none');
-            atisWidget.style.display = shouldShow ? 'block' : 'none';
-            if (btnToggleAtis) btnToggleAtis.style.opacity = shouldShow ? '1.0' : '0.45';
-            localStorage.setItem('atis_visible', shouldShow ? '1' : '0');
-        }
-
-        if (btnToggleAtis) btnToggleAtis.onclick = () => toggleAtisPanel();
-        if (btnCloseAtis) btnCloseAtis.onclick = () => toggleAtisPanel(false);
-
-        if (localStorage.getItem('atis_visible') === '1') {
-            toggleAtisPanel(true);
-        } else if (btnToggleAtis) {
-            btnToggleAtis.style.opacity = '0.45';
-        }
-
-        if (atisWidget) {
-            makeDraggable(atisWidget, atisWidget.querySelector('.atis-header-bar') || atisWidget);
-        }
-
-        // Live Zulu Clock for ATIS Header
-        function updateAtisClock() {
-            const clk = document.getElementById('atis-zulu-clock');
-            if (clk) {
-                clk.innerText = new Date().toISOString().substr(11, 8) + 'Z';
-            }
-        }
-        setInterval(updateAtisClock, 1000);
-        updateAtisClock();
-
-        // ATIS Simulation Action Triggers -> Stage into MCDU and arm EXEC
-        document.querySelectorAll('.atis-act').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const pName = btn.getAttribute('data-param');
-                const pVal = parseFloat(btn.getAttribute('data-val'));
-                const pLabel = btn.getAttribute('data-label') || pName;
-                // Reveal MCDU CDU console so pilot can review & press EXEC
-                toggleFmsPanel(true);
-                stageParam(pName, pVal, pLabel);
-            });
-        });
-
-        // ATIS Batch Copy Handler
-        const btnAtisCopyBatch = document.getElementById('btn-atis-copy-dr-batch');
-        if (btnAtisCopyBatch) {
-            btnAtisCopyBatch.onclick = function() {
-                const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8\nparam set EK3_GLITCH_RAD 25`;
-                copyText(batch, this);
-                toggleFmsPanel(true);
-                setCduScratchpad('COPIED FULL CONTINGENCY CONFIG', false);
-            };
-        }
-
-        // ATIS Open MCDU Shortcut
-        const btnAtisOpenMcdu = document.getElementById('btn-atis-open-mcdu');
-        if (btnAtisOpenMcdu) {
-            btnAtisOpenMcdu.onclick = () => {
-                toggleFmsPanel(true);
+        // ATIS Operational Flight Bulletin PDF Launcher
+        const btnOpenAtisPdf = document.getElementById('btn-open-atis-pdf');
+        if (btnOpenAtisPdf) {
+            btnOpenAtisPdf.onclick = () => {
+                window.open('ATIS_GPS_DENIAL_DEAD_RECKONING_SOP.pdf', '_blank');
             };
         }
 
@@ -3324,8 +2936,8 @@
                         <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-5l">&lt; FS_EKF [0.8]</span><span class="crt-cyan crt-clickable" id="row-5r">GLITCH [25m] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>COPY ALL CONFIG</span><span class="dim">RETURN NAV</span></div>
-                        <div class="crt-data-line"><span class="crt-white crt-clickable" id="row-6l">&lt; COPY ALL</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
+                        <div class="crt-label-line"><span>ATIS SOP MANUAL</span><span class="dim">RETURN NAV</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-6l">&lt; ATIS PDF</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
                     </div>
                 `;
 
@@ -3341,9 +2953,8 @@
                     '5L': () => stageParam('FS_EKF_THRESH', 0.8, 'FAILSAFE THRESH'),
                     '5R': () => stageParam('EK3_GLITCH_RAD', 25.0, 'GLITCH RAD'),
                     '6L': () => {
-                        const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
-                        copyText(batch);
-                        setCduScratchpad('COPIED FULL DR BATCH', false);
+                        window.open('ATIS_GPS_DENIAL_DEAD_RECKONING_SOP.pdf', '_blank');
+                        setCduScratchpad('OPENING ATIS PDF MANUAL', false);
                     },
                     '6R': () => { cduCurrentPage = 1; renderCduPage(); }
                 };
