@@ -303,7 +303,7 @@
             position: absolute;
             bottom: 20px;
             left: 315px;
-            width: 220px;
+            width: 232px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
@@ -392,17 +392,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 6px;
         }
 
         .compass-telemetry-row .lbl {
             color: var(--text-secondary);
             font-weight: 600;
             font-size: 10px;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
         }
 
         .compass-telemetry-row .val {
             font-weight: 700;
             font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
+            white-space: nowrap;
+            font-size: 11px;
         }
 
         /* Live Weather & Terminal Widget */
@@ -883,8 +888,8 @@
                 <span id="compass-wind-summary" class="val" style="color: var(--wind-color); font-weight: 800;">5.0 m/s @ 270°</span>
             </div>
             <div class="compass-telemetry-row">
-                <span class="lbl">COMPONENTS</span>
-                <span id="compass-components-val" class="val">HW +0.0 | XW 0.0</span>
+                <span class="lbl">WIND COMP</span>
+                <span id="compass-components-val" class="val">HW +0.0 · XW 0.0</span>
             </div>
             <div class="compass-telemetry-row">
                 <span class="lbl">DRIFT / CRAB</span>
@@ -1274,11 +1279,11 @@
 
             const hwStr = (headwind >= 0 ? `HW +${headwind.toFixed(1)}` : `TW -${Math.abs(headwind).toFixed(1)}`);
             let xwStr = `XW 0.0`;
-            if (crosswind > 0.1) xwStr = `XW ${crosswind.toFixed(1)} R`;
-            else if (crosswind < -0.1) xwStr = `XW ${Math.abs(crosswind).toFixed(1)} L`;
+            if (crosswind > 0.1) xwStr = `XW ${crosswind.toFixed(1)}R`;
+            else if (crosswind < -0.1) xwStr = `XW ${Math.abs(crosswind).toFixed(1)}L`;
 
             if (compValEl) {
-                compValEl.innerText = `${hwStr} | ${xwStr}`;
+                compValEl.innerText = `${hwStr} · ${xwStr}`;
             }
 
             // 6. Drift / Crab Angle
@@ -1286,12 +1291,12 @@
                 if (planeAirspeed > 2.0 && Math.abs(crosswind) > 0.1) {
                     const ratio = Math.max(-0.95, Math.min(0.95, crosswind / planeAirspeed));
                     const crab = (Math.asin(ratio) * 180 / Math.PI).toFixed(1);
-                    crabAngleEl.innerText = `${Math.abs(crab)}° ${crab > 0 ? 'Right' : 'Left'}`;
+                    crabAngleEl.innerText = `${Math.abs(crab)}° ${crab > 0 ? 'R' : 'L'}`;
                 } else if (trkInt !== null && planeGroundspeed > 1.0) {
                     let drift = (planeGroundTrack - planeHeading);
                     while (drift > 180) drift -= 360;
                     while (drift < -180) drift += 360;
-                    crabAngleEl.innerText = `${Math.abs(drift).toFixed(1)}° ${drift > 0 ? 'Right' : 'Left'}`;
+                    crabAngleEl.innerText = `${Math.abs(drift).toFixed(1)}° ${drift > 0 ? 'R' : 'L'}`;
                 } else {
                     crabAngleEl.innerText = `0.0°`;
                 }
