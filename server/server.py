@@ -21,33 +21,51 @@ async def mavlink_listener():
     while True:
         msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND'], blocking=False)
         if msg:
-            if not heartbeat_received and msg.get_type() == 'HEARTBEAT':
-                heartbeat_received = True
-                print("Heartbeat received! Connected to SITL.")
-                # Request data streams
-                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
-                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
-                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_POSITION, 30, 1) # POS 30Hz
-                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA2, 10, 1) # VFR_HUD
-                
-                # Explicitly request TERRAIN_REPORT (Msg 136) at 2Hz (500,000 microseconds)
-                connection.mav.command_long_send(
-                    connection.target_system, connection.target_component,
-                    mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
-                    136, 500000, 0, 0, 0, 0, 0
-                )
-                connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 2, 1)
+            if msg.get_type() == 'HEARTBEAT':
+                # Ignore GCS (type 6) or non-autopilot component heartbeats so they don't overwrite vehicle telemetry
+                if getattr(msg, 'type', None) == mavutil.mavlink.MAV_TYPE_GCS or getattr(msg, 'autopilot', 0) == mavutil.mavlink.MAV_AUTOPILOT_INVALID:
+                    await asyncio.sleep(0.005)
+                    continue
+                if hasattr(msg, 'get_srcComponent') and msg.get_srcComponent() not in [mavutil.mavlink.MAV_COMP_ID_AUTOPILOT1, 1]:
+                    await asyncio.sleep(0.005)
+                    continue
+
+                if not heartbeat_received:
+                    heartbeat_received = True
+                    print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to SITL.")
+                    # Request data streams
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_POSITION, 30, 1) # POS 30Hz
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA2, 10, 1) # VFR_HUD
+                    
+                    # Explicitly request TERRAIN_REPORT (Msg 136) at 2Hz (500,000 microseconds)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        136, 500000, 0, 0, 0, 0, 0
+                    )
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 2, 1)
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
-                # Decode Ardupilot mode strings
-                data['mode'] = mavutil.mode_string_v10(msg)
-                if msg.type == mavutil.mavlink.MAV_TYPE_FIXED_WING:
-                    data['firmware'] = 'ArduPlane'
-                elif msg.type in [mavutil.mavlink.MAV_TYPE_QUADROTOR, mavutil.mavlink.MAV_TYPE_HEXAROTOR, mavutil.mavlink.MAV_TYPE_OCTOROTOR]:
-                    data['firmware'] = 'ArduCopter'
+                # Decode Ardupilot mode strings safely
+                mode_str = mavutil.mode_string_v10(msg)
+                if mode_str and not mode_str.startswith("Mode("):
+                    data['mode'] = mode_str
                 else:
-                    data['firmware'] = f'Type {msg.type}'
+                    data['mode'] = getattr(msg, 'flight_mode', 'MANUAL')
+
+                if msg.type == mavutil.mavlink.MAV_TYPE_FIXED_WING or msg.type in [19, 20, 21, 22, 23, 24, 25]:
+                    data['firmware'] = 'ArduPlane'
+                elif msg.type in [mavutil.mavlink.MAV_TYPE_QUADROTOR, mavutil.mavlink.MAV_TYPE_HEXAROTOR, mavutil.mavlink.MAV_TYPE_OCTOROTOR, mavutil.mavlink.MAV_TYPE_TRICOPTER, mavutil.mavlink.MAV_TYPE_HELICOPTER]:
+                    data['firmware'] = 'ArduCopter'
+                elif msg.type in [mavutil.mavlink.MAV_TYPE_GROUND_ROVER, mavutil.mavlink.MAV_TYPE_SURFACE_BOAT]:
+                    data['firmware'] = 'Rover'
+                elif msg.type == mavutil.mavlink.MAV_TYPE_SUBMARINE:
+                    data['firmware'] = 'ArduSub'
+                else:
+                    data['firmware'] = 'ArduPilot'
             elif msg.get_type() == 'ATTITUDE':
                 data['roll'] = msg.roll
                 data['pitch'] = msg.pitch
