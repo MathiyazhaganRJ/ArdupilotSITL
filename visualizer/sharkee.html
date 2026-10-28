@@ -2712,7 +2712,7 @@
 
             if (spEl) spEl.innerText = text;
 
-            if (isParamCommand && paramObj) {
+            if (isParamCommand) {
                 if (execKey) execKey.classList.add('armed');
                 if (msgAnnun) msgAnnun.classList.add('active-cyan');
             } else {
@@ -2721,14 +2721,25 @@
             }
         }
 
+        // Standard 1-Click Execution: Pressing the side switch immediately sets the parameter
+        function applyParam(name, value) {
+            sendSitlParam(name, value);
+            const cmd = `param set ${name} ${value}`;
+            copyText(cmd);
+            setCduScratchpad(`SET: ${name} = ${value}`, true, { name, value, cmd });
+            
+            // Visual execution feedback on Boeing EXEC key
+            const execKey = document.getElementById('btn-cdu-exec');
+            if (execKey) {
+                execKey.classList.add('armed');
+                setTimeout(() => execKey.classList.remove('armed'), 1000);
+            }
+        }
+
+        // EXEC Key re-executes or commits current command
         function executeCduCommand() {
             if (cduPendingParam) {
-                sendSitlParam(cduPendingParam.name, cduPendingParam.value);
-                copyText(cduPendingParam.cmd);
-                setCduScratchpad(`SENT: ${cduPendingParam.name}`, false);
-                setTimeout(() => {
-                    setCduScratchpad('READY', false);
-                }, 2000);
+                applyParam(cduPendingParam.name, cduPendingParam.value);
             } else if (cduScratchpadText && cduScratchpadText !== 'READY') {
                 copyText(cduScratchpadText);
                 setCduScratchpad('COPIED TO CLIPBOARD', false);
@@ -2802,28 +2813,16 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', isDeadReckoning ? 1.0 : 0.0);
-                        setCduScratchpad(`param set SIM_GPS1_ENABLE ${isDeadReckoning ? 1 : 0}`, true, { name: 'SIM_GPS1_ENABLE', value: isDeadReckoning ? 1.0 : 0.0, cmd: `param set SIM_GPS1_ENABLE ${isDeadReckoning ? 1 : 0}` });
-                    },
-                    '1R': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
-                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
-                    },
-                    '2L': () => setCduScratchpad('FS_EKF_THRESH 0.8', true, { name: 'FS_EKF_THRESH', value: 0.8, cmd: 'param set FS_EKF_THRESH 0.8' }),
-                    '2R': () => setCduScratchpad('EK3_GLITCH_RAD 25', true, { name: 'EK3_GLITCH_RAD', value: 25, cmd: 'param set EK3_GLITCH_RAD 25' }),
+                    '1L': () => applyParam('SIM_GPS1_ENABLE', isDeadReckoning ? 1.0 : 0.0),
+                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
+                    '2L': () => applyParam('FS_EKF_THRESH', 0.8),
+                    '2R': () => applyParam('EK3_GLITCH_RAD', 25.0),
                     '3L': () => setCduScratchpad(`DR TIME: ${((performance.now() - drStartTime) / 1000).toFixed(0)}s`, false),
-                    '3R': () => setCduScratchpad('EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1, cmd: 'param set EK3_SRC_OPTIONS 1' }),
+                    '3R': () => applyParam('EK3_SRC_OPTIONS', 1.0),
                     '4L': () => { cduCurrentPage = 2; renderCduPage(); },
                     '4R': () => setCduScratchpad(`CRAB: ${crabAngleEl ? crabAngleEl.innerText : '0.0°'}`, false),
-                    '5L': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', 0.0);
-                        setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' });
-                    },
-                    '5R': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
-                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
-                    },
+                    '5L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
+                    '5R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
                     '6L': () => {
                         const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
                         copyText(batch);
@@ -2865,50 +2864,17 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', 0.0);
-                        setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' });
-                    },
-                    '1R': () => {
-                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
-                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
-                    },
-                    '2L': () => {
-                        sendSitlParam('SIM_GPS1_JAM', 1.0);
-                        setCduScratchpad('param set SIM_GPS1_JAM 1', true, { name: 'SIM_GPS1_JAM', value: 1.0, cmd: 'param set SIM_GPS1_JAM 1' });
-                    },
-                    '2R': () => {
-                        sendSitlParam('SIM_GPS1_JAM', 0.0);
-                        setCduScratchpad('param set SIM_GPS1_JAM 0', true, { name: 'SIM_GPS1_JAM', value: 0.0, cmd: 'param set SIM_GPS1_JAM 0' });
-                    },
-                    '3L': () => {
-                        sendSitlParam('SIM_FLOW_ENABLE', 1.0);
-                        setCduScratchpad('param set SIM_FLOW_ENABLE 1', true, { name: 'SIM_FLOW_ENABLE', value: 1.0, cmd: 'param set SIM_FLOW_ENABLE 1' });
-                    },
-                    '3R': () => {
-                        sendSitlParam('EK3_FLOW_USE', 1.0);
-                        setCduScratchpad('param set EK3_FLOW_USE 1', true, { name: 'EK3_FLOW_USE', value: 1.0, cmd: 'param set EK3_FLOW_USE 1' });
-                    },
-                    '4L': () => {
-                        sendSitlParam('EK3_SRC1_VELXY', 5.0);
-                        setCduScratchpad('param set EK3_SRC1_VELXY 5', true, { name: 'EK3_SRC1_VELXY', value: 5.0, cmd: 'param set EK3_SRC1_VELXY 5' });
-                    },
-                    '4R': () => {
-                        sendSitlParam('EK3_SRC_OPTIONS', 1.0);
-                        setCduScratchpad('param set EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1.0, cmd: 'param set EK3_SRC_OPTIONS 1' });
-                    },
-                    '5L': () => {
-                        sendSitlParam('AHRS_GPS_USE', 0.0);
-                        setCduScratchpad('param set AHRS_GPS_USE 0', true, { name: 'AHRS_GPS_USE', value: 0.0, cmd: 'param set AHRS_GPS_USE 0' });
-                    },
-                    '5R': () => {
-                        sendSitlParam('AHRS_GPS_USE', 1.0);
-                        setCduScratchpad('param set AHRS_GPS_USE 1', true, { name: 'AHRS_GPS_USE', value: 1.0, cmd: 'param set AHRS_GPS_USE 1' });
-                    },
-                    '6L': () => {
-                        sendSitlParam('EK3_DRAG_BCOEF_X', 25.0);
-                        setCduScratchpad('param set EK3_DRAG_BCOEF_X 25', true, { name: 'EK3_DRAG_BCOEF_X', value: 25.0, cmd: 'param set EK3_DRAG_BCOEF_X 25' });
-                    },
+                    '1L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
+                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
+                    '2L': () => applyParam('SIM_GPS1_JAM', 1.0),
+                    '2R': () => applyParam('SIM_GPS1_JAM', 0.0),
+                    '3L': () => applyParam('SIM_FLOW_ENABLE', 1.0),
+                    '3R': () => applyParam('EK3_FLOW_USE', 1.0),
+                    '4L': () => applyParam('EK3_SRC1_VELXY', 5.0),
+                    '4R': () => applyParam('EK3_SRC_OPTIONS', 1.0),
+                    '5L': () => applyParam('AHRS_GPS_USE', 0.0),
+                    '5R': () => applyParam('AHRS_GPS_USE', 1.0),
+                    '6L': () => applyParam('EK3_DRAG_BCOEF_X', 25.0),
                     '6R': () => { cduCurrentPage = 1; renderCduPage(); }
                 };
 
@@ -2945,16 +2911,16 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' }),
-                    '1R': () => setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' }),
-                    '2L': () => setCduScratchpad('param set SIM_GPS1_JAM 1', true, { name: 'SIM_GPS1_JAM', value: 1.0, cmd: 'param set SIM_GPS1_JAM 1' }),
-                    '2R': () => setCduScratchpad('param set SIM_FLOW_ENABLE 1', true, { name: 'SIM_FLOW_ENABLE', value: 1.0, cmd: 'param set SIM_FLOW_ENABLE 1' }),
-                    '3L': () => setCduScratchpad('param set EK3_FLOW_USE 1', true, { name: 'EK3_FLOW_USE', value: 1.0, cmd: 'param set EK3_FLOW_USE 1' }),
-                    '3R': () => setCduScratchpad('param set EK3_SRC1_VELXY 5', true, { name: 'EK3_SRC1_VELXY', value: 5.0, cmd: 'param set EK3_SRC1_VELXY 5' }),
-                    '4L': () => setCduScratchpad('param set EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1.0, cmd: 'param set EK3_SRC_OPTIONS 1' }),
-                    '4R': () => setCduScratchpad('param set EK3_DRAG_BCOEF_X 25', true, { name: 'EK3_DRAG_BCOEF_X', value: 25.0, cmd: 'param set EK3_DRAG_BCOEF_X 25' }),
-                    '5L': () => setCduScratchpad('param set FS_EKF_THRESH 0.8', true, { name: 'FS_EKF_THRESH', value: 0.8, cmd: 'param set FS_EKF_THRESH 0.8' }),
-                    '5R': () => setCduScratchpad('param set EK3_GLITCH_RAD 25', true, { name: 'EK3_GLITCH_RAD', value: 25.0, cmd: 'param set EK3_GLITCH_RAD 25' }),
+                    '1L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
+                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
+                    '2L': () => applyParam('SIM_GPS1_JAM', 1.0),
+                    '2R': () => applyParam('SIM_FLOW_ENABLE', 1.0),
+                    '3L': () => applyParam('EK3_FLOW_USE', 1.0),
+                    '3R': () => applyParam('EK3_SRC1_VELXY', 5.0),
+                    '4L': () => applyParam('EK3_SRC_OPTIONS', 1.0),
+                    '4R': () => applyParam('EK3_DRAG_BCOEF_X', 25.0),
+                    '5L': () => applyParam('FS_EKF_THRESH', 0.8),
+                    '5R': () => applyParam('EK3_GLITCH_RAD', 25.0),
                     '6L': () => {
                         const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
                         copyText(batch);
