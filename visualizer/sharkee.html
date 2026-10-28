@@ -348,6 +348,43 @@
             background: rgba(10, 132, 255, 0.3);
         }
 
+        /* Garmin G1000 Amber DR Annunciator Flag */
+        .compass-dr-flag {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 3px;
+            background: rgba(255, 159, 10, 0.22);
+            color: #ff9f0a;
+            border: 1px solid #ff9f0a;
+            letter-spacing: 0.08em;
+            display: inline-block;
+            animation: dr-blink 1.2s infinite ease-in-out;
+        }
+
+        @keyframes dr-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+
+        .dr-toggle-badge {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .dr-toggle-badge:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: var(--text-primary);
+        }
+
+        .dr-toggle-badge.active {
+            background: rgba(255, 159, 10, 0.25);
+            color: #ff9f0a;
+            border: 1px solid #ff9f0a;
+            animation: dr-blink 1.5s infinite ease-in-out;
+        }
+
         .compass-hdg-readout {
             display: flex;
             align-items: baseline;
@@ -697,6 +734,8 @@
                     m/s</span></div>
             <div class="data-row"><span class="data-label">RPM (Cruise)</span><span id="pusher-rpm" class="data-val"
                     style="color: var(--success);">0</span></div>
+            <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
+                    style="color: var(--success); font-weight:700;">3D FIX</span></div>
         </div>
 
         <div class="section-title">Vehicle Config</div>
@@ -769,8 +808,12 @@
                     <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="var(--accent)" fill-opacity="0.3"></polygon>
                 </svg>
                 <span class="compass-title">NAV COMPASS</span>
+                <span id="compass-dr-flag" class="compass-dr-flag" style="display:none;" title="Dead Reckoning Navigation Mode Active">DR</span>
             </div>
-            <div id="compass-mode-btn" class="compass-badge" title="Click to toggle Heading-Up / North-Up">HDG UP</div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <div id="btn-toggle-dr" class="compass-badge dr-toggle-badge" title="Toggle Dead Reckoning Simulation (Hotkey 'D')">DR TEST</div>
+                <div id="compass-mode-btn" class="compass-badge" title="Click to toggle Heading-Up / North-Up">HDG UP</div>
+            </div>
         </div>
 
         <!-- Heading & Track Readout -->
@@ -1902,20 +1945,206 @@
 
         const maxTrailPoints = 100000; // 50km of tracking
         const trailPositions = new Float32Array(maxTrailPoints * 3);
+        const trailColors = new Float32Array(maxTrailPoints * 3);
+        for (let i = 0; i < maxTrailPoints; i++) {
+            trailColors[i * 3] = 0.13;
+            trailColors[i * 3 + 1] = 0.59;
+            trailColors[i * 3 + 2] = 0.95;
+        }
+
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3).setUsage(THREE.DynamicDrawUsage));
+        trailGeo.setAttribute('color', new THREE.BufferAttribute(trailColors, 3).setUsage(THREE.DynamicDrawUsage));
 
         // Due to Windows/ANGLE limitations, native WebGL lines are capped at 1px thickness.
         const trailMat = new THREE.LineBasicMaterial({
-            color: CONFIG.trackColor,
-            linewidth: 4, // Ignored by Windows, works on Mac/Linux
+            vertexColors: true,
             transparent: true,
-            opacity: 0.9
+            opacity: 0.95
         });
 
         const trailLine = new THREE.Line(trailGeo, trailMat);
         trailLine.frustumCulled = false;
         scene.add(trailLine);
+
+        // ==========================================
+        // DEAD RECKONING 3D VISUAL SUITE
+        // ==========================================
+        const drGroup = new THREE.Group();
+        drGroup.visible = false;
+        scene.add(drGroup);
+
+        let isDeadReckoning = false;
+        let simulatedDR = false;
+        let drStartTime = 0;
+        const lastFixPosition = new THREE.Vector3();
+
+        // 1. Last Known GPS Fix Marker
+        const lastFixMarker = new THREE.Group();
+        drGroup.add(lastFixMarker);
+
+        // Ground anchor rings at last fix coordinate
+        const lastFixOuterRing = new THREE.Mesh(
+            new THREE.RingGeometry(1.2, 1.8, 32).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+        );
+        lastFixMarker.add(lastFixOuterRing);
+
+        const lastFixInnerRing = new THREE.Mesh(
+            new THREE.RingGeometry(0.2, 0.6, 32).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
+        );
+        lastFixMarker.add(lastFixInnerRing);
+
+        // Vertical cyan laser beacon from ground to sky
+        const beaconBeamGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 50, 0)]);
+        const beaconBeamMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.75 });
+        const beaconBeam = new THREE.Line(beaconBeamGeo, beaconBeamMat);
+        lastFixMarker.add(beaconBeam);
+
+        // Floating diamond beacon at last known 3D fix position
+        const lastFixDiamond = new THREE.Mesh(
+            new THREE.OctahedronGeometry(1.2),
+            new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.9 })
+        );
+        lastFixMarker.add(lastFixDiamond);
+
+        // 2. Tether line connecting Last Known Fix to Current Aircraft Position
+        const tetherGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]);
+        const tetherMat = new THREE.LineDashedMaterial({
+            color: 0xff9f0a,
+            dashSize: 2.0,
+            gapSize: 1.2,
+            transparent: true,
+            opacity: 0.85
+        });
+        const tetherLine = new THREE.Line(tetherGeo, tetherMat);
+        drGroup.add(tetherLine);
+
+        // 3. Ground Uncertainty Group (Expands over time beneath aircraft)
+        const uncertaintyGroup = new THREE.Group();
+        drGroup.add(uncertaintyGroup);
+
+        // Translucent expanding disc
+        const uncDiscMesh = new THREE.Mesh(
+            new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({
+                color: 0xff9f0a,
+                transparent: true,
+                opacity: 0.16,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            })
+        );
+        uncDiscMesh.position.y = -1.9;
+        uncertaintyGroup.add(uncDiscMesh);
+
+        // Outer rotating dashed border ring
+        const uncRingMesh = new THREE.Mesh(
+            new THREE.RingGeometry(0.96, 1.0, 48).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({
+                color: 0xff9f0a,
+                transparent: true,
+                opacity: 0.85,
+                side: THREE.DoubleSide
+            })
+        );
+        uncRingMesh.position.y = -1.89;
+        uncertaintyGroup.add(uncRingMesh);
+
+        // Crosshairs on ground
+        const uncCrosshairs = new THREE.LineSegments(
+            new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 1)
+            ]),
+            new THREE.LineBasicMaterial({ color: 0xff9f0a, transparent: true, opacity: 0.5 })
+        );
+        uncCrosshairs.position.y = -1.88;
+        uncertaintyGroup.add(uncCrosshairs);
+
+        // Vertical plumb line from aircraft down to ground uncertainty center
+        const plumbLine = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
+            new THREE.LineDashedMaterial({
+                color: 0xff9f0a,
+                dashSize: 1.2,
+                gapSize: 0.8,
+                transparent: true,
+                opacity: 0.6
+            })
+        );
+        drGroup.add(plumbLine);
+
+        // State Machine Controller for Dead Reckoning
+        function setDeadReckoningMode(enable, reason = '') {
+            if (isDeadReckoning === enable) {
+                if (!enable) {
+                    const navEl = document.getElementById('nav-fix-status');
+                    if (navEl && reason) navEl.innerText = reason;
+                }
+                return;
+            }
+
+            isDeadReckoning = enable;
+            const drFlag = document.getElementById('compass-dr-flag');
+            const drBtn = document.getElementById('btn-toggle-dr');
+            const navEl = document.getElementById('nav-fix-status');
+
+            if (enable) {
+                drStartTime = performance.now();
+                drGroup.visible = true;
+
+                // Fix coordinates at current plane position
+                lastFixPosition.copy(vtolGroup.position);
+                const groundY = mapGroup.position.y;
+                lastFixMarker.position.set(lastFixPosition.x, groundY + 0.05, lastFixPosition.z);
+                lastFixDiamond.position.set(0, Math.max(1.0, lastFixPosition.y - groundY), 0);
+                beaconBeam.geometry.setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, Math.max(30, (lastFixPosition.y - groundY) + 20), 0)
+                ]);
+
+                if (drFlag) drFlag.style.display = 'inline-block';
+                if (drBtn) {
+                    drBtn.classList.add('active');
+                    drBtn.innerText = 'DR ON';
+                }
+                if (navEl) {
+                    navEl.innerText = reason || 'DEAD RECKONING';
+                    navEl.style.color = '#ff9f0a';
+                }
+            } else {
+                drGroup.visible = false;
+                if (drFlag) drFlag.style.display = 'none';
+                if (drBtn) {
+                    drBtn.classList.remove('active');
+                    drBtn.innerText = 'DR TEST';
+                }
+                if (navEl) {
+                    navEl.innerText = reason || '3D FIX';
+                    navEl.style.color = 'var(--success)';
+                }
+            }
+        }
+
+        function toggleDeadReckoningSim() {
+            simulatedDR = !simulatedDR;
+            setDeadReckoningMode(simulatedDR, simulatedDR ? 'SIMULATED DR' : '3D FIX');
+        }
+
+        const drToggleBtn = document.getElementById('btn-toggle-dr');
+        if (drToggleBtn) {
+            drToggleBtn.onclick = toggleDeadReckoningSim;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            // Ignore when typing in input boxes
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+            if (e.key === 'd' || e.key === 'D') {
+                toggleDeadReckoningSim();
+            }
+        });
 
         let trailCount = 0;
         let lastRenderTime = Date.now();
@@ -2219,6 +2448,7 @@
                     trailPositions[0] = currentTrackPos.x;
                     trailPositions[1] = currentTrackPos.y;
                     trailPositions[2] = currentTrackPos.z;
+                    trailColors[0] = 0.13; trailColors[1] = 0.59; trailColors[2] = 0.95;
                     
                     firstPos = true;
                 }
@@ -2232,17 +2462,25 @@
                         trailCount++;
                     } else {
                         trailPositions.copyWithin(0, 3);
+                        trailColors.copyWithin(0, 3);
                     }
+                    const ac = isDeadReckoning ? { r: 1.0, g: 0.62, b: 0.04 } : { r: 0.13, g: 0.59, b: 0.95 };
                     // Lock the historical point
                     trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
                     trailPositions[trailCount * 3 - 1] = rawTargetPos.z;
+                    trailColors[trailCount * 3 - 3] = ac.r;
+                    trailColors[trailCount * 3 - 2] = ac.g;
+                    trailColors[trailCount * 3 - 1] = ac.b;
                     
                     // Crucial: Update the active tip so it doesn't default to 0,0,0!
                     // Without this, waking up the browser causes permanent origin spikes!
                     trailPositions[trailCount * 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 + 1] = rawTargetPos.y;
                     trailPositions[trailCount * 3 + 2] = rawTargetPos.z;
+                    trailColors[trailCount * 3] = ac.r;
+                    trailColors[trailCount * 3 + 1] = ac.g;
+                    trailColors[trailCount * 3 + 2] = ac.b;
                     
                     lastTrailAddPos.copy(rawTargetPos);
                 }
@@ -2260,6 +2498,24 @@
                     if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
                     updateTerrainGraph();
                     lastGraphUpdate = now;
+                }
+            }
+            else if (data.type === 'GPS_RAW_INT') {
+                const fixTypes = ['NO GPS', 'NO FIX', '2D FIX', '3D FIX', 'DGPS', 'RTK FLT', 'RTK FIX'];
+                const fixName = fixTypes[data.fix_type] || `FIX (${data.fix_type})`;
+                if (!simulatedDR) {
+                    if (data.fix_type < 3) {
+                        setDeadReckoningMode(true, `GPS LOST (${fixName})`);
+                    } else {
+                        setDeadReckoningMode(false, fixName);
+                    }
+                }
+            }
+            else if (data.type === 'ESTIMATOR_STATUS') {
+                if (!simulatedDR) {
+                    if (data.pos_horiz_abs === false) {
+                        setDeadReckoningMode(true, 'EKF DEAD RECKONING');
+                    }
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
@@ -2342,11 +2598,13 @@
             // Active Trail Tracking (High-Res): Records when focused!
             // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
             if (firstPos) {
+                const activeColor = isDeadReckoning ? { r: 1.0, g: 0.62, b: 0.04 } : { r: 0.13, g: 0.59, b: 0.95 };
                 if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
                     if (trailCount < maxTrailPoints - 1) {
                         trailCount++;
                     } else {
                         trailPositions.copyWithin(0, 3);
+                        trailColors.copyWithin(0, 3);
                     }
                     lastTrailAddPos.copy(currentTrackPos);
                 }
@@ -2355,8 +2613,12 @@
                 trailPositions[trailCount * 3] = currentTrackPos.x;
                 trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
                 trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
+                trailColors[trailCount * 3] = activeColor.r;
+                trailColors[trailCount * 3 + 1] = activeColor.g;
+                trailColors[trailCount * 3 + 2] = activeColor.b;
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
+                trailGeo.attributes.color.needsUpdate = true;
             }
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
@@ -2452,6 +2714,42 @@
             if (hdgValEl) {
                 const hdgInt = Math.round((planeHeading % 360 + 360) % 360);
                 hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
+            }
+
+            // Animate Dead Reckoning 3D Visual Suite
+            if (isDeadReckoning) {
+                const elapsedSec = (performance.now() - drStartTime) / 1000.0;
+                // Position uncertainty grows at ~1.2 m/s drift rate (standard un-aided aviation IMU model)
+                const uncRadius = Math.min(250.0, 4.0 + (elapsedSec * 1.2));
+                const groundY = mapGroup.position.y;
+
+                uncertaintyGroup.position.set(vtolGroup.position.x, groundY, vtolGroup.position.z);
+                uncDiscMesh.scale.set(uncRadius, uncRadius, uncRadius);
+                uncRingMesh.scale.set(uncRadius, uncRadius, uncRadius);
+                uncCrosshairs.scale.set(uncRadius, uncRadius, uncRadius);
+
+                // Rotate outer border and pulse inner disc
+                uncRingMesh.rotation.y += 0.01;
+                uncDiscMesh.material.opacity = 0.12 + 0.06 * Math.sin(now * 0.005);
+
+                // Spin diamond marker
+                lastFixDiamond.rotation.y += 0.02;
+                lastFixDiamond.rotation.x += 0.01;
+
+                // Tether line from Last Fix 3D position to current plane position
+                tetherLine.geometry.setFromPoints([lastFixPosition, vtolGroup.position]);
+                tetherLine.computeLineDistances();
+
+                // Plumb line dropping straight down from plane to uncertainty center
+                const planeGroundPt = new THREE.Vector3(vtolGroup.position.x, groundY, vtolGroup.position.z);
+                plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
+                plumbLine.computeLineDistances();
+
+                // Annunciator and telemetry badge updates
+                const navEl = document.getElementById('nav-fix-status');
+                if (navEl) {
+                    navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                }
             }
 
             renderer.render(scene, camera);

@@ -19,7 +19,7 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND'], blocking=False)
+        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'ESTIMATOR_STATUS'], blocking=False)
         if msg:
             if msg.get_type() == 'HEARTBEAT':
                 # Ignore GCS (type 6) or non-autopilot component heartbeats so they don't overwrite vehicle telemetry
@@ -38,6 +38,7 @@ async def mavlink_listener():
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_POSITION, 30, 1) # POS 30Hz
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA2, 10, 1) # VFR_HUD
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS, 5, 1) # GPS_RAW_INT & EKF 5Hz
                     
                     # Explicitly request TERRAIN_REPORT (Msg 136) at 2Hz (500,000 microseconds)
                     connection.mav.command_long_send(
@@ -96,6 +97,16 @@ async def mavlink_listener():
             elif msg.get_type() == 'TERRAIN_REPORT':
                 data['terrain_height'] = msg.terrain_height
                 data['current_height'] = msg.current_height
+            elif msg.get_type() == 'GPS_RAW_INT':
+                data['fix_type'] = getattr(msg, 'fix_type', 0)
+                data['satellites_visible'] = getattr(msg, 'satellites_visible', 0)
+                data['eph'] = getattr(msg, 'eph', 0)
+            elif msg.get_type() == 'ESTIMATOR_STATUS':
+                flags = getattr(msg, 'flags', 0)
+                data['flags'] = flags
+                data['pos_horiz_abs'] = bool(flags & (1 << 4))
+                data['gps_glitch'] = bool(flags & (1 << 9))
+                data['pos_horiz_ratio'] = getattr(msg, 'pos_horiz_ratio', 0.0)
                 
             if clients:
                 message = json.dumps(data)
