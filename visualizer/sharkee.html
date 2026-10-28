@@ -790,7 +790,7 @@
                 <circle cx="0" cy="0" r="34" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-dasharray="2,3" stroke-width="0.8" />
                 
                 <!-- Rotating Compass Card (rotates by -heading in HDG UP mode) -->
-                <g id="compass-rotator" style="transform-origin: 0px 0px; transition: transform 0.08s linear;">
+                <g id="compass-rotator" style="transform-origin: 0px 0px;">
                     <!-- Major 30° Ticks & Cardinal Labels -->
                     <!-- 0° North -->
                     <line x1="0" y1="-86" x2="0" y2="-72" stroke="#ff453a" stroke-width="2" />
@@ -862,13 +862,13 @@
                 </g>
 
                 <!-- Garmin Wind Vector Arrow -->
-                <g id="compass-wind-arrow" style="transform-origin: 0px 0px; transition: transform 0.2s ease-out; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));">
+                <g id="compass-wind-arrow" style="transform-origin: 0px 0px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));">
                     <line x1="0" y1="-38" x2="0" y2="-65" stroke="var(--wind-arrow-color)" stroke-width="2.5" stroke-linecap="round" />
                     <polygon points="0,-72 -4,-63 4,-63" fill="var(--wind-arrow-color)" />
                 </g>
 
                 <!-- Garmin 3D Faceted Navigation Arrow Symbol -->
-                <g id="compass-aircraft-symbol" style="transform-origin: 0px 0px; transition: transform 0.08s linear; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));">
+                <g id="compass-aircraft-symbol" style="transform-origin: 0px 0px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));">
                     <!-- Left Shaded Facet (Crimson Red) -->
                     <polygon points="0,-22 -14,18 0,8" fill="#c72b27" />
                     <!-- Right High-Contrast Facet (Vibrant Scarlet Red) -->
@@ -1172,6 +1172,19 @@
         let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
         let liveFetchedWeather = null;
 
+        // Smooth Compass Rotation State & Angle Unwrapping (Eliminates 0°/360° needle resets)
+        let targetRotatorAngle = 0, displayRotatorAngle = 0;
+        let targetWindAngle = 0, displayWindAngle = 0;
+        let targetAircraftAngle = 0, displayAircraftAngle = 0;
+        let targetTrkAngle = 0, displayTrkAngle = 0;
+
+        function shortestAngleDiff(target, current) {
+            let diff = (target - current) % 360;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+            return diff;
+        }
+
         // Initialize SVG Compass Rose 5° and 10° Tick Marks
         function initCompassTicks() {
             const rotator = document.getElementById('compass-rotator');
@@ -1232,44 +1245,38 @@
                 if (trkValEl) trkValEl.innerText = '---';
             }
 
-            // 3. Dial Card & Aircraft Rotation
+            // 3. Dial Card & Aircraft Rotation Targets
             if (compassMode === 'hdg_up') {
-                // Compass card rotates so plane heading is at top (12 o'clock lubber line)
-                rotatorEl.style.transform = `rotate(${-planeHeading}deg)`;
-                aircraftSymbolEl.style.transform = `rotate(0deg)`;
+                targetRotatorAngle = -planeHeading;
+                targetAircraftAngle = 0;
 
-                // Wind arrow points along the wind vector relative to aircraft nose
-                // windDir is FROM direction. Vector flows towards (windDir + 180).
-                const relWindAngle = (currentWindDir - planeHeading + 180) % 360;
-                windArrowEl.style.transform = `rotate(${relWindAngle}deg)`;
+                // Wind arrow points along wind flow vector relative to aircraft nose
+                targetWindAngle = currentWindDir - planeHeading + 180;
 
-                // Track Bug relative to heading
                 if (trkInt !== null && trkBugEl) {
-                    const relTrk = (planeGroundTrack - planeHeading) % 360;
+                    targetTrkAngle = planeGroundTrack - planeHeading;
                     trkBugEl.style.display = 'block';
-                    trkBugEl.style.transform = `rotate(${relTrk}deg)`;
                 } else if (trkBugEl) {
                     trkBugEl.style.display = 'none';
                 }
             } else {
-                // North-Up mode: Card is fixed, aircraft rotates to heading
-                rotatorEl.style.transform = `rotate(0deg)`;
-                aircraftSymbolEl.style.transform = `rotate(${planeHeading}deg)`;
+                targetRotatorAngle = 0;
+                targetAircraftAngle = planeHeading;
 
-                const relWindAngle = (currentWindDir + 180) % 360;
-                windArrowEl.style.transform = `rotate(${relWindAngle}deg)`;
+                targetWindAngle = currentWindDir + 180;
 
                 if (trkInt !== null && trkBugEl) {
+                    targetTrkAngle = planeGroundTrack;
                     trkBugEl.style.display = 'block';
-                    trkBugEl.style.transform = `rotate(${planeGroundTrack}deg)`;
                 } else if (trkBugEl) {
                     trkBugEl.style.display = 'none';
                 }
             }
 
-            // 4. Wind Summary Text
+            // 4. Wind Summary Text (Official Aviation Standard: Direction first, then Speed)
             if (windSummaryEl) {
-                windSummaryEl.innerText = `${currentWindSpd.toFixed(1)} m/s @ ${Math.round(currentWindDir)}° (${getCardinal(currentWindDir)})`;
+                const windDirInt = Math.round(((currentWindDir % 360) + 360) % 360);
+                windSummaryEl.innerText = `${windDirInt.toString().padStart(3, '0')}° / ${currentWindSpd.toFixed(1)} m/s (${getCardinal(currentWindDir)})`;
             }
 
             // 5. Aerospace Headwind & Crosswind Decomposition
@@ -2403,6 +2410,25 @@
             pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
             twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
             twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+
+            // Smooth 60FPS Compass Rotation (Continuous shortest-path, zero 0°/360° reset)
+            const compassRotatorEl = document.getElementById('compass-rotator');
+            const compassWindArrowEl = document.getElementById('compass-wind-arrow');
+            const compassAircraftSymbolEl = document.getElementById('compass-aircraft-symbol');
+            const compassTrkBugEl = document.getElementById('compass-trk-bug');
+
+            const compassLerp = Math.min(1.0, 1.0 - Math.exp(-dt * 12.0));
+            displayRotatorAngle += shortestAngleDiff(targetRotatorAngle, displayRotatorAngle) * compassLerp;
+            displayWindAngle += shortestAngleDiff(targetWindAngle, displayWindAngle) * compassLerp;
+            displayAircraftAngle += shortestAngleDiff(targetAircraftAngle, displayAircraftAngle) * compassLerp;
+            displayTrkAngle += shortestAngleDiff(targetTrkAngle, displayTrkAngle) * compassLerp;
+
+            if (compassRotatorEl) compassRotatorEl.style.transform = `rotate(${displayRotatorAngle}deg)`;
+            if (compassWindArrowEl) compassWindArrowEl.style.transform = `rotate(${displayWindAngle}deg)`;
+            if (compassAircraftSymbolEl) compassAircraftSymbolEl.style.transform = `rotate(${displayAircraftAngle}deg)`;
+            if (compassTrkBugEl && compassTrkBugEl.style.display !== 'none') {
+                compassTrkBugEl.style.transform = `rotate(${displayTrkAngle}deg)`;
+            }
 
             renderer.render(scene, camera);
         }
