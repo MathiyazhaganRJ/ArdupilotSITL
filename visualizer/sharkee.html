@@ -1425,20 +1425,33 @@
                 </div>
             </div>
 
-            <!-- Parameter Row 3: EK3_DR_TIMEOUT -->
+            <!-- Parameter Row 3: FS_DR_ENABLE -->
             <div class="fms-param-card">
                 <div class="param-card-header">
-                    <span class="p-name">EK3_DR_TIMEOUT</span>
-                    <span class="p-role">Dead Reckon Timeout</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_DR_TIMEOUT 5" title="Copy command">COPY</button>
+                    <span class="p-name">FS_DR_ENABLE</span>
+                    <span class="p-role">Dead Reckoning Action</span>
+                    <button class="fms-copy-btn" data-param="param set FS_DR_ENABLE 1" title="Copy command">COPY</button>
                 </div>
                 <div class="param-card-body">
-                    <code>param set EK3_DR_TIMEOUT 5</code>
-                    <p class="p-desc">Duration in seconds EKF continues flying in Dead Reckoning before failsafe trigger.</p>
+                    <code>param set FS_DR_ENABLE 1</code>
+                    <p class="p-desc">Failsafe action on position loss: 0=Disabled, 1=Land/QLand, 2=RTL (Dead Reckoning home).</p>
                 </div>
             </div>
 
-            <!-- Parameter Row 4: EK3_GLITCH_RAD -->
+            <!-- Parameter Row 4: FS_DR_TIMEOUT -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">FS_DR_TIMEOUT</span>
+                    <span class="p-role">Dead Reckon Timeout</span>
+                    <button class="fms-copy-btn" data-param="param set FS_DR_TIMEOUT 15" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set FS_DR_TIMEOUT 15</code>
+                    <p class="p-desc">Time in seconds vehicle may navigate in Dead Reckoning before escalating failsafe.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 5: EK3_GLITCH_RAD -->
             <div class="fms-param-card">
                 <div class="param-card-header">
                     <span class="p-name">EK3_GLITCH_RAD</span>
@@ -1447,24 +1460,24 @@
                 </div>
                 <div class="param-card-body">
                     <code>param set EK3_GLITCH_RAD 25</code>
-                    <p class="p-desc">Maximum horizontal position innovation (meters) before GPS is flagged as glitched.</p>
+                    <p class="p-desc">Maximum horizontal position innovation (meters) before GPS reading is rejected as glitched.</p>
                 </div>
             </div>
 
-            <!-- Parameter Row 5: EK3_FLOW_ENABLE -->
+            <!-- Parameter Row 6: EK3_FLOW_USE -->
             <div class="fms-param-card">
                 <div class="param-card-header">
-                    <span class="p-name">EK3_FLOW_ENABLE</span>
+                    <span class="p-name">EK3_FLOW_USE</span>
                     <span class="p-role">Optical Flow Fusion</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_FLOW_ENABLE 1" title="Copy command">COPY</button>
+                    <button class="fms-copy-btn" data-param="param set EK3_FLOW_USE 1" title="Copy command">COPY</button>
                 </div>
                 <div class="param-card-body">
-                    <code>param set EK3_FLOW_ENABLE 1</code>
-                    <p class="p-desc">Fuses downward optical flow sensors to eliminate Dead Reckoning horizontal velocity drift.</p>
+                    <code>param set EK3_FLOW_USE 1</code>
+                    <p class="p-desc">Optical flow mode: 0=None, 1=Fuse into horizontal velocity & position, 2=Terrain height.</p>
                 </div>
             </div>
 
-            <!-- Parameter Row 6: EK3_SRC1_VELXY -->
+            <!-- Parameter Row 7: EK3_SRC1_VELXY -->
             <div class="fms-param-card">
                 <div class="param-card-header">
                     <span class="p-name">EK3_SRC1_VELXY</span>
@@ -1473,24 +1486,24 @@
                 </div>
                 <div class="param-card-body">
                     <code>param set EK3_SRC1_VELXY 5</code>
-                    <p class="p-desc">3=GPS. Set to 5 for Compass + Airspeed velocity fallback during GPS-denied dead reckoning.</p>
+                    <p class="p-desc">0=None, 3=GPS (default), 5=OpticalFlow (ground-speed tracking), 6=ExternalNav.</p>
                 </div>
             </div>
 
-            <!-- Parameter Row 7: FS_EKF_ACTION -->
+            <!-- Parameter Row 8: EK3_SRC_OPTIONS -->
             <div class="fms-param-card">
                 <div class="param-card-header">
-                    <span class="p-name">FS_EKF_ACTION</span>
-                    <span class="p-role">Emergency Failsafe</span>
-                    <button class="fms-copy-btn" data-param="param set FS_EKF_ACTION 1" title="Copy command">COPY</button>
+                    <span class="p-name">EK3_SRC_OPTIONS</span>
+                    <span class="p-role">Fallback Source Option</span>
+                    <button class="fms-copy-btn" data-param="param set EK3_SRC_OPTIONS 1" title="Copy command">COPY</button>
                 </div>
                 <div class="param-card-body">
-                    <code>param set FS_EKF_ACTION 1</code>
-                    <p class="p-desc">Action taken if Dead Reckoning fails: 1=Emergency Land, 2=AltHold, 3=Loiter in circle.</p>
+                    <code>param set EK3_SRC_OPTIONS 1</code>
+                    <p class="p-desc">Bit 0 (1)=Fuse all available velocity sources (including wind dead reckoning) if primary is lost.</p>
                 </div>
             </div>
 
-            <!-- Parameter Row 8: FS_EKF_THRESH -->
+            <!-- Parameter Row 9: FS_EKF_THRESH -->
             <div class="fms-param-card">
                 <div class="param-card-header">
                     <span class="p-name">FS_EKF_THRESH</span>
@@ -1499,7 +1512,7 @@
                 </div>
                 <div class="param-card-body">
                     <code>param set FS_EKF_THRESH 0.8</code>
-                    <p class="p-desc">Threshold (0.0 - 1.0) of EKF innovation variance test to declare navigation loss.</p>
+                    <p class="p-desc">Innovation variance threshold (0.0 to 1.0) before declaring navigation loss on QuadPlanes.</p>
                 </div>
             </div>
         </div>
@@ -2693,7 +2706,7 @@
         const btnFmsCopyAllDr = document.getElementById('btn-fms-copy-all-dr');
         if (btnFmsCopyAllDr) {
             btnFmsCopyAllDr.onclick = function () {
-                const batch = `param set EK3_DR_TIMEOUT 5\nparam set EK3_GLITCH_RAD 25\nparam set EK3_FLOW_ENABLE 1\nparam set EK3_SRC1_VELXY 5\nparam set FS_EKF_ACTION 1\nparam set FS_EKF_THRESH 0.8`;
+                const batch = `param set FS_DR_ENABLE 1\nparam set FS_DR_TIMEOUT 15\nparam set EK3_GLITCH_RAD 25\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set FS_EKF_THRESH 0.8`;
                 copyText(batch, this);
             };
         }
