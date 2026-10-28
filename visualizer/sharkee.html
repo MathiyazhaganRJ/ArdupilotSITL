@@ -2160,10 +2160,11 @@
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
                 planeAirspeed = data.airspeed;
                 planeGroundspeed = data.groundspeed;
-                if (data.heading !== undefined && data.heading !== null) {
+                // Only fallback to integer VFR_HUD heading if no 3D attitude received yet
+                if (data.heading !== undefined && data.heading !== null && !firstPos) {
                     planeHeading = data.heading;
+                    updateCompass();
                 }
-                updateCompass();
             } else if (data.type === 'ATTITUDE') {
                 rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
                 // Convert MAVLink yaw (radians) to degrees [0..360)
@@ -2174,7 +2175,7 @@
             } else if (data.type === 'GLOBAL_POSITION_INT') {
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
-                if (data.hdg !== undefined) planeHeading = data.hdg;
+                // data.hdg is GPS track in cdeg; attitude heading is handled by ATTITUDE
                 currentPlaneLat = data.lat;
                 currentPlaneLon = data.lon;
                 const coordsBadge = document.getElementById('weather-coords-badge');
@@ -2411,13 +2412,29 @@
             twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
             twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
 
-            // Smooth 60FPS Compass Rotation (Continuous shortest-path, zero 0°/360° reset)
+            // Continuous 60FPS Compass Synchronization from 3D Model
+            if (firstPos) {
+                // In Three.js, vtolGroup.rotation.y = -yaw (radians). Extract continuous float heading:
+                const smoothHdg = ((-vtolGroup.rotation.y * 180 / Math.PI) % 360 + 360) % 360;
+                planeHeading = smoothHdg;
+                if (compassMode === 'hdg_up') {
+                    targetRotatorAngle = -smoothHdg;
+                    targetAircraftAngle = 0;
+                    targetWindAngle = currentWindDir - smoothHdg + 180;
+                } else {
+                    targetRotatorAngle = 0;
+                    targetAircraftAngle = smoothHdg;
+                    targetWindAngle = currentWindDir + 180;
+                }
+            }
+
+            // Smooth 60FPS Compass Rotation (Authentic Garmin AHRS Gyro-Damped Filter)
             const compassRotatorEl = document.getElementById('compass-rotator');
             const compassWindArrowEl = document.getElementById('compass-wind-arrow');
             const compassAircraftSymbolEl = document.getElementById('compass-aircraft-symbol');
             const compassTrkBugEl = document.getElementById('compass-trk-bug');
 
-            const compassLerp = Math.min(1.0, 1.0 - Math.exp(-dt * 12.0));
+            const compassLerp = Math.min(1.0, 1.0 - Math.exp(-dt * 8.0));
             displayRotatorAngle += shortestAngleDiff(targetRotatorAngle, displayRotatorAngle) * compassLerp;
             displayWindAngle += shortestAngleDiff(targetWindAngle, displayWindAngle) * compassLerp;
             displayAircraftAngle += shortestAngleDiff(targetAircraftAngle, displayAircraftAngle) * compassLerp;
@@ -2428,6 +2445,13 @@
             if (compassAircraftSymbolEl) compassAircraftSymbolEl.style.transform = `rotate(${displayAircraftAngle}deg)`;
             if (compassTrkBugEl && compassTrkBugEl.style.display !== 'none') {
                 compassTrkBugEl.style.transform = `rotate(${displayTrkAngle}deg)`;
+            }
+
+            // Keep digital heading readout synchronized
+            const hdgValEl = document.getElementById('compass-hdg-val');
+            if (hdgValEl) {
+                const hdgInt = Math.round((planeHeading % 360 + 360) % 360);
+                hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
             }
 
             renderer.render(scene, camera);
