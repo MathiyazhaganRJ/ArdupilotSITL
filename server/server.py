@@ -46,7 +46,25 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         136, 500000, 0, 0, 0, 0, 0
                     )
-                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 2, 1)
+                    # Explicitly request WIND (Msg 168) at 10Hz (100,000 microseconds)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        168, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request GPS_RAW_INT (Msg 24) at 10Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        24, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request ESTIMATOR_STATUS (Msg 230) at 10Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        230, 100000, 0, 0, 0, 0, 0
+                    )
+                    connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
@@ -104,9 +122,12 @@ async def mavlink_listener():
             elif msg.get_type() == 'ESTIMATOR_STATUS':
                 flags = getattr(msg, 'flags', 0)
                 data['flags'] = flags
-                data['pos_horiz_abs'] = bool(flags & (1 << 4))
-                data['gps_glitch'] = bool(flags & (1 << 9))
+                data['pos_horiz_abs'] = bool(flags & 16)
+                data['pred_pos_horiz_abs'] = bool(flags & 512)
+                data['gps_glitch'] = bool(flags & 1024)
                 data['pos_horiz_ratio'] = getattr(msg, 'pos_horiz_ratio', 0.0)
+                data['vel_ratio'] = getattr(msg, 'vel_ratio', 0.0)
+                data['innov_ratio'] = max(data.get('pos_horiz_ratio', 0.0), data.get('vel_ratio', 0.0))
                 
             if clients:
                 message = json.dumps(data)
@@ -120,7 +141,28 @@ async def mavlink_listener():
 async def ws_handler(websocket, path=None):
     clients.add(websocket)
     try:
-        await websocket.wait_closed()
+        async for message in websocket:
+            try:
+                cmd = json.loads(message)
+                action = cmd.get("action")
+                if action == "set_param":
+                    param_name = cmd.get("name", "")
+                    param_val = float(cmd.get("value", 0.0))
+                    param_id = param_name.encode('utf-8')[:16]
+                    target_sys = getattr(connection, 'target_system', 1) or 1
+                    target_comp = getattr(connection, 'target_component', 1) or 1
+                    connection.mav.param_set_send(
+                        target_sys,
+                        target_comp,
+                        param_id,
+                        param_val,
+                        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+                    )
+                    print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
+            except Exception as e:
+                print(f"[Server] Error processing client message: {e}")
+    except websockets.exceptions.ConnectionClosed:
+        pass
     finally:
         clients.discard(websocket)
 

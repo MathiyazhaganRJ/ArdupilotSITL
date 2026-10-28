@@ -1921,9 +1921,19 @@
             }
         }
 
-        // Trigger initial weather fetch
-        fetchLiveWeather(currentPlaneLat, currentPlaneLon);
+        // MAVLink Parameter Transmission over WebSocket to server.py
+        function sendSitlParam(paramName, paramValue) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: 'set_param',
+                    name: paramName,
+                    value: parseFloat(paramValue)
+                }));
+                console.log(`[SITL Command] param set ${paramName} ${paramValue}`);
+            }
+        }
 
+        // Open-Meteo weather fetch is available on-demand via the refresh button
         document.getElementById('btn-fetch-weather').onclick = () => {
             fetchLiveWeather(currentPlaneLat, currentPlaneLon);
         };
@@ -1997,18 +2007,21 @@
             const val = parseFloat(e.target.value);
             document.getElementById('slider-spd-label').innerText = val.toFixed(1);
             applyWeatherValues(val, currentWindDir, Math.max(val * 1.3, currentWindGust), currentWindTurb, null, null, null, false);
+            sendSitlParam('SIM_WIND_SPD', val);
         };
 
         sliderDir.oninput = (e) => {
             const val = parseInt(e.target.value, 10);
             document.getElementById('slider-dir-label').innerText = val;
             applyWeatherValues(currentWindSpd, val, currentWindGust, currentWindTurb, null, null, null, false);
+            sendSitlParam('SIM_WIND_DIR', val);
         };
 
         sliderTurb.oninput = (e) => {
             const val = parseFloat(e.target.value);
             document.getElementById('slider-turb-label').innerText = val.toFixed(2);
             applyWeatherValues(currentWindSpd, currentWindDir, currentWindGust, val, null, null, null, false);
+            sendSitlParam('SIM_WIND_TURB', val);
         };
 
         document.getElementById('btn-reset-live').onclick = () => {
@@ -2665,7 +2678,7 @@
         if (btnFmsGpsDis) {
             btnFmsGpsDis.onclick = function () {
                 copyText('param set SIM_GPS_DISABLE 1', this);
-                setDeadReckoningMode(true, 'SIMULATED GPS DENIAL');
+                sendSitlParam('SIM_GPS_DISABLE', 1.0);
             };
         }
 
@@ -2673,7 +2686,7 @@
         if (btnFmsGpsRestore) {
             btnFmsGpsRestore.onclick = function () {
                 copyText('param set SIM_GPS_DISABLE 0', this);
-                setDeadReckoningMode(false, '3D FIX');
+                sendSitlParam('SIM_GPS_DISABLE', 0.0);
             };
         }
 
@@ -2967,12 +2980,51 @@
                 if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
                 if (!hasFetchedInitialWeather) {
                     hasFetchedInitialWeather = true;
-                    fetchLiveWeather(data.lat, data.lon);
                 }
             } else if (data.type === 'WIND') {
-                // SITL telemetry wind report: preserve target weather values and copyable terminal commands
+                // Genuine ArduPilot SITL Wind Telemetry
                 if (data.wind_speed !== undefined && data.wind_direction !== undefined) {
-                    window.sitlTelemetryWind = { speed: data.wind_speed, direction: data.wind_direction };
+                    currentWindSpd = Math.max(0, data.wind_speed);
+                    currentWindDir = ((data.wind_direction % 360) + 360) % 360;
+                    currentWindGust = Math.max(currentWindSpd, currentWindSpd * 1.35);
+
+                    // Synchronize avionics compass directly with genuine SITL wind
+                    updateCompass();
+
+                    // Synchronize Weather widget metrics
+                    const spdEl = document.getElementById('live-wind-spd');
+                    if (spdEl) spdEl.innerText = currentWindSpd.toFixed(1);
+                    const spdKtEl = document.getElementById('live-wind-spd-kt');
+                    if (spdKtEl) spdKtEl.innerText = (currentWindSpd * 1.94384).toFixed(1) + ' kt';
+                    const dirEl = document.getElementById('live-wind-dir');
+                    if (dirEl) dirEl.innerText = Math.round(currentWindDir);
+                    const dirCardEl = document.getElementById('live-wind-dir-cardinal');
+                    if (dirCardEl) dirCardEl.innerText = getCardinal(currentWindDir);
+
+                    // Keep terminal commands in sync
+                    const cmdSpd = document.getElementById('cmd-spd-val');
+                    if (cmdSpd) cmdSpd.innerText = currentWindSpd.toFixed(1);
+                    const cmdDir = document.getElementById('cmd-dir-val');
+                    if (cmdDir) cmdDir.innerText = Math.round(currentWindDir);
+
+                    // Synchronize weather sliders if user is not actively dragging
+                    const sSpd = document.getElementById('slider-spd');
+                    const sDir = document.getElementById('slider-dir');
+                    if (sSpd && document.activeElement !== sSpd) {
+                        sSpd.value = currentWindSpd.toFixed(1);
+                        const sSpdLbl = document.getElementById('slider-spd-label');
+                        if (sSpdLbl) sSpdLbl.innerText = currentWindSpd.toFixed(1);
+                    }
+                    if (sDir && document.activeElement !== sDir) {
+                        sDir.value = Math.round(currentWindDir);
+                        const sDirLbl = document.getElementById('slider-dir-label');
+                        if (sDirLbl) sDirLbl.innerText = Math.round(currentWindDir);
+                    }
+
+                    const statusTag = document.getElementById('weather-status-tag');
+                    if (statusTag) statusTag.innerText = "SITL Active Wind (Telemetry)";
+                    const dotEl = document.getElementById('weather-dot');
+                    if (dotEl) dotEl.className = 'live-dot';
                 }
             } else if (data.type === 'TERRAIN_REPORT') {
                 if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
@@ -3059,19 +3111,36 @@
             else if (data.type === 'GPS_RAW_INT') {
                 const fixTypes = ['NO GPS', 'NO FIX', '2D FIX', '3D FIX', 'DGPS', 'RTK FLT', 'RTK FIX'];
                 const fixName = fixTypes[data.fix_type] || `FIX (${data.fix_type})`;
-                if (!simulatedDR) {
-                    if (data.fix_type < 3) {
-                        setDeadReckoningMode(true, `GPS LOST (${fixName})`);
-                    } else {
-                        setDeadReckoningMode(false, fixName);
-                    }
+                const sats = (data.satellites_visible !== undefined) ? data.satellites_visible : 0;
+
+                // Detect actual ArduPilot state: GPS is lost if fix_type < 3 or 0 satellites
+                if (data.fix_type < 3 || sats === 0) {
+                    setDeadReckoningMode(true, `GPS LOST (${fixName})`);
+                } else {
+                    setDeadReckoningMode(false, fixName);
                 }
             }
             else if (data.type === 'ESTIMATOR_STATUS') {
-                if (!simulatedDR) {
-                    if (data.pos_horiz_abs === false) {
-                        setDeadReckoningMode(true, 'EKF DEAD RECKONING');
-                    }
+                // Update FMS CDU live status telemetry from genuine EKF3 state
+                const statPosAbs = document.getElementById('fms-stat-pos-abs');
+                if (statPosAbs) {
+                    statPosAbs.innerText = data.pos_horiz_abs ? 'VALID' : 'DENIED';
+                    statPosAbs.className = 'cell-val ' + (data.pos_horiz_abs ? 'green' : 'amber');
+                }
+                const statGlitch = document.getElementById('fms-stat-glitch');
+                if (statGlitch) {
+                    statGlitch.innerText = data.gps_glitch ? 'DETECTED' : 'NONE';
+                    statGlitch.className = 'cell-val ' + (data.gps_glitch ? 'amber' : 'green');
+                }
+                const statInnov = document.getElementById('fms-stat-innov');
+                if (statInnov) {
+                    const innov = data.innov_ratio || data.pos_horiz_ratio || 0.08;
+                    statInnov.innerText = innov.toFixed(2);
+                    statInnov.className = 'cell-val ' + (innov > 0.8 ? 'amber' : 'cyan');
+                }
+
+                if (data.pos_horiz_abs === false) {
+                    setDeadReckoningMode(true, 'EKF DEAD RECKONING');
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
