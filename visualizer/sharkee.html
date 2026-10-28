@@ -1031,6 +1031,12 @@
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
             </div>
+            <div class="terminal-cmd-row" style="border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 5px; margin-top: 2px;">
+                <code style="color: #ff9f0a;">param set SIM_GPS_DISABLE 1</code>
+                <button class="btn-copy-mini" id="btn-copy-gps-dis" title="Copy GPS denial command for SITL terminal">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+            </div>
         </div>
 
         <!-- Interactive Adjust / Simulation Sliders -->
@@ -1516,6 +1522,12 @@
         document.getElementById('btn-copy-turb').onclick = function () {
             copyText(`param set SIM_WIND_TURB ${currentWindTurb.toFixed(2)}`, this);
         };
+        const btnGpsDis = document.getElementById('btn-copy-gps-dis');
+        if (btnGpsDis) {
+            btnGpsDis.onclick = function () {
+                copyText('param set SIM_GPS_DISABLE 1', this);
+            };
+        }
 
         // Slider Tuning Controls
         const sliderSpd = document.getElementById('slider-spd');
@@ -1943,13 +1955,16 @@
         document.getElementById('m_y3_tilt_r').value = 7; // Tilt Servo Right on CH8
         document.getElementById('m_y3_tilt_l').value = 8; // Tilt Servo Left on CH9
 
+        const normalTrackColor = new THREE.Color(CONFIG.trackColor || 0x0dda14);
+        const drTrackColor = new THREE.Color(0xff9f0a);
+
         const maxTrailPoints = 100000; // 50km of tracking
         const trailPositions = new Float32Array(maxTrailPoints * 3);
         const trailColors = new Float32Array(maxTrailPoints * 3);
         for (let i = 0; i < maxTrailPoints; i++) {
-            trailColors[i * 3] = 0.13;
-            trailColors[i * 3 + 1] = 0.59;
-            trailColors[i * 3 + 2] = 0.95;
+            trailColors[i * 3] = normalTrackColor.r;
+            trailColors[i * 3 + 1] = normalTrackColor.g;
+            trailColors[i * 3 + 2] = normalTrackColor.b;
         }
 
         const trailGeo = new THREE.BufferGeometry();
@@ -2448,7 +2463,7 @@
                     trailPositions[0] = currentTrackPos.x;
                     trailPositions[1] = currentTrackPos.y;
                     trailPositions[2] = currentTrackPos.z;
-                    trailColors[0] = 0.13; trailColors[1] = 0.59; trailColors[2] = 0.95;
+                    trailColors[0] = normalTrackColor.r; trailColors[1] = normalTrackColor.g; trailColors[2] = normalTrackColor.b;
                     
                     firstPos = true;
                 }
@@ -2464,7 +2479,7 @@
                         trailPositions.copyWithin(0, 3);
                         trailColors.copyWithin(0, 3);
                     }
-                    const ac = isDeadReckoning ? { r: 1.0, g: 0.62, b: 0.04 } : { r: 0.13, g: 0.59, b: 0.95 };
+                    const ac = isDeadReckoning ? drTrackColor : normalTrackColor;
                     // Lock the historical point
                     trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
@@ -2598,7 +2613,7 @@
             // Active Trail Tracking (High-Res): Records when focused!
             // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
             if (firstPos) {
-                const activeColor = isDeadReckoning ? { r: 1.0, g: 0.62, b: 0.04 } : { r: 0.13, g: 0.59, b: 0.95 };
+                const activeColor = isDeadReckoning ? drTrackColor : normalTrackColor;
                 if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
                     if (trailCount < maxTrailPoints - 1) {
                         trailCount++;
