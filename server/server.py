@@ -172,18 +172,34 @@ def start_http_server():
     class QuietHandler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format, *args): pass
     
-    # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
-    with http.server.ThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
-        print("HTTP Web Server started on port 8000")
-        httpd.serve_forever()
+    try:
+        # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
+        with http.server.ThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
+            print("HTTP Web Server started on port 8000")
+            httpd.serve_forever()
+    except OSError as e:
+        if getattr(e, 'errno', None) in (10048, 98):
+            print("[Notice] HTTP Port 8000 is already in use by an active server.")
+        else:
+            raise
 
 async def main():
     # Start the HTTP server in the background
     threading.Thread(target=start_http_server, daemon=True).start()
 
-    server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
-    print("WebSocket Server started on port 8766")
-    await asyncio.gather(server.wait_closed(), mavlink_listener())
+    try:
+        server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
+        print("WebSocket Server started on port 8766")
+        await asyncio.gather(server.wait_closed(), mavlink_listener())
+    except OSError as e:
+        if getattr(e, 'errno', None) in (10048, 98):
+            print("\n" + "="*65)
+            print(" [!] ERROR: Port 8766 is already in use by another Python instance.")
+            print(" An existing server.py process is already running.")
+            print(" To free the port, run in PowerShell:")
+            print("   Get-Process python | Stop-Process -Force")
+            print("="*65 + "\n")
+        raise
 
 def start_asyncio_loop():
     # Set up a new event loop for this background thread
