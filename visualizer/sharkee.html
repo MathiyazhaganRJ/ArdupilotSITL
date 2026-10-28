@@ -653,6 +653,269 @@
             background: var(--accent);
             cursor: pointer;
         }
+
+        /* Authentic Avionics FMS / CDU Navigation Panel */
+        #fms-widget {
+            position: absolute;
+            top: 65px;
+            right: 20px;
+            width: 364px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: rgba(10, 14, 20, 0.94);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1.5px solid rgba(0, 229, 255, 0.35);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 15px rgba(0, 229, 255, 0.05);
+            z-index: 155;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
+            color: #e0e0e0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        #fms-widget::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #fms-widget::-webkit-scrollbar-thumb {
+            background: rgba(0, 229, 255, 0.25);
+            border-radius: 2px;
+        }
+
+        .fms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            cursor: move;
+        }
+
+        .fms-header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .fms-title-main {
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            color: #00e5ff;
+        }
+
+        .fms-page-badge {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .fms-status-chip {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(0, 230, 118, 0.18);
+            color: #00e676;
+            border: 1px solid rgba(0, 230, 118, 0.4);
+            letter-spacing: 0.04em;
+        }
+
+        .fms-status-chip.dr {
+            background: rgba(255, 159, 10, 0.22);
+            color: #ff9f0a;
+            border-color: rgba(255, 159, 10, 0.5);
+            animation: dr-blink 1.2s infinite ease-in-out;
+        }
+
+        .fms-close-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.15s;
+        }
+
+        .fms-close-btn:hover {
+            color: #ff453a;
+        }
+
+        .fms-screen-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #00e5ff;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .fms-screen-time {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .fms-section-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: rgba(0, 229, 255, 0.7);
+            text-align: center;
+            letter-spacing: 0.08em;
+            margin: 10px 0 5px;
+        }
+
+        .fms-status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .fms-grid-cell {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 4px 6px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fms-grid-cell .cell-lbl {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.04em;
+            margin-bottom: 2px;
+        }
+
+        .fms-grid-cell .cell-val {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .cell-val.green { color: #00e676; }
+        .cell-val.amber { color: #ff9f0a; }
+        .cell-val.cyan  { color: #00e5ff; }
+        .cell-val.red   { color: #ff453a; }
+
+        .fms-action-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .fms-lsk-btn {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: inherit;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid;
+            letter-spacing: 0.04em;
+            transition: all 0.15s;
+        }
+
+        .fms-lsk-btn.amber {
+            background: rgba(255, 159, 10, 0.15);
+            border-color: rgba(255, 159, 10, 0.45);
+            color: #ff9f0a;
+        }
+        .fms-lsk-btn.amber:hover {
+            background: rgba(255, 159, 10, 0.3);
+        }
+
+        .fms-lsk-btn.green {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: rgba(0, 230, 118, 0.45);
+            color: #00e676;
+        }
+        .fms-lsk-btn.green:hover {
+            background: rgba(0, 230, 118, 0.3);
+        }
+
+        .fms-lsk-btn.cyan {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: rgba(0, 229, 255, 0.45);
+            color: #00e5ff;
+        }
+        .fms-lsk-btn.cyan:hover {
+            background: rgba(0, 229, 255, 0.3);
+        }
+
+        .fms-param-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .fms-param-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .param-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .p-name {
+            font-size: 11px;
+            font-weight: 800;
+            color: #00e5ff;
+        }
+
+        .p-role {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .fms-copy-btn {
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            color: #00e5ff;
+            font-size: 9px;
+            font-weight: 700;
+            font-family: inherit;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .fms-copy-btn:hover {
+            background: rgba(0, 229, 255, 0.35);
+            color: #fff;
+        }
+
+        .param-card-body code {
+            display: block;
+            font-size: 10.5px;
+            color: #4ade80;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+        }
+
+        .param-card-body .p-desc {
+            font-size: 9.5px;
+            color: rgba(255, 255, 255, 0.65);
+            margin: 0;
+            line-height: 1.35;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -698,10 +961,16 @@
                 <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.3"></polygon>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & SITL Terminal Commands">
+        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            </svg>
+        </button>
+        <button class="toolbar-btn" id="btn-toggle-fms" title="Toggle FMS Dead Reckoning & Navigation CDU">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
             </svg>
         </button>
     </div>
@@ -1031,12 +1300,6 @@
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
             </div>
-            <div class="terminal-cmd-row" style="border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 5px; margin-top: 2px;">
-                <code style="color: #ff9f0a;">param set SIM_GPS_DISABLE 1</code>
-                <button class="btn-copy-mini" id="btn-copy-gps-dis" title="Copy GPS denial command for SITL terminal">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                </button>
-            </div>
         </div>
 
         <!-- Interactive Adjust / Simulation Sliders -->
@@ -1065,6 +1328,179 @@
                     <span><b id="slider-turb-label">0.20</b></span>
                 </div>
                 <input type="range" id="slider-turb" min="0" max="1" step="0.05" value="0.20">
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated FMS / Dead Reckoning Navigation CDU Panel -->
+    <div id="fms-widget" class="fms-cdu-panel" style="display: none;">
+        <div class="fms-header">
+            <div class="fms-header-left">
+                <span class="fms-title-main">FMS NAV</span>
+                <span class="fms-page-badge">1/1</span>
+                <span id="fms-live-badge" class="fms-status-chip">3D GPS</span>
+            </div>
+            <div class="fms-header-right">
+                <button id="btn-close-fms" class="fms-close-btn" title="Close FMS">&times;</button>
+            </div>
+        </div>
+
+        <!-- CDU Subtitle & Title Bar -->
+        <div class="fms-screen-title">
+            <span>DEAD RECKONING &amp; EKF3</span>
+            <span id="fms-cur-time" class="fms-screen-time">00:00:00Z</span>
+        </div>
+
+        <!-- 1. Live EKF & Navigation Status Grid -->
+        <div class="fms-section-label">--- NAV SENSORS &amp; EKF STATUS ---</div>
+        <div class="fms-status-grid">
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">PRIMARY FIX</span>
+                <span id="fms-stat-fix" class="cell-val green">3D FIX</span>
+            </div>
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">POS HORIZ ABS</span>
+                <span id="fms-stat-pos-abs" class="cell-val green">VALID</span>
+            </div>
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">GPS GLITCH</span>
+                <span id="fms-stat-glitch" class="cell-val green">NONE</span>
+            </div>
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">INNOV RATIO</span>
+                <span id="fms-stat-innov" class="cell-val cyan">0.08</span>
+            </div>
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">DR DRIFT EST</span>
+                <span id="fms-stat-drift" class="cell-val amber">&plusmn;0.0m</span>
+            </div>
+            <div class="fms-grid-cell">
+                <span class="cell-lbl">FALLBACK SRC</span>
+                <span class="cell-val cyan">IMU+COMPASS</span>
+            </div>
+        </div>
+
+        <!-- 2. Fast LSK Action Softkeys -->
+        <div class="fms-section-label">--- QUICK SIMULATION ACTIONS ---</div>
+        <div class="fms-action-row">
+            <button id="btn-fms-gps-disable" class="fms-lsk-btn amber" title="Disable GPS in SITL (param set SIM_GPS_DISABLE 1)">
+                &lt; DROP GPS FIX &gt;
+            </button>
+            <button id="btn-fms-gps-restore" class="fms-lsk-btn green" title="Restore GPS in SITL (param set SIM_GPS_DISABLE 0)">
+                &lt; RESTORE GPS &gt;
+            </button>
+        </div>
+        <div class="fms-action-row" style="margin-top: 5px;">
+            <button id="btn-fms-copy-all-dr" class="fms-lsk-btn cyan" style="width: 100%;" title="Copy full recommended Dead Reckoning parameter set">
+                &lt; COPY FULL DR EKF3 CONFIG &gt;
+            </button>
+        </div>
+
+        <!-- 3. ArduPilot Dead Reckoning Parameters Repertory -->
+        <div class="fms-section-label">--- EKF3 DEAD RECKONING PARAMETERS ---</div>
+        <div class="fms-param-list">
+            <!-- Parameter Row 1: SIM_GPS_DISABLE -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">SIM_GPS_DISABLE</span>
+                    <span class="p-role">SITL GPS Denial</span>
+                    <button class="fms-copy-btn" data-param="param set SIM_GPS_DISABLE 1" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set SIM_GPS_DISABLE 1</code>
+                    <p class="p-desc">Drops all GPS satellites. Forces EKF3 to enter Dead Reckoning mode immediately.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 2: SIM_GPS_DISABLE 0 -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">SIM_GPS_RESTORE</span>
+                    <span class="p-role">SITL GPS Recovery</span>
+                    <button class="fms-copy-btn" data-param="param set SIM_GPS_DISABLE 0" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set SIM_GPS_DISABLE 0</code>
+                    <p class="p-desc">Restores 3D satellite lock. EKF3 fuses GPS and re-centers position fix.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 3: EK3_DR_TIMEOUT -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">EK3_DR_TIMEOUT</span>
+                    <span class="p-role">Dead Reckon Timeout</span>
+                    <button class="fms-copy-btn" data-param="param set EK3_DR_TIMEOUT 5" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set EK3_DR_TIMEOUT 5</code>
+                    <p class="p-desc">Duration in seconds EKF continues flying in Dead Reckoning before failsafe trigger.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 4: EK3_GLITCH_RAD -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">EK3_GLITCH_RAD</span>
+                    <span class="p-role">Outlier Glitch Gate</span>
+                    <button class="fms-copy-btn" data-param="param set EK3_GLITCH_RAD 25" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set EK3_GLITCH_RAD 25</code>
+                    <p class="p-desc">Maximum horizontal position innovation (meters) before GPS is flagged as glitched.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 5: EK3_FLOW_ENABLE -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">EK3_FLOW_ENABLE</span>
+                    <span class="p-role">Optical Flow Fusion</span>
+                    <button class="fms-copy-btn" data-param="param set EK3_FLOW_ENABLE 1" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set EK3_FLOW_ENABLE 1</code>
+                    <p class="p-desc">Fuses downward optical flow sensors to eliminate Dead Reckoning horizontal velocity drift.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 6: EK3_SRC1_VELXY -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">EK3_SRC1_VELXY</span>
+                    <span class="p-role">Velocity Source Priority</span>
+                    <button class="fms-copy-btn" data-param="param set EK3_SRC1_VELXY 5" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set EK3_SRC1_VELXY 5</code>
+                    <p class="p-desc">3=GPS. Set to 5 for Compass + Airspeed velocity fallback during GPS-denied dead reckoning.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 7: FS_EKF_ACTION -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">FS_EKF_ACTION</span>
+                    <span class="p-role">Emergency Failsafe</span>
+                    <button class="fms-copy-btn" data-param="param set FS_EKF_ACTION 1" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set FS_EKF_ACTION 1</code>
+                    <p class="p-desc">Action taken if Dead Reckoning fails: 1=Emergency Land, 2=AltHold, 3=Loiter in circle.</p>
+                </div>
+            </div>
+
+            <!-- Parameter Row 8: FS_EKF_THRESH -->
+            <div class="fms-param-card">
+                <div class="param-card-header">
+                    <span class="p-name">FS_EKF_THRESH</span>
+                    <span class="p-role">Failsafe Threshold</span>
+                    <button class="fms-copy-btn" data-param="param set FS_EKF_THRESH 0.8" title="Copy command">COPY</button>
+                </div>
+                <div class="param-card-body">
+                    <code>param set FS_EKF_THRESH 0.8</code>
+                    <p class="p-desc">Threshold (0.0 - 1.0) of EKF innovation variance test to declare navigation loss.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1203,6 +1639,29 @@
         }
         makeDraggable(compassWidget, compassWidget.querySelector('.compass-header'));
         makeDraggable(weatherWidget, weatherWidget.querySelector('.weather-header'));
+
+        // FMS CDU Navigation Panel Toggle
+        const btnToggleFms = document.getElementById('btn-toggle-fms');
+        const fmsWidget = document.getElementById('fms-widget');
+        const btnCloseFms = document.getElementById('btn-close-fms');
+
+        function toggleFmsPanel(forceState) {
+            const shouldShow = (forceState !== undefined) ? forceState : (fmsWidget.style.display === 'none');
+            fmsWidget.style.display = shouldShow ? 'block' : 'none';
+            if (btnToggleFms) btnToggleFms.style.opacity = shouldShow ? '1.0' : '0.45';
+            localStorage.setItem('fms_visible', shouldShow ? '1' : '0');
+        }
+
+        if (btnToggleFms) btnToggleFms.onclick = () => toggleFmsPanel();
+        if (btnCloseFms) btnCloseFms.onclick = () => toggleFmsPanel(false);
+
+        if (localStorage.getItem('fms_visible') === '1') {
+            toggleFmsPanel(true);
+        } else if (btnToggleFms) {
+            btnToggleFms.style.opacity = '0.45';
+        }
+
+        makeDraggable(fmsWidget, fmsWidget.querySelector('.fms-header'));
 
         // ============================================================
         // AVIONICS COMPASS & LIVE WEATHER LOGIC
@@ -2140,8 +2599,55 @@
                     navEl.innerText = reason || '3D FIX';
                     navEl.style.color = 'var(--success)';
                 }
+            updateFmsCduLive();
+        }
+
+        // Live FMS CDU Status Sync
+        function updateFmsCduLive() {
+            const liveBadge = document.getElementById('fms-live-badge');
+            const statFix = document.getElementById('fms-stat-fix');
+            const statPosAbs = document.getElementById('fms-stat-pos-abs');
+            const statDrift = document.getElementById('fms-stat-drift');
+            const timeEl = document.getElementById('fms-cur-time');
+
+            if (timeEl) {
+                const d = new Date();
+                timeEl.innerText = d.toISOString().substr(11, 8) + 'Z';
+            }
+
+            if (isDeadReckoning) {
+                if (liveBadge) {
+                    liveBadge.className = 'fms-status-chip dr';
+                    liveBadge.innerText = 'DEAD RECKONING';
+                }
+                if (statFix) {
+                    statFix.className = 'cell-val amber';
+                    statFix.innerText = 'NO GPS FIX';
+                }
+                if (statPosAbs) {
+                    statPosAbs.className = 'cell-val amber';
+                    statPosAbs.innerText = 'DENIED';
+                }
+            } else {
+                if (liveBadge) {
+                    liveBadge.className = 'fms-status-chip';
+                    liveBadge.innerText = '3D GPS';
+                }
+                if (statFix) {
+                    statFix.className = 'cell-val green';
+                    statFix.innerText = '3D FIX';
+                }
+                if (statPosAbs) {
+                    statPosAbs.className = 'cell-val green';
+                    statPosAbs.innerText = 'VALID';
+                }
+                if (statDrift) {
+                    statDrift.innerText = '±0.0m';
+                }
             }
         }
+        setInterval(updateFmsCduLive, 1000);
+        updateFmsCduLive();
 
         function toggleDeadReckoningSim() {
             simulatedDR = !simulatedDR;
@@ -2152,6 +2658,40 @@
         if (drToggleBtn) {
             drToggleBtn.onclick = toggleDeadReckoningSim;
         }
+
+        // Wire FMS Softkeys & Parameter Copy Buttons
+        const btnFmsGpsDis = document.getElementById('btn-fms-gps-disable');
+        if (btnFmsGpsDis) {
+            btnFmsGpsDis.onclick = function () {
+                copyText('param set SIM_GPS_DISABLE 1', this);
+                setDeadReckoningMode(true, 'SIMULATED GPS DENIAL');
+            };
+        }
+
+        const btnFmsGpsRestore = document.getElementById('btn-fms-gps-restore');
+        if (btnFmsGpsRestore) {
+            btnFmsGpsRestore.onclick = function () {
+                copyText('param set SIM_GPS_DISABLE 0', this);
+                setDeadReckoningMode(false, '3D FIX');
+            };
+        }
+
+        const btnFmsCopyAllDr = document.getElementById('btn-fms-copy-all-dr');
+        if (btnFmsCopyAllDr) {
+            btnFmsCopyAllDr.onclick = function () {
+                const batch = `param set EK3_DR_TIMEOUT 5\nparam set EK3_GLITCH_RAD 25\nparam set EK3_FLOW_ENABLE 1\nparam set EK3_SRC1_VELXY 5\nparam set FS_EKF_ACTION 1\nparam set FS_EKF_THRESH 0.8`;
+                copyText(batch, this);
+            };
+        }
+
+        document.querySelectorAll('#fms-widget .fms-copy-btn').forEach(btn => {
+            btn.onclick = function () {
+                const paramText = this.getAttribute('data-param');
+                if (paramText) {
+                    copyText(paramText, this);
+                }
+            };
+        });
 
         window.addEventListener('keydown', (e) => {
             // Ignore when typing in input boxes
@@ -2764,6 +3304,10 @@
                 const navEl = document.getElementById('nav-fix-status');
                 if (navEl) {
                     navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                }
+                const fmsDriftEl = document.getElementById('fms-stat-drift');
+                if (fmsDriftEl) {
+                    fmsDriftEl.innerText = `±${uncRadius.toFixed(1)}m`;
                 }
             }
 
