@@ -1078,6 +1078,16 @@
             margin-bottom: 2px;
             transition: all 0.2s ease;
         }
+        .cdu-exec-key.armed {
+            border-color: #00ff66;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4), inset 0 1px 0 rgba(0, 255, 102, 0.5);
+            animation: exec-pulse 1.2s infinite alternate ease-in-out;
+        }
+        @keyframes exec-pulse {
+            from { filter: brightness(1.0); }
+            to { filter: brightness(1.25); box-shadow: 0 0 14px rgba(0, 255, 102, 0.6); }
+        }
         .cdu-exec-key.armed .exec-led-bar {
             background: #00ff66;
             border-color: #00ff66;
@@ -2697,22 +2707,23 @@
         }
 
         // ============================================================
+        // ============================================================
         // AIRBUS MCDU / BOEING FMC-CDU COCKPIT AVIONICS CONTROLLER
+        // Authentic Two-Step Staged Execution (Select LSK -> Commit EXEC)
         // ============================================================
         let cduCurrentPage = 1; // 1: NAV POS, 2: SIM CTL, 3: PARAMS
         let cduScratchpadText = 'READY';
-        let cduPendingParam = null; // { name, value, cmd }
+        let cduPendingParam = null; // { name, value, cmd, label }
 
-        function setCduScratchpad(text, isParamCommand = false, paramObj = null) {
+        function setCduScratchpad(text, isStaged = false) {
             cduScratchpadText = text;
-            cduPendingParam = paramObj;
             const spEl = document.getElementById('crt-scratchpad-text');
             const execKey = document.getElementById('btn-cdu-exec');
             const msgAnnun = document.getElementById('cdu-annun-msg');
 
             if (spEl) spEl.innerText = text;
 
-            if (isParamCommand) {
+            if (isStaged) {
                 if (execKey) execKey.classList.add('armed');
                 if (msgAnnun) msgAnnun.classList.add('active-cyan');
             } else {
@@ -2721,30 +2732,35 @@
             }
         }
 
-        // Standard 1-Click Execution: Pressing the side switch immediately sets the parameter
-        function applyParam(name, value) {
-            sendSitlParam(name, value);
+        // STEP 1: Select & Stage Parameter on Side Switch (Boeing FMC / Airbus MCDU Standard)
+        function stageParam(name, value, label = '') {
             const cmd = `param set ${name} ${value}`;
             copyText(cmd);
-            setCduScratchpad(`SET: ${name} = ${value}`, true, { name, value, cmd });
-            
-            // Visual execution feedback on Boeing EXEC key
-            const execKey = document.getElementById('btn-cdu-exec');
-            if (execKey) {
-                execKey.classList.add('armed');
-                setTimeout(() => execKey.classList.remove('armed'), 1000);
-            }
+            cduPendingParam = { name, value, cmd, label: label || name };
+            setCduScratchpad(`STG: ${name} ${value} > PRESS EXEC`, true);
         }
 
-        // EXEC Key re-executes or commits current command
+        // STEP 2: Commit & Execute Parameter when pilot presses illuminated EXEC key
         function executeCduCommand() {
             if (cduPendingParam) {
-                applyParam(cduPendingParam.name, cduPendingParam.value);
+                const { name, value, cmd } = cduPendingParam;
+                sendSitlParam(name, value);
+                setCduScratchpad(`EXEC: ${name} = ${value} OK`, false);
+                cduPendingParam = null;
+                setTimeout(() => {
+                    if (!cduPendingParam) setCduScratchpad('READY', false);
+                }, 2500);
             } else if (cduScratchpadText && cduScratchpadText !== 'READY') {
                 copyText(cduScratchpadText);
                 setCduScratchpad('COPIED TO CLIPBOARD', false);
                 setTimeout(() => setCduScratchpad('READY', false), 1500);
             }
+        }
+
+        // STEP 3: Cancel / Erase Staged Modification when CLR is pressed
+        function clearCduScratchpad() {
+            cduPendingParam = null;
+            setCduScratchpad('READY', false);
         }
 
         // Active LSK Actions Map for current page [1L..6L, 1R..6R]
@@ -2813,16 +2829,16 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => applyParam('SIM_GPS1_ENABLE', isDeadReckoning ? 1.0 : 0.0),
-                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
-                    '2L': () => applyParam('FS_EKF_THRESH', 0.8),
-                    '2R': () => applyParam('EK3_GLITCH_RAD', 25.0),
+                    '1L': () => stageParam('SIM_GPS1_ENABLE', isDeadReckoning ? 1.0 : 0.0, 'GPS TOGGLE'),
+                    '1R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS'),
+                    '2L': () => stageParam('FS_EKF_THRESH', 0.8, 'FAILSAFE THRESH'),
+                    '2R': () => stageParam('EK3_GLITCH_RAD', 25.0, 'GLITCH GATE'),
                     '3L': () => setCduScratchpad(`DR TIME: ${((performance.now() - drStartTime) / 1000).toFixed(0)}s`, false),
-                    '3R': () => applyParam('EK3_SRC_OPTIONS', 1.0),
+                    '3R': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
                     '4L': () => { cduCurrentPage = 2; renderCduPage(); },
                     '4R': () => setCduScratchpad(`CRAB: ${crabAngleEl ? crabAngleEl.innerText : '0.0°'}`, false),
-                    '5L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
-                    '5R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
+                    '5L': () => stageParam('SIM_GPS1_ENABLE', 0.0, 'DROP GPS FIX'),
+                    '5R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS FIX'),
                     '6L': () => {
                         const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
                         copyText(batch);
@@ -2864,17 +2880,17 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
-                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
-                    '2L': () => applyParam('SIM_GPS1_JAM', 1.0),
-                    '2R': () => applyParam('SIM_GPS1_JAM', 0.0),
-                    '3L': () => applyParam('SIM_FLOW_ENABLE', 1.0),
-                    '3R': () => applyParam('EK3_FLOW_USE', 1.0),
-                    '4L': () => applyParam('EK3_SRC1_VELXY', 5.0),
-                    '4R': () => applyParam('EK3_SRC_OPTIONS', 1.0),
-                    '5L': () => applyParam('AHRS_GPS_USE', 0.0),
-                    '5R': () => applyParam('AHRS_GPS_USE', 1.0),
-                    '6L': () => applyParam('EK3_DRAG_BCOEF_X', 25.0),
+                    '1L': () => stageParam('SIM_GPS1_ENABLE', 0.0, 'DISABLE GPS'),
+                    '1R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS'),
+                    '2L': () => stageParam('SIM_GPS1_JAM', 1.0, 'GPS JAMMING'),
+                    '2R': () => stageParam('SIM_GPS1_JAM', 0.0, 'CLEAR JAMMING'),
+                    '3L': () => stageParam('SIM_FLOW_ENABLE', 1.0, 'ENABLE OPT FLOW'),
+                    '3R': () => stageParam('EK3_FLOW_USE', 1.0, 'USE OPT FLOW'),
+                    '4L': () => stageParam('EK3_SRC1_VELXY', 5.0, 'VEL FLOW SRC'),
+                    '4R': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
+                    '5L': () => stageParam('AHRS_GPS_USE', 0.0, 'IGNORE GPS'),
+                    '5R': () => stageParam('AHRS_GPS_USE', 1.0, 'RESTORE GPS'),
+                    '6L': () => stageParam('EK3_DRAG_BCOEF_X', 25.0, 'DRAG COEFF X'),
                     '6R': () => { cduCurrentPage = 1; renderCduPage(); }
                 };
 
@@ -2911,16 +2927,16 @@
                 `;
 
                 currentLskActions = {
-                    '1L': () => applyParam('SIM_GPS1_ENABLE', 0.0),
-                    '1R': () => applyParam('SIM_GPS1_ENABLE', 1.0),
-                    '2L': () => applyParam('SIM_GPS1_JAM', 1.0),
-                    '2R': () => applyParam('SIM_FLOW_ENABLE', 1.0),
-                    '3L': () => applyParam('EK3_FLOW_USE', 1.0),
-                    '3R': () => applyParam('EK3_SRC1_VELXY', 5.0),
-                    '4L': () => applyParam('EK3_SRC_OPTIONS', 1.0),
-                    '4R': () => applyParam('EK3_DRAG_BCOEF_X', 25.0),
-                    '5L': () => applyParam('FS_EKF_THRESH', 0.8),
-                    '5R': () => applyParam('EK3_GLITCH_RAD', 25.0),
+                    '1L': () => stageParam('SIM_GPS1_ENABLE', 0.0, 'GPS DENIAL'),
+                    '1R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'GPS RECOVERY'),
+                    '2L': () => stageParam('SIM_GPS1_JAM', 1.0, 'GPS JAMMING'),
+                    '2R': () => stageParam('SIM_FLOW_ENABLE', 1.0, 'OPTICAL FLOW'),
+                    '3L': () => stageParam('EK3_FLOW_USE', 1.0, 'FLOW FUSION'),
+                    '3R': () => stageParam('EK3_SRC1_VELXY', 5.0, 'VELOCITY SRC'),
+                    '4L': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
+                    '4R': () => stageParam('EK3_DRAG_BCOEF_X', 25.0, 'DRAG COEFF X'),
+                    '5L': () => stageParam('FS_EKF_THRESH', 0.8, 'FAILSAFE THRESH'),
+                    '5R': () => stageParam('EK3_GLITCH_RAD', 25.0, 'GLITCH RAD'),
                     '6L': () => {
                         const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
                         copyText(batch);
@@ -2968,7 +2984,7 @@
         document.getElementById('btn-page-nav')?.addEventListener('click', () => { cduCurrentPage = 1; renderCduPage(); });
         document.getElementById('btn-page-sim')?.addEventListener('click', () => { cduCurrentPage = 2; renderCduPage(); });
         document.getElementById('btn-page-params')?.addEventListener('click', () => { cduCurrentPage = 3; renderCduPage(); });
-        document.getElementById('btn-cdu-clr')?.addEventListener('click', () => { setCduScratchpad('READY', false); });
+        document.getElementById('btn-cdu-clr')?.addEventListener('click', clearCduScratchpad);
         document.getElementById('btn-cdu-exec')?.addEventListener('click', executeCduCommand);
 
         // Live FMS CDU Status Sync
