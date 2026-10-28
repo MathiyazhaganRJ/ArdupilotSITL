@@ -1,7 +1,7 @@
 # ATIS BROADCAST INFORMATION BRAVO // AVIONICS PARAMETER EXECUTION MANUAL
 **Station:** `VAPO SITL`  
 **Purpose:** GNSS Denial, Electronic Jamming, Spoofing Gating & Dead Reckoning Execution  
-**Applicability:** ArduPilot EKF3 Navigation Core // Sharkee VTOL Fleet  
+**Applicability:** ArduPilot EKF3 Navigation Core // All Fixed-Wing & VTOL Aircraft Fleet  
 **Instruction:** Execute parameters via Cockpit MCDU Line Select Keys or SITL Console  
 
 ---
