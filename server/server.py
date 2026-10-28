@@ -19,7 +19,7 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT'], blocking=False)
+        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND'], blocking=False)
         if msg:
             if not heartbeat_received and msg.get_type() == 'HEARTBEAT':
                 heartbeat_received = True
@@ -59,14 +59,22 @@ async def mavlink_listener():
                 data['x'] = msg.x
                 data['y'] = msg.y
                 data['z'] = -msg.z # Convert down to up
+                data['vx'] = getattr(msg, 'vx', 0.0)
+                data['vy'] = getattr(msg, 'vy', 0.0)
             elif msg.get_type() == 'GLOBAL_POSITION_INT':
                 data['lat'] = msg.lat / 1e7
                 data['lon'] = msg.lon / 1e7
                 data['alt'] = msg.alt
                 data['relative_alt'] = msg.relative_alt
+                data['hdg'] = getattr(msg, 'hdg', 0) / 100.0
             elif msg.get_type() == 'VFR_HUD':
                 data['airspeed'] = msg.airspeed
                 data['groundspeed'] = msg.groundspeed
+                data['heading'] = getattr(msg, 'heading', None)
+            elif msg.get_type() == 'WIND':
+                data['wind_direction'] = getattr(msg, 'direction', 0)
+                data['wind_speed'] = getattr(msg, 'speed', 0.0)
+                data['wind_speed_z'] = getattr(msg, 'speed_z', 0.0)
             elif msg.get_type() == 'TERRAIN_REPORT':
                 data['terrain_height'] = msg.terrain_height
                 data['current_height'] = msg.current_height

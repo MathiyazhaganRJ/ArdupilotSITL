@@ -65,13 +65,14 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 260px;
+            width: 280px;
+            box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 24px;
+            padding: 20px;
             box-shadow: var(--shadow);
             z-index: 10;
             transition: all 0.3s ease;
@@ -277,6 +278,325 @@
             background: rgba(0, 0, 0, 0.9);
             border-color: rgba(255, 255, 255, 0.4);
         }
+
+        .toolbar-btn.active {
+            background: rgba(10, 132, 255, 0.35);
+            border-color: rgba(10, 132, 255, 0.85);
+            color: #5ac8fa;
+        }
+
+        /* Avionics Grade Compass Rose Widget */
+        #compass-widget {
+            position: absolute;
+            bottom: 20px;
+            left: 315px;
+            width: 220px;
+            box-sizing: border-box;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 12px 14px 10px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            user-select: none;
+            transition: opacity 0.25s ease, transform 0.25s ease, left 0.3s ease;
+        }
+
+        .compass-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .compass-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .compass-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(10, 132, 255, 0.15);
+            color: var(--accent);
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: background 0.2s;
+        }
+
+        .compass-badge:hover {
+            background: rgba(10, 132, 255, 0.3);
+        }
+
+        .compass-hdg-readout {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 6px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
+            margin: 2px 0 4px;
+        }
+
+        .compass-hdg-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+        }
+
+        .compass-hdg-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .compass-dial-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2px 0 6px;
+            position: relative;
+        }
+
+        .compass-telemetry {
+            background: var(--btn-bg);
+            border-radius: 8px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 11px;
+        }
+
+        .compass-telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .compass-telemetry-row .lbl {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 10px;
+        }
+
+        .compass-telemetry-row .val {
+            font-weight: 700;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
+        }
+
+        /* Live Weather & Terminal Widget */
+        #weather-widget {
+            position: absolute;
+            top: 65px;
+            right: 20px;
+            width: 324px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            z-index: 150;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        #weather-widget::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #weather-widget::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .btn-refresh {
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background: var(--btn-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-refresh.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .weather-metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .weather-metric-card {
+            background: var(--btn-bg);
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+
+        .weather-metric-card .m-lbl {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .weather-metric-card .m-val {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 2px 0 1px;
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
+        }
+
+        .weather-metric-card .m-val small {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .weather-metric-card .m-sub {
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .terminal-cmd-box {
+            background: rgba(12, 14, 18, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 6px 0 10px;
+            font-family: 'SF Mono', Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .terminal-cmd-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #4ade80;
+        }
+
+        .terminal-cmd-row code {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-copy-mini {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            padding: 2px 5px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.15s;
+        }
+
+        .btn-copy-mini:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-copy-all {
+            background: var(--accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-copy-all:hover {
+            filter: brightness(1.15);
+        }
+
+        .slider-group {
+            background: var(--btn-bg);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 11px;
+        }
+
+        .slider-row-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        .slider-row input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--motor-bg);
+            outline: none;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -313,6 +633,19 @@
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.3"></polygon>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-weather" title="Toggle Live Weather & SITL Terminal Commands">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
             </svg>
         </button>
     </div>
@@ -403,7 +736,256 @@
             <button id="btn-free" class="mode-btn">Free</button>
         </div>
     </div>
+
+    <!-- Avionics Grade Compass Rose Widget -->
+    <div id="compass-widget">
+        <div class="compass-header">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="var(--accent)" fill-opacity="0.3"></polygon>
+                </svg>
+                <span class="compass-title">NAV COMPASS</span>
+            </div>
+            <div id="compass-mode-btn" class="compass-badge" title="Click to toggle Heading-Up / North-Up">HDG UP</div>
+        </div>
+
+        <!-- Heading & Track Readout -->
+        <div class="compass-hdg-readout">
+            <span class="compass-hdg-label">HDG</span>
+            <span id="compass-hdg-val" class="compass-hdg-val">000</span><span style="font-size:12px; font-weight:700;">°</span>
+            <span class="compass-hdg-label" style="margin-left: 8px;">TRK</span>
+            <span id="compass-trk-val" style="font-size:16px; font-weight:700; color:var(--text-secondary);">---</span><span style="font-size:11px; font-weight:600; color:var(--text-secondary);">°</span>
+        </div>
+
+        <!-- Dial SVG -->
+        <div class="compass-dial-container">
+            <svg id="compass-svg" width="180" height="180" viewBox="-90 -90 180 180" style="overflow: visible;">
+                <!-- Outer Dial Bezel -->
+                <circle cx="0" cy="0" r="86" fill="rgba(12, 14, 18, 0.75)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="72" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
+                <circle cx="0" cy="0" r="34" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-dasharray="2,3" stroke-width="0.8" />
+                
+                <!-- Rotating Compass Card (rotates by -heading in HDG UP mode) -->
+                <g id="compass-rotator" style="transform-origin: 0px 0px; transition: transform 0.08s linear;">
+                    <!-- Major 30° Ticks & Cardinal Labels -->
+                    <!-- 0° North -->
+                    <line x1="0" y1="-86" x2="0" y2="-72" stroke="#ff453a" stroke-width="2" />
+                    <text x="0" y="-59" fill="#ff453a" font-size="12" font-weight="800" text-anchor="middle" dominant-baseline="central">N</text>
+                    
+                    <!-- 30° -->
+                    <g transform="rotate(30)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">3</text>
+                    </g>
+                    <!-- 60° -->
+                    <g transform="rotate(60)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">6</text>
+                    </g>
+                    <!-- 90° East -->
+                    <g transform="rotate(90)">
+                        <line x1="0" y1="-86" x2="0" y2="-72" stroke="#30d158" stroke-width="2" />
+                        <text x="0" y="-59" fill="#30d158" font-size="12" font-weight="800" text-anchor="middle" dominant-baseline="central">E</text>
+                    </g>
+                    <!-- 120° -->
+                    <g transform="rotate(120)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">12</text>
+                    </g>
+                    <!-- 150° -->
+                    <g transform="rotate(150)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">15</text>
+                    </g>
+                    <!-- 180° South -->
+                    <g transform="rotate(180)">
+                        <line x1="0" y1="-86" x2="0" y2="-72" stroke="#fff" stroke-width="2" />
+                        <text x="0" y="-59" fill="#fff" font-size="12" font-weight="800" text-anchor="middle" dominant-baseline="central">S</text>
+                    </g>
+                    <!-- 210° -->
+                    <g transform="rotate(210)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">21</text>
+                    </g>
+                    <!-- 240° -->
+                    <g transform="rotate(240)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">24</text>
+                    </g>
+                    <!-- 270° West -->
+                    <g transform="rotate(270)">
+                        <line x1="0" y1="-86" x2="0" y2="-72" stroke="#30d158" stroke-width="2" />
+                        <text x="0" y="-59" fill="#30d158" font-size="12" font-weight="800" text-anchor="middle" dominant-baseline="central">W</text>
+                    </g>
+                    <!-- 300° -->
+                    <g transform="rotate(300)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">30</text>
+                    </g>
+                    <!-- 330° -->
+                    <g transform="rotate(330)">
+                        <line x1="0" y1="-86" x2="0" y2="-75" stroke="#fff" stroke-width="1.2" />
+                        <text x="0" y="-62" fill="#fff" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="central">33</text>
+                    </g>
+                </g>
+
+                <!-- Fixed Lubber Line (Top Center) -->
+                <polygon points="0,-86 -5,-93 5,-93" fill="#ff9f0a" stroke="rgba(0,0,0,0.5)" stroke-width="0.5" />
+                
+                <!-- Ground Track Bug (TRK) -->
+                <g id="compass-trk-bug" style="transform-origin: 0px 0px; display: none;">
+                    <polygon points="0,-86 -4,-80 0,-74 4,-80" fill="#30d158" stroke="#000" stroke-width="0.5" />
+                </g>
+
+                <!-- Wind Vector Arrow (Garmin Cyan) -->
+                <g id="compass-wind-arrow" style="transform-origin: 0px 0px; transition: transform 0.2s ease-out;">
+                    <!-- Wind Shaft pointing along the wind flow vector -->
+                    <line x1="0" y1="-42" x2="0" y2="-66" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" />
+                    <!-- Arrowhead -->
+                    <polygon points="0,-72 -4.5,-63 4.5,-63" fill="#00e5ff" />
+                    <!-- Intensity Barb -->
+                    <line x1="0" y1="-46" x2="6" y2="-51" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" />
+                </g>
+
+                <!-- Center Aircraft Symbol -->
+                <g id="compass-aircraft-symbol" style="transform-origin: 0px 0px; transition: transform 0.08s linear;">
+                    <path d="M0,-18 L2,-12 L16,-3 L16,0 L3,-3 L3,10 L7,14 L7,16 L0,15 L-7,16 L-7,14 L-3,10 L-3,-3 L-16,0 L-16,-3 L-2,-12 Z" 
+                          fill="#ffffff" stroke="rgba(0,0,0,0.7)" stroke-width="1" />
+                    <circle cx="0" cy="0" r="2" fill="#ff9f0a" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Telemetry Strip -->
+        <div class="compass-telemetry">
+            <div class="compass-telemetry-row">
+                <span class="lbl">WIND</span>
+                <span id="compass-wind-summary" class="val" style="color: #00e5ff;">5.0 m/s @ 270°</span>
+            </div>
+            <div class="compass-telemetry-row">
+                <span class="lbl">COMPONENTS</span>
+                <span id="compass-components-val" class="val">HW +0.0 | XW 0.0</span>
+            </div>
+            <div class="compass-telemetry-row">
+                <span class="lbl">DRIFT / CRAB</span>
+                <span id="compass-crab-angle" class="val">0.0°</span>
+            </div>
+        </div>
     </div>
+
+    <!-- Live Weather & SITL Terminal Commands Widget -->
+    <div id="weather-widget">
+        <div class="weather-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5ac8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                </svg>
+                <div>
+                    <div style="font-weight: 700; font-size: 13px; letter-spacing: -0.01em;">Live Weather & Wind</div>
+                    <div id="weather-coords-badge" style="font-size: 10px; color: var(--text-secondary); font-family: monospace;">GPS: 8.3113°N, 77.3077°E</div>
+                </div>
+            </div>
+            <button id="btn-fetch-weather" class="btn-refresh" title="Fetch live weather from Open-Meteo for aircraft position">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Fetch
+            </button>
+        </div>
+
+        <!-- Live Feed Status Tag -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 6px; font-size: 11px;">
+            <span id="weather-status-tag" style="color: var(--success); font-weight: 600;">● Live Open-Meteo Feed</span>
+            <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">--:--:--</span>
+        </div>
+
+        <!-- Meteorological Metrics 4-Card Grid -->
+        <div class="weather-metrics-grid">
+            <div class="weather-metric-card">
+                <div class="m-lbl">WIND SPEED</div>
+                <div class="m-val"><span id="live-wind-spd">5.0</span> <small>m/s</small></div>
+                <div id="live-wind-spd-kt" class="m-sub">9.7 kt</div>
+            </div>
+            <div class="weather-metric-card">
+                <div class="m-lbl">WIND DIR</div>
+                <div class="m-val"><span id="live-wind-dir">270</span><small>°</small></div>
+                <div id="live-wind-dir-cardinal" class="m-sub">W</div>
+            </div>
+            <div class="weather-metric-card">
+                <div class="m-lbl">GUSTS</div>
+                <div class="m-val"><span id="live-wind-gust">7.5</span> <small>m/s</small></div>
+                <div id="live-wind-gust-kt" class="m-sub">14.6 kt</div>
+            </div>
+            <div class="weather-metric-card">
+                <div class="m-lbl">TURBULENCE</div>
+                <div class="m-val"><span id="live-wind-turb">0.20</span></div>
+                <div id="live-wind-turb-desc" class="m-sub">Light</div>
+            </div>
+        </div>
+
+        <!-- Atmospheric Secondary Row -->
+        <div style="display:flex; justify-content:space-between; margin-top: 6px; padding: 5px 8px; background: var(--btn-bg); border-radius: 8px; font-size: 10px; color: var(--text-secondary);">
+            <span>Temp: <b id="live-temp" style="color:var(--text-primary);">--°C</b></span>
+            <span>QNH: <b id="live-press" style="color:var(--text-primary);">-- hPa</b></span>
+            <span>Elev: <b id="live-elev" style="color:var(--text-primary);">-- m</b></span>
+        </div>
+
+        <!-- Section: SITL Terminal Commands -->
+        <div class="section-title" style="margin: 12px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
+            <span>Terminal SITL Commands</span>
+            <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
+                📋 Copy All
+            </button>
+        </div>
+
+        <!-- Dark Terminal Box -->
+        <div class="terminal-cmd-box">
+            <div class="terminal-cmd-row">
+                <code>param set SIM_WIND_SPD <span id="cmd-spd-val">5.0</span></code>
+                <button class="btn-copy-mini" id="btn-copy-spd" title="Copy parameter line">📋</button>
+            </div>
+            <div class="terminal-cmd-row">
+                <code>param set SIM_WIND_DIR <span id="cmd-dir-val">270</span></code>
+                <button class="btn-copy-mini" id="btn-copy-dir" title="Copy parameter line">📋</button>
+            </div>
+            <div class="terminal-cmd-row">
+                <code>param set SIM_WIND_TURB <span id="cmd-turb-val">0.20</span></code>
+                <button class="btn-copy-mini" id="btn-copy-turb" title="Copy parameter line">📋</button>
+            </div>
+        </div>
+
+        <!-- Interactive Adjust / Simulation Sliders -->
+        <div class="section-title" style="margin: 10px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
+            <span>Custom Wind Adjustment</span>
+            <button id="btn-reset-live" style="background:none; border:none; color:var(--accent); font-size:10px; cursor:pointer; font-weight:600; padding:0;">Reset to Live</button>
+        </div>
+        <div class="slider-group">
+            <div class="slider-row">
+                <div class="slider-row-header">
+                    <span>Speed</span>
+                    <span><b id="slider-spd-label">5.0</b> m/s</span>
+                </div>
+                <input type="range" id="slider-spd" min="0" max="25" step="0.1" value="5.0">
+            </div>
+            <div class="slider-row">
+                <div class="slider-row-header">
+                    <span>Direction</span>
+                    <span><b id="slider-dir-label">270</b>°</span>
+                </div>
+                <input type="range" id="slider-dir" min="0" max="359" step="1" value="270">
+            </div>
+            <div class="slider-row">
+                <div class="slider-row-header">
+                    <span>Turbulence</span>
+                    <span><b id="slider-turb-label">0.20</b></span>
+                </div>
+                <input type="range" id="slider-turb" min="0" max="1" step="0.05" value="0.20">
+            </div>
+        </div>
+    </div>
+
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
         style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
@@ -445,7 +1027,11 @@
         const btnToggleUi = document.getElementById('btn-toggle-ui');
         const uiPanel = document.getElementById('ui-panel');
         btnToggleUi.onclick = () => {
-            uiPanel.style.display = uiPanel.style.display === 'none' ? 'block' : 'none';
+            const isHidden = uiPanel.style.display === 'none';
+            uiPanel.style.display = isHidden ? 'block' : 'none';
+            if (compassWidget && !compassWidget.dataset.userDragged) {
+                compassWidget.style.left = isHidden ? '315px' : '20px';
+            }
         };
 
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
@@ -466,6 +1052,419 @@
                     eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
                     btnToggleTrace.style.opacity = '0.5';
                 }
+            }
+        };
+
+        // Compass & Weather Toolbar Toggles
+        const btnToggleCompass = document.getElementById('btn-toggle-compass');
+        const compassWidget = document.getElementById('compass-widget');
+        btnToggleCompass.onclick = () => {
+            const isHidden = compassWidget.style.display === 'none';
+            compassWidget.style.display = isHidden ? 'block' : 'none';
+            btnToggleCompass.classList.toggle('active', isHidden);
+            localStorage.setItem('compass_visible', isHidden ? '1' : '0');
+        };
+
+        const btnToggleWeather = document.getElementById('btn-toggle-weather');
+        const weatherWidget = document.getElementById('weather-widget');
+        btnToggleWeather.onclick = () => {
+            const isHidden = weatherWidget.style.display === 'none';
+            weatherWidget.style.display = isHidden ? 'block' : 'none';
+            btnToggleWeather.classList.toggle('active', isHidden);
+            localStorage.setItem('weather_visible', isHidden ? '1' : '0');
+        };
+
+        // Restore user toggle preferences
+        if (localStorage.getItem('compass_visible') === '0') {
+            compassWidget.style.display = 'none';
+            btnToggleCompass.classList.remove('active');
+        }
+        if (localStorage.getItem('weather_visible') === '0') {
+            weatherWidget.style.display = 'none';
+            btnToggleWeather.classList.remove('active');
+        }
+
+        // Draggable Floating Panels
+        function makeDraggable(element, handle) {
+            if (!element || !handle) return;
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            handle.style.cursor = 'grab';
+
+            handle.onmousedown = (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.classList.contains('compass-badge')) return;
+                e.preventDefault();
+                handle.style.cursor = 'grabbing';
+                p3 = e.clientX;
+                p4 = e.clientY;
+                document.onmouseup = () => {
+                    handle.style.cursor = 'grab';
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                };
+                document.onmousemove = (ev) => {
+                    ev.preventDefault();
+                    element.dataset.userDragged = 'true';
+                    p1 = p3 - ev.clientX;
+                    p2 = p4 - ev.clientY;
+                    p3 = ev.clientX;
+                    p4 = ev.clientY;
+                    element.style.bottom = 'auto';
+                    element.style.right = 'auto';
+                    element.style.top = Math.max(10, Math.min(window.innerHeight - 80, element.offsetTop - p2)) + 'px';
+                    element.style.left = Math.max(10, Math.min(window.innerWidth - 80, element.offsetLeft - p1)) + 'px';
+                };
+            };
+        }
+        makeDraggable(compassWidget, compassWidget.querySelector('.compass-header'));
+        makeDraggable(weatherWidget, weatherWidget.querySelector('.weather-header'));
+
+        // ============================================================
+        // AVIONICS COMPASS & LIVE WEATHER LOGIC
+        // ============================================================
+        let planeHeading = 0;       // Degrees [0..360)
+        let planeGroundTrack = null;// Degrees [0..360)
+        let planeAirspeed = 0;      // m/s
+        let planeGroundspeed = 0;   // m/s
+        let currentWindSpd = 5.0;   // m/s
+        let currentWindDir = 270;   // Degrees
+        let currentWindTurb = 0.20; // 0.0 - 1.0
+        let currentWindGust = 7.5;  // m/s
+        let currentPlaneLat = 8.3113;
+        let currentPlaneLon = 77.3077;
+        let hasFetchedInitialWeather = false;
+        let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
+        let liveFetchedWeather = null;
+
+        // Initialize SVG Compass Rose 5° and 10° Tick Marks
+        function initCompassTicks() {
+            const rotator = document.getElementById('compass-rotator');
+            if (!rotator) return;
+            for (let deg = 0; deg < 360; deg += 5) {
+                if (deg % 30 === 0) continue; // Major 30° ticks already defined with numbers
+                const is10 = (deg % 10 === 0);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', '0');
+                line.setAttribute('y1', '-86');
+                line.setAttribute('x2', '0');
+                line.setAttribute('y2', is10 ? '-78' : '-82');
+                line.setAttribute('stroke', is10 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)');
+                line.setAttribute('stroke-width', is10 ? '1.2' : '0.8');
+                line.setAttribute('transform', `rotate(${deg})`);
+                rotator.appendChild(line);
+            }
+        }
+        initCompassTicks();
+
+        // Toggle Compass Mode (HDG UP / NORTH UP)
+        const compassModeBtn = document.getElementById('compass-mode-btn');
+        compassModeBtn.onclick = () => {
+            compassMode = (compassMode === 'hdg_up') ? 'north_up' : 'hdg_up';
+            compassModeBtn.innerText = (compassMode === 'hdg_up') ? 'HDG UP' : 'NORTH UP';
+            updateCompass();
+        };
+
+        function getCardinal(deg) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const idx = Math.round(((deg % 360 + 360) % 360) / 22.5) % 16;
+            return directions[idx];
+        }
+
+        function updateCompass() {
+            const hdgValEl = document.getElementById('compass-hdg-val');
+            const trkValEl = document.getElementById('compass-trk-val');
+            const rotatorEl = document.getElementById('compass-rotator');
+            const windArrowEl = document.getElementById('compass-wind-arrow');
+            const aircraftSymbolEl = document.getElementById('compass-aircraft-symbol');
+            const trkBugEl = document.getElementById('compass-trk-bug');
+            const windSummaryEl = document.getElementById('compass-wind-summary');
+            const compValEl = document.getElementById('compass-components-val');
+            const crabAngleEl = document.getElementById('compass-crab-angle');
+
+            if (!rotatorEl) return;
+
+            // 1. Digital HDG Readout
+            const hdgInt = Math.round((planeHeading % 360 + 360) % 360);
+            if (hdgValEl) hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
+
+            // 2. Track readout
+            let trkInt = null;
+            if (planeGroundTrack !== null && planeGroundspeed > 0.5) {
+                trkInt = Math.round((planeGroundTrack % 360 + 360) % 360);
+                if (trkValEl) trkValEl.innerText = trkInt.toString().padStart(3, '0');
+            } else {
+                if (trkValEl) trkValEl.innerText = '---';
+            }
+
+            // 3. Dial Card & Aircraft Rotation
+            if (compassMode === 'hdg_up') {
+                // Compass card rotates so plane heading is at top (12 o'clock lubber line)
+                rotatorEl.style.transform = `rotate(${-planeHeading}deg)`;
+                aircraftSymbolEl.style.transform = `rotate(0deg)`;
+
+                // Wind arrow points along the wind vector relative to aircraft nose
+                // windDir is FROM direction. Vector flows towards (windDir + 180).
+                const relWindAngle = (currentWindDir - planeHeading + 180) % 360;
+                windArrowEl.style.transform = `rotate(${relWindAngle}deg)`;
+
+                // Track Bug relative to heading
+                if (trkInt !== null && trkBugEl) {
+                    const relTrk = (planeGroundTrack - planeHeading) % 360;
+                    trkBugEl.style.display = 'block';
+                    trkBugEl.style.transform = `rotate(${relTrk}deg)`;
+                } else if (trkBugEl) {
+                    trkBugEl.style.display = 'none';
+                }
+            } else {
+                // North-Up mode: Card is fixed, aircraft rotates to heading
+                rotatorEl.style.transform = `rotate(0deg)`;
+                aircraftSymbolEl.style.transform = `rotate(${planeHeading}deg)`;
+
+                const relWindAngle = (currentWindDir + 180) % 360;
+                windArrowEl.style.transform = `rotate(${relWindAngle}deg)`;
+
+                if (trkInt !== null && trkBugEl) {
+                    trkBugEl.style.display = 'block';
+                    trkBugEl.style.transform = `rotate(${planeGroundTrack}deg)`;
+                } else if (trkBugEl) {
+                    trkBugEl.style.display = 'none';
+                }
+            }
+
+            // 4. Wind Summary Text
+            if (windSummaryEl) {
+                windSummaryEl.innerText = `${currentWindSpd.toFixed(1)} m/s @ ${Math.round(currentWindDir)}° (${getCardinal(currentWindDir)})`;
+            }
+
+            // 5. Aerospace Headwind & Crosswind Decomposition
+            const angleDiffRad = ((currentWindDir - planeHeading) * Math.PI) / 180;
+            const headwind = currentWindSpd * Math.cos(angleDiffRad);
+            const crosswind = currentWindSpd * Math.sin(angleDiffRad);
+
+            const hwStr = (headwind >= 0 ? `HW +${headwind.toFixed(1)}` : `TW -${Math.abs(headwind).toFixed(1)}`);
+            let xwStr = `XW 0.0`;
+            if (crosswind > 0.1) xwStr = `XW ${crosswind.toFixed(1)} R`;
+            else if (crosswind < -0.1) xwStr = `XW ${Math.abs(crosswind).toFixed(1)} L`;
+
+            if (compValEl) {
+                compValEl.innerText = `${hwStr} | ${xwStr}`;
+            }
+
+            // 6. Drift / Crab Angle
+            if (crabAngleEl) {
+                if (planeAirspeed > 2.0 && Math.abs(crosswind) > 0.1) {
+                    const ratio = Math.max(-0.95, Math.min(0.95, crosswind / planeAirspeed));
+                    const crab = (Math.asin(ratio) * 180 / Math.PI).toFixed(1);
+                    crabAngleEl.innerText = `${Math.abs(crab)}° ${crab > 0 ? 'Right' : 'Left'}`;
+                } else if (trkInt !== null && planeGroundspeed > 1.0) {
+                    let drift = (planeGroundTrack - planeHeading);
+                    while (drift > 180) drift -= 360;
+                    while (drift < -180) drift += 360;
+                    crabAngleEl.innerText = `${Math.abs(drift).toFixed(1)}° ${drift > 0 ? 'Right' : 'Left'}`;
+                } else {
+                    crabAngleEl.innerText = `0.0°`;
+                }
+            }
+        }
+
+        // Apply Weather Parameters to UI & Synchronize Compass
+        function applyWeatherValues(spd, dir, gust, turb, temp, press, elev, syncSliders = true) {
+            currentWindSpd = Math.max(0, spd);
+            currentWindDir = ((dir % 360) + 360) % 360;
+            currentWindTurb = Math.max(0, Math.min(1.0, turb));
+            currentWindGust = Math.max(spd, gust);
+
+            // Update Metrics Cards
+            document.getElementById('live-wind-spd').innerText = currentWindSpd.toFixed(1);
+            document.getElementById('live-wind-spd-kt').innerText = (currentWindSpd * 1.94384).toFixed(1) + ' kt';
+
+            document.getElementById('live-wind-dir').innerText = Math.round(currentWindDir);
+            document.getElementById('live-wind-dir-cardinal').innerText = getCardinal(currentWindDir);
+
+            document.getElementById('live-wind-gust').innerText = currentWindGust.toFixed(1);
+            document.getElementById('live-wind-gust-kt').innerText = (currentWindGust * 1.94384).toFixed(1) + ' kt';
+
+            document.getElementById('live-wind-turb').innerText = currentWindTurb.toFixed(2);
+            let turbDesc = 'Light';
+            if (currentWindTurb > 0.55) turbDesc = 'Severe';
+            else if (currentWindTurb > 0.3) turbDesc = 'Moderate';
+            document.getElementById('live-wind-turb-desc').innerText = turbDesc;
+
+            if (temp !== undefined && temp !== null) document.getElementById('live-temp').innerText = temp.toFixed(1) + '°C';
+            if (press !== undefined && press !== null) document.getElementById('live-press').innerText = press.toFixed(1) + ' hPa';
+            if (elev !== undefined && elev !== null) document.getElementById('live-elev').innerText = Math.round(elev) + ' m';
+
+            // Update SITL Terminal Command Box
+            document.getElementById('cmd-spd-val').innerText = currentWindSpd.toFixed(1);
+            document.getElementById('cmd-dir-val').innerText = Math.round(currentWindDir);
+            document.getElementById('cmd-turb-val').innerText = currentWindTurb.toFixed(2);
+
+            // Synchronize sliders
+            if (syncSliders) {
+                document.getElementById('slider-spd').value = currentWindSpd;
+                document.getElementById('slider-spd-label').innerText = currentWindSpd.toFixed(1);
+                document.getElementById('slider-dir').value = Math.round(currentWindDir);
+                document.getElementById('slider-dir-label').innerText = Math.round(currentWindDir);
+                document.getElementById('slider-turb').value = currentWindTurb;
+                document.getElementById('slider-turb-label').innerText = currentWindTurb.toFixed(2);
+            }
+
+            updateCompass();
+        }
+
+        // Live Open-Meteo Weather Fetching
+        async function fetchLiveWeather(lat, lon) {
+            lat = lat || currentPlaneLat;
+            lon = lon || currentPlaneLon;
+
+            const coordsBadge = document.getElementById('weather-coords-badge');
+            if (coordsBadge) coordsBadge.innerText = `GPS: ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+
+            const fetchBtn = document.getElementById('btn-fetch-weather');
+            if (fetchBtn) fetchBtn.classList.add('loading');
+            const statusTag = document.getElementById('weather-status-tag');
+            if (statusTag) statusTag.innerText = "Fetching Open-Meteo...";
+
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=ms`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                if (data && data.current) {
+                    const cur = data.current;
+                    const spd = cur.wind_speed_10m ?? 5.0;
+                    const dir = cur.wind_direction_10m ?? 270;
+                    const gust = cur.wind_gusts_10m ?? (spd * 1.35);
+                    const temp = cur.temperature_2m ?? 25.0;
+                    const press = cur.surface_pressure ?? 1013.2;
+                    const elev = data.elevation ?? 0;
+
+                    // Calculate turbulence parameter (0.05 to 1.0)
+                    const gustExcess = Math.max(0, gust - spd);
+                    const turb = Math.min(1.0, Math.max(0.05, (gustExcess / (spd + 1.5)) * 0.7));
+
+                    liveFetchedWeather = { spd, dir, gust, turb, temp, press, elev };
+                    applyWeatherValues(spd, dir, gust, turb, temp, press, elev, true);
+
+                    if (statusTag) {
+                        statusTag.innerText = "● Live Open-Meteo Feed";
+                        statusTag.style.color = "var(--success)";
+                    }
+                    const timeTag = document.getElementById('weather-timestamp');
+                    if (timeTag) {
+                        const now = new Date();
+                        timeTag.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not fetch live Open-Meteo weather:", err);
+                if (statusTag) {
+                    statusTag.innerText = "● Offline (Default Profile)";
+                    statusTag.style.color = "var(--danger)";
+                }
+            } finally {
+                if (fetchBtn) fetchBtn.classList.remove('loading');
+            }
+        }
+
+        // Trigger initial weather fetch
+        fetchLiveWeather(currentPlaneLat, currentPlaneLon);
+
+        document.getElementById('btn-fetch-weather').onclick = () => {
+            fetchLiveWeather(currentPlaneLat, currentPlaneLon);
+        };
+
+        // Clipboard Copy Helper with Visual Feedback
+        function copyText(text, btnElement) {
+            function showSuccess() {
+                if (!btnElement) return;
+                const orig = btnElement.innerHTML;
+                btnElement.innerHTML = '✓ Copied!';
+                btnElement.style.background = '#30d158';
+                btnElement.style.color = '#fff';
+                setTimeout(() => {
+                    btnElement.innerHTML = orig;
+                    btnElement.style.background = '';
+                    btnElement.style.color = '';
+                }, 1500);
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(showSuccess).catch(() => fallbackCopy(text, showSuccess));
+            } else {
+                fallbackCopy(text, showSuccess);
+            }
+        }
+
+        function fallbackCopy(text, callback) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                if (callback) callback();
+            } catch (err) {
+                console.error("Copy failed", err);
+            }
+            document.body.removeChild(ta);
+        }
+
+        // Hook Terminal Copy Buttons
+        document.getElementById('btn-copy-all-cmd').onclick = function () {
+            const cmds = `param set SIM_WIND_SPD ${currentWindSpd.toFixed(1)}\nparam set SIM_WIND_DIR ${Math.round(currentWindDir)}\nparam set SIM_WIND_TURB ${currentWindTurb.toFixed(2)}`;
+            copyText(cmds, this);
+        };
+        document.getElementById('btn-copy-spd').onclick = function () {
+            copyText(`param set SIM_WIND_SPD ${currentWindSpd.toFixed(1)}`, this);
+        };
+        document.getElementById('btn-copy-dir').onclick = function () {
+            copyText(`param set SIM_WIND_DIR ${Math.round(currentWindDir)}`, this);
+        };
+        document.getElementById('btn-copy-turb').onclick = function () {
+            copyText(`param set SIM_WIND_TURB ${currentWindTurb.toFixed(2)}`, this);
+        };
+
+        // Slider Tuning Controls
+        const sliderSpd = document.getElementById('slider-spd');
+        const sliderDir = document.getElementById('slider-dir');
+        const sliderTurb = document.getElementById('slider-turb');
+
+        sliderSpd.oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('slider-spd-label').innerText = val.toFixed(1);
+            applyWeatherValues(val, currentWindDir, Math.max(val * 1.3, currentWindGust), currentWindTurb, null, null, null, false);
+        };
+
+        sliderDir.oninput = (e) => {
+            const val = parseInt(e.target.value, 10);
+            document.getElementById('slider-dir-label').innerText = val;
+            applyWeatherValues(currentWindSpd, val, currentWindGust, currentWindTurb, null, null, null, false);
+        };
+
+        sliderTurb.oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('slider-turb-label').innerText = val.toFixed(2);
+            applyWeatherValues(currentWindSpd, currentWindDir, currentWindGust, val, null, null, null, false);
+        };
+
+        document.getElementById('btn-reset-live').onclick = () => {
+            if (liveFetchedWeather) {
+                applyWeatherValues(
+                    liveFetchedWeather.spd,
+                    liveFetchedWeather.dir,
+                    liveFetchedWeather.gust,
+                    liveFetchedWeather.turb,
+                    liveFetchedWeather.temp,
+                    liveFetchedWeather.press,
+                    liveFetchedWeather.elev,
+                    true
+                );
+            } else {
+                fetchLiveWeather(currentPlaneLat, currentPlaneLon);
             }
         };
 
@@ -1108,11 +2107,35 @@
             } else if (data.type === 'VFR_HUD') {
                 document.getElementById('a_spd').innerText = data.airspeed.toFixed(1) + " m/s";
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
+                planeAirspeed = data.airspeed;
+                planeGroundspeed = data.groundspeed;
+                if (data.heading !== undefined && data.heading !== null) {
+                    planeHeading = data.heading;
+                }
+                updateCompass();
             } else if (data.type === 'ATTITUDE') {
                 rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
+                // Convert MAVLink yaw (radians) to degrees [0..360)
+                let hdg = (data.yaw * 180 / Math.PI) % 360;
+                if (hdg < 0) hdg += 360;
+                planeHeading = hdg;
+                updateCompass();
             } else if (data.type === 'GLOBAL_POSITION_INT') {
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
+                if (data.hdg !== undefined) planeHeading = data.hdg;
+                currentPlaneLat = data.lat;
+                currentPlaneLon = data.lon;
+                const coordsBadge = document.getElementById('weather-coords-badge');
+                if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
+                if (!hasFetchedInitialWeather) {
+                    hasFetchedInitialWeather = true;
+                    fetchLiveWeather(data.lat, data.lon);
+                }
+            } else if (data.type === 'WIND') {
+                if (data.wind_speed !== undefined && data.wind_direction !== undefined) {
+                    applyWeatherValues(data.wind_speed, data.wind_direction, data.wind_speed * 1.3, currentWindTurb, null, null, null, false);
+                }
             } else if (data.type === 'TERRAIN_REPORT') {
                 if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
                 hasTerrainData = true;
@@ -1122,6 +2145,15 @@
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
+                if (data.vx !== undefined && data.vy !== undefined) {
+                    const spd = Math.hypot(data.vx, data.vy);
+                    if (spd > 0.4) {
+                        let trk = (Math.atan2(data.vy, data.vx) * 180 / Math.PI) % 360;
+                        if (trk < 0) trk += 360;
+                        planeGroundTrack = trk;
+                        updateCompass();
+                    }
+                }
                 if (!firstPos) {
                     targetPos.copy(rawTargetPos);
                     vtolGroup.position.copy(rawTargetPos);
