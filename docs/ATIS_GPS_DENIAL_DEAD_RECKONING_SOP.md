@@ -1,14 +1,14 @@
-# FMS FLIGHT COMPUTER // EKF3 TACTICAL SENSOR EXECUTION MANUAL
+# GPS DENIAL & DEAD RECKONING FLIGHT EXECUTION MANUAL
 **FLEET:** `ARDUPILOT EKF3 UNIVERSAL [ALL FIXED-WING / VTOL]`  
-**SUBSYSTEM:** `FMS FLIGHT MANAGEMENT COMPUTER // INERTIAL & GNSS DENIAL PROTOCOLS`  
-**DISPLAY SPECIFICATION:** `ARINC 739 MCDU / MONOSPACE FLIGHT COMPUTER TYPOGRAPHY`  
+**PURPOSE:** `GNSS DENIAL, ELECTRONIC JAMMING, SPOOFING GATING & DEAD RECKONING PROTOCOLS`  
+**INSTRUCTION:** `EXECUTE PARAMETERS VIA COCKPIT MCDU OR SITL CONSOLE`  
 
 ---
 
 ```
 +------------------------------------------------------------------------+
-| FMS FLIGHT COMPUTER // EKF3 GNSS DENIAL & DEAD RECKONING DIRECTIVE     |
-| FLEET: ARDUPILOT EKF3 UNIVERSAL             DISPLAY MODE: MCDU MONO   |
+| GPS DENIAL, ELECTRONIC JAMMING & DEAD RECKONING EXECUTION DIRECTIVE   |
+| FLEET: ARDUPILOT EKF3 UNIVERSAL             AVIONICS OPERATIONAL SOP   |
 +------------------------------------------------------------------------+
 ```
 
@@ -18,7 +18,7 @@
 
 ## 1. GNSS HARDWARE CUTOFF & RF JAMMING SIMULATION
 
-### `SIM_GPS1_ENABLE` [SITL HARDWARE TOGGLE]
+### `SIM_GPS1_ENABLE` [HARDWARE TOGGLE]
 - **DEFAULT:** `1` (ACTIVE) $\rightarrow$ **TARGET:** `0` (SEVERED / DENIED)
 - **LSK 1L COMMAND:**  
   ```bash
@@ -108,7 +108,6 @@
 - **MCDU COMMANDS:**  
   ```bash
   param set SIM_FLOW_ENABLE 1
-  param set EK3_FLOW_USE 1
   param set EK3_SRC1_VELXY 5
   ```
 - **DESCRIPTION:**  
@@ -133,7 +132,7 @@
 
 ---
 
-## < SCENARIO 1: TOTAL GNSS HARDWARE CUTOFF [CLEAN DEAD RECKONING]
+## SCENARIO 1: TOTAL GNSS HARDWARE CUTOFF [CLEAN DEAD RECKONING]
 
 * **OBJECTIVE:** Evaluate pure aerodynamic and inertial dead reckoning following complete loss of primary satellite reception (antenna severance or hardware failure). Verify aircraft tracks waypoints without wander.
 * **PREREQUISITES:** Airspeed calibrated ($\pm 1.0\text{ m/s}$); cruise in `AUTO` or `GUIDED` at 50–100 m AGL; drag coefficients set: `EK3_DRAG_BCOEF_X/Y = 25`.
@@ -153,7 +152,7 @@
 
 ---
 
-## < SCENARIO 2: EW RF JAMMING COUNTERMEASURE [ANTI-HUNT PROTOCOL]
+## SCENARIO 2: EW RF JAMMING COUNTERMEASURE [ANTI-HUNT PROTOCOL]
 
 * **OBJECTIVE:** Counter hostile broadband RF noise injection. Prevent aircraft from chasing jumping coordinates (the "here-and-there" hunting phenomenon) by forcing automatic innovation rejection and prompt Dead Reckoning fallback.
 * **ROOT CAUSE OF WANDERING:**
@@ -182,7 +181,7 @@
 
 ---
 
-## < SCENARIO 3: ADVERSARIAL GPS SPOOFING STEP-JUMP DEFENSE
+## SCENARIO 3: ADVERSARIAL GPS SPOOFING STEP-JUMP DEFENSE
 
 * **OBJECTIVE:** Validate EKF3 innovation gating defense against hostile terrestrial spoofers attempting to hijack the aircraft trajectory via false pseudoranges or sudden coordinate offset steps.
 * **STEP 1 — GATING DEFENSIVE PRE-CONFIGURATION:**
@@ -208,7 +207,7 @@
 
 ---
 
-## < SCENARIO 4: VTOL / LOW-ALTITUDE HOVER OPTICAL FLOW FALLBACK
+## SCENARIO 4: VTOL / LOW-ALTITUDE HOVER OPTICAL FLOW FALLBACK
 
 * **OBJECTIVE:** Ensure stationary hover and station-keeping capability for VTOL platforms or quadplanes when GPS is denied in zero-airspeed hover flight.
 * **STEP 1 — SENSOR PRE-CONFIGURATION:**
@@ -235,7 +234,7 @@
 
 ---
 
-## < SCENARIO 5: HIGH-CROSSWIND TURBULENCE DEAD RECKONING
+## SCENARIO 5: HIGH-CROSSWIND TURBULENCE DEAD RECKONING
 
 * **OBJECTIVE:** Validate EKF3 wind triangle estimation ($\vec{V}_{\text{ground}} = \vec{V}_{\text{tas}} + \vec{W}_{\text{wind}}$) and crab-angle compensation under strong crosswind gusts and Dryden turbulence during GPS denial.
 * **STEP 1 — INJECT CROSSWIND METEOROLOGY:**
@@ -257,7 +256,7 @@
 
 ---
 
-# PART III: FMS MASTER FLIGHT TEST MATRIX
+# PART III: MASTER FLIGHT TEST MATRIX
 
 | SCENARIO | PRE-SETUP | TRIGGER | KEY TELEMETRY | EVALUATION |
 | :--- | :--- | :--- | :--- | :--- |
@@ -275,4 +274,4 @@
 * **< LSK 3L:** Spoofing Offset (`SIM_GPS1_GLT_X/Y`) $\quad\leftrightarrow\quad$ **LSK 3R >:** RESET GLITCH OFFSETS
 * **< LSK 4L:** Wind Dead Reckoning (`BCOEF_X/Y 25`) $\quad\leftrightarrow\quad$ **LSK 4R >:** RESTORE SENSORS
 * **< LSK 5L:** Anti-Jam Config (`SRC 1`, `FS 0.60`, `AHRS 0`) $\quad\leftrightarrow\quad$ **LSK 5R >:** FLIGHT LOG EXPORT
-* **< LSK 6L:** OPEN THIS FMS SOP MANUAL $\quad\leftrightarrow\quad$ **LSK 6R >:** RECOVER ALL NOMINAL
+* **< LSK 6L:** OPEN THIS SOP MANUAL $\quad\leftrightarrow\quad$ **LSK 6R >:** RECOVER ALL NOMINAL
