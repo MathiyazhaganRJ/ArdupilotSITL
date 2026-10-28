@@ -7,6 +7,9 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/png" href="app_icon.png">
     <link rel="apple-touch-icon" href="app_icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #f5f5f7;
@@ -654,267 +657,434 @@
             cursor: pointer;
         }
 
-        /* Authentic Avionics FMS / CDU Navigation Panel */
+        /* ============================================================
+           AUTHENTIC AIRBUS MCDU / BOEING FMC-CDU AVIONICS INSTRUMENT
+           Compliant with ARINC 702 Cockpit Avionics Standards
+           ============================================================ */
         #fms-widget {
             position: absolute;
-            top: 65px;
+            top: 55px;
             right: 20px;
-            width: 364px;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
-            background: rgba(10, 14, 20, 0.94);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1.5px solid rgba(0, 229, 255, 0.35);
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 15px rgba(0, 229, 255, 0.05);
+            width: 420px;
+            background: linear-gradient(180deg, #242933 0%, #1a1e26 40%, #14171d 100%);
+            border: 2px solid #333a4a;
+            border-radius: 10px;
+            padding: 12px 10px 14px 10px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.8);
             z-index: 155;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Consolas, monospace;
-            color: #e0e0e0;
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            font-family: 'B612 Mono', 'SF Mono', Consolas, monospace;
+            color: #d1d7e0;
+            user-select: none;
+            box-sizing: border-box;
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
-        #fms-widget::-webkit-scrollbar {
-            width: 4px;
+        /* 4 Corner Dzus Avionics Fasteners */
+        .cdu-screw {
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #6a7485 0%, #2b303b 100%);
+            border: 1px solid #14171d;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.8);
         }
-
-        #fms-widget::-webkit-scrollbar-thumb {
-            background: rgba(0, 229, 255, 0.25);
-            border-radius: 2px;
+        .cdu-screw::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 1px;
+            width: 7px;
+            height: 1px;
+            background: #111317;
         }
+        .cdu-screw.tl { top: 6px; left: 6px; }
+        .cdu-screw.tr { top: 6px; right: 6px; }
+        .cdu-screw.bl { bottom: 6px; left: 6px; }
+        .cdu-screw.br { bottom: 6px; right: 6px; }
 
-        .fms-header {
+        /* Chassis Top Header & Stenciled Plate */
+        .cdu-bezel-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-            padding-bottom: 8px;
+            padding: 2px 6px 8px 6px;
+            border-bottom: 2px solid #12151a;
             margin-bottom: 8px;
             cursor: move;
         }
 
-        .fms-header-left {
+        .cdu-plate-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #8c98a8;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.8);
             display: flex;
             align-items: center;
             gap: 6px;
         }
-
-        .fms-title-main {
-            font-weight: 800;
-            font-size: 13px;
-            letter-spacing: 0.1em;
-            color: #00e5ff;
+        .cdu-plate-label b {
+            color: #d8e2ec;
+            letter-spacing: 0.14em;
         }
 
-        .fms-page-badge {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-            padding: 1px 5px;
-            border-radius: 3px;
-        }
-
-        .fms-status-chip {
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 3px;
-            background: rgba(0, 230, 118, 0.18);
-            color: #00e676;
-            border: 1px solid rgba(0, 230, 118, 0.4);
-            letter-spacing: 0.04em;
-        }
-
-        .fms-status-chip.dr {
-            background: rgba(255, 159, 10, 0.22);
-            color: #ff9f0a;
-            border-color: rgba(255, 159, 10, 0.5);
-            animation: dr-blink 1.2s infinite ease-in-out;
-        }
-
-        .fms-close-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 4px;
-            transition: color 0.15s;
-        }
-
-        .fms-close-btn:hover {
-            color: #ff453a;
-        }
-
-        .fms-screen-title {
+        /* Cockpit Korry Annunciators (FAIL, DR, MSG, OFST) */
+        .cdu-annunciators {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 10.5px;
-            font-weight: 700;
-            color: #00e5ff;
-            margin-bottom: 8px;
-            letter-spacing: 0.05em;
-        }
-
-        .fms-screen-time {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .fms-section-label {
-            font-size: 9px;
-            font-weight: 700;
-            color: rgba(0, 229, 255, 0.7);
-            text-align: center;
-            letter-spacing: 0.08em;
-            margin: 10px 0 5px;
-        }
-
-        .fms-status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
             gap: 5px;
-            margin-bottom: 8px;
+            align-items: center;
         }
 
-        .fms-grid-cell {
-            background: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            padding: 4px 6px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .fms-grid-cell .cell-lbl {
+        .cdu-annun {
             font-size: 8px;
-            color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 0.04em;
-            margin-bottom: 2px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            padding: 2px 5px;
+            border-radius: 2px;
+            background: #14171d;
+            color: #3e4756;
+            border: 1px solid #282f3c;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+            transition: all 0.2s ease;
         }
 
-        .fms-grid-cell .cell-val {
-            font-size: 11px;
+        .cdu-annun.active-amber {
+            background: #543200;
+            color: #ffb000;
+            border-color: #ffb000;
+            box-shadow: 0 0 8px rgba(255, 176, 0, 0.6), inset 0 0 4px rgba(255, 176, 0, 0.3);
+            text-shadow: 0 0 5px #ffb000;
+        }
+
+        .cdu-annun.blink {
+            animation: cdu-annun-blink 1s infinite alternate ease-in-out;
+        }
+        @keyframes cdu-annun-blink {
+            from { opacity: 0.45; }
+            to { opacity: 1; filter: brightness(1.3); }
+        }
+
+        .cdu-annun.active-cyan {
+            background: #003640;
+            color: #00e5ff;
+            border-color: #00e5ff;
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+            text-shadow: 0 0 5px #00e5ff;
+        }
+
+        .cdu-close-btn {
+            background: #242933;
+            border: 1px solid #3c4454;
+            color: #8c98a8;
+            font-size: 13px;
             font-weight: 700;
+            width: 18px;
+            height: 18px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.6);
+            transition: all 0.15s;
+            margin-left: 6px;
+        }
+        .cdu-close-btn:hover {
+            color: #ff453a;
+            border-color: #ff453a;
         }
 
-        .cell-val.green { color: #00e676; }
-        .cell-val.amber { color: #ff9f0a; }
-        .cell-val.cyan  { color: #00e5ff; }
-        .cell-val.red   { color: #ff453a; }
-
-        .fms-action-row {
+        /* Main Cockpit Faceplate (Left LSKs | CRT Screen | Right LSKs) */
+        .cdu-faceplate {
             display: flex;
+            align-items: stretch;
             gap: 6px;
         }
 
-        .fms-lsk-btn {
-            flex: 1;
-            padding: 6px 8px;
-            font-size: 10px;
-            font-weight: 700;
-            font-family: inherit;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 1px solid;
-            letter-spacing: 0.04em;
-            transition: all 0.15s;
-        }
-
-        .fms-lsk-btn.amber {
-            background: rgba(255, 159, 10, 0.15);
-            border-color: rgba(255, 159, 10, 0.45);
-            color: #ff9f0a;
-        }
-        .fms-lsk-btn.amber:hover {
-            background: rgba(255, 159, 10, 0.3);
-        }
-
-        .fms-lsk-btn.green {
-            background: rgba(0, 230, 118, 0.15);
-            border-color: rgba(0, 230, 118, 0.45);
-            color: #00e676;
-        }
-        .fms-lsk-btn.green:hover {
-            background: rgba(0, 230, 118, 0.3);
-        }
-
-        .fms-lsk-btn.cyan {
-            background: rgba(0, 229, 255, 0.15);
-            border-color: rgba(0, 229, 255, 0.45);
-            color: #00e5ff;
-        }
-        .fms-lsk-btn.cyan:hover {
-            background: rgba(0, 229, 255, 0.3);
-        }
-
-        .fms-param-list {
+        /* Line Select Key Columns */
+        .cdu-lsk-col {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             gap: 6px;
-            margin-top: 4px;
+            padding: 24px 0 32px 0; /* Align with 6 ARINC screen lines */
         }
 
-        .fms-param-card {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .cdu-lsk {
+            width: 28px;
+            height: 38px;
+            background: linear-gradient(180deg, #373e4d 0%, #252b36 60%, #1d212a 100%);
+            border: 1px solid #444d5e;
+            border-bottom: 2px solid #0e1014;
+            border-radius: 4px;
+            color: #8c98a8;
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 3px 5px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.08s ease;
+            position: relative;
+        }
+        .cdu-lsk::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 2px;
+            background: #181c22;
+            border-radius: 1px;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .cdu-lsk:hover {
+            background: linear-gradient(180deg, #444c5e 0%, #2f3644 60%, #242933 100%);
+            color: #ffffff;
+        }
+        .cdu-lsk:active, .cdu-lsk.pressed {
+            transform: translateY(1.5px) scale(0.97);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+            border-bottom-width: 1px;
+        }
+
+        /* Recessed Avionics CRT Display Screen */
+        .cdu-crt-housing {
+            flex: 1;
+            background: #06090e;
+            border: 2px solid #14171d;
             border-radius: 6px;
             padding: 6px 8px;
+            box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.95), inset 0 0 2px rgba(0, 229, 255, 0.15), 0 1px 1px rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 310px;
         }
 
-        .param-card-header {
+        /* CRT Raster Scanlines */
+        .cdu-crt-housing::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0px, rgba(0, 0, 0, 0.3) 1px, transparent 1px, transparent 3px);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* CRT Screen Glass Glare */
+        .cdu-crt-housing::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 35%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        /* CRT Title Row */
+        .crt-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .p-name {
             font-size: 11px;
-            font-weight: 800;
-            color: #00e5ff;
-        }
-
-        .p-role {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .fms-copy-btn {
-            background: rgba(0, 229, 255, 0.15);
-            border: 1px solid rgba(0, 229, 255, 0.35);
-            color: #00e5ff;
-            font-size: 9px;
             font-weight: 700;
-            font-family: inherit;
-            padding: 2px 6px;
-            border-radius: 4px;
+            color: #ffffff;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+            z-index: 2;
+        }
+        .crt-page-num {
+            color: #00e5ff;
+            text-shadow: 0 0 3px #00e5ff;
+        }
+
+        /* ARINC 702 Two-Tier Monospace Screen Lines (1L..6L / 1R..6R) */
+        .crt-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            z-index: 2;
+        }
+
+        .crt-row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2px;
+            min-height: 38px;
+            justify-content: center;
+        }
+
+        .crt-label-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5px;
+            font-weight: 700;
+            color: #00e5ff; /* Cyan labels per ARINC 702 standard */
+            letter-spacing: 0.06em;
+            text-shadow: 0 0 2px rgba(0, 229, 255, 0.4);
+            line-height: 1.1;
+        }
+        .crt-label-line .dim {
+            color: #7b8898;
+            text-shadow: none;
+        }
+
+        .crt-data-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            line-height: 1.25;
+        }
+
+        /* ARINC 702 Cockpit Color Palette */
+        .crt-green {
+            color: #00ff66;
+            text-shadow: 0 0 4px rgba(0, 255, 102, 0.6);
+        }
+        .crt-amber {
+            color: #ffb000;
+            text-shadow: 0 0 4px rgba(255, 176, 0, 0.6);
+        }
+        .crt-cyan {
+            color: #00e5ff;
+            text-shadow: 0 0 4px rgba(0, 229, 255, 0.6);
+        }
+        .crt-white {
+            color: #ffffff;
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
+        }
+        .crt-magenta {
+            color: #ff33cc;
+            text-shadow: 0 0 4px rgba(255, 51, 204, 0.6);
+        }
+
+        .crt-clickable {
             cursor: pointer;
-            transition: all 0.15s;
+            transition: opacity 0.1s;
+        }
+        .crt-clickable:hover {
+            opacity: 0.8;
+            text-decoration: underline;
         }
 
-        .fms-copy-btn:hover {
-            background: rgba(0, 229, 255, 0.35);
-            color: #fff;
-        }
-
-        .param-card-body code {
-            display: block;
+        /* Authentic MCDU Scratchpad Line with Blinking Cursor */
+        .crt-scratchpad {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 4px;
+            margin-top: 4px;
             font-size: 10.5px;
-            color: #4ade80;
-            background: rgba(0, 0, 0, 0.45);
-            padding: 3px 6px;
-            border-radius: 4px;
-            margin-bottom: 3px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.05em;
+            min-height: 18px;
+            z-index: 2;
+        }
+        .crt-cursor {
+            display: inline-block;
+            width: 7px;
+            height: 12px;
+            background: #00ff66;
+            margin-left: 2px;
+            animation: crt-cursor-blink 0.9s infinite step-end;
+            box-shadow: 0 0 3px #00ff66;
+        }
+        @keyframes crt-cursor-blink {
+            0%, 50% { opacity: 1; }
+            50.1%, 100% { opacity: 0; }
         }
 
-        .param-card-body .p-desc {
+        /* Bottom CDU Avionics Keypad Bar */
+        .cdu-keypad-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 2px solid #14171d;
+        }
+
+        .cdu-func-key {
+            flex: 1;
+            height: 32px;
+            background: linear-gradient(180deg, #373e4d 0%, #252b36 60%, #1d212a 100%);
+            border: 1px solid #485264;
+            border-bottom: 2px solid #0e1014;
+            border-radius: 4px;
+            color: #d8e2ec;
+            font-family: inherit;
             font-size: 9.5px;
-            color: rgba(255, 255, 255, 0.65);
-            margin: 0;
-            line-height: 1.35;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .cdu-func-key:hover {
+            background: linear-gradient(180deg, #444c5e 0%, #303746 60%, #262b35 100%);
+            color: #ffffff;
+        }
+        .cdu-func-key.active-page {
+            background: linear-gradient(180deg, #1b384d 0%, #122838 60%, #0d1e2b 100%);
+            border-color: #00e5ff;
+            color: #00e5ff;
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.4), inset 0 1px 0 rgba(0, 229, 255, 0.3);
+        }
+        .cdu-func-key:active {
+            transform: translateY(1px);
+            box-shadow: inset 0 2px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Boeing Illuminated EXEC Key */
+        .cdu-exec-key {
+            position: relative;
+            background: linear-gradient(180deg, #373e4d 0%, #252b36 60%, #1d212a 100%);
+            border: 1px solid #485264;
+            border-bottom: 2px solid #0e1014;
+            border-radius: 4px;
+            color: #d8e2ec;
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 58px;
+            height: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 4px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+        .exec-led-bar {
+            width: 24px;
+            height: 3px;
+            background: #14281a;
+            border-radius: 1px;
+            border: 1px solid #203f29;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
+        }
+        .cdu-exec-key.armed .exec-led-bar {
+            background: #00ff66;
+            border-color: #00ff66;
+            box-shadow: 0 0 8px #00ff66, 0 0 14px rgba(0, 255, 102, 0.7);
+        }
+        .cdu-exec-key:active {
+            transform: translateY(1px);
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1332,215 +1502,86 @@
         </div>
     </div>
 
-    <!-- Dedicated FMS / Dead Reckoning Navigation CDU Panel -->
-    <div id="fms-widget" class="fms-cdu-panel" style="display: none;">
-        <div class="fms-header">
-            <div class="fms-header-left">
-                <span class="fms-title-main">FMS NAV</span>
-                <span class="fms-page-badge">1/1</span>
-                <span id="fms-live-badge" class="fms-status-chip">3D GPS</span>
+    <!-- Dedicated Airbus MCDU / Boeing FMC-CDU Avionics Instrument -->
+    <div id="fms-widget" class="cdu-housing" style="display: none;">
+        <!-- 4 Corner Dzus Fasteners -->
+        <div class="cdu-screw tl"></div>
+        <div class="cdu-screw tr"></div>
+        <div class="cdu-screw bl"></div>
+        <div class="cdu-screw br"></div>
+
+        <!-- Bezel Top Header / Annunciator Bar -->
+        <div class="cdu-bezel-top">
+            <div class="cdu-plate-label">
+                <span>MCDU</span><b>EKF3-DR</b>
             </div>
-            <div class="fms-header-right">
-                <button id="btn-close-fms" class="fms-close-btn" title="Close FMS">&times;</button>
+            <!-- Cockpit Annunciators (Korry Lights) -->
+            <div class="cdu-annunciators">
+                <span id="cdu-annun-fail" class="cdu-annun">FAIL</span>
+                <span id="cdu-annun-dr" class="cdu-annun">DR</span>
+                <span id="cdu-annun-msg" class="cdu-annun">MSG</span>
+                <span id="cdu-annun-ofst" class="cdu-annun">OFST</span>
+                <button id="btn-close-fms" class="cdu-close-btn" title="Close MCDU">&times;</button>
             </div>
         </div>
 
-        <!-- CDU Subtitle & Title Bar -->
-        <div class="fms-screen-title">
-            <span>DEAD RECKONING &amp; EKF3</span>
-            <span id="fms-cur-time" class="fms-screen-time">00:00:00Z</span>
+        <!-- Main Cockpit Faceplate: LSKs Flanking CRT Screen -->
+        <div class="cdu-faceplate">
+            <!-- Left Physical Line Select Keys (1L - 6L) -->
+            <div class="cdu-lsk-col">
+                <button class="cdu-lsk" id="lsk-1l" data-key="1L" title="Line Select 1L"></button>
+                <button class="cdu-lsk" id="lsk-2l" data-key="2L" title="Line Select 2L"></button>
+                <button class="cdu-lsk" id="lsk-3l" data-key="3L" title="Line Select 3L"></button>
+                <button class="cdu-lsk" id="lsk-4l" data-key="4L" title="Line Select 4L"></button>
+                <button class="cdu-lsk" id="lsk-5l" data-key="5L" title="Line Select 5L"></button>
+                <button class="cdu-lsk" id="lsk-6l" data-key="6L" title="Line Select 6L"></button>
+            </div>
+
+            <!-- Recessed CRT Display Screen -->
+            <div class="cdu-crt-housing">
+                <!-- Screen Title Row -->
+                <div class="crt-top-row">
+                    <span id="crt-page-title">NAV POS STATUS</span>
+                    <span id="fms-cur-time" style="font-size: 10px; color: #a0aec0;">00:00:00Z</span>
+                    <span id="crt-page-indicator" class="crt-page-num">1/3</span>
+                </div>
+
+                <!-- CRT Screen Body (Page Container) -->
+                <div id="crt-screen-content" class="crt-body">
+                    <!-- ARINC 702 Two-Tier Monospace Rows populated dynamically by renderCduPage() -->
+                </div>
+
+                <!-- ARINC 702 Scratchpad Line with Blinking Cursor -->
+                <div class="crt-scratchpad">
+                    <span style="color: #7b8898; margin-right: 4px;">[</span>
+                    <span id="crt-scratchpad-text" style="color: #00ff66;">READY</span>
+                    <span style="color: #7b8898; margin-left: 4px;">]</span>
+                    <span class="crt-cursor"></span>
+                </div>
+            </div>
+
+            <!-- Right Physical Line Select Keys (1R - 6R) -->
+            <div class="cdu-lsk-col">
+                <button class="cdu-lsk" id="lsk-1r" data-key="1R" title="Line Select 1R"></button>
+                <button class="cdu-lsk" id="lsk-2r" data-key="2R" title="Line Select 2R"></button>
+                <button class="cdu-lsk" id="lsk-3r" data-key="3R" title="Line Select 3R"></button>
+                <button class="cdu-lsk" id="lsk-4r" data-key="4R" title="Line Select 4R"></button>
+                <button class="cdu-lsk" id="lsk-5r" data-key="5R" title="Line Select 5R"></button>
+                <button class="cdu-lsk" id="lsk-6r" data-key="6R" title="Line Select 6R"></button>
+            </div>
         </div>
 
-        <!-- 1. Live EKF & Navigation Status Grid -->
-        <div class="fms-section-label">--- NAV SENSORS &amp; EKF STATUS ---</div>
-        <div class="fms-status-grid">
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">PRIMARY FIX</span>
-                <span id="fms-stat-fix" class="cell-val green">3D FIX</span>
-            </div>
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">POS HORIZ ABS</span>
-                <span id="fms-stat-pos-abs" class="cell-val green">VALID</span>
-            </div>
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">GPS GLITCH</span>
-                <span id="fms-stat-glitch" class="cell-val green">NONE</span>
-            </div>
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">INNOV RATIO</span>
-                <span id="fms-stat-innov" class="cell-val cyan">0.08</span>
-            </div>
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">DR DRIFT EST</span>
-                <span id="fms-stat-drift" class="cell-val amber">&plusmn;0.0m</span>
-            </div>
-            <div class="fms-grid-cell">
-                <span class="cell-lbl">FALLBACK SRC</span>
-                <span class="cell-val cyan">IMU+COMPASS</span>
-            </div>
-        </div>
-
-        <!-- 2. Fast LSK Action Softkeys -->
-        <div class="fms-section-label">--- QUICK SIMULATION ACTIONS ---</div>
-        <div class="fms-action-row">
-            <button id="btn-fms-gps-disable" class="fms-lsk-btn amber" title="Disable GPS in SITL (param set SIM_GPS1_ENABLE 0)">
-                &lt; DROP GPS FIX &gt;
+        <!-- Bottom Avionics Keypad Bar -->
+        <div class="cdu-keypad-row">
+            <button class="cdu-func-key active-page" id="btn-page-nav" title="Page 1: Navigation Status & Dead Reckoning">NAV POS</button>
+            <button class="cdu-func-key" id="btn-page-sim" title="Page 2: SITL Simulation & Sensor Actuators">SIM CTL</button>
+            <button class="cdu-func-key" id="btn-page-params" title="Page 3: ArduPilot EKF3 Parameters Register">PARAMS</button>
+            <button class="cdu-func-key" id="btn-cdu-clr" title="Clear Scratchpad">CLR</button>
+            <!-- Boeing Illuminated EXEC Key -->
+            <button class="cdu-exec-key" id="btn-cdu-exec" title="Execute Staged Command">
+                <div class="exec-led-bar" id="cdu-exec-led"></div>
+                <span>EXEC</span>
             </button>
-            <button id="btn-fms-gps-restore" class="fms-lsk-btn green" title="Restore GPS in SITL (param set SIM_GPS1_ENABLE 1)">
-                &lt; RESTORE GPS &gt;
-            </button>
-        </div>
-        <div class="fms-action-row" style="margin-top: 5px;">
-            <button id="btn-fms-copy-all-dr" class="fms-lsk-btn cyan" style="width: 100%;" title="Copy full recommended Dead Reckoning parameter set">
-                &lt; COPY FULL DR EKF3 CONFIG &gt;
-            </button>
-        </div>
-
-        <!-- 3. ArduPilot Dead Reckoning Parameters Repertory (Verified SITL Parameters) -->
-        <div class="fms-section-label">--- EKF3 DEAD RECKONING PARAMETERS ---</div>
-        <div class="fms-param-list">
-            <!-- Parameter Row 1: SIM_GPS1_ENABLE 0 -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">SIM_GPS1_ENABLE</span>
-                    <span class="p-role">SITL GPS Denial</span>
-                    <button class="fms-copy-btn" data-param="param set SIM_GPS1_ENABLE 0" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set SIM_GPS1_ENABLE 0</code>
-                    <p class="p-desc">Disables simulated GPS1 input in SITL, forcing EKF3 into Dead Reckoning mode immediately.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 2: SIM_GPS1_ENABLE 1 -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">SIM_GPS1_RESTORE</span>
-                    <span class="p-role">SITL GPS Recovery</span>
-                    <button class="fms-copy-btn" data-param="param set SIM_GPS1_ENABLE 1" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set SIM_GPS1_ENABLE 1</code>
-                    <p class="p-desc">Restores simulated GPS1 satellite lock. EKF3 fuses 3D GPS fix and eliminates drift.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 3: SIM_GPS1_JAM -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">SIM_GPS1_JAM</span>
-                    <span class="p-role">SITL GPS Jamming</span>
-                    <button class="fms-copy-btn" data-param="param set SIM_GPS1_JAM 1" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set SIM_GPS1_JAM 1</code>
-                    <p class="p-desc">Simulates active electronic GPS jamming attack in SITL: 1=Jamming, 0=Clear signal.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 4: SIM_FLOW_ENABLE -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">SIM_FLOW_ENABLE</span>
-                    <span class="p-role">SITL Optical Flow Sensor</span>
-                    <button class="fms-copy-btn" data-param="param set SIM_FLOW_ENABLE 1" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set SIM_FLOW_ENABLE 1</code>
-                    <p class="p-desc">Enables downward optical flow sensor hardware in SITL simulation (0=Disabled, 1=Enabled).</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 5: EK3_FLOW_USE -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">EK3_FLOW_USE</span>
-                    <span class="p-role">EKF3 Optical Flow Mode</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_FLOW_USE 1" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set EK3_FLOW_USE 1</code>
-                    <p class="p-desc">Optical flow fusion: 0=None, 1=Navigation (horizontal velocity & position fusion), 2=Terrain only.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 6: EK3_SRC1_VELXY -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">EK3_SRC1_VELXY</span>
-                    <span class="p-role">Velocity Source Priority</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_SRC1_VELXY 5" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set EK3_SRC1_VELXY 5</code>
-                    <p class="p-desc">0=None, 3=GPS (default), 5=OpticalFlow (enables velocity-aided dead reckoning), 6=ExternalNav.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 7: EK3_SRC_OPTIONS -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">EK3_SRC_OPTIONS</span>
-                    <span class="p-role">Fallback Source Option</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_SRC_OPTIONS 1" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set EK3_SRC_OPTIONS 1</code>
-                    <p class="p-desc">Bit 0 (1)=Fuse all available velocity sources (including wind dead reckoning) if primary GPS is lost.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 8: EK3_GLITCH_RAD -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">EK3_GLITCH_RAD</span>
-                    <span class="p-role">Outlier Glitch Gate</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_GLITCH_RAD 25" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set EK3_GLITCH_RAD 25</code>
-                    <p class="p-desc">Maximum radial innovation (meters, default 25) before GPS reading is rejected as a glitch.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 9: EK3_DRAG_BCOEF_X -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">EK3_DRAG_BCOEF_X</span>
-                    <span class="p-role">Wind DR Drag Coef</span>
-                    <button class="fms-copy-btn" data-param="param set EK3_DRAG_BCOEF_X 25" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set EK3_DRAG_BCOEF_X 25</code>
-                    <p class="p-desc">Body frame drag coefficient. Enables aerodynamic wind estimation for Dead Reckoning without GPS.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 10: FS_EKF_THRESH -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">FS_EKF_THRESH</span>
-                    <span class="p-role">Failsafe Threshold</span>
-                    <button class="fms-copy-btn" data-param="param set FS_EKF_THRESH 0.8" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set FS_EKF_THRESH 0.8</code>
-                    <p class="p-desc">Innovation variance threshold (0.0 to 1.0, default 0.8) before declaring navigation loss.</p>
-                </div>
-            </div>
-
-            <!-- Parameter Row 11: AHRS_GPS_USE -->
-            <div class="fms-param-card">
-                <div class="param-card-header">
-                    <span class="p-name">AHRS_GPS_USE</span>
-                    <span class="p-role">AHRS GPS Switch</span>
-                    <button class="fms-copy-btn" data-param="param set AHRS_GPS_USE 0" title="Copy command">COPY</button>
-                </div>
-                <div class="param-card-body">
-                    <code>param set AHRS_GPS_USE 0</code>
-                    <p class="p-desc">Master switch to use/ignore GPS in AHRS position and velocity solution (1=Use, 0=Ignore).</p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1700,7 +1741,7 @@
             btnToggleFms.style.opacity = '0.45';
         }
 
-        makeDraggable(fmsWidget, fmsWidget.querySelector('.fms-header'));
+        makeDraggable(fmsWidget, fmsWidget.querySelector('.cdu-bezel-top') || fmsWidget);
 
         // ============================================================
         // AVIONICS COMPASS & LIVE WEATHER LOGIC
@@ -2655,51 +2696,349 @@
             updateFmsCduLive();
         }
 
+        // ============================================================
+        // AIRBUS MCDU / BOEING FMC-CDU COCKPIT AVIONICS CONTROLLER
+        // ============================================================
+        let cduCurrentPage = 1; // 1: NAV POS, 2: SIM CTL, 3: PARAMS
+        let cduScratchpadText = 'READY';
+        let cduPendingParam = null; // { name, value, cmd }
+
+        function setCduScratchpad(text, isParamCommand = false, paramObj = null) {
+            cduScratchpadText = text;
+            cduPendingParam = paramObj;
+            const spEl = document.getElementById('crt-scratchpad-text');
+            const execKey = document.getElementById('btn-cdu-exec');
+            const msgAnnun = document.getElementById('cdu-annun-msg');
+
+            if (spEl) spEl.innerText = text;
+
+            if (isParamCommand && paramObj) {
+                if (execKey) execKey.classList.add('armed');
+                if (msgAnnun) msgAnnun.classList.add('active-cyan');
+            } else {
+                if (execKey) execKey.classList.remove('armed');
+                if (msgAnnun) msgAnnun.classList.remove('active-cyan');
+            }
+        }
+
+        function executeCduCommand() {
+            if (cduPendingParam) {
+                sendSitlParam(cduPendingParam.name, cduPendingParam.value);
+                copyText(cduPendingParam.cmd);
+                setCduScratchpad(`SENT: ${cduPendingParam.name}`, false);
+                setTimeout(() => {
+                    setCduScratchpad('READY', false);
+                }, 2000);
+            } else if (cduScratchpadText && cduScratchpadText !== 'READY') {
+                copyText(cduScratchpadText);
+                setCduScratchpad('COPIED TO CLIPBOARD', false);
+                setTimeout(() => setCduScratchpad('READY', false), 1500);
+            }
+        }
+
+        // Active LSK Actions Map for current page [1L..6L, 1R..6R]
+        let currentLskActions = {};
+
+        function renderCduPage() {
+            const crtContent = document.getElementById('crt-screen-content');
+            const crtTitle = document.getElementById('crt-page-title');
+            const crtInd = document.getElementById('crt-page-indicator');
+            if (!crtContent) return;
+
+            // Update function keys active state
+            document.querySelectorAll('.cdu-func-key').forEach(btn => btn.classList.remove('active-page'));
+            if (cduCurrentPage === 1) document.getElementById('btn-page-nav')?.classList.add('active-page');
+            if (cduCurrentPage === 2) document.getElementById('btn-page-sim')?.classList.add('active-page');
+            if (cduCurrentPage === 3) document.getElementById('btn-page-params')?.classList.add('active-page');
+
+            currentLskActions = {};
+            let html = '';
+
+            if (cduCurrentPage === 1) {
+                // PAGE 1: NAV POS STATUS (1/3)
+                if (crtTitle) crtTitle.innerText = 'NAV POS STATUS';
+                if (crtInd) crtInd.innerText = '1/3';
+
+                const fixColor = isDeadReckoning ? 'crt-amber' : 'crt-green';
+                const fixText = isDeadReckoning ? '< NO GPS [DR]' : '< 3D GPS FIX';
+                const posAbsColor = isDeadReckoning ? 'crt-amber' : 'crt-green';
+                const posAbsText = isDeadReckoning ? 'DENIED >' : 'VALID >';
+
+                let driftEst = '±0.0m';
+                if (isDeadReckoning && drStartTime > 0) {
+                    const elapsedSec = (performance.now() - drStartTime) / 1000;
+                    driftEst = `±${(elapsedSec * 0.45).toFixed(1)}m`;
+                }
+
+                const windStr = `< ${Math.round(currentWindDir)}° / ${currentWindSpd.toFixed(1)}m/s`;
+                const crabAngleEl = document.getElementById('compass-crab-angle');
+                const crabStr = (crabAngleEl ? crabAngleEl.innerText : '0.0°') + ' >';
+
+                html = `
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>PRIMARY FIX</span><span class="dim">POS VALIDITY</span></div>
+                        <div class="crt-data-line"><span class="${fixColor} crt-clickable" id="row-1l">${fixText}</span><span class="${posAbsColor} crt-clickable" id="row-1r">${posAbsText}</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>INNOV RATIO</span><span class="dim">GPS GLITCH</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-2l">&lt; 0.08 RATIO</span><span class="crt-green crt-clickable" id="row-2r">NONE &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>DR DRIFT ACC</span><span class="dim">FALLBACK SENSORS</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-3l">&lt; ${driftEst}</span><span class="crt-cyan crt-clickable" id="row-3r">IMU+COMP &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>WIND SPEED/DIR</span><span class="dim">CRAB / DRIFT</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-4l">${windStr}</span><span class="crt-cyan crt-clickable" id="row-4r">${crabStr}</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>GPS INHIBIT</span><span class="dim">GPS RECOVER</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-5l">&lt; DROP GPS [0]</span><span class="crt-green crt-clickable" id="row-5r">RESTORE [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>COPY BATCH</span><span class="dim">SITL CONTROL</span></div>
+                        <div class="crt-data-line"><span class="crt-white crt-clickable" id="row-6l">&lt; COPY DR BATCH</span><span class="crt-cyan crt-clickable" id="row-6r">SIM CTL &gt;</span></div>
+                    </div>
+                `;
+
+                currentLskActions = {
+                    '1L': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', isDeadReckoning ? 1.0 : 0.0);
+                        setCduScratchpad(`param set SIM_GPS1_ENABLE ${isDeadReckoning ? 1 : 0}`, true, { name: 'SIM_GPS1_ENABLE', value: isDeadReckoning ? 1.0 : 0.0, cmd: `param set SIM_GPS1_ENABLE ${isDeadReckoning ? 1 : 0}` });
+                    },
+                    '1R': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
+                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
+                    },
+                    '2L': () => setCduScratchpad('FS_EKF_THRESH 0.8', true, { name: 'FS_EKF_THRESH', value: 0.8, cmd: 'param set FS_EKF_THRESH 0.8' }),
+                    '2R': () => setCduScratchpad('EK3_GLITCH_RAD 25', true, { name: 'EK3_GLITCH_RAD', value: 25, cmd: 'param set EK3_GLITCH_RAD 25' }),
+                    '3L': () => setCduScratchpad(`DR TIME: ${((performance.now() - drStartTime) / 1000).toFixed(0)}s`, false),
+                    '3R': () => setCduScratchpad('EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1, cmd: 'param set EK3_SRC_OPTIONS 1' }),
+                    '4L': () => { cduCurrentPage = 2; renderCduPage(); },
+                    '4R': () => setCduScratchpad(`CRAB: ${crabAngleEl ? crabAngleEl.innerText : '0.0°'}`, false),
+                    '5L': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', 0.0);
+                        setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' });
+                    },
+                    '5R': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
+                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
+                    },
+                    '6L': () => {
+                        const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
+                        copyText(batch);
+                        setCduScratchpad('COPIED FULL DR BATCH', false);
+                    },
+                    '6R': () => { cduCurrentPage = 2; renderCduPage(); }
+                };
+
+            } else if (cduCurrentPage === 2) {
+                // PAGE 2: SIM CTL & SENSORS (2/3)
+                if (crtTitle) crtTitle.innerText = 'SIM CTL & SENSORS';
+                if (crtInd) crtInd.innerText = '2/3';
+
+                html = `
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>SITL GPS PWR</span><span class="dim">GPS RECOVER</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-1l">&lt; DISABLE [0]</span><span class="crt-green crt-clickable" id="row-1r">RESTORE [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>RF GPS JAMMING</span><span class="dim">CLEAR JAMMING</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-2l">&lt; SIM_JAM [1]</span><span class="crt-green crt-clickable" id="row-2r">CLEAR [0] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>OPTICAL FLOW HW</span><span class="dim">FLOW FUSION</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-3l">&lt; SIM_FLOW [1]</span><span class="crt-cyan crt-clickable" id="row-3r">FLOW_USE [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>VELOCITY SOURCE</span><span class="dim">SRC FALLBACK</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-4l">&lt; VEL FLOW [5]</span><span class="crt-cyan crt-clickable" id="row-4r">SRC_OPT [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>AHRS GPS SWITCH</span><span class="dim">RESTORE AHRS</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-5l">&lt; AHRS_GPS [0]</span><span class="crt-green crt-clickable" id="row-5r">AHRS_GPS [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>WIND DR ESTIMATE</span><span class="dim">NAV POS PAGE</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-6l">&lt; DRAG_X [25]</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
+                    </div>
+                `;
+
+                currentLskActions = {
+                    '1L': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', 0.0);
+                        setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' });
+                    },
+                    '1R': () => {
+                        sendSitlParam('SIM_GPS1_ENABLE', 1.0);
+                        setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' });
+                    },
+                    '2L': () => {
+                        sendSitlParam('SIM_GPS1_JAM', 1.0);
+                        setCduScratchpad('param set SIM_GPS1_JAM 1', true, { name: 'SIM_GPS1_JAM', value: 1.0, cmd: 'param set SIM_GPS1_JAM 1' });
+                    },
+                    '2R': () => {
+                        sendSitlParam('SIM_GPS1_JAM', 0.0);
+                        setCduScratchpad('param set SIM_GPS1_JAM 0', true, { name: 'SIM_GPS1_JAM', value: 0.0, cmd: 'param set SIM_GPS1_JAM 0' });
+                    },
+                    '3L': () => {
+                        sendSitlParam('SIM_FLOW_ENABLE', 1.0);
+                        setCduScratchpad('param set SIM_FLOW_ENABLE 1', true, { name: 'SIM_FLOW_ENABLE', value: 1.0, cmd: 'param set SIM_FLOW_ENABLE 1' });
+                    },
+                    '3R': () => {
+                        sendSitlParam('EK3_FLOW_USE', 1.0);
+                        setCduScratchpad('param set EK3_FLOW_USE 1', true, { name: 'EK3_FLOW_USE', value: 1.0, cmd: 'param set EK3_FLOW_USE 1' });
+                    },
+                    '4L': () => {
+                        sendSitlParam('EK3_SRC1_VELXY', 5.0);
+                        setCduScratchpad('param set EK3_SRC1_VELXY 5', true, { name: 'EK3_SRC1_VELXY', value: 5.0, cmd: 'param set EK3_SRC1_VELXY 5' });
+                    },
+                    '4R': () => {
+                        sendSitlParam('EK3_SRC_OPTIONS', 1.0);
+                        setCduScratchpad('param set EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1.0, cmd: 'param set EK3_SRC_OPTIONS 1' });
+                    },
+                    '5L': () => {
+                        sendSitlParam('AHRS_GPS_USE', 0.0);
+                        setCduScratchpad('param set AHRS_GPS_USE 0', true, { name: 'AHRS_GPS_USE', value: 0.0, cmd: 'param set AHRS_GPS_USE 0' });
+                    },
+                    '5R': () => {
+                        sendSitlParam('AHRS_GPS_USE', 1.0);
+                        setCduScratchpad('param set AHRS_GPS_USE 1', true, { name: 'AHRS_GPS_USE', value: 1.0, cmd: 'param set AHRS_GPS_USE 1' });
+                    },
+                    '6L': () => {
+                        sendSitlParam('EK3_DRAG_BCOEF_X', 25.0);
+                        setCduScratchpad('param set EK3_DRAG_BCOEF_X 25', true, { name: 'EK3_DRAG_BCOEF_X', value: 25.0, cmd: 'param set EK3_DRAG_BCOEF_X 25' });
+                    },
+                    '6R': () => { cduCurrentPage = 1; renderCduPage(); }
+                };
+
+            } else if (cduCurrentPage === 3) {
+                // PAGE 3: EKF3 PARAMS REGISTER (3/3)
+                if (crtTitle) crtTitle.innerText = 'EKF3 PARAMS REGISTER';
+                if (crtInd) crtInd.innerText = '3/3';
+
+                html = `
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>SIM GPS PWR</span><span class="dim">GPS RECOVERY</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-1l">&lt; GPS_EN [0]</span><span class="crt-green crt-clickable" id="row-1r">GPS_EN [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>GPS JAMMING</span><span class="dim">OPTICAL FLOW</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-2l">&lt; GPS_JAM [1]</span><span class="crt-cyan crt-clickable" id="row-2r">FLOW_EN [1] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>FLOW FUSION</span><span class="dim">VELOCITY SRC</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-3l">&lt; FLOW_USE [1]</span><span class="crt-cyan crt-clickable" id="row-3r">SRC_VEL [5] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>SRC OPTIONS</span><span class="dim">DRAG COEFF X</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-4l">&lt; SRC_OPT [1]</span><span class="crt-cyan crt-clickable" id="row-4r">DRAG_X [25] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>EKF FAILSAFE</span><span class="dim">GLITCH GATE</span></div>
+                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-5l">&lt; FS_EKF [0.8]</span><span class="crt-cyan crt-clickable" id="row-5r">GLITCH [25m] &gt;</span></div>
+                    </div>
+                    <div class="crt-row">
+                        <div class="crt-label-line"><span>COPY ALL CONFIG</span><span class="dim">RETURN NAV</span></div>
+                        <div class="crt-data-line"><span class="crt-white crt-clickable" id="row-6l">&lt; COPY ALL</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
+                    </div>
+                `;
+
+                currentLskActions = {
+                    '1L': () => setCduScratchpad('param set SIM_GPS1_ENABLE 0', true, { name: 'SIM_GPS1_ENABLE', value: 0.0, cmd: 'param set SIM_GPS1_ENABLE 0' }),
+                    '1R': () => setCduScratchpad('param set SIM_GPS1_ENABLE 1', true, { name: 'SIM_GPS1_ENABLE', value: 1.0, cmd: 'param set SIM_GPS1_ENABLE 1' }),
+                    '2L': () => setCduScratchpad('param set SIM_GPS1_JAM 1', true, { name: 'SIM_GPS1_JAM', value: 1.0, cmd: 'param set SIM_GPS1_JAM 1' }),
+                    '2R': () => setCduScratchpad('param set SIM_FLOW_ENABLE 1', true, { name: 'SIM_FLOW_ENABLE', value: 1.0, cmd: 'param set SIM_FLOW_ENABLE 1' }),
+                    '3L': () => setCduScratchpad('param set EK3_FLOW_USE 1', true, { name: 'EK3_FLOW_USE', value: 1.0, cmd: 'param set EK3_FLOW_USE 1' }),
+                    '3R': () => setCduScratchpad('param set EK3_SRC1_VELXY 5', true, { name: 'EK3_SRC1_VELXY', value: 5.0, cmd: 'param set EK3_SRC1_VELXY 5' }),
+                    '4L': () => setCduScratchpad('param set EK3_SRC_OPTIONS 1', true, { name: 'EK3_SRC_OPTIONS', value: 1.0, cmd: 'param set EK3_SRC_OPTIONS 1' }),
+                    '4R': () => setCduScratchpad('param set EK3_DRAG_BCOEF_X 25', true, { name: 'EK3_DRAG_BCOEF_X', value: 25.0, cmd: 'param set EK3_DRAG_BCOEF_X 25' }),
+                    '5L': () => setCduScratchpad('param set FS_EKF_THRESH 0.8', true, { name: 'FS_EKF_THRESH', value: 0.8, cmd: 'param set FS_EKF_THRESH 0.8' }),
+                    '5R': () => setCduScratchpad('param set EK3_GLITCH_RAD 25', true, { name: 'EK3_GLITCH_RAD', value: 25.0, cmd: 'param set EK3_GLITCH_RAD 25' }),
+                    '6L': () => {
+                        const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
+                        copyText(batch);
+                        setCduScratchpad('COPIED FULL DR BATCH', false);
+                    },
+                    '6R': () => { cduCurrentPage = 1; renderCduPage(); }
+                };
+            }
+
+            crtContent.innerHTML = html;
+
+            // Wire in-screen row clicks to their corresponding LSK actions
+            ['1l', '2l', '3l', '4l', '5l', '6l', '1r', '2r', '3r', '4r', '5r', '6r'].forEach(k => {
+                const rowEl = document.getElementById(`row-${k}`);
+                const actionKey = k.toUpperCase();
+                if (rowEl && currentLskActions[actionKey]) {
+                    rowEl.onclick = () => {
+                        const lskBtn = document.getElementById(`lsk-${k}`);
+                        if (lskBtn) {
+                            lskBtn.classList.add('pressed');
+                            setTimeout(() => lskBtn.classList.remove('pressed'), 120);
+                        }
+                        currentLskActions[actionKey]();
+                    };
+                }
+            });
+        }
+
+        // Physical Line Select Key (1L..6L / 1R..6R) click handlers
+        ['1l', '2l', '3l', '4l', '5l', '6l', '1r', '2r', '3r', '4r', '5r', '6r'].forEach(k => {
+            const btn = document.getElementById(`lsk-${k}`);
+            if (btn) {
+                btn.onclick = function () {
+                    this.classList.add('pressed');
+                    setTimeout(() => this.classList.remove('pressed'), 120);
+                    const actionKey = k.toUpperCase();
+                    if (currentLskActions[actionKey]) {
+                        currentLskActions[actionKey]();
+                    }
+                };
+            }
+        });
+
+        // CDU Function Key Handlers
+        document.getElementById('btn-page-nav')?.addEventListener('click', () => { cduCurrentPage = 1; renderCduPage(); });
+        document.getElementById('btn-page-sim')?.addEventListener('click', () => { cduCurrentPage = 2; renderCduPage(); });
+        document.getElementById('btn-page-params')?.addEventListener('click', () => { cduCurrentPage = 3; renderCduPage(); });
+        document.getElementById('btn-cdu-clr')?.addEventListener('click', () => { setCduScratchpad('READY', false); });
+        document.getElementById('btn-cdu-exec')?.addEventListener('click', executeCduCommand);
+
         // Live FMS CDU Status Sync
         function updateFmsCduLive() {
-            const liveBadge = document.getElementById('fms-live-badge');
-            const statFix = document.getElementById('fms-stat-fix');
-            const statPosAbs = document.getElementById('fms-stat-pos-abs');
-            const statDrift = document.getElementById('fms-stat-drift');
             const timeEl = document.getElementById('fms-cur-time');
+            const annunDr = document.getElementById('cdu-annun-dr');
+            const annunFail = document.getElementById('cdu-annun-fail');
 
             if (timeEl) {
                 const d = new Date();
                 timeEl.innerText = d.toISOString().substr(11, 8) + 'Z';
             }
 
-            if (isDeadReckoning) {
-                if (liveBadge) {
-                    liveBadge.className = 'fms-status-chip dr';
-                    liveBadge.innerText = 'DEAD RECKONING';
+            if (annunDr) {
+                if (isDeadReckoning) {
+                    annunDr.className = 'cdu-annun active-amber blink';
+                } else {
+                    annunDr.className = 'cdu-annun';
                 }
-                if (statFix) {
-                    statFix.className = 'cell-val amber';
-                    statFix.innerText = 'NO GPS FIX';
+            }
+
+            if (annunFail) {
+                if (isDeadReckoning) {
+                    annunFail.className = 'cdu-annun active-amber';
+                } else {
+                    annunFail.className = 'cdu-annun';
                 }
-                if (statPosAbs) {
-                    statPosAbs.className = 'cell-val amber';
-                    statPosAbs.innerText = 'DENIED';
-                }
-            } else {
-                if (liveBadge) {
-                    liveBadge.className = 'fms-status-chip';
-                    liveBadge.innerText = '3D GPS';
-                }
-                if (statFix) {
-                    statFix.className = 'cell-val green';
-                    statFix.innerText = '3D FIX';
-                }
-                if (statPosAbs) {
-                    statPosAbs.className = 'cell-val green';
-                    statPosAbs.innerText = 'VALID';
-                }
-                if (statDrift) {
-                    statDrift.innerText = '±0.0m';
-                }
+            }
+
+            // If on Page 1, re-render live telemetry rows
+            if (cduCurrentPage === 1) {
+                renderCduPage();
             }
         }
         setInterval(updateFmsCduLive, 1000);
+        renderCduPage();
         updateFmsCduLive();
 
         function toggleDeadReckoningSim() {
@@ -2712,40 +3051,6 @@
         if (drToggleBtn) {
             drToggleBtn.onclick = toggleDeadReckoningSim;
         }
-
-        // Wire FMS Softkeys & Parameter Copy Buttons
-        const btnFmsGpsDis = document.getElementById('btn-fms-gps-disable');
-        if (btnFmsGpsDis) {
-            btnFmsGpsDis.onclick = function () {
-                copyText('param set SIM_GPS1_ENABLE 0', this);
-                sendSitlParam('SIM_GPS1_ENABLE', 0.0);
-            };
-        }
-
-        const btnFmsGpsRestore = document.getElementById('btn-fms-gps-restore');
-        if (btnFmsGpsRestore) {
-            btnFmsGpsRestore.onclick = function () {
-                copyText('param set SIM_GPS1_ENABLE 1', this);
-                sendSitlParam('SIM_GPS1_ENABLE', 1.0);
-            };
-        }
-
-        const btnFmsCopyAllDr = document.getElementById('btn-fms-copy-all-dr');
-        if (btnFmsCopyAllDr) {
-            btnFmsCopyAllDr.onclick = function () {
-                const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
-                copyText(batch, this);
-            };
-        }
-
-        document.querySelectorAll('#fms-widget .fms-copy-btn').forEach(btn => {
-            btn.onclick = function () {
-                const paramText = this.getAttribute('data-param');
-                if (paramText) {
-                    copyText(paramText, this);
-                }
-            };
-        });
 
         window.addEventListener('keydown', (e) => {
             // Ignore when typing in input boxes
