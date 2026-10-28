@@ -1,7 +1,7 @@
 \documentclass[10pt,letterpaper]{article}
 
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.6in,top=0.6in,bottom=0.6in]{geometry}
+\usepackage[margin=0.55in,top=0.55in,bottom=0.55in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{xcolor}
@@ -9,149 +9,386 @@
 \usepackage{tcolorbox}
 \usepackage{tabularx}
 \usepackage{lmodern}
+\usepackage{enumitem}
 
 % Color definitions
-\definecolor{headerdark}{RGB}{20,24,33}
+\definecolor{headerdark}{RGB}{18,24,36}
 \definecolor{paramcmd}{RGB}{0,102,204}
-\definecolor{boxbg}{RGB}{248,250,252}
+\definecolor{boxbg}{RGB}{247,250,252}
+\definecolor{scenbg}{RGB}{252,253,255}
+\definecolor{bordergray}{RGB}{205,215,225}
 
 % Header / Footer
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\footnotesize \textbf{ATIS INFO BRAVO // ARDUPILOT EKF3 PARAMETER MANUAL}}
-\fancyhead[R]{\footnotesize \textbf{ALL AIRCRAFT / FLEET}}
-\fancyfoot[L]{\footnotesize Tactical Flight Operations --- Parameter Execution Sheet}
+\fancyhead[L]{\footnotesize \textbf{ATIS INFO BRAVO // GPS DENIAL \& DEAD RECKONING FLIGHT EXECUTION SOP}}
+\fancyhead[R]{\footnotesize \textbf{FLEET AVIONICS MANUAL}}
+\fancyfoot[L]{\footnotesize Tactical Flight Operations --- Aerospace Systems Engineering Protocol}
 \fancyfoot[R]{\footnotesize Page \thepage}
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.4pt}
 
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
+\setlength{\parskip}{3pt}
 
 \begin{document}
 
 % ATIS Teletype Banner Header
 \begin{tcolorbox}[colback=headerdark,colframe=headerdark,arc=1mm,boxrule=0.5pt,top=2.5mm,bottom=2.5mm,left=3mm,right=3mm]
 \color{white}\ttfamily\footnotesize
-\textbf{ATIS BROADCAST INFORMATION BRAVO // AVIONICS PARAMETER EXECUTION DIRECTIVE}\\
-\textbf{STATION: VAPO SITL \quad|\quad PURPOSE: GNSS DENIAL, JAMMING, SPOOFING \& DEAD RECKONING}\\
-\textbf{INSTRUCTION: EXECUTE PARAMETERS VIA COCKPIT MCDU OR SITL MAVLINK CONSOLE}
+\textbf{ATIS BROADCAST INFORMATION BRAVO // AVIONICS SCENARIO FLIGHT EXECUTION DIRECTIVE}\\
+\textbf{STATION: VAPO SITL \quad|\quad FLEET: ARDUPILOT EKF3 FIXED-WING \& VTOL AIRCRAFT}\\
+\textbf{OPERATIONAL DIRECTIVE: GPS DENIAL, ELECTRONIC JAMMING, SPOOFING GATING \& DEAD RECKONING}
 \end{tcolorbox}
 
 \vspace{1mm}
 
-% SECTION 1: GNSS LOSS & JAMMING SIMULATION
+% ==============================================================================
+% PART I: INDIVIDUAL PARAMETER TECHNICAL REFERENCE
+% ==============================================================================
+\noindent{\Large\textbf{PART I: Avionics Parameter Technical Reference}}
+
+\vspace{1mm}
+
 \textbf{\large 1. GNSS Denial, Hardware Cutoff \& Jamming Simulation}
 
-\vspace{1mm}
+\vspace{0.5mm}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
 \textbf{\large\texttt{SIM\_GPS1\_ENABLE}} \hfill \textbf{Type:} SITL Hardware Toggle \\
 \textbf{Default:} \texttt{1} (Active) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{0} (Severed / Denied) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_ENABLE 0} \\[1.5mm]
-\textbf{Description:} Simulates complete power cutoff or physical antenna severance to the primary GNSS receiver. When set to \texttt{0}, SITL instantly halts satellite tracking, dropping MAVLink \texttt{GPS\_RAW\_INT} to $fix\_type = 0$ (No GPS) and $satellites\_visible = 0$. This forces the ArduPilot EKF3 core to declare horizontal position invalid and transition immediately into inertial Dead Reckoning mode.
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_ENABLE 0} \\[1.2mm]
+\textbf{Description:} Simulates complete power cutoff or physical antenna severance. SITL immediately drops satellite tracking ($fix\_type = 0$, $sats = 0$). EKF3 immediately declares horizontal GPS invalid and transitions directly to smooth Dead Reckoning without coordinate jitter.
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{SIM\_GPS1\_JAM}} \hfill \textbf{Type:} SITL Jamming Injection \\
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{SIM\_GPS1\_JAM}} \hfill \textbf{Type:} SITL Electronic Warfare Injection \\
 \textbf{Default:} \texttt{0} (Normal RF) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{1} (RF Jammed) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_JAM 1} \\[1.5mm]
-\textbf{Description:} Injects broadband RF interference and noise across GPS L1/L2 carrier frequencies. Simulates terrestrial electronic warfare jammers. When set to \texttt{1}, receiver Carrier-to-Noise density ($C/N_0$) drops below the tracking threshold ($< 28\text{ dB-Hz}$), causing carrier phase lock loss, satellite drops, and severe HDOP inflation ($> 5.0$) before fix loss.
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_JAM 1} \\[1.2mm]
+\textbf{Description:} Injects broadband RF interference on GPS L1/L2 carrier frequencies. Receiver $C/N_0$ drops below lock threshold ($< 28\text{ dB-Hz}$), inflating pseudorange noise. \textbf{Caution:} In SITL, the receiver retains a degraded 3D fix with jumping coordinates; requires automated gating configuration (Section 2) to prevent aircraft wandering.
 \end{tcolorbox}
 
-\vspace{2mm}
-% SECTION 2: EKF3 SPOOFING GATES & ATTITUDE ISOLATION
-\textbf{\large 2. GNSS Spoofing Defense, Innovation Gating \& Attitude Protection}
+\vspace{1.5mm}
+\textbf{\large 2. Spoofing Defense, Innovation Gating \& Attitude Protection}
 
-\vspace{1mm}
+\vspace{0.5mm}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_GLITCH\_RAD}} \hfill \textbf{Type:} EKF3 Innovation Gate Threshold \\
-\textbf{Default:} \texttt{25.0} m \quad $\rightarrow$ \quad \textbf{Recommended Combat Setting:} \texttt{15.0} to \texttt{25.0} m \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_GLITCH\_RAD 25} \\[1.5mm]
-\textbf{Description:} Defines the maximum horizontal step distance (in meters) allowed between consecutive GPS updates before EKF3 rejects the measurement as a position jump anomaly (glitch or adversarial spoofing attempt). If a spoofed signal attempts to shift the aircraft trajectory faster than natural aerodynamic acceleration limits, EKF3 discards the vector and flags \texttt{GPS\_Glitch}.
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{EK3\_GLITCH\_RAD}} \hfill \textbf{Type:} Innovation Step Gate \\
+\textbf{Default:} \texttt{25.0} m \quad $\rightarrow$ \quad \textbf{Recommended Setting:} \texttt{15.0} to \texttt{20.0} m \\
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_GLITCH\_RAD 15} \\[1.2mm]
+\textbf{Description:} Defines maximum horizontal jump distance (meters) between consecutive updates before EKF3 rejects the measurement as anomalous. Rejects abrupt spoofed position jumps and extreme jamming noise spikes.
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{FS\_EKF\_THRESH}} \hfill \textbf{Type:} Flight Safety Failsafe Ratio \\
-\textbf{Default:} \texttt{0.80} \quad $\rightarrow$ \quad \textbf{Recommended Setting:} \texttt{0.65} to \texttt{0.80} \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set FS\_EKF\_THRESH 0.8} \\[1.5mm]
-\textbf{Description:} Normalized innovation variance threshold that triggers the autonomous EKF Failsafe. When sensor measurements consistently conflict with the internal inertial prediction (such as during meaconing or creeping spoofing attacks), exceeding this threshold triggers emergency automated actions (contingency loiter, Dead Reckoning Return-to-Launch, or Land).
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{FS\_EKF\_THRESH}} \hfill \textbf{Type:} Flight Safety Failsafe Threshold \\
+\textbf{Default:} \texttt{0.80} \quad $\rightarrow$ \quad \textbf{Anti-Jam Setting:} \texttt{0.60} to \texttt{0.65} \\
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set FS\_EKF\_THRESH 0.60} \\[1.2mm]
+\textbf{Description:} Normalized innovation variance threshold triggering the EKF Failsafe. Lowering this threshold to \texttt{0.60} forces ArduPlane to trip the failsafe immediately under jamming noise rather than tolerating noisy jumping fixes.
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{AHRS\_GPS\_USE}} \hfill \textbf{Type:} Attitude Filter Sensor Isolation \\
-\textbf{Default:} \texttt{1} (GPS Enabled) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{0} (Isolate AHRS from GPS) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 0} \\[1.5mm]
-\textbf{Description:} Controls whether the primary attitude determination filter uses GPS ground velocity to apply centrifugal compensation during coordinated turns ($a_{\text{cent}} = \omega_z \cdot V_{\text{gps}}$). When GPS spoofing or erratic velocity jumps occur, setting this parameter to \texttt{0} isolates the artificial horizon, preventing erroneous roll/pitch tilt induced by false satellite velocity.
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{AHRS\_GPS\_USE}} \hfill \textbf{Type:} Attitude Filter Isolation \\
+\textbf{Default:} \texttt{1} (Enabled) \quad $\rightarrow$ \quad \textbf{Hostile RF Target:} \texttt{0} (Isolate AHRS) \\
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 0} \\[1.2mm]
+\textbf{Description:} Disconnects GPS ground velocity from attitude centrifugal turn compensation ($a_{\text{cent}} = \omega_z \cdot V_{\text{gps}}$). Prevents erratic GPS velocity spikes from corrupting the artificial horizon and inducing violent wing-rocking.
+\end{tcolorbox}
+
+\vspace{1.5mm}
+\textbf{\large 3. Dead Reckoning \& Wind Estimation Configuration}
+
+\vspace{0.5mm}
+
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{EK3\_DRAG\_BCOEF\_X} / \texttt{EK3\_DRAG\_BCOEF\_Y}} \hfill \textbf{Type:} Aerodynamic Ballistic Coefficients \\
+\textbf{Default:} \texttt{0.0} (Disabled) \quad $\rightarrow$ \quad \textbf{Airframe Target:} \texttt{25.0} to \texttt{35.0} ($kg/m^2$) \\
+\textbf{MCDU / Console Commands:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_DRAG\_BCOEF\_X 25} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set EK3\_DRAG\_BCOEF\_Y 25} \\[1.2mm]
+\textbf{Description:} Calibrates longitudinal and lateral airframe drag. In GPS-denied flight, EKF3 combines pitot true airspeed ($V_{\text{tas}}$) with accelerometer drag deceleration to estimate the horizontal wind vector ($\vec{W}$), establishing ground track: $\vec{V}_{\text{ground}} = \vec{V}_{\text{air}} + \vec{W}$.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.5pt,top=1.8mm,bottom=1.8mm,left=3mm,right=3mm]
+\textbf{\large\texttt{EK3\_SRC\_OPTIONS}} \hfill \textbf{Type:} Sensor Fallback Bitmask \\
+\textbf{Default:} \texttt{0} (Manual Fallback) \quad $\rightarrow$ \quad \textbf{Autonomous Target:} \texttt{1} (Auto Fallback) \\
+\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC\_OPTIONS 1} \\[1.2mm]
+\textbf{Description:} Enables automatic sensor cascade. Setting Bit 0 allows EKF3 to drop an unhealthy GPS autonomously and switch to Dead Reckoning or Optical Flow without pilot intervention.
 \end{tcolorbox}
 
 \newpage
 
-% SECTION 3: DEAD RECKONING & AERODYNAMIC WIND ESTIMATION
-\textbf{\large 3. Dead Reckoning, True Airspeed \& Aerodynamic Wind Estimation}
+% ==============================================================================
+% PART II: COMPLETE SCENARIO FLIGHT TEST EXECUTION PROTOCOLS
+% ==============================================================================
+\noindent{\Large\textbf{PART II: Tactical Flight Scenario Execution Protocols}}
+
+\vspace{1.5mm}
+
+% SCENARIO 1
+\begin{tcolorbox}[colback=scenbg,colframe=bordergray,arc=1mm,boxrule=0.7pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large\color{headerdark}SCENARIO 1: Total GPS Denial / Hardware Cutoff (Clean Dead Reckoning)}
 
 \vspace{1mm}
+\textbf{Operational Objective:} Evaluate pure aerodynamic and inertial dead reckoning following complete loss of primary satellite reception (antenna severance or hardware failure). Verify that the aircraft maintains mission waypoints without wander.
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_DRAG\_BCOEF\_X}} \hfill \textbf{Type:} Aerodynamic Drag Ballistic Coefficient \\
-\textbf{Default:} \texttt{0.0} (Disabled) \quad $\rightarrow$ \quad \textbf{Recommended Airframe Setting:} \texttt{25.0} to \texttt{35.0} ($kg/m^2$) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_DRAG\_BCOEF\_X 25} \\[1.5mm]
-\textbf{Description:} Sets the aircraft's longitudinal frontal ballistic drag coefficient for EKF3's wind estimation filter. In GPS-denied forward flight, EKF3 uses this coefficient along with pitot true airspeed ($V_{\text{tas}}$) and accelerometer deceleration to estimate the horizontal wind vector ($\vec{W}_{\text{wind}}$). This bounds inertial dead reckoning drift indefinitely by synthesizing ground velocity: $\vec{V}_{\text{ground}} = \vec{V}_{\text{air}} + \vec{W}_{\text{wind}}$.
-\end{tcolorbox}
+\vspace{1.5mm}
+\textbf{Prerequisites \& In-Flight Conditions:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item Airspeed sensor healthy and pitot tube calibrated ($\pm 1.0\text{ m/s}$).
+  \item Aircraft in stable cruise in \texttt{AUTO} or \texttt{GUIDED} mode at 50--100 m AGL.
+  \item Drag coefficients set: \texttt{EK3\_DRAG\_BCOEF\_X = 25}, \texttt{EK3\_DRAG\_BCOEF\_Y = 25}.
+\end{itemize}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_DRAG\_BCOEF\_Y}} \hfill \textbf{Type:} Lateral Aerodynamic Drag Coefficient \\
-\textbf{Default:} \texttt{0.0} (Disabled) \quad $\rightarrow$ \quad \textbf{Recommended Setting:} \texttt{20.0} to \texttt{30.0} ($kg/m^2$) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_DRAG\_BCOEF\_Y 25} \\[1.5mm]
-\textbf{Description:} Models lateral fuselage side-force slip dynamics. Enables EKF3 to compute crosswind velocity and crab angle during GPS-denied cruising without requiring dedicated physical side-slip angle vanes.
-\end{tcolorbox}
+\vspace{1mm}
+\textbf{Step 1 --- Pre-Test Verification:}
+Verify groundspeed and airspeed telemetry match expected calm-air values ($V_{\text{tas}} \approx 18\text{ m/s}$).
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_SRC\_OPTIONS}} \hfill \textbf{Type:} Sensor Fallback Mode Bitmask \\
-\textbf{Default:} \texttt{0} (Manual/No Cascade) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{1} (Automatic Fallback) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC\_OPTIONS 1} \\[1.5mm]
-\textbf{Description:} Bitmask parameter that enables automatic internal fallback switching. When Bit 0 is set to \texttt{1}, if the primary navigation source (GPS) fails innovation checks or drops fix, EKF3 automatically cascades to secondary available sources (such as Optical Flow or Airspeed/Compass Wind Dead Reckoning) without pilot intervention.
+\vspace{1mm}
+\textbf{Step 2 --- Execution Command (MCDU Line 1L or SITL Console):}
+\begin{center}
+{\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_ENABLE 0}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 3 --- Telemetry \& Aircraft Flight Response:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item MAVLink \texttt{GPS\_RAW\_INT}: $fix\_type$ drops immediately to \texttt{0} (NO\_FIX), $satellites\_visible$ drops to \texttt{0}.
+  \item EKF3 detects instant satellite loss: horizontal GPS aiding is cleanly decoupled.
+  \item Aircraft transitions into \textbf{Wind-Aided Dead Reckoning}: banks smoothly on flight plan course, holds ground track via pitot airspeed and compass heading. Zero weaving or wing-rocking occurs.
+\end{itemize}
+
+\vspace{1mm}
+\textbf{Step 4 --- Recovery Sequence (Return to Satellite Navigation):}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_ENABLE 1}
+\end{center}
+\textit{Response:} GPS lock reacquired ($fix\_type = 3$); EKF3 fuses satellites back into navigation state within 3--5 seconds.
 \end{tcolorbox}
 
 \vspace{2mm}
-% SECTION 4: OPTICAL FLOW SENSOR FUSION (HOVER / LOW-ALTITUDE)
-\textbf{\large 4. Optical Flow Sensor Simulation \& Hover Velocity Fusion}
+
+% SCENARIO 2
+\begin{tcolorbox}[colback=scenbg,colframe=bordergray,arc=1mm,boxrule=0.7pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large\color{headerdark}SCENARIO 2: Electronic Warfare RF Jamming Countermeasure (Anti-Hunt Protocol)}
 
 \vspace{1mm}
+\textbf{Operational Objective:} Counter hostile broadband RF noise injection. Prevent the aircraft from chasing jumping coordinates (the ``here-and-there'' hunting phenomenon) by forcing automatic innovation rejection and prompt Dead Reckoning fallback.
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{SIM\_FLOW\_ENABLE}} \hfill \textbf{Type:} SITL Optical Flow Hardware Simulation \\
-\textbf{Default:} \texttt{0} (Disabled) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{1} (Hardware Simulated) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_FLOW\_ENABLE 1} \\[1.5mm]
-\textbf{Description:} Activates downward-facing optical flow camera hardware simulation (e.g., HereFlow, CX-OF). Emits continuous ground pixel motion displacement rates over MAVLink (\texttt{OPTICAL\_FLOW} packets) based on simulated ground imagery texture.
+\vspace{1.5mm}
+\textbf{Technical Root Cause of Wandering:}
+During RF jamming, the receiver does \textit{not} declare $fix\_type = 0$ immediately. It outputs a degraded 3D fix with jumping coordinates. The L1 navigation controller tries to turn toward each false jump, and \texttt{AHRS\_GPS\_USE 1} tilts the horizon with false ground velocities.
+
+\vspace{1.5mm}
+\textbf{Step 1 --- Execute Anti-Jamming Defensive Pre-Configuration:}
+Execute the following parameters in order via the MCDU or Console:
+\begin{center}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Command} & \textbf{Operational Function} \\
+\midrule
+{\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC\_OPTIONS 1} & Enables EKF3 automatic fallback away from failing GPS. \\
+{\ttfamily\bfseries\color{paramcmd}param set FS\_EKF\_THRESH 0.60} & Tightens failsafe threshold to trip instantly under RF noise. \\
+{\ttfamily\bfseries\color{paramcmd}param set EK3\_GLITCH\_RAD 15} & Tightens innovation gate from 25 m to 15 m. \\
+{\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 0} & Severs GPS velocity from attitude filter to prevent wing-rocking. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 2 --- Execution Command (Inject RF Jamming Noise):}
+\begin{center}
+{\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_JAM 1}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 3 --- Telemetry \& Aircraft Flight Response:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item SITL injects carrier noise: receiver HDOP inflates rapidly ($> 4.5$) and position variance surges.
+  \item With \texttt{FS\_EKF\_THRESH 0.60}, the EKF failsafe trips within 4--6 seconds.
+  \item With \texttt{EK3\_SRC\_OPTIONS 1}, EKF3 severs the noisy GPS and cascades into Dead Reckoning.
+  \item With \texttt{AHRS\_GPS\_USE 0}, the wings remain completely level; erratic weaving is eliminated.
+\end{itemize}
+
+\vspace{1mm}
+\textbf{Step 4 --- Recovery Sequence (Cease Jamming \& Restore Navigation):}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_JAM 0} \quad $\rightarrow$ \quad {\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 1}
+\end{center}
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_FLOW\_USE}} \hfill \textbf{Type:} EKF3 Optical Flow Fusion Toggle \\
-\textbf{Default:} \texttt{1} (Use Flow) \quad $\rightarrow$ \quad \textbf{Contingency Target:} \texttt{1} (Enabled) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_FLOW\_USE 1} \\[1.5mm]
-\textbf{Description:} Instructs the EKF3 estimation filter to ingest optical flow velocity measurements into the navigation state vector. Essential for stationary hovering, precision landing, and low-altitude VTOL operations where pitot airspeed is near zero.
-\end{tcolorbox}
+\newpage
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{EK3\_SRC1\_VELXY}} \hfill \textbf{Type:} Horizontal Velocity Source Selector \\
-\textbf{Default:} \texttt{3} (GPS Velocity) \quad $\rightarrow$ \quad \textbf{Execution Target:} \texttt{5} (Optical Flow) \\
-\textbf{MCDU / Console Command:} {\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC1\_VELXY 5} \\[1.5mm]
-\textbf{Description:} Selects the sensor used for horizontal velocity aiding ($V_x, V_y$). Setting this parameter to \texttt{5} directs EKF3 to use Optical Flow as the primary horizontal velocity reference, completely decoupling velocity estimation from satellite signals.
+% SCENARIO 3
+\begin{tcolorbox}[colback=scenbg,colframe=bordergray,arc=1mm,boxrule=0.7pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large\color{headerdark}SCENARIO 3: Adversarial GPS Spoofing / Innovation Step-Jump Defense}
+
+\vspace{1mm}
+\textbf{Operational Objective:} Validate EKF3 innovation gating defense against hostile terrestrial spoofers attempting to hijack the aircraft trajectory via false pseudoranges or sudden coordinate offset steps.
+
+\vspace{1.5mm}
+\textbf{Step 1 --- Gating Defensive Pre-Configuration:}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set EK3\_GLITCH\_RAD 15} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 0}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 2 --- Execution Command (Inject Adversarial Coordinate Step):}
+\begin{center}
+{\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_GLT\_X 60} \quad|\quad {\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_GLT\_Y 60}
+\end{center}
+\textit{Alternative MCDU Action:} Stage offset injection via Cockpit MCDU Line 3L.
+
+\vspace{1mm}
+\textbf{Step 3 --- Telemetry \& Aircraft Flight Response:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item The spoofed coordinate jump ($\approx 85\text{ m}$) exceeds the \texttt{EK3\_GLITCH\_RAD} 15 m gate.
+  \item EKF3 flags \texttt{GPS\_Glitch: pos step} in MAVLink \texttt{STATUSTEXT}; the false position vector is discarded.
+  \item The aircraft continues holding planned track on internal inertial dead reckoning, completely ignoring the spoofer's pull.
+\end{itemize}
+
+\vspace{1mm}
+\textbf{Step 4 --- Recovery Sequence (Cease Spoofing Signal):}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_GLT\_X 0} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_GLT\_Y 0} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set AHRS\_GPS\_USE 1}
+\end{center}
 \end{tcolorbox}
 
 \vspace{2mm}
-% SECTION 5: METEOROLOGICAL WIND INJECTION
-\textbf{\large 5. Environmental Wind \& Atmospheric Turbulence Injection}
+
+% SCENARIO 4
+\begin{tcolorbox}[colback=scenbg,colframe=bordergray,arc=1mm,boxrule=0.7pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large\color{headerdark}SCENARIO 4: VTOL / Low-Altitude GPS Failure with Optical Flow Fallback}
 
 \vspace{1mm}
+\textbf{Operational Objective:} Ensure stationary hover and station-keeping capability for VTOL platforms or low-altitude quadplanes when GPS is denied in zero-airspeed hover flight.
 
-\begin{tcolorbox}[colback=boxbg,colframe=gray!60,arc=1mm,boxrule=0.6pt,top=2mm,bottom=2mm,left=3mm,right=3mm]
-\textbf{\large\texttt{SIM\_WIND\_SPD} / \texttt{SIM\_WIND\_DIR} / \texttt{SIM\_WIND\_TURB}} \hfill \textbf{Type:} SITL Environment \\
-\textbf{Range:} Speed: \texttt{0}–\texttt{30} m/s \quad|\quad Direction: \texttt{0}–\texttt{359}° \quad|\quad Turbulence: \texttt{0.0}–\texttt{1.0} \\
-\textbf{Commands:} {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_SPD 7.0} \quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_DIR 270} \quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_TURB 0.20} \\[1.5mm]
-\textbf{Description:} Controls SITL atmospheric wind speed, compass direction, and Dryden gust turbulence. Used to evaluate aircraft drift compensation, crab angle computation, and the accuracy of EKF3's wind estimation filter under realistic operational weather conditions.
+\vspace{1.5mm}
+\textbf{Step 1 --- Sensor Pre-Configuration:}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_FLOW\_ENABLE 1} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set EK3\_FLOW\_USE 1} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC1\_VELXY 5}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 2 --- Flight Regime Establishment:}
+Establish the aircraft in steady hover (\texttt{QLOITER} or \texttt{QHOVER} mode) at 5--15 m AGL over textured ground.
+
+\vspace{1mm}
+\textbf{Step 3 --- Execution Command (Sever GPS in Hover):}
+\begin{center}
+{\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_ENABLE 0}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 4 --- Telemetry \& Aircraft Flight Response:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item MAVLink \texttt{OPTICAL\_FLOW} packets stream angular ground pixel displacement rates ($rad/s$).
+  \item EKF3 seamlessly substitutes satellite horizontal velocity with integrated optical flow ground velocity.
+  \item Aircraft holds stationary hover coordinates without drift, even with zero forward airspeed over the pitot tube.
+\end{itemize}
+
+\vspace{1mm}
+\textbf{Step 5 --- Recovery Sequence:}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_ENABLE 1} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set EK3\_SRC1\_VELXY 3}
+\end{center}
+\end{tcolorbox}
+
+\vspace{2mm}
+
+% SCENARIO 5
+\begin{tcolorbox}[colback=scenbg,colframe=bordergray,arc=1mm,boxrule=0.7pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large\color{headerdark}SCENARIO 5: High-Crosswind Atmospheric Turbulence Dead Reckoning Validation}
+
+\vspace{1mm}
+\textbf{Operational Objective:} Validate EKF3's wind triangle estimation ($\vec{V}_{\text{ground}} = \vec{V}_{\text{tas}} + \vec{W}_{\text{wind}}$) and crab-angle compensation under strong crosswind gusts and Dryden turbulence during GPS-denied navigation.
+
+\vspace{1.5mm}
+\textbf{Step 1 --- Inject Meteorological Crosswind Environment:}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_SPD 12.0} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_DIR 270} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_TURB 0.25}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 2 --- Execution Command (Sever GPS under Crosswind):}
+\begin{center}
+{\ttfamily\bfseries\Large\color{paramcmd}param set SIM\_GPS1\_ENABLE 0}
+\end{center}
+
+\vspace{0.5mm}
+\textbf{Step 3 --- Telemetry \& Aircraft Flight Response:}
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=1pt]
+  \item EKF3 estimates the 12 m/s westerly wind vector from frontal drag deceleration and sideslip drag dynamics.
+  \item Navigation controller automatically establishes crab angle: $\beta = \arcsin\left(\frac{W_\perp}{V_{\text{tas}}}\right) \approx 35^\circ$ to $40^\circ$.
+  \item Ground track remains aligned with planned waypoint course line despite turbulent atmospheric buffet.
+\end{itemize}
+
+\vspace{1mm}
+\textbf{Step 4 --- Recovery Sequence:}
+\begin{center}
+{\ttfamily\bfseries\color{paramcmd}param set SIM\_GPS1\_ENABLE 1} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_SPD 0} \quad|\quad {\ttfamily\bfseries\color{paramcmd}param set SIM\_WIND\_TURB 0}
+\end{center}
+\end{tcolorbox}
+
+\newpage
+
+% ==============================================================================
+% PART III: MASTER FLIGHT TEST MATRIX & QUICK-ACTION CHECKSHEET
+% ==============================================================================
+\noindent{\Large\textbf{PART III: Master Flight Test Matrix \& Telemetry Checksheet}}
+
+\vspace{2mm}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\linewidth}{p{2.2cm}p{3.5cm}p{3.5cm}p{3.5cm}X}
+\toprule
+\textbf{Scenario} & \textbf{Pre-Requisite Setup} & \textbf{Execution Trigger} & \textbf{Key Telemetry Sign} & \textbf{Evaluation Criteria} \\
+\midrule
+\textbf{1. Clean GPS Loss} &
+Airspeed calibrated, \texttt{BCOEF\_X/Y = 25} &
+{\ttfamily\footnotesize param set SIM\_GPS1\_ENABLE 0} &
+\texttt{GPS.fix = 0}\newline \texttt{GPS.sats = 0} &
+Smooth transition to Dead Reckoning; zero wandering or wing-rock. \\
+\addlinespace[1.5mm]
+\textbf{2. RF Jamming Counter} &
+{\ttfamily\footnotesize EK3\_SRC\_OPTIONS 1}\newline {\ttfamily\footnotesize FS\_EKF\_THRESH 0.60}\newline {\ttfamily\footnotesize AHRS\_GPS\_USE 0} &
+{\ttfamily\footnotesize param set SIM\_GPS1\_JAM 1} &
+\texttt{HDOP > 4.5}\newline \texttt{FS\_EKF} triggered within 6 seconds &
+EKF failsafe trips promptly; drops degraded GPS; zero coordinate hunting. \\
+\addlinespace[1.5mm]
+\textbf{3. Spoofing Defense} &
+{\ttfamily\footnotesize EK3\_GLITCH\_RAD 15}\newline {\ttfamily\footnotesize AHRS\_GPS\_USE 0} &
+{\ttfamily\footnotesize param set SIM\_GPS1\_GLT\_X 60} &
+\texttt{GPS\_Glitch} in STATUSTEXT &
+Measurement rejected at gate; internal dead reckoning maintained. \\
+\addlinespace[1.5mm]
+\textbf{4. Optical Flow Hover} &
+{\ttfamily\footnotesize SIM\_FLOW\_ENABLE 1}\newline {\ttfamily\footnotesize EK3\_SRC1\_VELXY 5} &
+{\ttfamily\footnotesize param set SIM\_GPS1\_ENABLE 0} (in hover) &
+\texttt{OPTICAL\_FLOW} packet rate $> 20\text{ Hz}$ &
+Zero positional drift in low-altitude hover; velocity aided by camera. \\
+\addlinespace[1.5mm]
+\textbf{5. High-Wind DR} &
+{\ttfamily\footnotesize SIM\_WIND\_SPD 12}\newline {\ttfamily\footnotesize SIM\_WIND\_DIR 270} &
+{\ttfamily\footnotesize param set SIM\_GPS1\_ENABLE 0} &
+Crab angle established; ground track true &
+Correct crosswind crab computed from drag model; path held in turbulence. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\vspace{3mm}
+
+% Quick Reference Operator Summary Box
+\begin{tcolorbox}[colback=boxbg,colframe=bordergray,arc=1mm,boxrule=0.6pt,top=2.5mm,bottom=2.5mm,left=3.5mm,right=3.5mm]
+\textbf{\large Cockpit MCDU Quick-Key Map Reference} \\[1.5mm]
+\begin{itemize}[leftmargin=4mm,topsep=1pt,itemsep=2pt]
+  \item \textbf{Line 1L (\texttt{< SIM GPS OFF}):} Stages \texttt{param set SIM\_GPS1\_ENABLE 0} for instant clean dead reckoning test.
+  \item \textbf{Line 2L (\texttt{< RF JAM 100\%}):} Stages \texttt{param set SIM\_GPS1\_JAM 1} for electronic warfare noise testing.
+  \item \textbf{Line 3L (\texttt{< LAT/LON SPOOF}):} Stages coordinate step glitch to test innovation gating.
+  \item \textbf{Line 4L (\texttt{< WIND DR ON}):} Stages \texttt{EK3\_DRAG\_BCOEF\_X 25} and \texttt{EK3\_DRAG\_BCOEF\_Y 25}.
+  \item \textbf{Line 5L (\texttt{< ANTI-JAM CONFIG}):} Stages \texttt{EK3\_SRC\_OPTIONS 1}, \texttt{FS\_EKF\_THRESH 0.60}, and \texttt{AHRS\_GPS\_USE 0} to eliminate hunting.
+  \item \textbf{Line 6R (\texttt{< RECOVER ALL}):} Instantly restores all parameters to nominal GPS-guided flight.
+\end{itemize}
 \end{tcolorbox}
 
 \end{document}
