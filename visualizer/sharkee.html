@@ -279,10 +279,19 @@
             border-color: rgba(255, 255, 255, 0.4);
         }
 
-        .toolbar-btn.active {
-            background: rgba(10, 132, 255, 0.35);
-            border-color: rgba(10, 132, 255, 0.85);
-            color: #5ac8fa;
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #30d158;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 6px #30d158;
+            margin-right: 6px;
+        }
+
+        .live-dot.offline {
+            background: #ff453a;
+            box-shadow: 0 0 6px #ff453a;
         }
 
         /* Avionics Grade Compass Rose Widget */
@@ -538,22 +547,23 @@
         }
 
         .btn-copy-all {
-            background: var(--accent);
-            color: #ffffff;
-            border: none;
+            background: var(--btn-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px 8px;
+            padding: 4px 10px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
         .btn-copy-all:hover {
-            filter: brightness(1.15);
+            background: var(--btn-hover);
+            border-color: var(--accent);
         }
 
         .slider-group {
@@ -635,14 +645,14 @@
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
+        <button class="toolbar-btn" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.3"></polygon>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-weather" title="Toggle Live Weather & SITL Terminal Commands">
+        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & SITL Terminal Commands">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
@@ -656,7 +666,11 @@
                 <img src="app_icon.png" alt="ArduPilot Mascot" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
                 <h2>ArduPilot SITL</h2>
             </div>
-            <button id="theme-toggle" class="icon-btn">🌙</button>
+            <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
         </div>
 
         <div class="data-card">
@@ -838,21 +852,17 @@
                     <polygon points="0,-86 -4,-80 0,-74 4,-80" fill="#30d158" stroke="#000" stroke-width="0.5" />
                 </g>
 
-                <!-- Wind Vector Arrow (Garmin Cyan) -->
+                <!-- Garmin Cyan Wind Vector Arrow -->
                 <g id="compass-wind-arrow" style="transform-origin: 0px 0px; transition: transform 0.2s ease-out;">
-                    <!-- Wind Shaft pointing along the wind flow vector -->
-                    <line x1="0" y1="-42" x2="0" y2="-66" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" />
-                    <!-- Arrowhead -->
-                    <polygon points="0,-72 -4.5,-63 4.5,-63" fill="#00e5ff" />
-                    <!-- Intensity Barb -->
-                    <line x1="0" y1="-46" x2="6" y2="-51" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" />
+                    <line x1="0" y1="-38" x2="0" y2="-65" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" />
+                    <polygon points="0,-72 -4,-63 4,-63" fill="#00e5ff" />
                 </g>
 
-                <!-- Center Aircraft Symbol -->
+                <!-- Garmin G1000 HSI Miniature Aircraft Symbol -->
                 <g id="compass-aircraft-symbol" style="transform-origin: 0px 0px; transition: transform 0.08s linear;">
-                    <path d="M0,-18 L2,-12 L16,-3 L16,0 L3,-3 L3,10 L7,14 L7,16 L0,15 L-7,16 L-7,14 L-3,10 L-3,-3 L-16,0 L-16,-3 L-2,-12 Z" 
-                          fill="#ffffff" stroke="rgba(0,0,0,0.7)" stroke-width="1" />
-                    <circle cx="0" cy="0" r="2" fill="#ff9f0a" />
+                    <path d="M 0,-18 L 2.5,-11 L 2.5,-3 L 19,-3 L 19,1.5 L 2.5,1.5 L 2.5,12 L 9,12 L 9,15 L -9,15 L -9,12 L -2.5,12 L -2.5,1.5 L -19,1.5 L -19,-3 L -2.5,-3 L -2.5,-11 Z" 
+                          fill="#ffffff" stroke="#000000" stroke-width="1.2" stroke-linejoin="round" />
+                    <circle cx="0" cy="0" r="2" fill="#ff9f0a" stroke="#000000" stroke-width="0.7" />
                 </g>
             </svg>
         </div>
@@ -897,7 +907,7 @@
 
         <!-- Live Feed Status Tag -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 6px; font-size: 11px;">
-            <span id="weather-status-tag" style="color: var(--success); font-weight: 600;">● Live Open-Meteo Feed</span>
+            <span style="display:flex; align-items:center;"><span class="live-dot" id="weather-dot"></span><span id="weather-status-tag" style="color: var(--text-primary); font-weight: 600;">Live Open-Meteo Feed</span></span>
             <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">--:--:--</span>
         </div>
 
@@ -936,7 +946,11 @@
         <div class="section-title" style="margin: 12px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
             <span>Terminal SITL Commands</span>
             <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
-                📋 Copy All
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy All</span>
             </button>
         </div>
 
@@ -944,15 +958,21 @@
         <div class="terminal-cmd-box">
             <div class="terminal-cmd-row">
                 <code>param set SIM_WIND_SPD <span id="cmd-spd-val">5.0</span></code>
-                <button class="btn-copy-mini" id="btn-copy-spd" title="Copy parameter line">📋</button>
+                <button class="btn-copy-mini" id="btn-copy-spd" title="Copy parameter line">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
             </div>
             <div class="terminal-cmd-row">
                 <code>param set SIM_WIND_DIR <span id="cmd-dir-val">270</span></code>
-                <button class="btn-copy-mini" id="btn-copy-dir" title="Copy parameter line">📋</button>
+                <button class="btn-copy-mini" id="btn-copy-dir" title="Copy parameter line">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
             </div>
             <div class="terminal-cmd-row">
                 <code>param set SIM_WIND_TURB <span id="cmd-turb-val">0.20</span></code>
-                <button class="btn-copy-mini" id="btn-copy-turb" title="Copy parameter line">📋</button>
+                <button class="btn-copy-mini" id="btn-copy-turb" title="Copy parameter line">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
             </div>
         </div>
 
@@ -999,15 +1019,18 @@
 
     <div id="canvas-container"></div>
     <script>
+        const SVG_MOON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+        const SVG_SUN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+
         const themeToggle = document.getElementById('theme-toggle');
         themeToggle.onclick = () => {
             const isDark = document.body.classList.contains('dark-mode');
             if (isDark) {
                 document.body.classList.remove('dark-mode');
-                themeToggle.innerText = '🌙';
+                themeToggle.innerHTML = SVG_MOON;
             } else {
                 document.body.classList.add('dark-mode');
-                themeToggle.innerText = '☀️';
+                themeToggle.innerHTML = SVG_SUN;
             }
             updateSceneTheme();
         };
@@ -1061,7 +1084,7 @@
         btnToggleCompass.onclick = () => {
             const isHidden = compassWidget.style.display === 'none';
             compassWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleCompass.classList.toggle('active', isHidden);
+            btnToggleCompass.style.opacity = isHidden ? '1.0' : '0.45';
             localStorage.setItem('compass_visible', isHidden ? '1' : '0');
         };
 
@@ -1070,18 +1093,18 @@
         btnToggleWeather.onclick = () => {
             const isHidden = weatherWidget.style.display === 'none';
             weatherWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleWeather.classList.toggle('active', isHidden);
+            btnToggleWeather.style.opacity = isHidden ? '1.0' : '0.45';
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
         };
 
         // Restore user toggle preferences
         if (localStorage.getItem('compass_visible') === '0') {
             compassWidget.style.display = 'none';
-            btnToggleCompass.classList.remove('active');
+            btnToggleCompass.style.opacity = '0.45';
         }
         if (localStorage.getItem('weather_visible') === '0') {
             weatherWidget.style.display = 'none';
-            btnToggleWeather.classList.remove('active');
+            btnToggleWeather.style.opacity = '0.45';
         }
 
         // Draggable Floating Panels
@@ -1347,9 +1370,10 @@
                     applyWeatherValues(spd, dir, gust, turb, temp, press, elev, true);
 
                     if (statusTag) {
-                        statusTag.innerText = "● Live Open-Meteo Feed";
-                        statusTag.style.color = "var(--success)";
+                        statusTag.innerText = "Live Open-Meteo Feed";
                     }
+                    const dotEl = document.getElementById('weather-dot');
+                    if (dotEl) dotEl.className = 'live-dot';
                     const timeTag = document.getElementById('weather-timestamp');
                     if (timeTag) {
                         const now = new Date();
@@ -1359,9 +1383,10 @@
             } catch (err) {
                 console.warn("Could not fetch live Open-Meteo weather:", err);
                 if (statusTag) {
-                    statusTag.innerText = "● Offline (Default Profile)";
-                    statusTag.style.color = "var(--danger)";
+                    statusTag.innerText = "Offline (Default Profile)";
                 }
+                const dotEl = document.getElementById('weather-dot');
+                if (dotEl) dotEl.className = 'live-dot offline';
             } finally {
                 if (fetchBtn) fetchBtn.classList.remove('loading');
             }
@@ -1379,12 +1404,12 @@
             function showSuccess() {
                 if (!btnElement) return;
                 const orig = btnElement.innerHTML;
-                btnElement.innerHTML = '✓ Copied!';
-                btnElement.style.background = '#30d158';
-                btnElement.style.color = '#fff';
+                btnElement.innerText = 'Copied';
+                btnElement.style.borderColor = 'var(--success)';
+                btnElement.style.color = 'var(--success)';
                 setTimeout(() => {
                     btnElement.innerHTML = orig;
-                    btnElement.style.background = '';
+                    btnElement.style.borderColor = '';
                     btnElement.style.color = '';
                 }, 1500);
             }
