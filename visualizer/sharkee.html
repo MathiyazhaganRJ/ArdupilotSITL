@@ -1394,7 +1394,7 @@
                     <!-- Populated dynamically -->
                 </select>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                    <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. South Strip)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
+                    <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. My Home Airfield)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
                     <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 5px 8px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         Save
@@ -2057,9 +2057,11 @@
         }
 
         // Preset Storage Architecture (localStorage)
+        const savedDefaultName = localStorage.getItem('pilot_default_preset_name');
+        const defaultName = (savedDefaultName && savedDefaultName !== 'SITL Test Airfield (Padanilam, India)') ? savedDefaultName : 'My Home Airfield';
         const DEFAULT_PRESET = {
             id: 'default',
-            name: localStorage.getItem('pilot_default_preset_name') || 'SITL Test Airfield (Padanilam, India)',
+            name: defaultName,
             lat: parseFloat(localStorage.getItem('pilot_default_preset_lat') || 8.3105),
             lon: parseFloat(localStorage.getItem('pilot_default_preset_lon') || 77.3137),
             radius: parseFloat(localStorage.getItem('pilot_default_preset_rad') || 3.0),
@@ -2200,7 +2202,7 @@
                 const nameInput = document.getElementById('map-cache-name');
                 const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : null;
                 if (!name) {
-                    alert('Please enter a name for this flight field preset (e.g. "Padanilam South Strip").');
+                    alert('Please enter a name for this flight field preset (e.g. "My Home Airfield").');
                     if (nameInput) nameInput.focus();
                     return;
                 }
