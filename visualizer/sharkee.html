@@ -1387,7 +1387,7 @@
         <!-- Telemetry Strip -->
         <div class="compass-telemetry">
             <div class="compass-telemetry-row">
-                <span class="lbl">WIND</span>
+                <span class="lbl">WIND <small id="compass-wind-src" style="font-size: 8.5px; opacity: 0.8; letter-spacing: 0.02em;">[SIM]</small></span>
                 <span id="compass-wind-summary" class="val" style="color: var(--wind-color); font-weight: 800;">5.0 m/s @ 270°</span>
             </div>
             <div class="compass-telemetry-row">
@@ -1797,6 +1797,13 @@
         let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
         let liveFetchedWeather = null;
 
+        // Aircraft In-Flight Sensed Wind (Garmin G1000 AHRS / EKF Model)
+        let ekfWindSpd = 5.0;
+        let ekfWindDir = 270;
+        let displaySensedWindSpd = 5.0;
+        let displaySensedWindDir = 270;
+        let hasReceivedEkfWind = false;
+
         // Smooth Compass Rotation State & Angle Unwrapping (Eliminates 0°/360° needle resets)
         let targetRotatorAngle = 0, displayRotatorAngle = 0;
         let targetWindAngle = 0, displayWindAngle = 0;
@@ -1857,6 +1864,24 @@
 
             if (!rotatorEl) return;
 
+            // Determine active flight deck wind:
+            // In flight (airspeed > 2.0 m/s) with active EKF telemetry, the cockpit compass displays genuine aircraft-sensed wind!
+            // When on the ground or before EKF convergence, it smoothly falls back to the baseline profile.
+            const inFlight = (planeAirspeed > 2.0 && hasReceivedEkfWind);
+            const activeWindSpd = inFlight ? displaySensedWindSpd : currentWindSpd;
+            const activeWindDir = inFlight ? displaySensedWindDir : currentWindDir;
+
+            const windSrcEl = document.getElementById('compass-wind-src');
+            if (windSrcEl) {
+                if (inFlight) {
+                    windSrcEl.innerText = '[EKF]';
+                    windSrcEl.style.color = 'var(--success)';
+                } else {
+                    windSrcEl.innerText = '[SIM]';
+                    windSrcEl.style.color = 'var(--text-secondary)';
+                }
+            }
+
             // 1. Digital HDG Readout
             const hdgInt = Math.round((planeHeading % 360 + 360) % 360);
             if (hdgValEl) hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
@@ -1876,7 +1901,7 @@
                 targetAircraftAngle = 0;
 
                 // Wind arrow points along wind flow vector relative to aircraft nose
-                targetWindAngle = currentWindDir - planeHeading + 180;
+                targetWindAngle = activeWindDir - planeHeading + 180;
 
                 if (trkInt !== null && trkBugEl) {
                     targetTrkAngle = planeGroundTrack - planeHeading;
@@ -1888,7 +1913,7 @@
                 targetRotatorAngle = 0;
                 targetAircraftAngle = planeHeading;
 
-                targetWindAngle = currentWindDir + 180;
+                targetWindAngle = activeWindDir + 180;
 
                 if (trkInt !== null && trkBugEl) {
                     targetTrkAngle = planeGroundTrack;
@@ -1900,14 +1925,14 @@
 
             // 4. Wind Summary Text (Official Aviation Standard: Direction first, then Speed)
             if (windSummaryEl) {
-                const windDirInt = Math.round(((currentWindDir % 360) + 360) % 360);
-                windSummaryEl.innerText = `${windDirInt.toString().padStart(3, '0')}° / ${currentWindSpd.toFixed(1)} m/s (${getCardinal(currentWindDir)})`;
+                const windDirInt = Math.round(((activeWindDir % 360) + 360) % 360);
+                windSummaryEl.innerText = `${windDirInt.toString().padStart(3, '0')}° / ${activeWindSpd.toFixed(1)} m/s (${getCardinal(activeWindDir)})`;
             }
 
             // 5. Aerospace Headwind & Crosswind Decomposition
-            const angleDiffRad = ((currentWindDir - planeHeading) * Math.PI) / 180;
-            const headwind = currentWindSpd * Math.cos(angleDiffRad);
-            const crosswind = currentWindSpd * Math.sin(angleDiffRad);
+            const angleDiffRad = ((activeWindDir - planeHeading) * Math.PI) / 180;
+            const headwind = activeWindSpd * Math.cos(angleDiffRad);
+            const crosswind = activeWindSpd * Math.sin(angleDiffRad);
 
             const hwStr = (headwind >= 0 ? `HW +${headwind.toFixed(1)}` : `TW -${Math.abs(headwind).toFixed(1)}`);
             let xwStr = `XW 0.0`;
@@ -2860,7 +2885,10 @@
                     driftEst = `±${(elapsedSec * 0.45).toFixed(1)}m`;
                 }
 
-                const windStr = `< ${Math.round(currentWindDir)}° / ${currentWindSpd.toFixed(1)}m/s`;
+                const inFlight = (planeAirspeed > 2.0 && hasReceivedEkfWind);
+                const activeWindSpd = inFlight ? displaySensedWindSpd : currentWindSpd;
+                const activeWindDir = inFlight ? displaySensedWindDir : currentWindDir;
+                const windStr = `< ${Math.round(activeWindDir)}° / ${activeWindSpd.toFixed(1)}m/s`;
                 const crabAngleEl = document.getElementById('compass-crab-angle');
                 const crabStr = (crabAngleEl ? crabAngleEl.innerText : '0.0°') + ' >';
 
@@ -3375,6 +3403,20 @@
                 currentTerrainAltMSL = data.terrain_height;
                 currentAGL = data.current_height;
                 document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
+            } else if (data.type === 'WIND') {
+                // Sensed in-flight EKF wind experienced by the aircraft
+                if (data.wind_speed !== undefined && data.wind_direction !== undefined) {
+                    hasReceivedEkfWind = true;
+                    ekfWindSpd = Math.max(0, data.wind_speed);
+                    ekfWindDir = ((data.wind_direction % 360) + 360) % 360;
+
+                    // Smooth 2nd-order exponential filter (damps rapid throttle blips without lag)
+                    displaySensedWindSpd += (ekfWindSpd - displaySensedWindSpd) * 0.15;
+                    displaySensedWindDir += shortestAngleDiff(ekfWindDir, displaySensedWindDir) * 0.15;
+                    displaySensedWindDir = (displaySensedWindDir % 360 + 360) % 360;
+
+                    updateCompass();
+                }
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
@@ -3647,14 +3689,16 @@
                 // In Three.js, vtolGroup.rotation.y = -yaw (radians). Extract continuous float heading:
                 const smoothHdg = ((-vtolGroup.rotation.y * 180 / Math.PI) % 360 + 360) % 360;
                 planeHeading = smoothHdg;
+                const inFlight = (planeAirspeed > 2.0 && hasReceivedEkfWind);
+                const activeWindDir = inFlight ? displaySensedWindDir : currentWindDir;
                 if (compassMode === 'hdg_up') {
                     targetRotatorAngle = -smoothHdg;
                     targetAircraftAngle = 0;
-                    targetWindAngle = currentWindDir - smoothHdg + 180;
+                    targetWindAngle = activeWindDir - smoothHdg + 180;
                 } else {
                     targetRotatorAngle = 0;
                     targetAircraftAngle = smoothHdg;
-                    targetWindAngle = currentWindDir + 180;
+                    targetWindAngle = activeWindDir + 180;
                 }
             }
 

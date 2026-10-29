@@ -19,7 +19,7 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'GPS_RAW_INT', 'ESTIMATOR_STATUS'], blocking=False)
+        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'ESTIMATOR_STATUS'], blocking=False)
         if msg:
             if msg.get_type() == 'HEARTBEAT':
                 # Ignore GCS (type 6) or non-autopilot component heartbeats so they don't overwrite vehicle telemetry
@@ -45,6 +45,12 @@ async def mavlink_listener():
                         connection.target_system, connection.target_component,
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         136, 500000, 0, 0, 0, 0, 0
+                    )
+                    # Stream in-flight EKF aircraft-sensed wind (Msg 168) at 4Hz (250,000 microseconds)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        168, 250000, 0, 0, 0, 0, 0
                     )
                     # Explicitly request GPS_RAW_INT (Msg 24) at 10Hz
                     connection.mav.command_long_send(
@@ -102,6 +108,10 @@ async def mavlink_listener():
                 data['airspeed'] = msg.airspeed
                 data['groundspeed'] = msg.groundspeed
                 data['heading'] = getattr(msg, 'heading', None)
+            elif msg.get_type() == 'WIND':
+                data['wind_direction'] = getattr(msg, 'direction', 0)
+                data['wind_speed'] = getattr(msg, 'speed', 0.0)
+                data['wind_speed_z'] = getattr(msg, 'speed_z', 0.0)
             elif msg.get_type() == 'TERRAIN_REPORT':
                 data['terrain_height'] = msg.terrain_height
                 data['current_height'] = msg.current_height
