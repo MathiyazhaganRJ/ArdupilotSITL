@@ -1462,22 +1462,13 @@
         <!-- Section: SITL Terminal Commands -->
         <div class="section-title" style="margin: 12px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
             <span>Terminal SITL Commands</span>
-            <div style="display:flex; gap:6px; align-items:center;">
-                <button id="btn-inject-weather" class="btn-copy-all" title="Transmit current wind parameters to SITL over MAVLink">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                    <span>Update</span>
-                </button>
-                <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    <span>Copy All</span>
-                </button>
-            </div>
+            <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy All</span>
+            </button>
         </div>
 
         <!-- Dark Terminal Box -->
@@ -2074,7 +2065,12 @@
             sendSitlParam('SIM_WIND_SPD', currentWindSpd);
             sendSitlParam('SIM_WIND_DIR', Math.round(currentWindDir));
             sendSitlParam('SIM_WIND_TURB', currentWindTurb);
-            console.log(`[Weather Injection] Injected to SITL: SPD=${currentWindSpd.toFixed(1)}, DIR=${Math.round(currentWindDir)}, TURB=${currentWindTurb.toFixed(2)}`);
+            // By default SITL uses SIM_WIND_T=0 which zeroes wind at ground and scales up to 60m.
+            // SIM_WIND_T=1 (none) applies full wind at all altitudes (including runway/ground).
+            sendSitlParam('SIM_WIND_T', 1);
+            // SITL default SIM_WIND_TC is 5.0s (sluggish filter). 0.5s provides rapid response.
+            sendSitlParam('SIM_WIND_TC', 0.5);
+            console.log(`[Weather Injection] Injected to SITL: SPD=${currentWindSpd.toFixed(1)}, DIR=${Math.round(currentWindDir)}, TURB=${currentWindTurb.toFixed(2)}, T=1, TC=0.5`);
             if (typeof setCduScratchpad === 'function') {
                 setCduScratchpad(`WIND INJECTED: ${currentWindSpd.toFixed(1)}M/S ${Math.round(currentWindDir)}DEG`, false);
             }
@@ -2092,7 +2088,7 @@
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <span>Updated</span>
+                <span>Updated SITL</span>
             `;
             btn.style.borderColor = 'var(--success)';
             btn.style.color = 'var(--success)';
@@ -2103,21 +2099,12 @@
             }, 1500);
         }
 
-        // Wire dedicated Update buttons (Top header and bottom of sliders)
-        const btnInjectWeather = document.getElementById('btn-inject-weather');
+        // Wire single dedicated Update button below the sliders
         const btnApplySliders = document.getElementById('btn-apply-sliders');
-        if (btnInjectWeather) {
-            btnInjectWeather.onclick = function () {
-                injectCurrentWeatherToSitl();
-                flashUpdateSuccess(this);
-                if (btnApplySliders) flashUpdateSuccess(btnApplySliders);
-            };
-        }
         if (btnApplySliders) {
             btnApplySliders.onclick = function () {
                 injectCurrentWeatherToSitl();
                 flashUpdateSuccess(this);
-                if (btnInjectWeather) flashUpdateSuccess(btnInjectWeather);
             };
         }
 
@@ -2162,7 +2149,7 @@
 
         // Hook Terminal Copy Buttons
         document.getElementById('btn-copy-all-cmd').onclick = function () {
-            const cmds = `param set SIM_WIND_SPD ${currentWindSpd.toFixed(1)}\nparam set SIM_WIND_DIR ${Math.round(currentWindDir)}\nparam set SIM_WIND_TURB ${currentWindTurb.toFixed(2)}`;
+            const cmds = `param set SIM_WIND_SPD ${currentWindSpd.toFixed(1)}\nparam set SIM_WIND_DIR ${Math.round(currentWindDir)}\nparam set SIM_WIND_TURB ${currentWindTurb.toFixed(2)}\nparam set SIM_WIND_T 1\nparam set SIM_WIND_TC 0.5`;
             copyText(cmds, this);
         };
         document.getElementById('btn-copy-spd').onclick = function () {
