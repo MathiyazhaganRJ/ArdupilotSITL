@@ -1484,7 +1484,7 @@
                     <span id="map-cache-count-label">Checking...</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-                    <span style="font-size: 9px; color: var(--text-secondary); font-family: monospace;">tile_cache/</span>
+                    <span id="map-cache-dir-label" style="font-size: 9px; color: var(--text-secondary); font-family: monospace;" title="Local disk cache folder for active airfield preset">tile_cache/</span>
                     <button id="btn-purge-cache" class="btn-refresh" style="font-size: 9.5px; padding: 1px 6px; color: var(--text-secondary);" title="Purge local cache and fetch latest satellite passes">
                         Purge & Fetch Latest
                     </button>
@@ -2029,13 +2029,14 @@
         window.addEventListener('offline', updateNetBadge);
         updateNetBadge();
 
-        // Purge Cache and Force Fresh Imagery Fetch
+        // Purge Cache and Force Fresh Imagery Fetch for Active Airfield Preset
         const btnPurgeCache = document.getElementById('btn-purge-cache');
         if (btnPurgeCache) {
             btnPurgeCache.onclick = () => {
                 btnPurgeCache.disabled = true;
                 btnPurgeCache.innerText = 'Purging...';
-                fetch('/api/clear_cache')
+                const preset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+                fetch(`/api/clear_cache?preset=${encodeURIComponent(preset)}`)
                     .then(r => r.json())
                     .then(res => {
                         btnPurgeCache.innerText = 'Purged!';
@@ -2072,6 +2073,21 @@
             } catch (e) {
                 return [];
             }
+        }
+
+        function getActivePresetName() {
+            const presetSelect = document.getElementById('map-cache-preset');
+            const nameInput = document.getElementById('map-cache-name');
+            const customName = nameInput && nameInput.value.trim();
+            if (presetSelect && presetSelect.value) {
+                if (presetSelect.value === 'default') return DEFAULT_PRESET.name;
+                if (presetSelect.value !== 'new') {
+                    const p = getSavedPresets().find(x => x.id === presetSelect.value);
+                    if (p && p.name) return p.name;
+                }
+            }
+            if (customName) return customName;
+            return DEFAULT_PRESET.name;
         }
 
         function saveCustomPreset(name, lat, lon, radius, zoom) {
@@ -2142,6 +2158,7 @@
                     if (nameInput) nameInput.value = '';
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     updateMapEstimate();
+                    refreshCacheStatus();
                     if (typeof updateMap === 'function') updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon, true);
                 } else if (val === 'new') {
                     if (nameInput) {
@@ -2149,6 +2166,7 @@
                         nameInput.focus();
                     }
                     if (deleteBtn) deleteBtn.style.display = 'none';
+                    refreshCacheStatus();
                 } else {
                     const preset = getSavedPresets().find(p => p.id === val);
                     if (preset) {
@@ -2159,6 +2177,7 @@
                         if (nameInput) nameInput.value = preset.name;
                         if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                         updateMapEstimate();
+                        refreshCacheStatus();
                         if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
                     }
                 }
@@ -2183,6 +2202,7 @@
 
                 const newId = saveCustomPreset(name, lat, lon, rad, zoom);
                 populatePresetDropdown(newId);
+                refreshCacheStatus();
 
                 // Visual feedback on save button
                 const origHtml = btnSavePreset.innerHTML;
@@ -2215,6 +2235,7 @@
                     document.getElementById('map-cache-zoom').value = def.zoom;
                     document.getElementById('map-cache-name').value = '';
                     updateMapEstimate();
+                    refreshCacheStatus();
                     if (typeof updateMap === 'function') updateMap(def.lat, def.lon, true);
                 }
             };
@@ -2307,11 +2328,14 @@
         let cachePollInterval = null;
 
         function refreshCacheStatus() {
-            fetch('/api/cache_status')
+            const preset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+            fetch(`/api/cache_status?preset=${encodeURIComponent(preset)}`)
                 .then(r => r.json())
                 .then(data => {
                     const countEl = document.getElementById('map-cache-count-label');
+                    const dirEl = document.getElementById('map-cache-dir-label');
                     if (countEl) countEl.innerText = `${data.cached_count} tiles (${data.cached_mb} MB)`;
+                    if (dirEl && data.preset_dir) dirEl.innerText = data.preset_dir;
 
                     const progBox = document.getElementById('map-cache-prog-box');
                     const progBar = document.getElementById('map-cache-prog-bar');
@@ -2370,6 +2394,7 @@
                 zooms = [parseInt(zoomMode)];
             }
             const provider = document.getElementById('sel-map-provider')?.value || 'esri';
+            const presetName = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
             const progBox = document.getElementById('map-cache-prog-box');
             progBox.style.display = 'flex';
@@ -2380,7 +2405,7 @@
             fetch('/api/cache_region', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lon, radius_km: rad, zooms, provider })
+                body: JSON.stringify({ lat, lon, radius_km: rad, zooms, provider, preset: presetName })
             })
             .then(r => r.json())
             .then(res => {
@@ -4118,6 +4143,7 @@
             const providerEl = document.getElementById('sel-map-provider');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
             const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+            const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
             for (let dx = -span; dx <= span; dx++) {
                 for (let dy = -span; dy <= span; dy++) {
@@ -4127,7 +4153,7 @@
 
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
-                    const key = `${activeZoom}_${tx}_${ty}_${provider}`;
+                    const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
 
                     if (!mapTiles.has(key)) {
                         mapTiles.set(key, true);
@@ -4135,7 +4161,7 @@
                         const mt = Math.abs(tx + ty) % 4;
 
                         // Local tile cache proxy URL
-                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&lyrs=s`;
+                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
 
                         // Remote fallback URL based on provider
                         let remoteUrl;

@@ -17,6 +17,7 @@ import argparse
 import urllib.request
 import concurrent.futures
 import time
+import re
 
 def lon2tile(lon, zoom):
     return (lon + 180.0) / 360.0 * (2 ** zoom)
@@ -74,6 +75,7 @@ def main():
     parser.add_argument("--lon", type=float, default=77.3137, help="Center longitude of flight test range (e.g. 77.3137)")
     parser.add_argument("--radius", type=float, default=3.0, help="Airspace radius in kilometers (default: 3.0 km)")
     parser.add_argument("--zoom", type=str, default="18", help="Zoom level(s), e.g. 18 or 17,18 (default: 18)")
+    parser.add_argument("--preset", type=str, default=None, help="Airfield preset name (creates dedicated subfolder inside tile_cache)")
     parser.add_argument("--output", type=str, default=None, help="Directory to save tile cache")
     parser.add_argument("--workers", type=int, default=12, help="Parallel download threads (default: 12)")
     args = parser.parse_args()
@@ -83,7 +85,11 @@ def main():
         cache_dir = os.path.abspath(args.output)
     else:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        cache_dir = os.path.join(root_dir, "tile_cache")
+        if args.preset:
+            clean_preset = re.sub(r'[^a-zA-Z0-9_\-]+', '_', args.preset.strip()).strip('_')
+            cache_dir = os.path.join(root_dir, "tile_cache", clean_preset)
+        else:
+            cache_dir = os.path.join(root_dir, "tile_cache")
 
     os.makedirs(cache_dir, exist_ok=True)
 

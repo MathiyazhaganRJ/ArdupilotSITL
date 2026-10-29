@@ -5,6 +5,8 @@ import threading
 import http.server
 import socketserver
 import os
+import re
+import shutil
 import webview
 import urllib.request
 import math
@@ -236,10 +238,20 @@ def get_tiles_for_radius(lat, lon, radius_km, zoom):
             tiles.append((zoom, x, y))
     return tiles
 
-def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri'):
+def sanitize_preset_folder(preset_name):
+    if not preset_name or not str(preset_name).strip():
+        return "default"
+    clean = re.sub(r'[^a-zA-Z0-9_\-]+', '_', str(preset_name).strip()).strip('_')
+    return clean if clean else "default"
+
+def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', preset='default'):
     global precache_state
     precache_state["is_downloading"] = True
     precache_state["status"] = "Calculating tiles..."
+    
+    preset_folder = sanitize_preset_folder(preset)
+    target_cache_dir = os.path.join(tile_cache_dir, preset_folder)
+    os.makedirs(target_cache_dir, exist_ok=True)
     
     all_tiles = []
     for z in zoom_levels:
@@ -250,14 +262,24 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri'):
     precache_state["downloaded"] = 0
     precache_state["cached"] = 0
     precache_state["failed"] = 0
-    precache_state["status"] = f"Downloading {total} tiles..."
+    precache_state["status"] = f"Downloading {total} tiles for {preset_folder}..."
 
     def proc_tile(tile_info):
         z, x, y = tile_info
         suffix = f"_{provider}" if provider != 'google' else ""
-        tile_path = os.path.join(tile_cache_dir, f"{z}_{x}_{y}{suffix}.jpg")
+        tile_filename = f"{z}_{x}_{y}{suffix}.jpg"
+        tile_path = os.path.join(target_cache_dir, tile_filename)
+        root_tile_path = os.path.join(tile_cache_dir, tile_filename)
+
         if os.path.exists(tile_path) and os.path.getsize(tile_path) > 100:
             return 'CACHED'
+        if os.path.exists(root_tile_path) and os.path.getsize(root_tile_path) > 100:
+            try:
+                shutil.copy2(root_tile_path, tile_path)
+                return 'CACHED'
+            except Exception:
+                pass
+
         data = fetch_tile(z, x, y, provider=provider)
         if data and len(data) > 100:
             try:
@@ -276,7 +298,7 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri'):
             precache_state["progress_pct"] = int((idx / total) * 100)
 
     precache_state["is_downloading"] = False
-    precache_state["status"] = f"Complete: {precache_state['downloaded'] + precache_state['cached']}/{total} tiles ready"
+    precache_state["status"] = f"Complete: {precache_state['downloaded'] + precache_state['cached']}/{total} tiles ready in {preset_folder}/"
 
 def start_http_server():
     vis_dir = os.path.join(os.path.dirname(__file__), '..', 'visualizer')
@@ -299,6 +321,7 @@ def start_http_server():
                     query_params = urllib.parse.parse_qs(query_str)
                     mode = query_params.get('mode', ['auto'])[0]
                     provider = query_params.get('provider', ['esri'])[0]
+                    preset = query_params.get('preset', ['default'])[0]
                     lyrs = query_params.get('lyrs', ['s'])[0]
                     parts = clean_path.split('/')
                     if len(parts) >= 5:
@@ -306,9 +329,22 @@ def start_http_server():
                         x = parts[3]
                         y = parts[4].split('.')[0]
                         suffix = f"_{provider}" if provider != 'google' else (f"_{lyrs}" if lyrs != 's' else "")
-                        tile_file = os.path.join(tile_cache_dir, f"{z}_{x}_{y}{suffix}.jpg")
-                        if os.path.exists(tile_file) and os.path.getsize(tile_file) > 100:
-                            with open(tile_file, 'rb') as f:
+                        tile_filename = f"{z}_{x}_{y}{suffix}.jpg"
+
+                        preset_folder = sanitize_preset_folder(preset)
+                        preset_dir = os.path.join(tile_cache_dir, preset_folder)
+                        os.makedirs(preset_dir, exist_ok=True)
+                        preset_tile_file = os.path.join(preset_dir, tile_filename)
+                        root_tile_file = os.path.join(tile_cache_dir, tile_filename)
+
+                        target_file = None
+                        if os.path.exists(preset_tile_file) and os.path.getsize(preset_tile_file) > 100:
+                            target_file = preset_tile_file
+                        elif os.path.exists(root_tile_file) and os.path.getsize(root_tile_file) > 100:
+                            target_file = root_tile_file
+
+                        if target_file:
+                            with open(target_file, 'rb') as f:
                                 data = f.read()
                             self.send_response(200)
                             self.send_header('Content-Type', 'image/jpeg')
@@ -321,7 +357,7 @@ def start_http_server():
                             data = fetch_tile(int(z), int(x), int(y), provider=provider, lyrs=lyrs)
                             if data:
                                 try:
-                                    with open(tile_file, 'wb') as f:
+                                    with open(preset_tile_file, 'wb') as f:
                                         f.write(data)
                                 except Exception: pass
                                 self.send_response(200)
@@ -336,16 +372,33 @@ def start_http_server():
                 self.send_error(404, "Tile not found")
                 return
 
-            # 2. Clear cache endpoint: /api/clear_cache
+            # 2. Clear cache endpoint: /api/clear_cache?preset=...
             elif self.path.startswith('/api/clear_cache'):
                 try:
+                    query_str = self.path.split('?')[1] if '?' in self.path else ''
+                    query_params = urllib.parse.parse_qs(query_str)
+                    preset = query_params.get('preset', [''])[0]
                     cleared_count = 0
-                    for f in os.listdir(tile_cache_dir):
-                        if f.endswith('.jpg'):
-                            try:
-                                os.remove(os.path.join(tile_cache_dir, f))
-                                cleared_count += 1
-                            except Exception: pass
+
+                    if preset and preset != 'all':
+                        preset_folder = sanitize_preset_folder(preset)
+                        target_dir = os.path.join(tile_cache_dir, preset_folder)
+                        if os.path.exists(target_dir):
+                            for f in os.listdir(target_dir):
+                                if f.endswith('.jpg'):
+                                    try:
+                                        os.remove(os.path.join(target_dir, f))
+                                        cleared_count += 1
+                                    except Exception: pass
+                    else:
+                        for root, dirs, files in os.walk(tile_cache_dir):
+                            for f in files:
+                                if f.endswith('.jpg'):
+                                    try:
+                                        os.remove(os.path.join(root, f))
+                                        cleared_count += 1
+                                    except Exception: pass
+
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
@@ -355,26 +408,62 @@ def start_http_server():
                     self.send_error(500, str(e))
                     return
 
-            # 3. Cache status API: /api/cache_status
+            # 3. Cache status API: /api/cache_status?preset=...
             elif self.path.startswith('/api/cache_status'):
                 try:
-                    cached_files = [f for f in os.listdir(tile_cache_dir) if f.endswith('.jpg')]
-                    total_mb = sum(os.path.getsize(os.path.join(tile_cache_dir, f)) for f in cached_files) / (1024 * 1024)
-                except Exception:
-                    cached_files = []
-                    total_mb = 0.0
+                    query_str = self.path.split('?')[1] if '?' in self.path else ''
+                    query_params = urllib.parse.parse_qs(query_str)
+                    preset = query_params.get('preset', ['default'])[0]
+                    preset_folder = sanitize_preset_folder(preset)
+                    target_dir = os.path.join(tile_cache_dir, preset_folder)
 
-                resp = {
-                    "cached_count": len(cached_files),
-                    "cached_mb": round(total_mb, 2),
-                    "is_downloading": precache_state["is_downloading"],
-                    "progress_pct": precache_state["progress_pct"],
-                    "downloaded": precache_state["downloaded"],
-                    "cached": precache_state["cached"],
-                    "failed": precache_state["failed"],
-                    "total": precache_state["total"],
-                    "status": precache_state["status"]
-                }
+                    preset_files = [f for f in os.listdir(target_dir) if f.endswith('.jpg')] if os.path.exists(target_dir) else []
+                    preset_mb = sum(os.path.getsize(os.path.join(target_dir, f)) for f in preset_files) / (1024 * 1024) if preset_files else 0.0
+
+                    total_files_count = 0
+                    total_bytes = 0
+                    for root, dirs, files in os.walk(tile_cache_dir):
+                        for f in files:
+                            if f.endswith('.jpg'):
+                                total_files_count += 1
+                                try:
+                                    total_bytes += os.path.getsize(os.path.join(root, f))
+                                except Exception: pass
+
+                    total_mb = total_bytes / (1024 * 1024)
+
+                    resp = {
+                        "preset_folder": preset_folder,
+                        "preset_dir": f"tile_cache/{preset_folder}/",
+                        "cached_count": len(preset_files),
+                        "cached_mb": round(preset_mb, 2),
+                        "total_cached_count": total_files_count,
+                        "total_cached_mb": round(total_mb, 2),
+                        "is_downloading": precache_state["is_downloading"],
+                        "progress_pct": precache_state["progress_pct"],
+                        "downloaded": precache_state["downloaded"],
+                        "cached": precache_state["cached"],
+                        "failed": precache_state["failed"],
+                        "total": precache_state["total"],
+                        "status": precache_state["status"]
+                    }
+                except Exception:
+                    resp = {
+                        "preset_folder": "default",
+                        "preset_dir": "tile_cache/default/",
+                        "cached_count": 0,
+                        "cached_mb": 0.0,
+                        "total_cached_count": 0,
+                        "total_cached_mb": 0.0,
+                        "is_downloading": False,
+                        "progress_pct": 0,
+                        "downloaded": 0,
+                        "cached": 0,
+                        "failed": 0,
+                        "total": 0,
+                        "status": "Idle"
+                    }
+
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
@@ -394,8 +483,9 @@ def start_http_server():
                     radius = float(data.get('radius_km', 3.0))
                     zooms = data.get('zooms', [18])
                     provider = data.get('provider', 'esri')
+                    preset = data.get('preset', 'default')
                     if not precache_state["is_downloading"]:
-                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms, provider), daemon=True).start()
+                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms, provider, preset), daemon=True).start()
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
