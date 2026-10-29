@@ -197,9 +197,9 @@ precache_state = {
     "status": "Idle"
 }
 
-def fetch_google_tile(z, x, y):
+def fetch_google_tile(z, x, y, lyrs='s'):
     mt = abs(x + y) % 4
-    url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+    url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
     try:
         with urllib.request.urlopen(req, timeout=4) as resp:
@@ -287,12 +287,17 @@ def start_http_server():
                 self._is_tile = True
                 try:
                     clean_path = self.path.split('?')[0]
+                    query_str = self.path.split('?')[1] if '?' in self.path else ''
+                    query_params = urllib.parse.parse_qs(query_str)
+                    mode = query_params.get('mode', ['auto'])[0]
+                    lyrs = query_params.get('lyrs', ['s'])[0]
                     parts = clean_path.split('/')
                     if len(parts) >= 5:
                         z = parts[2]
                         x = parts[3]
                         y = parts[4].split('.')[0]
-                        tile_file = os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg")
+                        suffix = f"_{lyrs}" if lyrs != 's' else ""
+                        tile_file = os.path.join(tile_cache_dir, f"{z}_{x}_{y}{suffix}.jpg")
                         if os.path.exists(tile_file) and os.path.getsize(tile_file) > 100:
                             with open(tile_file, 'rb') as f:
                                 data = f.read()
@@ -303,8 +308,8 @@ def start_http_server():
                             self.end_headers()
                             self.wfile.write(data)
                             return
-                        else:
-                            data = fetch_google_tile(int(z), int(x), int(y))
+                        elif mode != 'offline':
+                            data = fetch_google_tile(int(z), int(x), int(y), lyrs=lyrs)
                             if data:
                                 try:
                                     with open(tile_file, 'wb') as f:

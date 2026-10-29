@@ -1472,6 +1472,34 @@
             </label>
         </div>
 
+        <!-- Map Connection Mode & Network Indicator -->
+        <div style="background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">MAP MODE & LAYER STYLE</span>
+                <span id="map-net-badge" style="font-size: 9.5px; font-weight: 700; color: var(--success); display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+                    ONLINE LIVE
+                </span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">STREAMING MODE</span>
+                    <select id="sel-map-mode" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
+                        <option value="auto" selected>🌐 Online Stream + Cache</option>
+                        <option value="direct">⚡ Direct Online (Google)</option>
+                        <option value="offline">💾 Offline Only (Disk Cache)</option>
+                    </select>
+                </div>
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LAYER STYLE</span>
+                    <select id="sel-map-style" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
+                        <option value="s" selected>Pure Satellite</option>
+                        <option value="y">Hybrid (Satellite + Roads)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div id="map-cache-disk-summary" style="margin: 6px 0 10px; font-size: 11px; padding: 7px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
             <span style="display: flex; align-items: center; gap: 5px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
@@ -1915,6 +1943,43 @@
                 }
             };
         }
+
+        // Online / Offline Map Mode & Layer Style Toggles
+        const selMapMode = document.getElementById('sel-map-mode');
+        const selMapStyle = document.getElementById('sel-map-style');
+        if (selMapMode) {
+            selMapMode.value = localStorage.getItem('pilot_map_mode') || 'auto';
+            selMapMode.onchange = (e) => {
+                localStorage.setItem('pilot_map_mode', e.target.value);
+                const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
+                const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
+                if (typeof updateMap === 'function') updateMap(lat, lon, true);
+            };
+        }
+        if (selMapStyle) {
+            selMapStyle.value = localStorage.getItem('pilot_map_style') || 's';
+            selMapStyle.onchange = (e) => {
+                localStorage.setItem('pilot_map_style', e.target.value);
+                const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
+                const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
+                if (typeof updateMap === 'function') updateMap(lat, lon, true);
+            };
+        }
+
+        function updateNetBadge() {
+            const badge = document.getElementById('map-net-badge');
+            if (!badge) return;
+            if (navigator.onLine) {
+                badge.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span> ONLINE LIVE';
+                badge.style.color = 'var(--success)';
+            } else {
+                badge.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background: var(--warning); display: inline-block;"></span> OFFLINE DISK';
+                badge.style.color = 'var(--warning)';
+            }
+        }
+        window.addEventListener('online', updateNetBadge);
+        window.addEventListener('offline', updateNetBadge);
+        updateNetBadge();
 
         makeDraggable(offlineMapWidget, offlineMapWidget.querySelector('.weather-header'));
 
@@ -3796,9 +3861,14 @@
                         mapTiles.set(key, true);
 
                         const mt = Math.abs(tx + ty) % 4;
+                        const modeEl = document.getElementById('sel-map-mode');
+                        const styleEl = document.getElementById('sel-map-style');
+                        const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+                        const mapStyle = styleEl ? styleEl.value : (localStorage.getItem('pilot_map_style') || 's');
+
                         // Local tile cache proxy URL (serves from local disk offline, fetches & caches if online)
-                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg`;
-                        const googleUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg?mode=${mapMode}&lyrs=${mapStyle}`;
+                        const googleUrl = `https://mt${mt}.google.com/vt/lyrs=${mapStyle}&x=${tx}&y=${ty}&z=${zoomLevel}`;
 
                         function attachTile(texture) {
                             texture.anisotropy = 16;
@@ -3822,21 +3892,35 @@
                         const loader = new THREE.TextureLoader();
                         loader.setCrossOrigin('anonymous');
 
-                        // Try local disk cache proxy first (100% offline capability)
-                        loader.load(
-                            localUrl,
-                            (texture) => attachTile(texture),
-                            undefined,
-                            () => {
-                                // If local proxy fails, fallback directly to Google mt server
-                                loader.load(
-                                    googleUrl,
-                                    (texture) => attachTile(texture),
-                                    undefined,
-                                    () => { mapTiles.delete(key); }
-                                );
-                            }
-                        );
+                        if (mapMode === 'direct') {
+                            // Direct from Google Maps Online
+                            loader.load(
+                                googleUrl,
+                                (texture) => attachTile(texture),
+                                undefined,
+                                () => { mapTiles.delete(key); }
+                            );
+                        } else {
+                            // Smart Auto Cache or Strict Offline Mode
+                            loader.load(
+                                localUrl,
+                                (texture) => attachTile(texture),
+                                undefined,
+                                () => {
+                                    // If auto mode and local proxy failed, fallback directly to Google mt server
+                                    if (mapMode !== 'offline') {
+                                        loader.load(
+                                            googleUrl,
+                                            (texture) => attachTile(texture),
+                                            undefined,
+                                            () => { mapTiles.delete(key); }
+                                        );
+                                    } else {
+                                        mapTiles.delete(key);
+                                    }
+                                }
+                            );
+                        }
                     }
                 }
             }
