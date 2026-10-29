@@ -2674,10 +2674,17 @@
             return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
         }
 
+        let drLastGoodLat = 0.0;
+        let drLastGoodLon = 0.0;
+
         function updateArduPilotDrift() {
-            // Priority for truth reference: SIMSTATE (true physics in SITL) -> GPS_RAW_INT (raw receiver position)
-            const refLat = (arduSimLat && Math.abs(arduSimLat) > 0.01) ? arduSimLat : arduGpsLat;
-            const refLon = (arduSimLon && Math.abs(arduSimLon) > 0.01) ? arduSimLon : arduGpsLon;
+            if (!isDeadReckoning) {
+                arduMeasuredDriftMeters = 0.0;
+                return;
+            }
+            // Priority for truth reference during dead reckoning:
+            const refLat = (arduSimLat && Math.abs(arduSimLat) > 0.01) ? arduSimLat : (arduGpsLat && Math.abs(arduGpsLat) > 0.01 ? arduGpsLat : drLastGoodLat);
+            const refLon = (arduSimLon && Math.abs(arduSimLon) > 0.01) ? arduSimLon : (arduGpsLon && Math.abs(arduGpsLon) > 0.01 ? arduGpsLon : drLastGoodLon);
 
             if (currentPlaneLat && currentPlaneLon && refLat && refLon) {
                 arduMeasuredDriftMeters = calcGeodeticDistance(currentPlaneLat, currentPlaneLon, refLat, refLon);
@@ -2787,7 +2794,10 @@
             if (isDeadReckoning === enable) {
                 if (!enable) {
                     const navEl = document.getElementById('nav-fix-status');
-                    if (navEl && reason) navEl.innerText = reason;
+                    if (navEl && reason) {
+                        navEl.innerText = reason;
+                        navEl.style.color = 'var(--success)';
+                    }
                 }
                 return;
             }
@@ -2800,6 +2810,8 @@
             if (enable) {
                 drStartTime = performance.now();
                 drGroup.visible = true;
+                drLastGoodLat = currentPlaneLat;
+                drLastGoodLon = currentPlaneLon;
 
                 // Fix coordinates at current plane position
                 lastFixPosition.copy(vtolGroup.position);
@@ -2820,8 +2832,10 @@
                     navEl.innerText = reason || 'DEAD RECKONING';
                     navEl.style.color = '#ff9f0a';
                 }
+                updateArduPilotDrift();
             } else {
                 drGroup.visible = false;
+                arduMeasuredDriftMeters = 0.0;
                 if (drFlag) drFlag.style.display = 'none';
                 if (drBtn) {
                     drBtn.classList.remove('active');
@@ -3782,10 +3796,10 @@
                 hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
             }
 
-            // Animate Dead Reckoning 3D Visual Suite directly from ArduPilot drift
-            if (isDeadReckoning || arduMeasuredDriftMeters > 1.0) {
+            // Animate Dead Reckoning 3D Visual Suite strictly during Dead Reckoning condition
+            if (isDeadReckoning) {
                 let uncRadius = 4.0;
-                if (arduMeasuredDriftMeters > 1.0) {
+                if (arduMeasuredDriftMeters > 0.5) {
                     uncRadius = Math.max(4.0, Math.min(500.0, arduMeasuredDriftMeters));
                 } else if (arduEkfHorizAccuracy > 0) {
                     uncRadius = Math.max(4.0, Math.min(500.0, arduEkfHorizAccuracy));
@@ -3817,10 +3831,10 @@
                 plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
                 plumbLine.computeLineDistances();
 
-                // Annunciator and telemetry badge updates directly from ArduPilot
+                // Annunciator and telemetry badge updates strictly in Dead Reckoning
                 const navEl = document.getElementById('nav-fix-status');
                 if (navEl) {
-                    if (arduMeasuredDriftMeters > 1.0) {
+                    if (arduMeasuredDriftMeters > 0.5) {
                         const card = getCardinal(arduMeasuredDriftBearing);
                         navEl.innerText = `DR DRIFT: ${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
                     } else if (arduEkfHorizAccuracy > 0) {
@@ -3829,10 +3843,11 @@
                         const elapsedSec = (performance.now() - drStartTime) / 1000.0;
                         navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
                     }
+                    navEl.style.color = '#ff9f0a';
                 }
                 const fmsDriftEl = document.getElementById('fms-stat-drift');
                 if (fmsDriftEl) {
-                    if (arduMeasuredDriftMeters > 1.0) {
+                    if (arduMeasuredDriftMeters > 0.5) {
                         fmsDriftEl.innerText = `${arduMeasuredDriftMeters.toFixed(1)}m`;
                     } else if (arduEkfHorizAccuracy > 0) {
                         fmsDriftEl.innerText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
@@ -3840,6 +3855,8 @@
                         fmsDriftEl.innerText = `±${uncRadius.toFixed(1)}m`;
                     }
                 }
+            } else {
+                drGroup.visible = false;
             }
 
             renderer.render(scene, camera);
