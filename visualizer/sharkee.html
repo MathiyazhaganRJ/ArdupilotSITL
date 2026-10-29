@@ -2650,8 +2650,8 @@
         let arduSimLat = 0.0;
         let arduSimLon = 0.0;
         let arduEkfHorizAccuracy = 0.0; // EKF 1-sigma horizontal position uncertainty from ESTIMATOR_STATUS (meters)
-        let arduMeasuredDriftMeters = 0.0; // Distance between EKF Estimated Position (Red plane) and Raw GPS / Sim truth (Blue plane)
-        let arduMeasuredDriftBearing = 0.0; // Bearing of drift vector
+        let arduMeasuredDriftMeters = 0.0; // Distance between Actual truth (Blue) and Dead Reckoned position (Red)
+        let arduMeasuredDriftBearing = 0.0; // Bearing of drift vector FROM Actual (Truth) TO Dead Reckoning (Red)
 
         function calcGeodeticDistance(lat1, lon1, lat2, lon2) {
             if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
@@ -2687,8 +2687,10 @@
             const refLon = (arduSimLon && Math.abs(arduSimLon) > 0.01) ? arduSimLon : (arduGpsLon && Math.abs(arduGpsLon) > 0.01 ? arduGpsLon : drLastGoodLon);
 
             if (currentPlaneLat && currentPlaneLon && refLat && refLon) {
-                arduMeasuredDriftMeters = calcGeodeticDistance(currentPlaneLat, currentPlaneLon, refLat, refLon);
-                arduMeasuredDriftBearing = calcGeodeticBearing(currentPlaneLat, currentPlaneLon, refLat, refLon);
+                arduMeasuredDriftMeters = calcGeodeticDistance(refLat, refLon, currentPlaneLat, currentPlaneLon);
+                // Vector strictly measured FROM Actual (Truth / Blue) TO Dead Reckoning (Red)
+                // Represents the exact drift of the Dead Reckoning position relative to ground truth
+                arduMeasuredDriftBearing = calcGeodeticBearing(refLat, refLon, currentPlaneLat, currentPlaneLon);
             }
         }
 
@@ -2937,7 +2939,11 @@
                 let driftEst = '±0.0m';
                 if (arduMeasuredDriftMeters > 0.5) {
                     const card = getCardinal(arduMeasuredDriftBearing);
-                    driftEst = `${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
+                    let relAngle = (arduMeasuredDriftBearing - planeHeading) % 360;
+                    if (relAngle > 180) relAngle -= 360;
+                    if (relAngle < -180) relAngle += 360;
+                    const side = relAngle > 0 ? 'R' : 'L';
+                    driftEst = `${arduMeasuredDriftMeters.toFixed(1)}m ${card} [${side}]`;
                 } else if (arduEkfHorizAccuracy > 0) {
                     driftEst = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
                 } else if (isDeadReckoning && drStartTime > 0) {
@@ -2983,7 +2989,18 @@
                     '1R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS'),
                     '2L': () => stageParam('FS_EKF_THRESH', 0.8, 'FAILSAFE THRESH'),
                     '2R': () => stageParam('EK3_GLITCH_RAD', 25.0, 'GLITCH GATE'),
-                    '3L': () => setCduScratchpad(`DR TIME: ${((performance.now() - drStartTime) / 1000).toFixed(0)}s`, false),
+                    '3L': () => {
+                        if (arduMeasuredDriftMeters > 0.5) {
+                            const card = getCardinal(arduMeasuredDriftBearing);
+                            let relAngle = (arduMeasuredDriftBearing - planeHeading) % 360;
+                            if (relAngle > 180) relAngle -= 360;
+                            if (relAngle < -180) relAngle += 360;
+                            const side = relAngle > 0 ? 'RIGHT' : 'LEFT';
+                            setCduScratchpad(`DR: ${arduMeasuredDriftMeters.toFixed(1)}m ${card} (${Math.round(arduMeasuredDriftBearing)}° ${side})`, false);
+                        } else {
+                            setCduScratchpad(`DR TIME: ${((performance.now() - drStartTime) / 1000).toFixed(0)}s`, false);
+                        }
+                    },
                     '3R': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
                     '4L': () => { cduCurrentPage = 2; renderCduPage(); },
                     '4R': () => setCduScratchpad(`CRAB: ${crabAngleEl ? crabAngleEl.innerText : '0.0°'}`, false),
@@ -3836,7 +3853,11 @@
                 if (navEl) {
                     if (arduMeasuredDriftMeters > 0.5) {
                         const card = getCardinal(arduMeasuredDriftBearing);
-                        navEl.innerText = `DR DRIFT: ${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
+                        let relAngle = (arduMeasuredDriftBearing - planeHeading) % 360;
+                        if (relAngle > 180) relAngle -= 360;
+                        if (relAngle < -180) relAngle += 360;
+                        const side = relAngle > 0 ? 'R' : 'L';
+                        navEl.innerText = `DR DRIFT: ${arduMeasuredDriftMeters.toFixed(1)}m ${card} [${side}]`;
                     } else if (arduEkfHorizAccuracy > 0) {
                         navEl.innerText = `EKF ACC: ±${arduEkfHorizAccuracy.toFixed(1)}m`;
                     } else {
@@ -3848,7 +3869,8 @@
                 const fmsDriftEl = document.getElementById('fms-stat-drift');
                 if (fmsDriftEl) {
                     if (arduMeasuredDriftMeters > 0.5) {
-                        fmsDriftEl.innerText = `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                        const card = getCardinal(arduMeasuredDriftBearing);
+                        fmsDriftEl.innerText = `${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
                     } else if (arduEkfHorizAccuracy > 0) {
                         fmsDriftEl.innerText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
                     } else {

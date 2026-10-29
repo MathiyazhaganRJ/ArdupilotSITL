@@ -19,7 +19,7 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'ESTIMATOR_STATUS'], blocking=False)
+        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE', 'ESTIMATOR_STATUS'], blocking=False)
         if msg:
             if msg.get_type() == 'HEARTBEAT':
                 # Ignore GCS (type 6) or non-autopilot component heartbeats so they don't overwrite vehicle telemetry
