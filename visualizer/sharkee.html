@@ -482,21 +482,30 @@
         /* Offline Map Pre-Downloader Widget */
         #offline-map-widget {
             position: absolute;
-            top: 65px;
-            right: 360px;
-            width: 330px;
-            max-height: calc(100vh - 120px);
+            top: 20px;
+            left: 335px;
+            width: 360px;
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
             background: var(--panel-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 16px;
-            box-shadow: var(--shadow);
-            z-index: 150;
+            padding: 16px 18px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            z-index: 300;
             display: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        #offline-map-widget::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #offline-map-widget::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
         }
 
         #weather-widget::-webkit-scrollbar {
@@ -1242,6 +1251,24 @@
                     style="color: var(--success); font-weight:700;">3D FIX</span></div>
         </div>
 
+        <!-- Offline Satellite Map Pre-Download & Region Selection Card -->
+        <div class="data-card" style="margin-top: 10px; border: 1px solid rgba(0, 113, 227, 0.45); background: rgba(0, 113, 227, 0.08); box-shadow: 0 2px 10px rgba(0, 113, 227, 0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                    OFFLINE MAP CACHE
+                </span>
+                <span id="panel-cache-badge" style="font-size: 10px; font-weight: 700; color: var(--success); background: rgba(52, 199, 89, 0.15); padding: 1px 7px; border-radius: 4px;">Checking...</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px;">
+                Pre-download 3D satellite tiles before heading to the field. Operates 100% offline with zero internet or SITL.
+            </div>
+            <button id="btn-open-cache-panel" style="width: 100%; padding: 8px 12px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,113,227,0.35);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Select & Pre-Download Region
+            </button>
+        </div>
+
         <div class="section-title">Vehicle Config</div>
         <!-- 
           TIP: To hide a vehicle configuration from the user without deleting the code,
@@ -1450,24 +1477,50 @@
     <div id="offline-map-widget">
         <div class="weather-header">
             <div>
-                <h3 style="font-size: 14px; margin: 0; font-weight: 700;">OFFLINE MAP CACHE</h3>
-                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Pre-download tiles for field operations</div>
+                <h3 style="font-size: 14px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                    OFFLINE AIRSPACE CACHE
+                </h3>
+                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Pre-download satellite tiles before field operations</div>
             </div>
             <button id="btn-close-map-cache" class="icon-btn" style="width: 26px; height: 26px;" title="Close">✕</button>
         </div>
 
-        <div id="map-cache-disk-summary" style="margin: 8px 0; font-size: 11px; padding: 6px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-            <span>Disk Cache:</span>
+        <div style="font-size: 11px; line-height: 1.4; color: var(--text-secondary); background: rgba(0, 113, 227, 0.08); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 6px; margin: 10px 0;">
+            <b style="color: var(--text-primary);">Zero SITL Required:</b> Pre-download satellite tiles over home/base Wi-Fi now. Once cached, the 3D map runs 100% offline in remote field areas.
+        </div>
+
+        <div id="map-cache-disk-summary" style="margin: 8px 0; font-size: 11px; padding: 7px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                Disk Storage:
+            </span>
             <span id="map-cache-count-label">Checking...</span>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="data-label" style="font-size: 11px;">Flight Range Center</span>
-                <button id="btn-use-plane-coords" class="btn-refresh" style="font-size: 10px; padding: 2px 6px;">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
-                    Use Drone GPS
-                </button>
+            <div>
+                <span style="font-size: 9px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">FLIGHT FIELD PRESET</span>
+                <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; margin-top: 3px;">
+                    <option value="8.3105,77.3137" selected>SITL Test Airfield (Padanilam, India)</option>
+                    <option value="37.4220,-122.0841">Mountain View Drone Range (California, USA)</option>
+                    <option value="-35.363261,149.165230">Canberra CMAC Flying Field (Australia)</option>
+                    <option value="custom">-- Custom Coordinates (Enter Below) --</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                <span class="data-label" style="font-size: 11px;">Target Coordinates</span>
+                <div style="display: flex; gap: 4px;">
+                    <button id="btn-use-plane-coords" class="btn-refresh" style="font-size: 10px; padding: 2px 7px;" title="Set coordinates from active drone telemetry">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+                        Drone GPS
+                    </button>
+                    <button id="btn-preview-map" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--accent); border-color: var(--accent);" title="Render and preview terrain on the 3D map">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Preview Map
+                    </button>
+                </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <div>
@@ -1507,11 +1560,12 @@
             <span id="map-cache-est-text" style="color: var(--accent); font-weight: 600;">~196 tiles (~15 MB)</span>
         </div>
 
-        <button id="btn-start-cache-dl" class="btn-refresh" style="width: 100%; justify-content: center; padding: 9px; font-size: 12px; font-weight: 700; background: var(--accent); color: #fff; border-radius: 8px; margin-top: 4px;">
-            Pre-Download Area for Offline Flight
+        <button id="btn-start-cache-dl" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px; font-weight: 700; background: var(--accent); color: #fff; border: none; border-radius: 8px; margin-top: 6px; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,113,227,0.35);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Pre-Download Area to Laptop Drive
         </button>
 
-        <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 8px;">
+        <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 10px;">
             <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600;">
                 <span id="map-cache-prog-status" style="color: var(--accent);">Downloading...</span>
                 <span id="map-cache-prog-pct">0%</span>
@@ -1829,6 +1883,7 @@
         // Offline Map Pre-Downloader Controls
         const btnToggleMapCache = document.getElementById('btn-toggle-map-cache');
         const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
+        const btnOpenCachePanel = document.getElementById('btn-open-cache-panel');
         const offlineMapWidget = document.getElementById('offline-map-widget');
         const btnCloseMapCache = document.getElementById('btn-close-map-cache');
 
@@ -1848,9 +1903,45 @@
 
         if (btnToggleMapCache) btnToggleMapCache.onclick = toggleOfflineMapWidget;
         if (btnOfflineMapHdr) btnOfflineMapHdr.onclick = toggleOfflineMapWidget;
+        if (btnOpenCachePanel) btnOpenCachePanel.onclick = () => {
+            offlineMapWidget.style.display = 'block';
+            if (btnToggleMapCache) btnToggleMapCache.style.opacity = '1.0';
+            refreshCacheStatus();
+            updateMapEstimate();
+        };
         if (btnCloseMapCache) btnCloseMapCache.onclick = () => { offlineMapWidget.style.display = 'none'; };
 
         makeDraggable(offlineMapWidget, offlineMapWidget.querySelector('.weather-header'));
+
+        // Preset Airfield Selection
+        const mapPresetEl = document.getElementById('map-cache-preset');
+        if (mapPresetEl) {
+            mapPresetEl.onchange = (e) => {
+                if (e.target.value !== 'custom') {
+                    const parts = e.target.value.split(',').map(Number);
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        document.getElementById('map-cache-lat').value = parts[0].toFixed(4);
+                        document.getElementById('map-cache-lon').value = parts[1].toFixed(4);
+                        updateMapEstimate();
+                        if (typeof updateMap === 'function') {
+                            updateMap(parts[0], parts[1], true);
+                        }
+                    }
+                }
+            };
+        }
+
+        // Preview Area on 3D Map Button
+        const btnPreviewMap = document.getElementById('btn-preview-map');
+        if (btnPreviewMap) {
+            btnPreviewMap.onclick = () => {
+                const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+                const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+                if (typeof updateMap === 'function') {
+                    updateMap(lat, lon, true);
+                }
+            };
+        }
 
         // Use Current Drone GPS Fix button
         document.getElementById('btn-use-plane-coords').onclick = () => {
@@ -1858,6 +1949,9 @@
                 document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
                 document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
                 updateMapEstimate();
+                if (typeof updateMap === 'function') {
+                    updateMap(currentPlaneLat, currentPlaneLon, true);
+                }
             } else {
                 alert('No drone GPS position received yet. Using default coordinates.');
             }
@@ -1895,6 +1989,9 @@
                     const countEl = document.getElementById('map-cache-count-label');
                     if (countEl) countEl.innerText = `${data.cached_count} tiles (${data.cached_mb} MB)`;
 
+                    const panelBadge = document.getElementById('panel-cache-badge');
+                    if (panelBadge) panelBadge.innerText = `${data.cached_count} Tiles (${data.cached_mb} MB)`;
+
                     const progBox = document.getElementById('map-cache-prog-box');
                     const progBar = document.getElementById('map-cache-prog-bar');
                     const progPct = document.getElementById('map-cache-prog-pct');
@@ -1920,13 +2017,17 @@
                             btnDl.style.opacity = '1.0';
                             btnDl.innerText = 'Download Complete! (Ready Offline)';
                             setTimeout(() => {
-                                btnDl.innerText = 'Pre-Download Area for Offline Flight';
+                                btnDl.innerText = 'Pre-Download Area to Laptop Drive';
                             }, 4000);
                         }
                     }
                 })
                 .catch(() => {});
         }
+
+        // Initialize cache status and estimates on page load
+        refreshCacheStatus();
+        updateMapEstimate();
 
         document.getElementById('btn-start-cache-dl').onclick = () => {
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
@@ -2487,9 +2588,9 @@
         }
         updateSceneTheme();
 
-        // Increase far clipping plane to 50km
+        // Initial tactical flight overview camera: elevated to reveal the 3D satellite airfield terrain immediately!
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 50000);
-        camera.position.set(0, 3, 6);
+        camera.position.set(0, 80, 120);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -3483,6 +3584,12 @@
         document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
 
+        let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
+        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
+        let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
+        let firstPos = false;
+        let initialGpsCalibrated = false;
+
         // ==========================================
         // DYNAMIC SATELLITE MAP ENGINE
         // ==========================================
@@ -3495,25 +3602,40 @@
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
 
-        function updateMap(lat, lon) {
-            if (homeLat === null) {
-                if (!firstPos) return; // Wait until physics grid is established!
-                homeLat = lat; homeLon = lon;
+        function updateMap(lat, lon, recenter = false) {
+            if (!lat || !lon || Math.abs(lat) < 0.001) return;
+
+            if (homeLat === null || recenter) {
+                homeLat = lat; 
+                homeLon = lon;
                 // Earth circumference at equator = 40075016.686 meters
                 tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoomLevel);
                 homeTileXFloat = lon2tileFloat(lon, zoomLevel);
                 homeTileYFloat = lat2tileFloat(lat, zoomLevel);
 
-                // Lock the map origin to the plane's CURRENT physics position!
-                // This fixes the bug where the map renders miles behind the plane if you refresh mid-flight.
-                mapGroup.position.set(rawTargetPos.x, 0, rawTargetPos.z);
+                // Lock the map origin to the plane's physics position (or 0,0,0 if SITL disconnected)
+                const posX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
+                const posZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
+                mapGroup.position.set(posX, 0, posZ);
+
+                if (recenter) {
+                    while (mapGroup.children.length > 0) {
+                        const child = mapGroup.children[0];
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }
+                        mapGroup.remove(child);
+                    }
+                    mapTiles.clear();
+                }
             }
 
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load a massive 17x17 grid around the plane. Because we never delete old tiles,
-            // the plane 'paints' a continuous 2.5km wide high-res swath along its flight path!
+            // Load a 17x17 grid around the aircraft or selected center
             for (let dx = -8; dx <= 8; dx++) {
                 for (let dy = -8; dy <= 8; dy++) {
                     const tx = currentTileX + dx;
@@ -3569,12 +3691,11 @@
                 }
             }
         }
+
+        // Initialize 3D Satellite Map immediately with default airfield coordinates (so terrain is visible with or without SITL!)
+        updateMap(8.3105, 77.3137);
         // ==========================================
         const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
-        let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
-        let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
-        let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
-        let firstPos = false;
 
         // Terrain Graph Variables
         let terrainHistory = [];
@@ -3721,7 +3842,12 @@
                 planeHeading = hdg;
                 updateCompass();
             } else if (data.type === 'GLOBAL_POSITION_INT') {
-                updateMap(data.lat, data.lon);
+                if (!initialGpsCalibrated && firstPos) {
+                    initialGpsCalibrated = true;
+                    updateMap(data.lat, data.lon, true);
+                } else {
+                    updateMap(data.lat, data.lon);
+                }
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
                 // data.hdg is GPS track in cdeg; attitude heading is handled by ATTITUDE
                 if (data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
