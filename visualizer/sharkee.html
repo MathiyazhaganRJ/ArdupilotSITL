@@ -1956,6 +1956,10 @@
                 btnOfflineMapHdr.style.color = isAirspace ? 'var(--accent)' : '';
                 btnOfflineMapHdr.style.borderColor = isAirspace ? 'var(--accent)' : '';
             }
+            if (typeof airspaceRingGroup !== 'undefined') {
+                const mapVisChecked = chkToggleMapVis ? chkToggleMapVis.checked : true;
+                airspaceRingGroup.visible = isAirspace && mapVisChecked;
+            }
             if (isAirspace) {
                 refreshCacheStatus();
                 updateMapEstimate();
@@ -1979,7 +1983,8 @@
             chkToggleMapVis.onchange = (e) => {
                 const isVis = e.target.checked;
                 mapGroup.visible = isVis;
-                if (typeof airspaceRingGroup !== 'undefined') airspaceRingGroup.visible = isVis;
+                const isAirspaceActive = tabAirspace && tabAirspace.classList.contains('active');
+                if (typeof airspaceRingGroup !== 'undefined') airspaceRingGroup.visible = isVis && isAirspaceActive;
                 if (mapVisStatus) {
                     mapVisStatus.innerText = isVis ? 'ACTIVE' : 'HIDDEN';
                     mapVisStatus.style.color = isVis ? 'var(--success)' : 'var(--text-secondary)';
@@ -3926,6 +3931,7 @@
         const mapGroup = new THREE.Group();
         scene.add(mapGroup);
         const airspaceRingGroup = new THREE.Group();
+        airspaceRingGroup.visible = false; // Only visible while AIRSPACE & MAP tab is active
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
@@ -4037,6 +4043,11 @@
             centerRing.rotation.x = -Math.PI / 2;
             centerRing.position.y = yOffset + 0.05;
             airspaceRingGroup.add(centerRing);
+
+            // Keep tactical boundary circles visible ONLY while AIRSPACE & MAP tab is active
+            const isAirspaceActive = tabAirspace && tabAirspace.classList.contains('active');
+            const mapVisChecked = chkToggleMapVis ? chkToggleMapVis.checked : true;
+            airspaceRingGroup.visible = isAirspaceActive && mapVisChecked;
         }
 
         // Camera Auto-Framing for selected airspace radius
