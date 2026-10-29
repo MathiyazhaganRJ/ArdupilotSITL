@@ -1964,6 +1964,12 @@
                 refreshCacheStatus();
                 updateMapEstimate();
                 populatePresetDropdown();
+            } else {
+                if (typeof cameraMode !== 'undefined' && cameraMode === 'follow' && typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
+                    controls.target.copy(vtolGroup.position);
+                    camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 3.0, vtolGroup.position.z + 6.0);
+                    controls.update();
+                }
             }
         }
 
@@ -2295,9 +2301,6 @@
                 if (typeof updateMap === 'function') {
                     updateMap(currentPlaneLat, currentPlaneLon, true);
                 }
-                if (typeof frameAirspaceCamera === 'function') {
-                    frameAirspaceCamera(rad);
-                }
             } else {
                 alert('No drone GPS position received yet. Using default coordinates.');
             }
@@ -2335,12 +2338,8 @@
             updateMapEstimate();
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
             const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
-            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
             if (typeof updateMap === 'function') {
                 updateMap(lat, lon, true);
-            }
-            if (typeof frameAirspaceCamera === 'function') {
-                frameAirspaceCamera(rad);
             }
         };
 
@@ -2976,9 +2975,9 @@
         }
         updateSceneTheme();
 
-        // Initial tactical flight overview camera: elevated to reveal the 3D satellite airfield terrain immediately!
+        // Initial close chase camera focused on the aircraft
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 50000);
-        camera.position.set(0, 80, 120);
+        camera.position.set(0, 3, 6);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -3969,7 +3968,16 @@
         }
 
         let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
-        document.getElementById('btn-follow').onclick = () => { cameraMode = 'follow'; document.getElementById('btn-follow').classList.add('btn-active'); document.getElementById('btn-free').classList.remove('btn-active'); };
+        document.getElementById('btn-follow').onclick = () => {
+            cameraMode = 'follow';
+            document.getElementById('btn-follow').classList.add('btn-active');
+            document.getElementById('btn-free').classList.remove('btn-active');
+            if (typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
+                controls.target.copy(vtolGroup.position);
+                camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 3.0, vtolGroup.position.z + 6.0);
+                controls.update();
+            }
+        };
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
 
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -4459,6 +4467,14 @@
                     trailPositions[2] = currentTrackPos.z;
                     trailColors[0] = normalTrackColor.r; trailColors[1] = normalTrackColor.g; trailColors[2] = normalTrackColor.b;
                     
+                    // Directly focus and follow the airplane in close chase view upon SITL connection
+                    if (typeof controls !== 'undefined' && typeof camera !== 'undefined') {
+                        controls.target.copy(rawTargetPos);
+                        camera.position.set(rawTargetPos.x, rawTargetPos.y + 3.0, rawTargetPos.z + 6.0);
+                        camera.lookAt(rawTargetPos);
+                        controls.update();
+                    }
+
                     firstPos = true;
                 }
 
