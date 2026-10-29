@@ -77,16 +77,66 @@
             top: 20px;
             left: 20px;
             width: 310px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            overflow-x: hidden;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 20px;
+            padding: 16px;
             box-shadow: var(--shadow);
             z-index: 10;
             transition: all 0.3s ease;
+        }
+
+        #ui-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #ui-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .panel-nav-tabs {
+            display: flex;
+            background: var(--btn-bg);
+            border-radius: 9px;
+            padding: 3px;
+            gap: 4px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .panel-nav-tab {
+            flex: 1;
+            padding: 6px 4px;
+            border: none;
+            border-radius: 7px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .panel-nav-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .panel-nav-tab.active {
+            background: var(--panel-bg);
+            color: var(--accent);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
         .header {
@@ -315,7 +365,7 @@
         #compass-widget {
             position: absolute;
             bottom: 20px;
-            left: 315px;
+            left: 340px;
             width: 232px;
             box-sizing: border-box;
             background: var(--panel-bg);
@@ -479,34 +529,6 @@
             transition: opacity 0.25s ease, transform 0.25s ease;
         }
 
-        /* Offline Map Pre-Downloader Widget */
-        #offline-map-widget {
-            position: absolute;
-            top: 20px;
-            left: 335px;
-            width: 360px;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-            background: var(--panel-bg);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            padding: 16px 18px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
-            z-index: 300;
-            display: none;
-            transition: opacity 0.25s ease, transform 0.25s ease;
-        }
-
-        #offline-map-widget::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        #offline-map-widget::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-        }
 
         #weather-widget::-webkit-scrollbar {
             width: 4px;
@@ -1224,83 +1246,248 @@
             </div>
         </div>
 
-        <div class="data-card">
-            <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
-                    style="color: var(--danger);">Offline</span></div>
-            <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                    style="color: var(--text-secondary);">---</span></div>
-            <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
-                    style="color: var(--accent);">UNKNOWN</span></div>
-            <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
-            </div>
-            <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
-                    m/s</span></div>
-            <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
-                    m/s</span></div>
-            <div class="data-row"><span class="data-label">RPM (Cruise)</span><span id="pusher-rpm" class="data-val"
-                    style="color: var(--success);">0</span></div>
-            <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
-                    style="color: var(--success); font-weight:700;">3D FIX</span></div>
+        <div class="panel-nav-tabs">
+            <button id="tab-telemetry" class="panel-nav-tab active">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                TELEMETRY
+            </button>
+            <button id="tab-airspace" class="panel-nav-tab">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                AIRSPACE & MAP
+            </button>
         </div>
 
-        <div class="section-title">Vehicle Config</div>
-        <!-- 
-          TIP: To hide a vehicle configuration from the user without deleting the code,
-          add the words "hidden disabled" inside the <option> tag.
-          This hides it from the menu and prevents the browser from selecting it by default!
-           <option value="quad" hidden disabled>Quadcopter</option>
-        -->
-        <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
-            <option value="vtol">QuadPlane (VTOL)</option>
-            <option value="plane">Fixed Wing (Pusher)</option>
-            <option value="twin">Twin Engine (Fixed Wing)</option>
-            <option value="quad">Quadcopter</option>
-            <option value="y3">Y3 Tilt-Rotor</option>
-        </select>
+        <!-- Tab 1: Live Flight Telemetry & Aircraft Config -->
+        <div id="panel-view-telemetry">
+            <div class="data-card">
+                <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
+                        style="color: var(--danger);">Offline</span></div>
+                <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
+                        style="color: var(--text-secondary);">---</span></div>
+                <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
+                        style="color: var(--accent);">UNKNOWN</span></div>
+                <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
+                </div>
+                <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
+                        m/s</span></div>
+                <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
+                        m/s</span></div>
+                <div class="data-row"><span class="data-label">RPM (Cruise)</span><span id="pusher-rpm" class="data-val"
+                        style="color: var(--success);">0</span></div>
+                <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
+                        style="color: var(--success); font-weight:700;">3D FIX</span></div>
+            </div>
 
-        <div class="data-card" style="margin-bottom: 20px; padding: 10px;">
-            <div class="map-row" style="margin: 0;">
-                <span>Model Scale</span>
-                <input type="number" id="scale_input" value="1.0" step="0.1"
-                    style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+            <div class="section-title">Vehicle Config</div>
+            <!-- 
+              TIP: To hide a vehicle configuration from the user without deleting the code,
+              add the words "hidden disabled" inside the <option> tag.
+              This hides it from the menu and prevents the browser from selecting it by default!
+               <option value="quad" hidden disabled>Quadcopter</option>
+            -->
+            <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
+                <option value="vtol">QuadPlane (VTOL)</option>
+                <option value="plane">Fixed Wing (Pusher)</option>
+                <option value="twin">Twin Engine (Fixed Wing)</option>
+                <option value="quad">Quadcopter</option>
+                <option value="y3">Y3 Tilt-Rotor</option>
+            </select>
+
+            <div class="data-card" style="margin-bottom: 16px; padding: 10px;">
+                <div class="map-row" style="margin: 0;">
+                    <span>Model Scale</span>
+                    <input type="number" id="scale_input" value="1.0" step="0.1"
+                        style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+                </div>
+            </div>
+
+            <div class="data-card">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
+                <div id="map-vtol">
+                    <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
+                    <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
+                    <div class="map-row">Motor 3 (FL) <select id="m_fl"></select></div>
+                    <div class="map-row">Motor 4 (BR) <select id="m_br"></select></div>
+                    <div class="map-row quad-tilt-ui">Tilt Servo (Right) <select id="m_quad_tilt_r"></select></div>
+                    <div class="map-row quad-tilt-ui">Tilt Servo (Left) <select id="m_quad_tilt_l"></select></div>
+                </div>
+                <div id="map-single" class="map-row">Cruise <select id="m_push"></select></div>
+                <div id="map-twin" style="display: none;">
+                    <div class="map-row">Left Cruise <select id="m_twin_l"></select></div>
+                    <div class="map-row">Right Cruise <select id="m_twin_r"></select></div>
+                </div>
+                <div id="map-y3" style="display: none;">
+                    <div class="map-row">M1 (FR Tilt) <select id="m_y3_fr"></select></div>
+                    <div class="map-row">M2 (FL Tilt) <select id="m_y3_fl"></select></div>
+                    <div class="map-row">M3 (Rear) <select id="m_y3_r"></select></div>
+                    <div class="map-row">Tilt Servo (Right) <select id="m_y3_tilt_r"></select></div>
+                    <div class="map-row">Tilt Servo (Left) <select id="m_y3_tilt_l"></select></div>
+                </div>
+            </div>
+
+            <div class="section-title">Motors</div>
+            <div class="motor-bar-container" id="motor-bars"></div>
+
+            <div style="margin-top: 24px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
+                Designed by RJ
+            </div>
+
+            <div class="btn-group">
+                <button id="btn-follow" class="mode-btn btn-active">Follow</button>
+                <button id="btn-free" class="mode-btn">Free</button>
             </div>
         </div>
 
-        <div class="data-card">
-            <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
-            <div id="map-vtol">
-                <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
-                <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
-                <div class="map-row">Motor 3 (FL) <select id="m_fl"></select></div>
-                <div class="map-row">Motor 4 (BR) <select id="m_br"></select></div>
-                <div class="map-row quad-tilt-ui">Tilt Servo (Right) <select id="m_quad_tilt_r"></select></div>
-                <div class="map-row quad-tilt-ui">Tilt Servo (Left) <select id="m_quad_tilt_l"></select></div>
+        <!-- Tab 2: Airspace Range, Presets & Latest Satellite Imagery -->
+        <div id="panel-view-airspace" style="display: none;">
+            <!-- 3D Satellite Map Visibility Toggle Switch -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; margin-bottom: 10px; background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 8px;">
+                <span style="font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    3D Terrain Imagery
+                </span>
+                <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
+                    <input type="checkbox" id="chk-toggle-map-vis" checked style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
+                    <span id="map-vis-status" style="font-size: 10px; font-weight: 700; color: var(--success);">ACTIVE</span>
+                </label>
             </div>
-            <div id="map-single" class="map-row">Cruise <select id="m_push"></select></div>
-            <div id="map-twin" style="display: none;">
-                <div class="map-row">Left Cruise <select id="m_twin_l"></select></div>
-                <div class="map-row">Right Cruise <select id="m_twin_r"></select></div>
+
+            <!-- Imagery Provider & Streaming Mode -->
+            <div class="data-card" style="margin-bottom: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">SATELLITE SOURCE</span>
+                    <span id="map-net-badge" style="font-size: 9.5px; font-weight: 700; color: var(--success); display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+                        ONLINE LIVE
+                    </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">IMAGERY PROVIDER</span>
+                        <select id="sel-map-provider" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
+                            <option value="esri" selected>ESRI World Imagery (Aviation High-Res)</option>
+                            <option value="google_hybrid">Google Hybrid (Satellite + Roads)</option>
+                            <option value="google">Google Satellite (Photographic)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">STREAMING MODE</span>
+                        <select id="sel-map-mode" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
+                            <option value="auto" selected>Online Stream + Cache (Auto)</option>
+                            <option value="direct">Direct Online (Bypass Disk)</option>
+                            <option value="offline">Offline Only (Disk Cache)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div id="map-y3" style="display: none;">
-                <div class="map-row">M1 (FR Tilt) <select id="m_y3_fr"></select></div>
-                <div class="map-row">M2 (FL Tilt) <select id="m_y3_fl"></select></div>
-                <div class="map-row">M3 (Rear) <select id="m_y3_r"></select></div>
-                <div class="map-row">Tilt Servo (Right) <select id="m_y3_tilt_r"></select></div>
-                <div class="map-row">Tilt Servo (Left) <select id="m_y3_tilt_l"></select></div>
+
+            <!-- Saved Airfield Presets -->
+            <div class="data-card" style="margin-bottom: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">AIRFIELD PRESETS</span>
+                    <button id="btn-delete-preset" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--danger); border-color: rgba(255, 69, 58, 0.35); display: none;" title="Delete selected preset">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Delete
+                    </button>
+                </div>
+                <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; font-weight: 600; margin-bottom: 8px;">
+                    <!-- Populated dynamically -->
+                </select>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. South Strip)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
+                    <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 5px 8px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        Save
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <div class="section-title">Motors</div>
-        <div class="motor-bar-container" id="motor-bars"></div>
+            <!-- Target Coordinates & Airspace Envelope -->
+            <div class="data-card" style="margin-bottom: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">COORDINATES & RADIUS</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button id="btn-use-plane-coords" class="btn-refresh" style="font-size: 10px; padding: 2px 6px;" title="Set coordinates from active drone telemetry">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+                            GPS
+                        </button>
+                        <button id="btn-preview-map" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--accent); border-color: var(--accent);" title="Render and frame airfield boundary in 3D scene">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Preview
+                        </button>
+                    </div>
+                </div>
 
-        <div
-            style="margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
-            Designed by RJ
-        </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LATITUDE</span>
+                        <input type="number" id="map-cache-lat" step="0.0001" value="8.3105" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 6px; font-size: 11px; font-family: monospace;">
+                    </div>
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LONGITUDE</span>
+                        <input type="number" id="map-cache-lon" step="0.0001" value="77.3137" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 6px; font-size: 11px; font-family: monospace;">
+                    </div>
+                </div>
 
-        <div class="btn-group">
-            <button id="btn-follow" class="mode-btn btn-active">Follow</button>
-            <button id="btn-free" class="mode-btn">Free</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">AIRSPACE RADIUS</span>
+                        <select id="map-cache-radius" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
+                            <option value="1">1.0 km (2 km box)</option>
+                            <option value="2">2.0 km (4 km box)</option>
+                            <option value="3" selected>3.0 km (6 km box)</option>
+                            <option value="5">5.0 km (10 km box)</option>
+                            <option value="10">10.0 km (20 km box)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
+                        <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
+                            <option value="18" selected>Zoom 18 (0.5m/px)</option>
+                            <option value="17">Zoom 17 (1.0m/px)</option>
+                            <option value="17,18">Zoom 17 + 18 (Dual)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download and Progress -->
+            <div style="margin-bottom: 10px;">
+                <div id="map-cache-est-box" style="font-size: 10.5px; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; padding: 2px 2px 6px;">
+                    <span>Estimated Size:</span>
+                    <span id="map-cache-est-text" style="color: var(--accent); font-weight: 600;">~196 tiles (~15 MB)</span>
+                </div>
+                <button id="btn-start-cache-dl" style="width: 100%; justify-content: center; padding: 9px; font-size: 12px; font-weight: 700; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,113,227,0.35);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Offline Map
+                </button>
+                <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 600;">
+                        <span id="map-cache-prog-status" style="color: var(--accent);">Downloading...</span>
+                        <span id="map-cache-prog-pct">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 5px; background: rgba(0,0,0,0.15); border-radius: 3px; overflow: hidden;">
+                        <div id="map-cache-prog-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Offline Cache Storage & Purge -->
+            <div id="map-cache-disk-summary" style="font-size: 10.5px; padding: 8px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.1); color: var(--success); font-weight: 600; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                        Disk Storage:
+                    </span>
+                    <span id="map-cache-count-label">Checking...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                    <span style="font-size: 9px; color: var(--text-secondary); font-family: monospace;">tile_cache/</span>
+                    <button id="btn-purge-cache" class="btn-refresh" style="font-size: 9.5px; padding: 1px 6px; color: var(--text-secondary);" title="Purge local cache and fetch latest satellite passes">
+                        Purge & Fetch Latest
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1442,163 +1629,6 @@
             <div class="compass-telemetry-row">
                 <span class="lbl">DRIFT / CRAB</span>
                 <span id="compass-crab-angle" class="val">0.0°</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Weather & SITL Terminal Commands Widget -->
-    <!-- Offline Map & Saved Presets Manager Widget -->
-    <div id="offline-map-widget">
-        <div class="weather-header">
-            <div>
-                <h3 style="font-size: 14px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                    OFFLINE MAP & PRESETS
-                </h3>
-                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Save field presets & download maps for zero-internet flight</div>
-            </div>
-            <button id="btn-close-map-cache" class="icon-btn" style="width: 26px; height: 26px;" title="Close">✕</button>
-        </div>
-
-        <!-- 3D Satellite Map Visibility Toggle Switch -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; margin: 8px 0; background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 8px;">
-            <span style="font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                3D Satellite Terrain Map
-            </span>
-            <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
-                <input type="checkbox" id="chk-toggle-map-vis" checked style="accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;">
-                <span id="map-vis-status" style="font-size: 10px; font-weight: 700; color: var(--success);">ACTIVE</span>
-            </label>
-        </div>
-
-        <!-- Map Connection Mode & Network Indicator -->
-        <div style="background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">MAP MODE & LAYER STYLE</span>
-                <span id="map-net-badge" style="font-size: 9.5px; font-weight: 700; color: var(--success); display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
-                    ONLINE LIVE
-                </span>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">STREAMING MODE</span>
-                    <select id="sel-map-mode" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                        <option value="auto" selected>Online Stream + Cache (Auto)</option>
-                        <option value="direct">Direct Online (Google Maps)</option>
-                        <option value="offline">Offline Only (Local Disk Cache)</option>
-                    </select>
-                </div>
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LAYER STYLE</span>
-                    <select id="sel-map-style" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                        <option value="s" selected>Pure Satellite</option>
-                        <option value="y">Hybrid (Satellite + Roads)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div id="map-cache-disk-summary" style="margin: 6px 0 10px; font-size: 11px; padding: 8px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="display: flex; align-items: center; gap: 5px;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-                    Cached Offline Storage:
-                </span>
-                <span id="map-cache-count-label">Checking...</span>
-            </div>
-            <div style="font-size: 9.5px; color: var(--text-secondary); font-family: monospace; font-weight: 500;">
-                Storage Directory: <span style="color: var(--text-primary); font-weight: 600;">tile_cache/</span>
-            </div>
-        </div>
-
-        <!-- Presets Selection & Management Box -->
-        <div style="background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">SAVED AIRFIELD PRESETS</span>
-                <button id="btn-delete-preset" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--danger); border-color: rgba(255, 69, 58, 0.35); display: none;" title="Delete selected custom preset">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    Delete Preset
-                </button>
-            </div>
-            <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">
-                <!-- Populated dynamically from localStorage -->
-            </select>
-
-            <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. South Runway)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 6px 8px; font-size: 11px;">
-                <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 6px 10px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;" title="Save current coordinates & radius as a named preset">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    Save Preset
-                </button>
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-                <span class="data-label" style="font-size: 11px;">Target Coordinates</span>
-                <div style="display: flex; gap: 4px;">
-                    <button id="btn-use-plane-coords" class="btn-refresh" style="font-size: 10px; padding: 2px 7px;" title="Set coordinates from active drone telemetry">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
-                        Drone GPS
-                    </button>
-                    <button id="btn-preview-map" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--accent); border-color: var(--accent);" title="Render and preview terrain on the 3D map">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        Preview Map
-                    </button>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LATITUDE</span>
-                    <input type="number" id="map-cache-lat" step="0.0001" value="8.3105" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-weight: 600; font-family: monospace;">
-                </div>
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LONGITUDE</span>
-                    <input type="number" id="map-cache-lon" step="0.0001" value="77.3137" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-weight: 600; font-family: monospace;">
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">AIRSPACE RADIUS</span>
-                    <select id="map-cache-radius" style="width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 11px;">
-                        <option value="1">1.0 km (2 km box)</option>
-                        <option value="2">2.0 km (4 km box)</option>
-                        <option value="3" selected>3.0 km (6 km box)</option>
-                        <option value="5">5.0 km (10 km box)</option>
-                        <option value="10">10.0 km (20 km box)</option>
-                    </select>
-                </div>
-                <div>
-                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
-                    <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 11px;">
-                        <option value="18" selected>Zoom 18 (0.5m/px)</option>
-                        <option value="17">Zoom 17 (1.0m/px)</option>
-                        <option value="17,18">Zoom 17 + 18 (Dual)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div id="map-cache-est-box" style="font-size: 11px; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; padding: 4px 2px;">
-            <span>Estimated Download:</span>
-            <span id="map-cache-est-text" style="color: var(--accent); font-weight: 600;">~196 tiles (~15 MB)</span>
-        </div>
-
-        <button id="btn-start-cache-dl" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px; font-weight: 700; background: var(--accent); color: #fff; border: none; border-radius: 8px; margin-top: 6px; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,113,227,0.35);">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Download Offline Map
-        </button>
-
-        <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 10px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600;">
-                <span id="map-cache-prog-status" style="color: var(--accent);">Downloading...</span>
-                <span id="map-cache-prog-pct">0%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden;">
-                <div id="map-cache-prog-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s;"></div>
             </div>
         </div>
     </div>
@@ -1907,41 +1937,47 @@
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
         };
 
-        // Offline Map & Saved Presets Controls
+        // Panel View Tab Navigation (Telemetry vs Airspace & Map)
+        const tabTelemetry = document.getElementById('tab-telemetry');
+        const tabAirspace = document.getElementById('tab-airspace');
+        const viewTelemetry = document.getElementById('panel-view-telemetry');
+        const viewAirspace = document.getElementById('panel-view-airspace');
         const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
-        const offlineMapWidget = document.getElementById('offline-map-widget');
-        const btnCloseMapCache = document.getElementById('btn-close-map-cache');
-        const chkToggleMapVis = document.getElementById('chk-toggle-map-vis');
-        const mapVisStatus = document.getElementById('map-vis-status');
 
-        function toggleOfflineMapWidget() {
-            const isHidden = offlineMapWidget.style.display === 'none';
-            offlineMapWidget.style.display = isHidden ? 'block' : 'none';
+        function switchPanelTab(tabName) {
+            const isAirspace = tabName === 'airspace';
+            if (tabTelemetry) tabTelemetry.classList.toggle('active', !isAirspace);
+            if (tabAirspace) tabAirspace.classList.toggle('active', isAirspace);
+            if (viewTelemetry) viewTelemetry.style.display = isAirspace ? 'none' : 'block';
+            if (viewAirspace) viewAirspace.style.display = isAirspace ? 'block' : 'none';
             if (btnOfflineMapHdr) {
-                btnOfflineMapHdr.style.color = isHidden ? 'var(--accent)' : '';
-                btnOfflineMapHdr.style.borderColor = isHidden ? 'var(--accent)' : '';
+                btnOfflineMapHdr.style.color = isAirspace ? 'var(--accent)' : '';
+                btnOfflineMapHdr.style.borderColor = isAirspace ? 'var(--accent)' : '';
             }
-            if (isHidden) {
+            if (isAirspace) {
                 refreshCacheStatus();
                 updateMapEstimate();
                 populatePresetDropdown();
             }
         }
 
-        if (btnOfflineMapHdr) btnOfflineMapHdr.onclick = toggleOfflineMapWidget;
-        if (btnCloseMapCache) btnCloseMapCache.onclick = () => {
-            offlineMapWidget.style.display = 'none';
-            if (btnOfflineMapHdr) {
-                btnOfflineMapHdr.style.color = '';
-                btnOfflineMapHdr.style.borderColor = '';
-            }
-        };
+        if (tabTelemetry) tabTelemetry.onclick = () => switchPanelTab('telemetry');
+        if (tabAirspace) tabAirspace.onclick = () => switchPanelTab('airspace');
+        if (btnOfflineMapHdr) {
+            btnOfflineMapHdr.onclick = () => {
+                const isAirActive = tabAirspace && tabAirspace.classList.contains('active');
+                switchPanelTab(isAirActive ? 'telemetry' : 'airspace');
+            };
+        }
 
         // 3D Map Visibility Toggle
+        const chkToggleMapVis = document.getElementById('chk-toggle-map-vis');
+        const mapVisStatus = document.getElementById('map-vis-status');
         if (chkToggleMapVis) {
             chkToggleMapVis.onchange = (e) => {
                 const isVis = e.target.checked;
                 mapGroup.visible = isVis;
+                if (typeof airspaceRingGroup !== 'undefined') airspaceRingGroup.visible = isVis;
                 if (mapVisStatus) {
                     mapVisStatus.innerText = isVis ? 'ACTIVE' : 'HIDDEN';
                     mapVisStatus.style.color = isVis ? 'var(--success)' : 'var(--text-secondary)';
@@ -1949,22 +1985,22 @@
             };
         }
 
-        // Online / Offline Map Mode & Layer Style Toggles
+        // Satellite Provider & Streaming Mode Toggles
+        const selMapProvider = document.getElementById('sel-map-provider');
         const selMapMode = document.getElementById('sel-map-mode');
-        const selMapStyle = document.getElementById('sel-map-style');
-        if (selMapMode) {
-            selMapMode.value = localStorage.getItem('pilot_map_mode') || 'auto';
-            selMapMode.onchange = (e) => {
-                localStorage.setItem('pilot_map_mode', e.target.value);
+        if (selMapProvider) {
+            selMapProvider.value = localStorage.getItem('pilot_map_provider') || 'esri';
+            selMapProvider.onchange = (e) => {
+                localStorage.setItem('pilot_map_provider', e.target.value);
                 const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
                 const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
                 if (typeof updateMap === 'function') updateMap(lat, lon, true);
             };
         }
-        if (selMapStyle) {
-            selMapStyle.value = localStorage.getItem('pilot_map_style') || 's';
-            selMapStyle.onchange = (e) => {
-                localStorage.setItem('pilot_map_style', e.target.value);
+        if (selMapMode) {
+            selMapMode.value = localStorage.getItem('pilot_map_mode') || 'auto';
+            selMapMode.onchange = (e) => {
+                localStorage.setItem('pilot_map_mode', e.target.value);
                 const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
                 const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
                 if (typeof updateMap === 'function') updateMap(lat, lon, true);
@@ -1975,10 +2011,10 @@
             const badge = document.getElementById('map-net-badge');
             if (!badge) return;
             if (navigator.onLine) {
-                badge.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span> ONLINE LIVE';
+                badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block;"></span> ONLINE LIVE';
                 badge.style.color = 'var(--success)';
             } else {
-                badge.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background: var(--warning); display: inline-block;"></span> OFFLINE DISK';
+                badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warning); display: inline-block;"></span> OFFLINE DISK';
                 badge.style.color = 'var(--warning)';
             }
         }
@@ -1986,7 +2022,31 @@
         window.addEventListener('offline', updateNetBadge);
         updateNetBadge();
 
-        makeDraggable(offlineMapWidget, offlineMapWidget.querySelector('.weather-header'));
+        // Purge Cache and Force Fresh Imagery Fetch
+        const btnPurgeCache = document.getElementById('btn-purge-cache');
+        if (btnPurgeCache) {
+            btnPurgeCache.onclick = () => {
+                btnPurgeCache.disabled = true;
+                btnPurgeCache.innerText = 'Purging...';
+                fetch('/api/clear_cache')
+                    .then(r => r.json())
+                    .then(res => {
+                        btnPurgeCache.innerText = 'Purged!';
+                        refreshCacheStatus();
+                        const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
+                        const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
+                        if (typeof updateMap === 'function') updateMap(lat, lon, true);
+                        setTimeout(() => {
+                            btnPurgeCache.disabled = false;
+                            btnPurgeCache.innerText = 'Purge & Fetch Latest';
+                        }, 1400);
+                    })
+                    .catch(() => {
+                        btnPurgeCache.disabled = false;
+                        btnPurgeCache.innerText = 'Purge Failed';
+                    });
+            };
+        }
 
         // Preset Storage Architecture (localStorage)
         const DEFAULT_PRESET = {
@@ -2159,8 +2219,12 @@
             btnPreviewMap.onclick = () => {
                 const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
                 const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+                const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
                 if (typeof updateMap === 'function') {
                     updateMap(lat, lon, true);
+                }
+                if (typeof frameAirspaceCamera === 'function') {
+                    frameAirspaceCamera(rad);
                 }
             };
         }
@@ -2171,8 +2235,12 @@
                 document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
                 document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
                 updateMapEstimate();
+                const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
                 if (typeof updateMap === 'function') {
                     updateMap(currentPlaneLat, currentPlaneLon, true);
+                }
+                if (typeof frameAirspaceCamera === 'function') {
+                    frameAirspaceCamera(rad);
                 }
             } else {
                 alert('No drone GPS position received yet. Using default coordinates.');
@@ -2199,7 +2267,18 @@
             document.getElementById('map-cache-est-text').innerText = `~${tileCount} tiles (~${estMb} MB)`;
         }
 
-        document.getElementById('map-cache-radius').onchange = updateMapEstimate;
+        document.getElementById('map-cache-radius').onchange = () => {
+            updateMapEstimate();
+            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+            if (typeof updateMap === 'function') {
+                updateMap(lat, lon, true);
+            }
+            if (typeof frameAirspaceCamera === 'function') {
+                frameAirspaceCamera(rad);
+            }
+        };
         document.getElementById('map-cache-zoom').onchange = updateMapEstimate;
 
         let cachePollInterval = null;
@@ -2260,6 +2339,7 @@
             const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
             const zoomMode = document.getElementById('map-cache-zoom').value;
             const zooms = zoomMode.includes(',') ? zoomMode.split(',').map(Number) : [parseInt(zoomMode)];
+            const provider = document.getElementById('sel-map-provider')?.value || 'esri';
 
             const progBox = document.getElementById('map-cache-prog-box');
             progBox.style.display = 'flex';
@@ -2270,7 +2350,7 @@
             fetch('/api/cache_region', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lon, radius_km: rad, zooms })
+                body: JSON.stringify({ lat, lon, radius_km: rad, zooms, provider })
             })
             .then(r => r.json())
             .then(res => {
@@ -3816,10 +3896,12 @@
         let initialGpsCalibrated = false;
 
         // ==========================================
-        // DYNAMIC SATELLITE MAP ENGINE
+        // DYNAMIC SATELLITE MAP ENGINE & AIRSPACE HUD
         // ==========================================
         const mapGroup = new THREE.Group();
         scene.add(mapGroup);
+        const airspaceRingGroup = new THREE.Group();
+        scene.add(airspaceRingGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
         const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Ultra High Resolution)
@@ -3827,8 +3909,106 @@
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
 
+        // Render Ground-Level Tactical Airspace Range Rings & Perimeter
+        function renderAirspaceBoundary(radiusKm) {
+            while (airspaceRingGroup.children.length > 0) {
+                const c = airspaceRingGroup.children[0];
+                if (c.geometry) c.geometry.dispose();
+                if (c.material) c.material.dispose();
+                airspaceRingGroup.remove(c);
+            }
+
+            const radM = radiusKm * 1000;
+            const yOffset = -1.6; // Slightly above ground satellite tiles at y = -2 to prevent z-fighting
+
+            // 1. Semi-transparent operational sector disc
+            const discGeo = new THREE.CircleGeometry(radM, 64);
+            const discMat = new THREE.MeshBasicMaterial({
+                color: 0x0071e3,
+                transparent: true,
+                opacity: 0.05,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            });
+            const disc = new THREE.Mesh(discGeo, discMat);
+            disc.rotation.x = -Math.PI / 2;
+            disc.position.y = yOffset - 0.05;
+            airspaceRingGroup.add(disc);
+
+            // 2. High-visibility outer perimeter boundary ring (Glowing Cyan)
+            const ringThickness = Math.max(4, radM * 0.007);
+            const ringGeo = new THREE.RingGeometry(Math.max(1, radM - ringThickness), radM + ringThickness, 96);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x00e5ff,
+                transparent: true,
+                opacity: 0.85,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = yOffset;
+            airspaceRingGroup.add(ring);
+
+            // 3. Concentric 1 km range rings (Green)
+            const maxKm = Math.floor(radiusKm);
+            for (let k = 1; k <= maxKm; k++) {
+                if (Math.abs(k - radiusKm) < 0.2) continue; // Skip if basically the outer ring
+                const innerRadM = k * 1000;
+                const innerGeo = new THREE.RingGeometry(Math.max(1, innerRadM - 1.5), innerRadM + 1.5, 64);
+                const innerMat = new THREE.MeshBasicMaterial({
+                    color: 0x30d158,
+                    transparent: true,
+                    opacity: 0.45,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+                const innerRing = new THREE.Mesh(innerGeo, innerMat);
+                innerRing.rotation.x = -Math.PI / 2;
+                innerRing.position.y = yOffset;
+                airspaceRingGroup.add(innerRing);
+            }
+
+            // 4. Center Tactical Crosshairs & Airfield Origin Reticle
+            const crossMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.5 });
+            const pts = [];
+            pts.push(new THREE.Vector3(0, yOffset, -radM));
+            pts.push(new THREE.Vector3(0, yOffset, radM));
+            pts.push(new THREE.Vector3(-radM, yOffset, 0));
+            pts.push(new THREE.Vector3(radM, yOffset, 0));
+            const crossGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const crossLine = new THREE.LineSegments(crossGeo, crossMat);
+            airspaceRingGroup.add(crossLine);
+
+            // Center small airfield circle (radius 60m)
+            const centerGeo = new THREE.RingGeometry(55, 65, 32);
+            const centerMat = new THREE.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+            const centerRing = new THREE.Mesh(centerGeo, centerMat);
+            centerRing.rotation.x = -Math.PI / 2;
+            centerRing.position.y = yOffset + 0.05;
+            airspaceRingGroup.add(centerRing);
+        }
+
+        // Camera Auto-Framing for selected airspace radius
+        function frameAirspaceCamera(radiusKm) {
+            if (typeof controls === 'undefined' || !controls || typeof camera === 'undefined') return;
+            const radM = radiusKm * 1000;
+            const camAlt = Math.max(220, radM * 1.5);
+            const camDist = radM * 1.1;
+            const targetX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
+            const targetZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
+
+            controls.target.set(targetX, 0, targetZ);
+            camera.position.set(targetX, camAlt, targetZ + camDist);
+            camera.lookAt(targetX, 0, targetZ);
+            controls.update();
+        }
+
         function updateMap(lat, lon, recenter = false) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
+
+            const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
+            renderAirspaceBoundary(radiusKm);
 
             if (homeLat === null || recenter) {
                 homeLat = lat; 
@@ -3842,6 +4022,7 @@
                 const posX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
                 const posZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
                 mapGroup.position.set(posX, 0, posZ);
+                airspaceRingGroup.position.set(posX, 0, posZ);
 
                 if (recenter) {
                     while (mapGroup.children.length > 0) {
@@ -3860,25 +4041,43 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
             const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
 
-            // Load a 17x17 grid around the aircraft or selected center
-            for (let dx = -8; dx <= 8; dx++) {
-                for (let dy = -8; dy <= 8; dy++) {
+            // Dynamic grid span based on radius (clamped to 10 for performance and GPU stability)
+            const radMeters = radiusKm * 1000;
+            const span = Math.min(10, Math.max(3, Math.ceil(radMeters / tileSize)));
+            const maxDistSq = Math.pow(radMeters + tileSize, 2);
+
+            const modeEl = document.getElementById('sel-map-mode');
+            const providerEl = document.getElementById('sel-map-provider');
+            const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+
+            for (let dx = -span; dx <= span; dx++) {
+                for (let dy = -span; dy <= span; dy++) {
+                    // Skip tiles outside circular radius envelope
+                    const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
+                    if (distSq > maxDistSq) continue;
+
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
-                    const key = `${tx},${ty}`;
+                    const key = `${tx},${ty}_${provider}`;
 
                     if (!mapTiles.has(key)) {
                         mapTiles.set(key, true);
 
                         const mt = Math.abs(tx + ty) % 4;
-                        const modeEl = document.getElementById('sel-map-mode');
-                        const styleEl = document.getElementById('sel-map-style');
-                        const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
-                        const mapStyle = styleEl ? styleEl.value : (localStorage.getItem('pilot_map_style') || 's');
 
-                        // Local tile cache proxy URL (serves from local disk offline, fetches & caches if online)
-                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg?mode=${mapMode}&lyrs=${mapStyle}`;
-                        const googleUrl = `https://mt${mt}.google.com/vt/lyrs=${mapStyle}&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        // Local tile cache proxy URL
+                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&lyrs=s`;
+
+                        // Remote fallback URL based on provider
+                        let remoteUrl;
+                        if (provider === 'esri') {
+                            remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoomLevel}/${ty}/${tx}`;
+                        } else if (provider === 'google_hybrid') {
+                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        } else {
+                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        }
 
                         function attachTile(texture) {
                             texture.anisotropy = 16;
@@ -3903,24 +4102,21 @@
                         loader.setCrossOrigin('anonymous');
 
                         if (mapMode === 'direct') {
-                            // Direct from Google Maps Online
                             loader.load(
-                                googleUrl,
+                                remoteUrl,
                                 (texture) => attachTile(texture),
                                 undefined,
                                 () => { mapTiles.delete(key); }
                             );
                         } else {
-                            // Smart Auto Cache or Strict Offline Mode
                             loader.load(
                                 localUrl,
                                 (texture) => attachTile(texture),
                                 undefined,
                                 () => {
-                                    // If auto mode and local proxy failed, fallback directly to Google mt server
                                     if (mapMode !== 'offline') {
                                         loader.load(
-                                            googleUrl,
+                                            remoteUrl,
                                             (texture) => attachTile(texture),
                                             undefined,
                                             () => { mapTiles.delete(key); }

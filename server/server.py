@@ -197,12 +197,19 @@ precache_state = {
     "status": "Idle"
 }
 
-def fetch_google_tile(z, x, y, lyrs='s'):
-    mt = abs(x + y) % 4
-    url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+def fetch_tile(z, x, y, provider='esri', lyrs='s'):
     try:
-        with urllib.request.urlopen(req, timeout=4) as resp:
+        if provider == 'esri':
+            url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        elif provider == 'google_hybrid':
+            mt = abs(x + y) % 4
+            url = f"https://mt{mt}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+        else: # google satellite
+            mt = abs(x + y) % 4
+            url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
+            
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
             if resp.status == 200:
                 return resp.read()
     except Exception:
@@ -229,7 +236,7 @@ def get_tiles_for_radius(lat, lon, radius_km, zoom):
             tiles.append((zoom, x, y))
     return tiles
 
-def run_precache_worker(lat, lon, radius_km, zoom_levels):
+def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri'):
     global precache_state
     precache_state["is_downloading"] = True
     precache_state["status"] = "Calculating tiles..."
@@ -247,10 +254,11 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels):
 
     def proc_tile(tile_info):
         z, x, y = tile_info
-        tile_path = os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg")
+        suffix = f"_{provider}" if provider != 'google' else ""
+        tile_path = os.path.join(tile_cache_dir, f"{z}_{x}_{y}{suffix}.jpg")
         if os.path.exists(tile_path) and os.path.getsize(tile_path) > 100:
             return 'CACHED'
-        data = fetch_google_tile(z, x, y)
+        data = fetch_tile(z, x, y, provider=provider)
         if data and len(data) > 100:
             try:
                 with open(tile_path, 'wb') as f:
@@ -290,13 +298,14 @@ def start_http_server():
                     query_str = self.path.split('?')[1] if '?' in self.path else ''
                     query_params = urllib.parse.parse_qs(query_str)
                     mode = query_params.get('mode', ['auto'])[0]
+                    provider = query_params.get('provider', ['esri'])[0]
                     lyrs = query_params.get('lyrs', ['s'])[0]
                     parts = clean_path.split('/')
                     if len(parts) >= 5:
                         z = parts[2]
                         x = parts[3]
                         y = parts[4].split('.')[0]
-                        suffix = f"_{lyrs}" if lyrs != 's' else ""
+                        suffix = f"_{provider}" if provider != 'google' else (f"_{lyrs}" if lyrs != 's' else "")
                         tile_file = os.path.join(tile_cache_dir, f"{z}_{x}_{y}{suffix}.jpg")
                         if os.path.exists(tile_file) and os.path.getsize(tile_file) > 100:
                             with open(tile_file, 'rb') as f:
@@ -309,7 +318,7 @@ def start_http_server():
                             self.wfile.write(data)
                             return
                         elif mode != 'offline':
-                            data = fetch_google_tile(int(z), int(x), int(y), lyrs=lyrs)
+                            data = fetch_tile(int(z), int(x), int(y), provider=provider, lyrs=lyrs)
                             if data:
                                 try:
                                     with open(tile_file, 'wb') as f:
@@ -327,7 +336,26 @@ def start_http_server():
                 self.send_error(404, "Tile not found")
                 return
 
-            # 2. Cache status API: /api/cache_status
+            # 2. Clear cache endpoint: /api/clear_cache
+            elif self.path.startswith('/api/clear_cache'):
+                try:
+                    cleared_count = 0
+                    for f in os.listdir(tile_cache_dir):
+                        if f.endswith('.jpg'):
+                            try:
+                                os.remove(os.path.join(tile_cache_dir, f))
+                                cleared_count += 1
+                            except Exception: pass
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "cleared", "count": cleared_count}).encode('utf-8'))
+                    return
+                except Exception as e:
+                    self.send_error(500, str(e))
+                    return
+
+            # 3. Cache status API: /api/cache_status
             elif self.path.startswith('/api/cache_status'):
                 try:
                     cached_files = [f for f in os.listdir(tile_cache_dir) if f.endswith('.jpg')]
@@ -365,8 +393,9 @@ def start_http_server():
                     lon = float(data.get('lon', 77.3137))
                     radius = float(data.get('radius_km', 3.0))
                     zooms = data.get('zooms', [18])
+                    provider = data.get('provider', 'esri')
                     if not precache_state["is_downloading"]:
-                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms), daemon=True).start()
+                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms, provider), daemon=True).start()
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
