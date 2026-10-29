@@ -1530,6 +1530,14 @@
                 <input type="range" id="slider-turb" min="0" max="1" step="0.05" value="0.20">
             </div>
         </div>
+        <div style="margin-top: 10px;">
+            <button id="btn-apply-sliders" class="btn-copy-all" style="width: 100%; justify-content: center; padding: 7px 12px; font-weight: 600; font-size: 11.5px; border-radius: 8px; background: var(--btn-bg);" title="Transmit custom parameters to SITL over MAVLink">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Update SITL Weather</span>
+            </button>
+        </div>
     </div>
 
     <!-- Dedicated Airbus MCDU / Boeing FMC-CDU Avionics Instrument -->
@@ -2077,25 +2085,39 @@
             fetchLiveWeather(currentPlaneLat, currentPlaneLon);
         };
 
-        // Wire dedicated Update button
+        function flashUpdateSuccess(btn) {
+            if (!btn) return;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Updated</span>
+            `;
+            btn.style.borderColor = 'var(--success)';
+            btn.style.color = 'var(--success)';
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }, 1500);
+        }
+
+        // Wire dedicated Update buttons (Top header and bottom of sliders)
         const btnInjectWeather = document.getElementById('btn-inject-weather');
+        const btnApplySliders = document.getElementById('btn-apply-sliders');
         if (btnInjectWeather) {
             btnInjectWeather.onclick = function () {
                 injectCurrentWeatherToSitl();
-                const origHtml = this.innerHTML;
-                this.innerHTML = `
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Updated</span>
-                `;
-                this.style.borderColor = 'var(--success)';
-                this.style.color = 'var(--success)';
-                setTimeout(() => {
-                    this.innerHTML = origHtml;
-                    this.style.borderColor = '';
-                    this.style.color = '';
-                }, 1500);
+                flashUpdateSuccess(this);
+                if (btnApplySliders) flashUpdateSuccess(btnApplySliders);
+            };
+        }
+        if (btnApplySliders) {
+            btnApplySliders.onclick = function () {
+                injectCurrentWeatherToSitl();
+                flashUpdateSuccess(this);
+                if (btnInjectWeather) flashUpdateSuccess(btnInjectWeather);
             };
         }
 
@@ -2159,7 +2181,7 @@
             };
         }
 
-        // Slider Tuning Controls (Live Parameter Injection to SITL)
+        // Slider Tuning Controls (Adjust locally; Click 'Update' to transmit to SITL)
         const sliderSpd = document.getElementById('slider-spd');
         const sliderDir = document.getElementById('slider-dir');
         const sliderTurb = document.getElementById('slider-turb');
@@ -2172,9 +2194,8 @@
             document.getElementById('live-wind-spd').innerText = val.toFixed(1);
             document.getElementById('live-wind-spd-kt').innerText = (val * 1.94384).toFixed(1) + ' kt';
             document.getElementById('cmd-spd-val').innerText = val.toFixed(1);
-            sendSitlParam('SIM_WIND_SPD', val);
             const statusTag = document.getElementById('weather-status-tag');
-            if (statusTag) statusTag.innerText = `Custom Wind: ${val.toFixed(1)} m/s (SIM_WIND_SPD Applied)`;
+            if (statusTag) statusTag.innerText = `Custom Wind: ${val.toFixed(1)} m/s (Click Update to apply)`;
         };
 
         sliderDir.oninput = (e) => {
@@ -2184,9 +2205,8 @@
             document.getElementById('live-wind-dir').innerText = val;
             document.getElementById('live-wind-dir-cardinal').innerText = getCardinal(val);
             document.getElementById('cmd-dir-val').innerText = val;
-            sendSitlParam('SIM_WIND_DIR', val);
             const statusTag = document.getElementById('weather-status-tag');
-            if (statusTag) statusTag.innerText = `Custom Direction: ${val}° (SIM_WIND_DIR Applied)`;
+            if (statusTag) statusTag.innerText = `Custom Direction: ${val}° (Click Update to apply)`;
         };
 
         sliderTurb.oninput = (e) => {
@@ -2195,9 +2215,8 @@
             currentWindTurb = val;
             document.getElementById('live-wind-turb').innerText = val.toFixed(2);
             document.getElementById('cmd-turb-val').innerText = val.toFixed(2);
-            sendSitlParam('SIM_WIND_TURB', val);
             const statusTag = document.getElementById('weather-status-tag');
-            if (statusTag) statusTag.innerText = `Custom Turbulence: ${val.toFixed(2)} (SIM_WIND_TURB Applied)`;
+            if (statusTag) statusTag.innerText = `Custom Turbulence: ${val.toFixed(2)} (Click Update to apply)`;
         };
 
         document.getElementById('btn-reset-live').onclick = () => {
