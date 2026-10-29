@@ -1421,7 +1421,13 @@
         <!-- Live Feed Status Tag -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 6px; font-size: 11px;">
             <span style="display:flex; align-items:center;"><span class="live-dot" id="weather-dot"></span><span id="weather-status-tag" style="color: var(--text-primary); font-weight: 600;">Live Open-Meteo Feed</span></span>
-            <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">--:--:--</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">--:--:--</span>
+                <label style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-secondary); cursor:pointer;" title="Automatically transmit weather changes to SITL over MAVLink">
+                    <input type="checkbox" id="chk-auto-inject-weather" style="cursor:pointer;" checked>
+                    <span style="font-weight:600; color:var(--accent);">Auto-Inject</span>
+                </label>
+            </div>
         </div>
 
         <!-- Meteorological Metrics 4-Card Grid -->
@@ -1458,13 +1464,21 @@
         <!-- Section: SITL Terminal Commands -->
         <div class="section-title" style="margin: 12px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
             <span>Terminal SITL Commands</span>
-            <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span>Copy All</span>
-            </button>
+            <div style="display:flex; gap:6px;">
+                <button id="btn-inject-weather" class="btn-copy-all" style="background:var(--accent); color:#fff; border:none;" title="Directly transmit these wind parameters to SITL over MAVLink">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>Inject SITL</span>
+                </button>
+                <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Copy All</span>
+                </button>
+            </div>
         </div>
 
         <!-- Dark Terminal Box -->
@@ -2003,7 +2017,14 @@
                     liveFetchedWeather = { spd, dir, gust, turb, temp, press, elev };
                     applyWeatherValues(spd, dir, gust, turb, temp, press, elev, true);
 
-                    if (statusTag) {
+                    // Auto-inject live weather into SITL if enabled
+                    const autoInjectEl = document.getElementById('chk-auto-inject-weather');
+                    if (autoInjectEl && autoInjectEl.checked) {
+                        injectCurrentWeatherToSitl();
+                        if (statusTag) {
+                            statusTag.innerText = "Live Open-Meteo (Injected to SITL)";
+                        }
+                    } else if (statusTag) {
                         statusTag.innerText = "Live Open-Meteo Feed";
                     }
                     const dotEl = document.getElementById('weather-dot');
@@ -2038,10 +2059,36 @@
             }
         }
 
+        // Transmit meteorological parameters directly to ArduPilot SITL
+        function injectCurrentWeatherToSitl() {
+            sendSitlParam('SIM_WIND_SPD', currentWindSpd);
+            sendSitlParam('SIM_WIND_DIR', Math.round(currentWindDir));
+            sendSitlParam('SIM_WIND_TURB', currentWindTurb);
+            console.log(`[Weather Injection] Injected to SITL: SPD=${currentWindSpd.toFixed(1)}, DIR=${Math.round(currentWindDir)}, TURB=${currentWindTurb.toFixed(2)}`);
+            if (typeof setCduScratchpad === 'function') {
+                setCduScratchpad(`WIND INJECTED: ${currentWindSpd.toFixed(1)}M/S ${Math.round(currentWindDir)}DEG`, false);
+            }
+        }
+
         // Open-Meteo weather fetch is available on-demand via the refresh button
         document.getElementById('btn-fetch-weather').onclick = () => {
             fetchLiveWeather(currentPlaneLat, currentPlaneLon);
         };
+
+        // Wire dedicated Inject to SITL button
+        const btnInjectWeather = document.getElementById('btn-inject-weather');
+        if (btnInjectWeather) {
+            btnInjectWeather.onclick = function () {
+                injectCurrentWeatherToSitl();
+                const origHtml = this.innerHTML;
+                this.innerHTML = '<span style="color:#fff;">✓ Injected!</span>';
+                this.style.background = 'var(--success)';
+                setTimeout(() => {
+                    this.innerHTML = origHtml;
+                    this.style.background = 'var(--accent)';
+                }, 1200);
+            };
+        }
 
         // Clipboard Copy Helper with Visual Feedback
         function copyText(text, btnElement) {
@@ -2141,6 +2188,9 @@
                     liveFetchedWeather.elev,
                     true
                 );
+                if (document.getElementById('chk-auto-inject-weather')?.checked) {
+                    injectCurrentWeatherToSitl();
+                }
             } else {
                 fetchLiveWeather(currentPlaneLat, currentPlaneLon);
             }
@@ -3319,8 +3369,9 @@
                 currentPlaneLon = data.lon;
                 const coordsBadge = document.getElementById('weather-coords-badge');
                 if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
-                if (!hasFetchedInitialWeather) {
+                if (!hasFetchedInitialWeather && data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
                     hasFetchedInitialWeather = true;
+                    fetchLiveWeather(data.lat, data.lon);
                 }
             } else if (data.type === 'WIND') {
                 // Genuine ArduPilot SITL Wind Telemetry
