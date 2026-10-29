@@ -1443,8 +1443,10 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
-                            <option value="18" selected>Zoom 18 (0.5m/px)</option>
+                            <option value="auto" selected>Auto Optimal</option>
+                            <option value="18">Zoom 18 (0.5m/px)</option>
                             <option value="17">Zoom 17 (1.0m/px)</option>
+                            <option value="16">Zoom 16 (2.0m/px)</option>
                             <option value="17,18">Zoom 17 + 18 (Dual)</option>
                         </select>
                     </div>
@@ -2252,16 +2254,24 @@
             const zoomMode = document.getElementById('map-cache-zoom').value;
             let tileCount = 0;
             const diamKm = rad * 2.0;
-            if (zoomMode === '18') {
-                const side = Math.ceil((diamKm * 1000) / 150);
-                tileCount = side * side;
+            if (zoomMode === 'auto') {
+                const z = (rad <= 1.2 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)));
+                const tSize = (z === 18 ? 150 : (z === 17 ? 300 : (z === 16 ? 600 : 1200)));
+                const side = Math.ceil((diamKm * 1000) / tSize) + 1;
+                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
+            } else if (zoomMode === '18') {
+                const side = Math.ceil((diamKm * 1000) / 150) + 1;
+                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
             } else if (zoomMode === '17') {
-                const side = Math.ceil((diamKm * 1000) / 300);
-                tileCount = side * side;
-            } else {
-                const s18 = Math.ceil((diamKm * 1000) / 150);
-                const s17 = Math.ceil((diamKm * 1000) / 300);
-                tileCount = (s18 * s18) + (s17 * s17);
+                const side = Math.ceil((diamKm * 1000) / 300) + 1;
+                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
+            } else if (zoomMode === '16') {
+                const side = Math.ceil((diamKm * 1000) / 600) + 1;
+                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
+            } else { // 17, 18
+                const s18 = Math.ceil((diamKm * 1000) / 150) + 1;
+                const s17 = Math.ceil((diamKm * 1000) / 300) + 1;
+                tileCount = Math.ceil(Math.PI * Math.pow(s18 / 2, 2)) + Math.ceil(Math.PI * Math.pow(s17 / 2, 2));
             }
             const estMb = (tileCount * 0.016).toFixed(1);
             document.getElementById('map-cache-est-text').innerText = `~${tileCount} tiles (~${estMb} MB)`;
@@ -2279,7 +2289,15 @@
                 frameAirspaceCamera(rad);
             }
         };
-        document.getElementById('map-cache-zoom').onchange = updateMapEstimate;
+
+        document.getElementById('map-cache-zoom').onchange = () => {
+            updateMapEstimate();
+            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+            if (typeof updateMap === 'function') {
+                updateMap(lat, lon, true);
+            }
+        };
 
         let cachePollInterval = null;
 
@@ -2338,7 +2356,14 @@
             const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
             const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
             const zoomMode = document.getElementById('map-cache-zoom').value;
-            const zooms = zoomMode.includes(',') ? zoomMode.split(',').map(Number) : [parseInt(zoomMode)];
+            let zooms = [];
+            if (zoomMode === 'auto') {
+                zooms = [(rad <= 1.2 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)))];
+            } else if (zoomMode.includes(',')) {
+                zooms = zoomMode.split(',').map(Number);
+            } else {
+                zooms = [parseInt(zoomMode)];
+            }
             const provider = document.getElementById('sel-map-provider')?.value || 'esri';
 
             const progBox = document.getElementById('map-cache-prog-box');
@@ -3904,10 +3929,35 @@
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
-        const zoomLevel = 18; // Zoom 18 = ~0.5 meters per pixel (Ultra High Resolution)
+        let currentMapZoom = null;
+        let currentMapRadius = null;
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
+
+        function getOptimalZoom(radiusKm) {
+            const zoomSelect = document.getElementById('map-cache-zoom')?.value;
+            if (zoomSelect && zoomSelect !== 'auto') {
+                if (zoomSelect === '17,18') {
+                    return (radiusKm <= 2.0) ? 18 : 17;
+                }
+                const parsed = parseInt(zoomSelect);
+                if (!isNaN(parsed) && parsed >= 14 && parsed <= 19) {
+                    if (radiusKm >= 4.0 && parsed > 17) return 17;
+                    if (radiusKm >= 8.0 && parsed > 16) return 16;
+                    return parsed;
+                }
+            }
+            // Auto Optimal Resolution ensures ~150-350 tiles max with full coverage:
+            // <= 1.2 km  -> Zoom 18 (Ultra-Res ~0.5m/px, tileSize ~151m, span 8, ~180 tiles)
+            // <= 3.5 km  -> Zoom 17 (High-Res  ~1.0m/px, tileSize ~302m, span 8-11, ~190-340 tiles)
+            // <= 7.0 km  -> Zoom 16 (Wide-Area ~2.0m/px, tileSize ~605m, span 8-10, ~190-280 tiles)
+            // > 7.0 km   -> Zoom 15 (Regional  ~4.0m/px, tileSize ~1210m, span 10, ~280 tiles)
+            if (radiusKm <= 1.2) return 18;
+            if (radiusKm <= 3.5) return 17;
+            if (radiusKm <= 7.0) return 16;
+            return 15;
+        }
 
         // Render Ground-Level Tactical Airspace Range Rings & Perimeter
         function renderAirspaceBoundary(radiusKm) {
@@ -4010,13 +4060,20 @@
             const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             renderAirspaceBoundary(radiusKm);
 
-            if (homeLat === null || recenter) {
+            const activeZoom = getOptimalZoom(radiusKm);
+            const zoomChanged = (currentMapZoom !== activeZoom);
+            const radiusChanged = (currentMapRadius !== radiusKm);
+
+            if (homeLat === null || recenter || zoomChanged || radiusChanged) {
+                currentMapZoom = activeZoom;
+                currentMapRadius = radiusKm;
                 homeLat = lat; 
                 homeLon = lon;
+
                 // Earth circumference at equator = 40075016.686 meters
-                tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoomLevel);
-                homeTileXFloat = lon2tileFloat(lon, zoomLevel);
-                homeTileYFloat = lat2tileFloat(lat, zoomLevel);
+                tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, activeZoom);
+                homeTileXFloat = lon2tileFloat(lon, activeZoom);
+                homeTileYFloat = lat2tileFloat(lat, activeZoom);
 
                 // Lock the map origin to the plane's physics position (or 0,0,0 if SITL disconnected)
                 const posX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
@@ -4024,7 +4081,7 @@
                 mapGroup.position.set(posX, 0, posZ);
                 airspaceRingGroup.position.set(posX, 0, posZ);
 
-                if (recenter) {
+                if (recenter || zoomChanged || radiusChanged) {
                     while (mapGroup.children.length > 0) {
                         const child = mapGroup.children[0];
                         if (child.geometry) child.geometry.dispose();
@@ -4038,13 +4095,13 @@
                 }
             }
 
-            const currentTileX = Math.floor(lon2tileFloat(lon, zoomLevel));
-            const currentTileY = Math.floor(lat2tileFloat(lat, zoomLevel));
+            const currentTileX = Math.floor(lon2tileFloat(lon, activeZoom));
+            const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
 
-            // Dynamic grid span based on radius (clamped to 10 for performance and GPU stability)
+            // Dynamic grid span: FULL radius plus buffer to ensure 100% boundary coverage
             const radMeters = radiusKm * 1000;
-            const span = Math.min(10, Math.max(3, Math.ceil(radMeters / tileSize)));
-            const maxDistSq = Math.pow(radMeters + tileSize, 2);
+            const span = Math.ceil(radMeters / tileSize) + 1;
+            const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
 
             const modeEl = document.getElementById('sel-map-mode');
             const providerEl = document.getElementById('sel-map-provider');
@@ -4053,13 +4110,13 @@
 
             for (let dx = -span; dx <= span; dx++) {
                 for (let dy = -span; dy <= span; dy++) {
-                    // Skip tiles outside circular radius envelope
+                    // Check distance from center to tile center
                     const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
                     if (distSq > maxDistSq) continue;
 
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
-                    const key = `${tx},${ty}_${provider}`;
+                    const key = `${activeZoom}_${tx}_${ty}_${provider}`;
 
                     if (!mapTiles.has(key)) {
                         mapTiles.set(key, true);
@@ -4067,16 +4124,16 @@
                         const mt = Math.abs(tx + ty) % 4;
 
                         // Local tile cache proxy URL
-                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&lyrs=s`;
+                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&lyrs=s`;
 
                         // Remote fallback URL based on provider
                         let remoteUrl;
                         if (provider === 'esri') {
-                            remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoomLevel}/${ty}/${tx}`;
+                            remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${activeZoom}/${ty}/${tx}`;
                         } else if (provider === 'google_hybrid') {
-                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${activeZoom}`;
                         } else {
-                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${activeZoom}`;
                         }
 
                         function attachTile(texture) {
