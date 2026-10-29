@@ -2059,11 +2059,11 @@
         // Preset Storage Architecture (localStorage)
         const DEFAULT_PRESET = {
             id: 'default',
-            name: 'SITL Test Airfield (Padanilam, India)',
-            lat: 8.3105,
-            lon: 77.3137,
-            radius: 3.0,
-            zoom: '18'
+            name: localStorage.getItem('pilot_default_preset_name') || 'SITL Test Airfield (Padanilam, India)',
+            lat: parseFloat(localStorage.getItem('pilot_default_preset_lat') || 8.3105),
+            lon: parseFloat(localStorage.getItem('pilot_default_preset_lon') || 77.3137),
+            radius: parseFloat(localStorage.getItem('pilot_default_preset_rad') || 3.0),
+            zoom: localStorage.getItem('pilot_default_preset_zoom') || '18'
         };
 
         function getSavedPresets() {
@@ -2096,6 +2096,15 @@
             presets.push({ id, name, lat, lon, radius, zoom });
             localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
             return id;
+        }
+
+        function updateCustomPreset(id, name, lat, lon, radius, zoom) {
+            let presets = getSavedPresets();
+            const idx = presets.findIndex(p => p.id === id);
+            if (idx !== -1) {
+                presets[idx] = { id, name, lat, lon, radius, zoom };
+                localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
+            }
         }
 
         function deleteCustomPreset(id) {
@@ -2155,7 +2164,7 @@
                     document.getElementById('map-cache-lon').value = DEFAULT_PRESET.lon.toFixed(4);
                     document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
                     document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
-                    if (nameInput) nameInput.value = '';
+                    if (nameInput) nameInput.value = DEFAULT_PRESET.name;
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     updateMapEstimate();
                     refreshCacheStatus();
@@ -2200,8 +2209,28 @@
                 const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
                 const zoom = document.getElementById('map-cache-zoom').value || '18';
 
-                const newId = saveCustomPreset(name, lat, lon, rad, zoom);
-                populatePresetDropdown(newId);
+                const select = document.getElementById('map-cache-preset');
+                const isDefault = (!select || select.value === 'default');
+
+                if (isDefault) {
+                    DEFAULT_PRESET.name = name;
+                    DEFAULT_PRESET.lat = lat;
+                    DEFAULT_PRESET.lon = lon;
+                    DEFAULT_PRESET.radius = rad;
+                    DEFAULT_PRESET.zoom = zoom;
+                    localStorage.setItem('pilot_default_preset_name', name);
+                    localStorage.setItem('pilot_default_preset_lat', lat.toString());
+                    localStorage.setItem('pilot_default_preset_lon', lon.toString());
+                    localStorage.setItem('pilot_default_preset_rad', rad.toString());
+                    localStorage.setItem('pilot_default_preset_zoom', zoom);
+                    populatePresetDropdown('default');
+                } else if (select && select.value !== 'new') {
+                    updateCustomPreset(select.value, name, lat, lon, rad, zoom);
+                    populatePresetDropdown(select.value);
+                } else {
+                    const newId = saveCustomPreset(name, lat, lon, rad, zoom);
+                    populatePresetDropdown(newId);
+                }
                 refreshCacheStatus();
 
                 // Visual feedback on save button
@@ -2379,6 +2408,10 @@
         refreshCacheStatus();
         updateMapEstimate();
         populatePresetDropdown();
+        const initNameEl = document.getElementById('map-cache-name');
+        if (initNameEl && !initNameEl.value) {
+            initNameEl.value = DEFAULT_PRESET.name;
+        }
 
         document.getElementById('btn-start-cache-dl').onclick = () => {
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
