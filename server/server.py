@@ -46,11 +46,11 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         136, 500000, 0, 0, 0, 0, 0
                     )
-                    # Stream in-flight EKF aircraft-sensed wind (Msg 168) at 4Hz (250,000 microseconds)
+                    # Stream ArduPlane MAVLink WIND (Msg 168) at 10Hz matching Mission Planner rate
                     connection.mav.command_long_send(
                         connection.target_system, connection.target_component,
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
-                        168, 250000, 0, 0, 0, 0, 0
+                        168, 100000, 0, 0, 0, 0, 0
                     )
                     # Explicitly request GPS_RAW_INT (Msg 24) at 10Hz
                     connection.mav.command_long_send(
