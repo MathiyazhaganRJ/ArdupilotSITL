@@ -479,6 +479,26 @@
             transition: opacity 0.25s ease, transform 0.25s ease;
         }
 
+        /* Offline Map Pre-Downloader Widget */
+        #offline-map-widget {
+            position: absolute;
+            top: 65px;
+            right: 360px;
+            width: 330px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            z-index: 150;
+            display: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
         #weather-widget::-webkit-scrollbar {
             width: 4px;
         }
@@ -1155,6 +1175,14 @@
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
             </svg>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-map-cache" title="Pre-Download & Cache Offline Satellite Map">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                <line x1="8" y1="2" x2="8" y2="18"></line>
+                <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+        </button>
         <button class="toolbar-btn" id="btn-toggle-fms" title="Toggle FMS Dead Reckoning & Navigation CDU">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -1179,11 +1207,20 @@
                 <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
                 <h2>ArduPilot SITL</h2>
             </div>
-            <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            </button>
+            <div style="display: flex; gap: 6px;">
+                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Satellite Map Cache & Pre-Downloader">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                        <line x1="8" y1="2" x2="8" y2="18"></line>
+                        <line x1="16" y1="6" x2="16" y2="22"></line>
+                    </svg>
+                </button>
+                <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="data-card">
@@ -1409,6 +1446,82 @@
     </div>
 
     <!-- Live Weather & SITL Terminal Commands Widget -->
+    <!-- Offline Map Pre-Downloader Widget -->
+    <div id="offline-map-widget">
+        <div class="weather-header">
+            <div>
+                <h3 style="font-size: 14px; margin: 0; font-weight: 700;">OFFLINE MAP CACHE</h3>
+                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Pre-download tiles for field operations</div>
+            </div>
+            <button id="btn-close-map-cache" class="icon-btn" style="width: 26px; height: 26px;" title="Close">✕</button>
+        </div>
+
+        <div id="map-cache-disk-summary" style="margin: 8px 0; font-size: 11px; padding: 6px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+            <span>Disk Cache:</span>
+            <span id="map-cache-count-label">Checking...</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="data-label" style="font-size: 11px;">Flight Range Center</span>
+                <button id="btn-use-plane-coords" class="btn-refresh" style="font-size: 10px; padding: 2px 6px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+                    Use Drone GPS
+                </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LATITUDE</span>
+                    <input type="number" id="map-cache-lat" step="0.0001" value="8.3105" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-weight: 600; font-family: monospace;">
+                </div>
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">LONGITUDE</span>
+                    <input type="number" id="map-cache-lon" step="0.0001" value="77.3137" style="width: 100%; box-sizing: border-box; background: var(--btn-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-weight: 600; font-family: monospace;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">AIRSPACE RADIUS</span>
+                    <select id="map-cache-radius" style="width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 11px;">
+                        <option value="1">1.0 km (2 km box)</option>
+                        <option value="2">2.0 km (4 km box)</option>
+                        <option value="3" selected>3.0 km (6 km box)</option>
+                        <option value="5">5.0 km (10 km box)</option>
+                        <option value="10">10.0 km (20 km box)</option>
+                    </select>
+                </div>
+                <div>
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
+                    <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 11px;">
+                        <option value="18" selected>Zoom 18 (0.5m/px)</option>
+                        <option value="17">Zoom 17 (1.0m/px)</option>
+                        <option value="17,18">Zoom 17 + 18 (Dual)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="map-cache-est-box" style="font-size: 11px; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; padding: 4px 2px;">
+            <span>Estimated Download:</span>
+            <span id="map-cache-est-text" style="color: var(--accent); font-weight: 600;">~196 tiles (~15 MB)</span>
+        </div>
+
+        <button id="btn-start-cache-dl" class="btn-refresh" style="width: 100%; justify-content: center; padding: 9px; font-size: 12px; font-weight: 700; background: var(--accent); color: #fff; border-radius: 8px; margin-top: 4px;">
+            Pre-Download Area for Offline Flight
+        </button>
+
+        <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600;">
+                <span id="map-cache-prog-status" style="color: var(--accent);">Downloading...</span>
+                <span id="map-cache-prog-pct">0%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden;">
+                <div id="map-cache-prog-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s;"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="weather-widget">
         <div class="weather-header">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1711,6 +1824,136 @@
             weatherWidget.style.display = isHidden ? 'block' : 'none';
             btnToggleWeather.style.opacity = isHidden ? '1.0' : '0.45';
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
+        };
+
+        // Offline Map Pre-Downloader Controls
+        const btnToggleMapCache = document.getElementById('btn-toggle-map-cache');
+        const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
+        const offlineMapWidget = document.getElementById('offline-map-widget');
+        const btnCloseMapCache = document.getElementById('btn-close-map-cache');
+
+        function toggleOfflineMapWidget() {
+            const isHidden = offlineMapWidget.style.display === 'none';
+            offlineMapWidget.style.display = isHidden ? 'block' : 'none';
+            if (btnToggleMapCache) btnToggleMapCache.style.opacity = isHidden ? '1.0' : '0.45';
+            if (isHidden) {
+                refreshCacheStatus();
+                updateMapEstimate();
+                if (currentPlaneLat && currentPlaneLon && (!document.getElementById('map-cache-lat').value || document.getElementById('map-cache-lat').value == '8.3105')) {
+                    document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
+                    document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
+                }
+            }
+        }
+
+        if (btnToggleMapCache) btnToggleMapCache.onclick = toggleOfflineMapWidget;
+        if (btnOfflineMapHdr) btnOfflineMapHdr.onclick = toggleOfflineMapWidget;
+        if (btnCloseMapCache) btnCloseMapCache.onclick = () => { offlineMapWidget.style.display = 'none'; };
+
+        makeDraggable(offlineMapWidget, offlineMapWidget.querySelector('.weather-header'));
+
+        // Use Current Drone GPS Fix button
+        document.getElementById('btn-use-plane-coords').onclick = () => {
+            if (currentPlaneLat && currentPlaneLon) {
+                document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
+                document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
+                updateMapEstimate();
+            } else {
+                alert('No drone GPS position received yet. Using default coordinates.');
+            }
+        };
+
+        function updateMapEstimate() {
+            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+            const zoomMode = document.getElementById('map-cache-zoom').value;
+            let tileCount = 0;
+            const diamKm = rad * 2.0;
+            if (zoomMode === '18') {
+                const side = Math.ceil((diamKm * 1000) / 150);
+                tileCount = side * side;
+            } else if (zoomMode === '17') {
+                const side = Math.ceil((diamKm * 1000) / 300);
+                tileCount = side * side;
+            } else {
+                const s18 = Math.ceil((diamKm * 1000) / 150);
+                const s17 = Math.ceil((diamKm * 1000) / 300);
+                tileCount = (s18 * s18) + (s17 * s17);
+            }
+            const estMb = (tileCount * 0.016).toFixed(1);
+            document.getElementById('map-cache-est-text').innerText = `~${tileCount} tiles (~${estMb} MB)`;
+        }
+
+        document.getElementById('map-cache-radius').onchange = updateMapEstimate;
+        document.getElementById('map-cache-zoom').onchange = updateMapEstimate;
+
+        let cachePollInterval = null;
+
+        function refreshCacheStatus() {
+            fetch('/api/cache_status')
+                .then(r => r.json())
+                .then(data => {
+                    const countEl = document.getElementById('map-cache-count-label');
+                    if (countEl) countEl.innerText = `${data.cached_count} tiles (${data.cached_mb} MB)`;
+
+                    const progBox = document.getElementById('map-cache-prog-box');
+                    const progBar = document.getElementById('map-cache-prog-bar');
+                    const progPct = document.getElementById('map-cache-prog-pct');
+                    const progStat = document.getElementById('map-cache-prog-status');
+                    const btnDl = document.getElementById('btn-start-cache-dl');
+
+                    if (data.is_downloading) {
+                        progBox.style.display = 'flex';
+                        progBar.style.width = data.progress_pct + '%';
+                        progPct.innerText = data.progress_pct + '%';
+                        progStat.innerText = `${data.status} (${data.downloaded + data.cached}/${data.total})`;
+                        btnDl.disabled = true;
+                        btnDl.style.opacity = '0.6';
+                        btnDl.innerText = 'Downloading Airspace Tiles...';
+                    } else {
+                        if (cachePollInterval && data.total > 0 && data.progress_pct >= 100) {
+                            clearInterval(cachePollInterval);
+                            cachePollInterval = null;
+                            progBar.style.width = '100%';
+                            progPct.innerText = '100%';
+                            progStat.innerText = data.status || 'Complete! Ready for Offline Flight.';
+                            btnDl.disabled = false;
+                            btnDl.style.opacity = '1.0';
+                            btnDl.innerText = 'Download Complete! (Ready Offline)';
+                            setTimeout(() => {
+                                btnDl.innerText = 'Pre-Download Area for Offline Flight';
+                            }, 4000);
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        document.getElementById('btn-start-cache-dl').onclick = () => {
+            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+            const zoomMode = document.getElementById('map-cache-zoom').value;
+            const zooms = zoomMode.includes(',') ? zoomMode.split(',').map(Number) : [parseInt(zoomMode)];
+
+            const progBox = document.getElementById('map-cache-prog-box');
+            progBox.style.display = 'flex';
+            document.getElementById('map-cache-prog-bar').style.width = '2%';
+            document.getElementById('map-cache-prog-pct').innerText = '0%';
+            document.getElementById('map-cache-prog-status').innerText = 'Starting multi-threaded download...';
+
+            fetch('/api/cache_region', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat, lon, radius_km: rad, zooms })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (cachePollInterval) clearInterval(cachePollInterval);
+                cachePollInterval = setInterval(refreshCacheStatus, 400);
+            })
+            .catch(err => {
+                alert('Error starting pre-download: ' + err);
+            });
         };
 
         // Restore user toggle preferences
@@ -3278,44 +3521,48 @@
                     const key = `${tx},${ty}`;
 
                     if (!mapTiles.has(key)) {
-                        // Place a placeholder immediately to prevent multiple fetches
                         mapTiles.set(key, true);
 
-                        // Cycle through Google's 4 tile servers (mt0 to mt3) to bypass rate limiting
                         const mt = Math.abs(tx + ty) % 4;
-                        const url = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+                        // Local tile cache proxy URL (serves from local disk offline, fetches & caches if online)
+                        const localUrl = `/tiles/${zoomLevel}/${tx}/${ty}.jpg`;
+                        const googleUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${zoomLevel}`;
+
+                        function attachTile(texture) {
+                            texture.anisotropy = 16;
+                            texture.encoding = THREE.sRGBEncoding;
+                            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                            const mat = new THREE.MeshBasicMaterial({
+                                map: texture,
+                                side: THREE.DoubleSide,
+                                depthWrite: false,
+                                fog: false
+                            });
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.renderOrder = -1;
+                            mesh.rotation.x = -Math.PI / 2;
+                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                            mesh.position.y = -2;
+                            mapGroup.add(mesh);
+                        }
 
                         const loader = new THREE.TextureLoader();
-                        loader.setCrossOrigin('anonymous'); // Required for WebGL to render external images
+                        loader.setCrossOrigin('anonymous');
+
+                        // Try local disk cache proxy first (100% offline capability)
                         loader.load(
-                            url, 
-                            (texture) => {
-                                texture.anisotropy = 16; // Prevents the high-res map from looking blurry at flat grazing angles
-                                texture.encoding = THREE.sRGBEncoding; // Fixes hazy/washed-out map colors
-                                const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                                const mat = new THREE.MeshBasicMaterial({
-                                    map: texture,
-                                    side: THREE.DoubleSide,
-                                    depthWrite: false, // Prevents airplane from sinking into the map!
-                                    fog: false // Keeps the satellite imagery 100% vibrant all the way to the horizon
-                                });
-                                const mesh = new THREE.Mesh(geo, mat);
-                                mesh.renderOrder = -1; // Force the map to render as a background layer
-                                mesh.rotation.x = -Math.PI / 2;
-
-                                // Align perfectly with Three.js origin (which is the Home Launch Point)
-                                // Three.js X = East, Three.js Z = South (matching Web Mercator Y)
-                                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                                mesh.position.y = -2; // Render just below the telemetry grid
-
-                                mapGroup.add(mesh);
-                            },
-                            undefined, // onProgress
-                            (err) => {
-                                // If tile fetch fails (e.g., rate limit or network drop), remove the placeholder 
-                                // so it can try fetching again in the next frame
-                                mapTiles.delete(key);
+                            localUrl,
+                            (texture) => attachTile(texture),
+                            undefined,
+                            () => {
+                                // If local proxy fails, fallback directly to Google mt server
+                                loader.load(
+                                    googleUrl,
+                                    (texture) => attachTile(texture),
+                                    undefined,
+                                    () => { mapTiles.delete(key); }
+                                );
                             }
                         );
                     }

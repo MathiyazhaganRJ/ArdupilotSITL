@@ -43,5 +43,7 @@ patch_*.py
 view.py
 test.js
 log_viewer_test.py
+wind_speed
+tile_cache/
 
 

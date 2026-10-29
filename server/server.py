@@ -6,6 +6,9 @@ import http.server
 import socketserver
 import os
 import webview
+import urllib.request
+import math
+import concurrent.futures
 from pymavlink import mavutil
 
 MAVLINK_URL = 'udpin:127.0.0.1:14551'
@@ -181,21 +184,203 @@ async def ws_handler(websocket, path=None):
     finally:
         clients.discard(websocket)
 
+tile_cache_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tile_cache'))
+os.makedirs(tile_cache_dir, exist_ok=True)
+
+precache_state = {
+    "is_downloading": False,
+    "progress_pct": 0,
+    "downloaded": 0,
+    "cached": 0,
+    "failed": 0,
+    "total": 0,
+    "status": "Idle"
+}
+
+def fetch_google_tile(z, x, y):
+    mt = abs(x + y) % 4
+    url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+    try:
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            if resp.status == 200:
+                return resp.read()
+    except Exception:
+        return None
+    return None
+
+def get_tiles_for_radius(lat, lon, radius_km, zoom):
+    lat_delta = (radius_km / 6371.0) * (180.0 / math.pi)
+    lon_delta = (radius_km / (6371.0 * math.cos(math.radians(lat)))) * (180.0 / math.pi)
+
+    def l2t(ln, z): return (ln + 180.0) / 360.0 * (2 ** z)
+    def a2t(lt, z):
+        rad = math.radians(lt)
+        return (1.0 - math.log(math.tan(rad) + 1.0 / math.cos(rad)) / math.pi) / 2.0 * (2 ** z)
+
+    min_x = int(l2t(lon - lon_delta, zoom))
+    max_x = int(l2t(lon + lon_delta, zoom))
+    min_y = int(a2t(lat + lat_delta, zoom))
+    max_y = int(a2t(lat - lat_delta, zoom))
+
+    tiles = []
+    for x in range(min(min_x, max_x), max(min_x, max_x) + 1):
+        for y in range(min(min_y, max_y), max(min_y, max_y) + 1):
+            tiles.append((zoom, x, y))
+    return tiles
+
+def run_precache_worker(lat, lon, radius_km, zoom_levels):
+    global precache_state
+    precache_state["is_downloading"] = True
+    precache_state["status"] = "Calculating tiles..."
+    
+    all_tiles = []
+    for z in zoom_levels:
+        all_tiles.extend(get_tiles_for_radius(lat, lon, radius_km, z))
+
+    total = len(all_tiles)
+    precache_state["total"] = total
+    precache_state["downloaded"] = 0
+    precache_state["cached"] = 0
+    precache_state["failed"] = 0
+    precache_state["status"] = f"Downloading {total} tiles..."
+
+    def proc_tile(tile_info):
+        z, x, y = tile_info
+        tile_path = os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg")
+        if os.path.exists(tile_path) and os.path.getsize(tile_path) > 100:
+            return 'CACHED'
+        data = fetch_google_tile(z, x, y)
+        if data and len(data) > 100:
+            try:
+                with open(tile_path, 'wb') as f:
+                    f.write(data)
+                return 'DOWNLOADED'
+            except Exception:
+                pass
+        return 'FAILED'
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        for idx, res in enumerate(executor.map(proc_tile, all_tiles), start=1):
+            if res == 'DOWNLOADED': precache_state["downloaded"] += 1
+            elif res == 'CACHED': precache_state["cached"] += 1
+            else: precache_state["failed"] += 1
+            precache_state["progress_pct"] = int((idx / total) * 100)
+
+    precache_state["is_downloading"] = False
+    precache_state["status"] = f"Complete: {precache_state['downloaded'] + precache_state['cached']}/{total} tiles ready"
+
 def start_http_server():
     vis_dir = os.path.join(os.path.dirname(__file__), '..', 'visualizer')
     os.chdir(vis_dir)
     class QuietHandler(http.server.SimpleHTTPRequestHandler):
         def end_headers(self):
-            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-            self.send_header('Pragma', 'no-cache')
-            self.send_header('Expires', '0')
+            if not getattr(self, '_is_tile', False):
+                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                self.send_header('Pragma', 'no-cache')
+                self.send_header('Expires', '0')
             super().end_headers()
+
+        def do_GET(self):
+            # 1. Tile proxy and disk caching: /tiles/<z>/<x>/<y>.jpg
+            if self.path.startswith('/tiles/'):
+                self._is_tile = True
+                try:
+                    clean_path = self.path.split('?')[0]
+                    parts = clean_path.split('/')
+                    if len(parts) >= 5:
+                        z = parts[2]
+                        x = parts[3]
+                        y = parts[4].split('.')[0]
+                        tile_file = os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg")
+                        if os.path.exists(tile_file) and os.path.getsize(tile_file) > 100:
+                            with open(tile_file, 'rb') as f:
+                                data = f.read()
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'image/jpeg')
+                            self.send_header('Content-Length', str(len(data)))
+                            self.send_header('Cache-Control', 'public, max-age=31536000')
+                            self.end_headers()
+                            self.wfile.write(data)
+                            return
+                        else:
+                            data = fetch_google_tile(int(z), int(x), int(y))
+                            if data:
+                                try:
+                                    with open(tile_file, 'wb') as f:
+                                        f.write(data)
+                                except Exception: pass
+                                self.send_response(200)
+                                self.send_header('Content-Type', 'image/jpeg')
+                                self.send_header('Content-Length', str(len(data)))
+                                self.send_header('Cache-Control', 'public, max-age=31536000')
+                                self.end_headers()
+                                self.wfile.write(data)
+                                return
+                except Exception:
+                    pass
+                self.send_error(404, "Tile not found")
+                return
+
+            # 2. Cache status API: /api/cache_status
+            elif self.path.startswith('/api/cache_status'):
+                try:
+                    cached_files = [f for f in os.listdir(tile_cache_dir) if f.endswith('.jpg')]
+                    total_mb = sum(os.path.getsize(os.path.join(tile_cache_dir, f)) for f in cached_files) / (1024 * 1024)
+                except Exception:
+                    cached_files = []
+                    total_mb = 0.0
+
+                resp = {
+                    "cached_count": len(cached_files),
+                    "cached_mb": round(total_mb, 2),
+                    "is_downloading": precache_state["is_downloading"],
+                    "progress_pct": precache_state["progress_pct"],
+                    "downloaded": precache_state["downloaded"],
+                    "cached": precache_state["cached"],
+                    "failed": precache_state["failed"],
+                    "total": precache_state["total"],
+                    "status": precache_state["status"]
+                }
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(resp).encode('utf-8'))
+                return
+
+            return super().do_GET()
+
+        def do_POST(self):
+            if self.path.startswith('/api/cache_region'):
+                content_len = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_len).decode('utf-8')
+                try:
+                    data = json.loads(body)
+                    lat = float(data.get('lat', 8.3105))
+                    lon = float(data.get('lon', 77.3137))
+                    radius = float(data.get('radius_km', 3.0))
+                    zooms = data.get('zooms', [18])
+                    if not precache_state["is_downloading"]:
+                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms), daemon=True).start()
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "started"}).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+                return
+
+            return super().do_POST()
+
         def log_message(self, format, *args): pass
     
     try:
         # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
         with http.server.ThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
-            print("HTTP Web Server started on port 8000")
+            print("HTTP Web Server with Offline Tile Cache started on port 8000")
             httpd.serve_forever()
     except OSError as e:
         if getattr(e, 'errno', None) in (10048, 98):
