@@ -7,9 +7,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>VTOL Visualizer</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="icon" type="image/png" href="app_icon.png">
-    <link rel="apple-touch-icon" href="app_icon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=4">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=4">
+    <link rel="icon" type="image/png" sizes="512x512" href="app_icon.png?v=4">
+    <link rel="apple-touch-icon" href="app_icon.png?v=4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -75,7 +76,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 280px;
+            width: 310px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
@@ -131,6 +132,8 @@
         .data-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            gap: 12px;
             margin-bottom: 8px;
             font-size: 13px;
         }
@@ -142,11 +145,15 @@
         .data-label {
             color: var(--text-secondary);
             font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .data-val {
             font-weight: 600;
             font-variant-numeric: tabular-nums;
+            text-align: right;
+            white-space: nowrap;
         }
 
         .section-title {
@@ -1169,7 +1176,7 @@
     <div id="ui-panel">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="app_icon.png" alt="ArduPilot Mascot" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
+                <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
                 <h2>ArduPilot SITL</h2>
             </div>
             <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
@@ -2943,7 +2950,10 @@
                     if (relAngle > 180) relAngle -= 360;
                     if (relAngle < -180) relAngle += 360;
                     const side = relAngle > 0 ? 'R' : 'L';
-                    driftEst = `${arduMeasuredDriftMeters.toFixed(1)}m ${card} [${side}]`;
+                    const distFormatted = arduMeasuredDriftMeters >= 1000 
+                        ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
+                        : `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                    driftEst = `${distFormatted} ${card} [${side}]`;
                 } else if (arduEkfHorizAccuracy > 0) {
                     driftEst = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
                 } else if (isDeadReckoning && drStartTime > 0) {
@@ -3857,7 +3867,10 @@
                         if (relAngle > 180) relAngle -= 360;
                         if (relAngle < -180) relAngle += 360;
                         const side = relAngle > 0 ? 'R' : 'L';
-                        navEl.innerText = `DR DRIFT: ${arduMeasuredDriftMeters.toFixed(1)}m ${card} [${side}]`;
+                        const distFormatted = arduMeasuredDriftMeters >= 1000 
+                            ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
+                            : `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                        navEl.innerText = `DR: ${distFormatted} ${card} [${side}]`;
                     } else if (arduEkfHorizAccuracy > 0) {
                         navEl.innerText = `EKF ACC: ±${arduEkfHorizAccuracy.toFixed(1)}m`;
                     } else {
@@ -3870,7 +3883,10 @@
                 if (fmsDriftEl) {
                     if (arduMeasuredDriftMeters > 0.5) {
                         const card = getCardinal(arduMeasuredDriftBearing);
-                        fmsDriftEl.innerText = `${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
+                        const distFormatted = arduMeasuredDriftMeters >= 1000 
+                            ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
+                            : `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                        fmsDriftEl.innerText = `${distFormatted} ${card}`;
                     } else if (arduEkfHorizAccuracy > 0) {
                         fmsDriftEl.innerText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
                     } else {
