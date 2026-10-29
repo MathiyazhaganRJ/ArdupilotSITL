@@ -1421,14 +1421,8 @@
 
         <!-- Live Feed Status Tag -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 6px; font-size: 11px;">
-            <span style="display:flex; align-items:center;"><span class="live-dot" id="weather-dot"></span><span id="weather-status-tag" style="color: var(--text-primary); font-weight: 600;">Live Open-Meteo Feed</span></span>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">--:--:--</span>
-                <label style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-secondary); cursor:pointer;" title="Automatically transmit weather changes to SITL over MAVLink">
-                    <input type="checkbox" id="chk-auto-inject-weather" style="cursor:pointer;" checked>
-                    <span style="font-weight:600; color:var(--accent);">Auto-Inject</span>
-                </label>
-            </div>
+            <span style="display:flex; align-items:center;"><span class="live-dot" id="weather-dot"></span><span id="weather-status-tag" style="color: var(--text-primary); font-weight: 600;">Manual Weather Control</span></span>
+            <span id="weather-timestamp" style="color: var(--text-secondary); font-size: 10px;">Ready</span>
         </div>
 
         <!-- Meteorological Metrics 4-Card Grid -->
@@ -1797,7 +1791,6 @@
         let currentWindGust = 7.5;  // m/s
         let currentPlaneLat = 8.3113;
         let currentPlaneLon = 77.3077;
-        let hasFetchedInitialWeather = false;
         let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
         let liveFetchedWeather = null;
 
@@ -2019,15 +2012,8 @@
                     liveFetchedWeather = { spd, dir, gust, turb, temp, press, elev };
                     applyWeatherValues(spd, dir, gust, turb, temp, press, elev, true);
 
-                    // Auto-inject live weather into SITL if enabled
-                    const autoInjectEl = document.getElementById('chk-auto-inject-weather');
-                    if (autoInjectEl && autoInjectEl.checked) {
-                        injectCurrentWeatherToSitl();
-                        if (statusTag) {
-                            statusTag.innerText = "Live Open-Meteo (Injected to SITL)";
-                        }
-                    } else if (statusTag) {
-                        statusTag.innerText = "Live Open-Meteo Feed";
+                    if (statusTag) {
+                        statusTag.innerText = "Open-Meteo Fetched";
                     }
                     const dotEl = document.getElementById('weather-dot');
                     if (dotEl) dotEl.className = 'live-dot';
@@ -2168,21 +2154,24 @@
             const val = parseFloat(e.target.value);
             document.getElementById('slider-spd-label').innerText = val.toFixed(1);
             applyWeatherValues(val, currentWindDir, Math.max(val * 1.3, currentWindGust), currentWindTurb, null, null, null, false);
-            sendSitlParam('SIM_WIND_SPD', val);
+            const statusTag = document.getElementById('weather-status-tag');
+            if (statusTag) statusTag.innerText = "Custom Adjustment";
         };
 
         sliderDir.oninput = (e) => {
             const val = parseInt(e.target.value, 10);
             document.getElementById('slider-dir-label').innerText = val;
             applyWeatherValues(currentWindSpd, val, currentWindGust, currentWindTurb, null, null, null, false);
-            sendSitlParam('SIM_WIND_DIR', val);
+            const statusTag = document.getElementById('weather-status-tag');
+            if (statusTag) statusTag.innerText = "Custom Adjustment";
         };
 
         sliderTurb.oninput = (e) => {
             const val = parseFloat(e.target.value);
             document.getElementById('slider-turb-label').innerText = val.toFixed(2);
             applyWeatherValues(currentWindSpd, currentWindDir, currentWindGust, val, null, null, null, false);
-            sendSitlParam('SIM_WIND_TURB', val);
+            const statusTag = document.getElementById('weather-status-tag');
+            if (statusTag) statusTag.innerText = "Custom Adjustment";
         };
 
         document.getElementById('btn-reset-live').onclick = () => {
@@ -2197,9 +2186,6 @@
                     liveFetchedWeather.elev,
                     true
                 );
-                if (document.getElementById('chk-auto-inject-weather')?.checked) {
-                    injectCurrentWeatherToSitl();
-                }
             } else {
                 fetchLiveWeather(currentPlaneLat, currentPlaneLon);
             }
@@ -3374,58 +3360,11 @@
                 updateMap(data.lat, data.lon);
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
                 // data.hdg is GPS track in cdeg; attitude heading is handled by ATTITUDE
-                currentPlaneLat = data.lat;
-                currentPlaneLon = data.lon;
-                const coordsBadge = document.getElementById('weather-coords-badge');
-                if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
-                if (!hasFetchedInitialWeather && data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
-                    hasFetchedInitialWeather = true;
-                    fetchLiveWeather(data.lat, data.lon);
-                }
-            } else if (data.type === 'WIND') {
-                // Genuine ArduPilot SITL Wind Telemetry
-                if (data.wind_speed !== undefined && data.wind_direction !== undefined) {
-                    currentWindSpd = Math.max(0, data.wind_speed);
-                    currentWindDir = ((data.wind_direction % 360) + 360) % 360;
-                    currentWindGust = Math.max(currentWindSpd, currentWindSpd * 1.35);
-
-                    // Synchronize avionics compass directly with genuine SITL wind
-                    updateCompass();
-
-                    // Synchronize Weather widget metrics
-                    const spdEl = document.getElementById('live-wind-spd');
-                    if (spdEl) spdEl.innerText = currentWindSpd.toFixed(1);
-                    const spdKtEl = document.getElementById('live-wind-spd-kt');
-                    if (spdKtEl) spdKtEl.innerText = (currentWindSpd * 1.94384).toFixed(1) + ' kt';
-                    const dirEl = document.getElementById('live-wind-dir');
-                    if (dirEl) dirEl.innerText = Math.round(currentWindDir);
-                    const dirCardEl = document.getElementById('live-wind-dir-cardinal');
-                    if (dirCardEl) dirCardEl.innerText = getCardinal(currentWindDir);
-
-                    // Keep terminal commands in sync
-                    const cmdSpd = document.getElementById('cmd-spd-val');
-                    if (cmdSpd) cmdSpd.innerText = currentWindSpd.toFixed(1);
-                    const cmdDir = document.getElementById('cmd-dir-val');
-                    if (cmdDir) cmdDir.innerText = Math.round(currentWindDir);
-
-                    // Synchronize weather sliders if user is not actively dragging
-                    const sSpd = document.getElementById('slider-spd');
-                    const sDir = document.getElementById('slider-dir');
-                    if (sSpd && document.activeElement !== sSpd) {
-                        sSpd.value = currentWindSpd.toFixed(1);
-                        const sSpdLbl = document.getElementById('slider-spd-label');
-                        if (sSpdLbl) sSpdLbl.innerText = currentWindSpd.toFixed(1);
-                    }
-                    if (sDir && document.activeElement !== sDir) {
-                        sDir.value = Math.round(currentWindDir);
-                        const sDirLbl = document.getElementById('slider-dir-label');
-                        if (sDirLbl) sDirLbl.innerText = Math.round(currentWindDir);
-                    }
-
-                    const statusTag = document.getElementById('weather-status-tag');
-                    if (statusTag) statusTag.innerText = "SITL Active Wind (Telemetry)";
-                    const dotEl = document.getElementById('weather-dot');
-                    if (dotEl) dotEl.className = 'live-dot';
+                if (data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
+                    currentPlaneLat = data.lat;
+                    currentPlaneLon = data.lon;
+                    const coordsBadge = document.getElementById('weather-coords-badge');
+                    if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
                 }
             } else if (data.type === 'TERRAIN_REPORT') {
                 if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
