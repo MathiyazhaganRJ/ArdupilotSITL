@@ -1390,11 +1390,11 @@
                         Delete
                     </button>
                 </div>
-                <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; font-weight: 600; margin-bottom: 8px;">
+                <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; font-weight: 600; margin-bottom: 0px;">
                     <!-- Populated dynamically -->
                 </select>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                    <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. My Home Airfield)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
+                <div id="map-cache-name-row" style="display: none; gap: 6px; align-items: center; margin-top: 8px;">
+                    <input type="text" id="map-cache-name" placeholder="New Airfield Name (e.g. South Strip)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
                     <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 5px 8px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         Save
@@ -2057,15 +2057,13 @@
         }
 
         // Preset Storage Architecture (localStorage)
-        const savedDefaultName = localStorage.getItem('pilot_default_preset_name');
-        const defaultName = (savedDefaultName && savedDefaultName !== 'SITL Test Airfield (Padanilam, India)') ? savedDefaultName : 'My Home Airfield';
         const DEFAULT_PRESET = {
             id: 'default',
-            name: defaultName,
-            lat: parseFloat(localStorage.getItem('pilot_default_preset_lat') || 8.3105),
-            lon: parseFloat(localStorage.getItem('pilot_default_preset_lon') || 77.3137),
-            radius: parseFloat(localStorage.getItem('pilot_default_preset_rad') || 3.0),
-            zoom: localStorage.getItem('pilot_default_preset_zoom') || '18'
+            name: 'My Home Airfield',
+            lat: 8.3105,
+            lon: 77.3137,
+            radius: 3.0,
+            zoom: '18'
         };
 
         function getSavedPresets() {
@@ -2117,6 +2115,7 @@
         function populatePresetDropdown(selectedId = null) {
             const select = document.getElementById('map-cache-preset');
             const deleteBtn = document.getElementById('btn-delete-preset');
+            const nameRow = document.getElementById('map-cache-name-row');
             if (!select) return;
 
             select.innerHTML = '';
@@ -2148,7 +2147,10 @@
                 select.value = DEFAULT_PRESET.id;
             }
 
-            // Show delete button only for custom presets
+            // Show name input row and delete button only when appropriate (hidden for default)
+            if (nameRow) {
+                nameRow.style.display = (select.value === 'default') ? 'none' : 'flex';
+            }
             if (deleteBtn) {
                 deleteBtn.style.display = (select.value && select.value !== 'default' && select.value !== 'new') ? 'inline-flex' : 'none';
             }
@@ -2160,25 +2162,30 @@
                 const val = e.target.value;
                 const deleteBtn = document.getElementById('btn-delete-preset');
                 const nameInput = document.getElementById('map-cache-name');
+                const nameRow = document.getElementById('map-cache-name-row');
 
                 if (val === 'default') {
+                    if (nameRow) nameRow.style.display = 'none';
                     document.getElementById('map-cache-lat').value = DEFAULT_PRESET.lat.toFixed(4);
                     document.getElementById('map-cache-lon').value = DEFAULT_PRESET.lon.toFixed(4);
                     document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
                     document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
-                    if (nameInput) nameInput.value = DEFAULT_PRESET.name;
+                    if (nameInput) nameInput.value = '';
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     updateMapEstimate();
                     refreshCacheStatus();
                     if (typeof updateMap === 'function') updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon, true);
                 } else if (val === 'new') {
+                    if (nameRow) nameRow.style.display = 'flex';
                     if (nameInput) {
                         nameInput.value = '';
+                        nameInput.placeholder = 'New Airfield Name (e.g. South Strip)';
                         nameInput.focus();
                     }
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     refreshCacheStatus();
                 } else {
+                    if (nameRow) nameRow.style.display = 'flex';
                     const preset = getSavedPresets().find(p => p.id === val);
                     if (preset) {
                         document.getElementById('map-cache-lat').value = parseFloat(preset.lat).toFixed(4);
@@ -2195,14 +2202,19 @@
             };
         }
 
-        // Save Current Preset Handler
+        // Save Current Preset Handler (Custom and New Presets Only)
         const btnSavePreset = document.getElementById('btn-save-preset');
         if (btnSavePreset) {
             btnSavePreset.onclick = () => {
+                const select = document.getElementById('map-cache-preset');
+                if (select && select.value === 'default') {
+                    alert('My Home Airfield is the fixed default and cannot be modified. Select "+ Enter New Field Location..." to create a new airfield preset.');
+                    return;
+                }
                 const nameInput = document.getElementById('map-cache-name');
                 const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : null;
                 if (!name) {
-                    alert('Please enter a name for this flight field preset (e.g. "My Home Airfield").');
+                    alert('Please enter a name for your airfield preset.');
                     if (nameInput) nameInput.focus();
                     return;
                 }
@@ -2211,22 +2223,7 @@
                 const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
                 const zoom = document.getElementById('map-cache-zoom').value || '18';
 
-                const select = document.getElementById('map-cache-preset');
-                const isDefault = (!select || select.value === 'default');
-
-                if (isDefault) {
-                    DEFAULT_PRESET.name = name;
-                    DEFAULT_PRESET.lat = lat;
-                    DEFAULT_PRESET.lon = lon;
-                    DEFAULT_PRESET.radius = rad;
-                    DEFAULT_PRESET.zoom = zoom;
-                    localStorage.setItem('pilot_default_preset_name', name);
-                    localStorage.setItem('pilot_default_preset_lat', lat.toString());
-                    localStorage.setItem('pilot_default_preset_lon', lon.toString());
-                    localStorage.setItem('pilot_default_preset_rad', rad.toString());
-                    localStorage.setItem('pilot_default_preset_zoom', zoom);
-                    populatePresetDropdown('default');
-                } else if (select && select.value !== 'new') {
+                if (select && select.value !== 'new') {
                     updateCustomPreset(select.value, name, lat, lon, rad, zoom);
                     populatePresetDropdown(select.value);
                 } else {
@@ -2410,10 +2407,6 @@
         refreshCacheStatus();
         updateMapEstimate();
         populatePresetDropdown();
-        const initNameEl = document.getElementById('map-cache-name');
-        if (initNameEl && !initNameEl.value) {
-            initNameEl.value = DEFAULT_PRESET.name;
-        }
 
         document.getElementById('btn-start-cache-dl').onclick = () => {
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
