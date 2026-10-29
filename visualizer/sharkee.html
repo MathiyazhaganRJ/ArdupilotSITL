@@ -608,6 +608,7 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            white-space: nowrap;
         }
 
         .btn-copy-all:hover {
@@ -1464,12 +1465,13 @@
         <!-- Section: SITL Terminal Commands -->
         <div class="section-title" style="margin: 12px 0 6px 0; display:flex; justify-content:space-between; align-items:center;">
             <span>Terminal SITL Commands</span>
-            <div style="display:flex; gap:6px;">
-                <button id="btn-inject-weather" class="btn-copy-all" style="background:var(--accent); color:#fff; border:none;" title="Directly transmit these wind parameters to SITL over MAVLink">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button id="btn-inject-weather" class="btn-copy-all" title="Transmit current wind parameters to SITL over MAVLink">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
-                    <span>Inject SITL</span>
+                    <span>Update</span>
                 </button>
                 <button id="btn-copy-all-cmd" class="btn-copy-all" title="Copy all SITL wind parameters to clipboard">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2075,18 +2077,25 @@
             fetchLiveWeather(currentPlaneLat, currentPlaneLon);
         };
 
-        // Wire dedicated Inject to SITL button
+        // Wire dedicated Update button
         const btnInjectWeather = document.getElementById('btn-inject-weather');
         if (btnInjectWeather) {
             btnInjectWeather.onclick = function () {
                 injectCurrentWeatherToSitl();
                 const origHtml = this.innerHTML;
-                this.innerHTML = '<span style="color:#fff;">✓ Injected!</span>';
-                this.style.background = 'var(--success)';
+                this.innerHTML = `
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Updated</span>
+                `;
+                this.style.borderColor = 'var(--success)';
+                this.style.color = 'var(--success)';
                 setTimeout(() => {
                     this.innerHTML = origHtml;
-                    this.style.background = 'var(--accent)';
-                }, 1200);
+                    this.style.borderColor = '';
+                    this.style.color = '';
+                }, 1500);
             };
         }
 
