@@ -2644,6 +2644,47 @@
         let drStartTime = 0;
         const lastFixPosition = new THREE.Vector3();
 
+        // Direct ArduPilot EKF and GPS Telemetry for Genuine Drift Tracking
+        let arduGpsLat = 0.0;
+        let arduGpsLon = 0.0;
+        let arduSimLat = 0.0;
+        let arduSimLon = 0.0;
+        let arduEkfHorizAccuracy = 0.0; // EKF 1-sigma horizontal position uncertainty from ESTIMATOR_STATUS (meters)
+        let arduMeasuredDriftMeters = 0.0; // Distance between EKF Estimated Position (Red plane) and Raw GPS / Sim truth (Blue plane)
+        let arduMeasuredDriftBearing = 0.0; // Bearing of drift vector
+
+        function calcGeodeticDistance(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+            const R = 6371000;
+            const p1 = lat1 * Math.PI / 180;
+            const p2 = lat2 * Math.PI / 180;
+            const dp = (lat2 - lat1) * Math.PI / 180;
+            const dl = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+                      Math.cos(p1) * Math.cos(p2) *
+                      Math.sin(dl / 2) * Math.sin(dl / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function calcGeodeticBearing(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+            const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+            const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                      Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+            return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+        }
+
+        function updateArduPilotDrift() {
+            // Priority for truth reference: SIMSTATE (true physics in SITL) -> GPS_RAW_INT (raw receiver position)
+            const refLat = (arduSimLat && Math.abs(arduSimLat) > 0.01) ? arduSimLat : arduGpsLat;
+            const refLon = (arduSimLon && Math.abs(arduSimLon) > 0.01) ? arduSimLon : arduGpsLon;
+
+            if (currentPlaneLat && currentPlaneLon && refLat && refLon) {
+                arduMeasuredDriftMeters = calcGeodeticDistance(currentPlaneLat, currentPlaneLon, refLat, refLon);
+                arduMeasuredDriftBearing = calcGeodeticBearing(currentPlaneLat, currentPlaneLon, refLat, refLon);
+            }
+        }
+
         // 1. Last Known GPS Fix Marker
         const lastFixMarker = new THREE.Group();
         drGroup.add(lastFixMarker);
@@ -2880,7 +2921,12 @@
                 const posAbsText = isDeadReckoning ? 'DENIED >' : 'VALID >';
 
                 let driftEst = '±0.0m';
-                if (isDeadReckoning && drStartTime > 0) {
+                if (arduMeasuredDriftMeters > 0.5) {
+                    const card = getCardinal(arduMeasuredDriftBearing);
+                    driftEst = `${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
+                } else if (arduEkfHorizAccuracy > 0) {
+                    driftEst = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
+                } else if (isDeadReckoning && drStartTime > 0) {
                     const elapsedSec = (performance.now() - drStartTime) / 1000;
                     driftEst = `±${(elapsedSec * 0.45).toFixed(1)}m`;
                 }
@@ -3393,6 +3439,7 @@
                 if (data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
                     currentPlaneLat = data.lat;
                     currentPlaneLon = data.lon;
+                    updateArduPilotDrift();
                     const coordsBadge = document.getElementById('weather-coords-badge');
                     if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
                 }
@@ -3487,6 +3534,11 @@
                 }
             }
             else if (data.type === 'GPS_RAW_INT') {
+                if (data.gps_lat && data.gps_lon && (Math.abs(data.gps_lat) > 0.01 || Math.abs(data.gps_lon) > 0.01)) {
+                    arduGpsLat = data.gps_lat;
+                    arduGpsLon = data.gps_lon;
+                    updateArduPilotDrift();
+                }
                 const fixTypes = ['NO GPS', 'NO FIX', '2D FIX', '3D FIX', 'DGPS', 'RTK FLT', 'RTK FIX'];
                 const fixName = fixTypes[data.fix_type] || `FIX (${data.fix_type})`;
                 const sats = (data.satellites_visible !== undefined) ? data.satellites_visible : 0;
@@ -3498,7 +3550,17 @@
                     setDeadReckoningMode(false, fixName);
                 }
             }
+            else if (data.type === 'SIMSTATE') {
+                if (data.sim_lat && data.sim_lon && (Math.abs(data.sim_lat) > 0.01 || Math.abs(data.sim_lon) > 0.01)) {
+                    arduSimLat = data.sim_lat;
+                    arduSimLon = data.sim_lon;
+                    updateArduPilotDrift();
+                }
+            }
             else if (data.type === 'ESTIMATOR_STATUS') {
+                if (data.pos_horiz_accuracy !== undefined && data.pos_horiz_accuracy !== null) {
+                    arduEkfHorizAccuracy = data.pos_horiz_accuracy;
+                }
                 // Update FMS CDU live status telemetry from genuine EKF3 state
                 const statPosAbs = document.getElementById('fms-stat-pos-abs');
                 if (statPosAbs) {
@@ -3720,11 +3782,17 @@
                 hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
             }
 
-            // Animate Dead Reckoning 3D Visual Suite
-            if (isDeadReckoning) {
-                const elapsedSec = (performance.now() - drStartTime) / 1000.0;
-                // Position uncertainty grows at ~1.2 m/s drift rate (standard un-aided aviation IMU model)
-                const uncRadius = Math.min(250.0, 4.0 + (elapsedSec * 1.2));
+            // Animate Dead Reckoning 3D Visual Suite directly from ArduPilot drift
+            if (isDeadReckoning || arduMeasuredDriftMeters > 1.0) {
+                let uncRadius = 4.0;
+                if (arduMeasuredDriftMeters > 1.0) {
+                    uncRadius = Math.max(4.0, Math.min(500.0, arduMeasuredDriftMeters));
+                } else if (arduEkfHorizAccuracy > 0) {
+                    uncRadius = Math.max(4.0, Math.min(500.0, arduEkfHorizAccuracy));
+                } else {
+                    const elapsedSec = (performance.now() - drStartTime) / 1000.0;
+                    uncRadius = Math.min(250.0, 4.0 + (elapsedSec * 1.2));
+                }
                 const groundY = mapGroup.position.y;
 
                 uncertaintyGroup.position.set(vtolGroup.position.x, groundY, vtolGroup.position.z);
@@ -3749,14 +3817,28 @@
                 plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
                 plumbLine.computeLineDistances();
 
-                // Annunciator and telemetry badge updates
+                // Annunciator and telemetry badge updates directly from ArduPilot
                 const navEl = document.getElementById('nav-fix-status');
                 if (navEl) {
-                    navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                    if (arduMeasuredDriftMeters > 1.0) {
+                        const card = getCardinal(arduMeasuredDriftBearing);
+                        navEl.innerText = `DR DRIFT: ${arduMeasuredDriftMeters.toFixed(1)}m ${card}`;
+                    } else if (arduEkfHorizAccuracy > 0) {
+                        navEl.innerText = `EKF ACC: ±${arduEkfHorizAccuracy.toFixed(1)}m`;
+                    } else {
+                        const elapsedSec = (performance.now() - drStartTime) / 1000.0;
+                        navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                    }
                 }
                 const fmsDriftEl = document.getElementById('fms-stat-drift');
                 if (fmsDriftEl) {
-                    fmsDriftEl.innerText = `±${uncRadius.toFixed(1)}m`;
+                    if (arduMeasuredDriftMeters > 1.0) {
+                        fmsDriftEl.innerText = `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                    } else if (arduEkfHorizAccuracy > 0) {
+                        fmsDriftEl.innerText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
+                    } else {
+                        fmsDriftEl.innerText = `±${uncRadius.toFixed(1)}m`;
+                    }
                 }
             }
 

@@ -64,6 +64,12 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         230, 100000, 0, 0, 0, 0, 0
                     )
+                    # Explicitly request SIMSTATE (Msg 164) at 10Hz (True SITL Physics coordinates)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        164, 100000, 0, 0, 0, 0, 0
+                    )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
             data = {"type": msg.get_type()}
@@ -119,6 +125,13 @@ async def mavlink_listener():
                 data['fix_type'] = getattr(msg, 'fix_type', 0)
                 data['satellites_visible'] = getattr(msg, 'satellites_visible', 0)
                 data['eph'] = getattr(msg, 'eph', 0)
+                data['gps_lat'] = getattr(msg, 'lat', 0) / 1e7
+                data['gps_lon'] = getattr(msg, 'lon', 0) / 1e7
+                data['gps_alt'] = getattr(msg, 'alt', 0) / 1000.0
+                data['h_acc'] = getattr(msg, 'h_acc', 0) / 1000.0
+            elif msg.get_type() == 'SIMSTATE':
+                data['sim_lat'] = getattr(msg, 'lat', 0) / 1e7
+                data['sim_lon'] = getattr(msg, 'lng', 0) / 1e7
             elif msg.get_type() == 'ESTIMATOR_STATUS':
                 flags = getattr(msg, 'flags', 0)
                 data['flags'] = flags
@@ -128,6 +141,8 @@ async def mavlink_listener():
                 data['pos_horiz_ratio'] = getattr(msg, 'pos_horiz_ratio', 0.0)
                 data['vel_ratio'] = getattr(msg, 'vel_ratio', 0.0)
                 data['innov_ratio'] = max(data.get('pos_horiz_ratio', 0.0), data.get('vel_ratio', 0.0))
+                data['pos_horiz_accuracy'] = getattr(msg, 'pos_horiz_accuracy', 0.0)
+                data['pos_vert_accuracy'] = getattr(msg, 'pos_vert_accuracy', 0.0)
                 
             if clients:
                 message = json.dumps(data)
