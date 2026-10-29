@@ -1184,14 +1184,6 @@
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-map-cache" title="Pre-Download & Cache Offline Satellite Map">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                <line x1="8" y1="2" x2="8" y2="18"></line>
-                <line x1="16" y1="6" x2="16" y2="22"></line>
-            </svg>
-        </button>
         <button class="toolbar-btn" id="btn-toggle-fms" title="Toggle FMS Dead Reckoning & Navigation CDU">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -1217,7 +1209,7 @@
                 <h2>ArduPilot SITL</h2>
             </div>
             <div style="display: flex; gap: 6px;">
-                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Satellite Map Cache & Pre-Downloader">
+                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Map & Airspace Presets">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
                         <line x1="8" y1="2" x2="8" y2="18"></line>
@@ -1249,24 +1241,6 @@
                     style="color: var(--success);">0</span></div>
             <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
                     style="color: var(--success); font-weight:700;">3D FIX</span></div>
-        </div>
-
-        <!-- Offline Satellite Map Pre-Download & Region Selection Card -->
-        <div class="data-card" style="margin-top: 10px; border: 1px solid rgba(0, 113, 227, 0.45); background: rgba(0, 113, 227, 0.08); box-shadow: 0 2px 10px rgba(0, 113, 227, 0.12);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <span style="font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                    OFFLINE MAP CACHE
-                </span>
-                <span id="panel-cache-badge" style="font-size: 10px; font-weight: 700; color: var(--success); background: rgba(52, 199, 89, 0.15); padding: 1px 7px; border-radius: 4px;">Checking...</span>
-            </div>
-            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px;">
-                Pre-download 3D satellite tiles before heading to the field. Operates 100% offline with zero internet or SITL.
-            </div>
-            <button id="btn-open-cache-panel" style="width: 100%; padding: 8px 12px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,113,227,0.35);">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Select & Pre-Download Region
-            </button>
         </div>
 
         <div class="section-title">Vehicle Config</div>
@@ -1473,42 +1447,62 @@
     </div>
 
     <!-- Live Weather & SITL Terminal Commands Widget -->
-    <!-- Offline Map Pre-Downloader Widget -->
+    <!-- Offline Map & Saved Presets Manager Widget -->
     <div id="offline-map-widget">
         <div class="weather-header">
             <div>
                 <h3 style="font-size: 14px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                    OFFLINE AIRSPACE CACHE
+                    OFFLINE MAP & PRESETS
                 </h3>
-                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Pre-download satellite tiles before field operations</div>
+                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 1px;">Save field presets & download maps for zero-internet flight</div>
             </div>
             <button id="btn-close-map-cache" class="icon-btn" style="width: 26px; height: 26px;" title="Close">✕</button>
         </div>
 
-        <div style="font-size: 11px; line-height: 1.4; color: var(--text-secondary); background: rgba(0, 113, 227, 0.08); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 6px; margin: 10px 0;">
-            <b style="color: var(--text-primary);">Zero SITL Required:</b> Pre-download satellite tiles over home/base Wi-Fi now. Once cached, the 3D map runs 100% offline in remote field areas.
+        <!-- 3D Satellite Map Visibility Toggle Switch -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; margin: 8px 0; background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 8px;">
+            <span style="font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                3D Satellite Terrain Map
+            </span>
+            <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
+                <input type="checkbox" id="chk-toggle-map-vis" checked style="accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;">
+                <span id="map-vis-status" style="font-size: 10px; font-weight: 700; color: var(--success);">ACTIVE</span>
+            </label>
         </div>
 
-        <div id="map-cache-disk-summary" style="margin: 8px 0; font-size: 11px; padding: 7px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+        <div id="map-cache-disk-summary" style="margin: 6px 0 10px; font-size: 11px; padding: 7px 10px; border-radius: 8px; background: rgba(52, 199, 89, 0.12); color: var(--success); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
             <span style="display: flex; align-items: center; gap: 5px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-                Disk Storage:
+                Cached Offline Storage:
             </span>
             <span id="map-cache-count-label">Checking...</span>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
-            <div>
-                <span style="font-size: 9px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">FLIGHT FIELD PRESET</span>
-                <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; margin-top: 3px;">
-                    <option value="8.3105,77.3137" selected>SITL Test Airfield (Padanilam, India)</option>
-                    <option value="37.4220,-122.0841">Mountain View Drone Range (California, USA)</option>
-                    <option value="-35.363261,149.165230">Canberra CMAC Flying Field (Australia)</option>
-                    <option value="custom">-- Custom Coordinates (Enter Below) --</option>
-                </select>
+        <!-- Presets Selection & Management Box -->
+        <div style="background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">SAVED AIRFIELD PRESETS</span>
+                <button id="btn-delete-preset" class="btn-refresh" style="font-size: 10px; padding: 2px 7px; color: var(--danger); border-color: rgba(255, 69, 58, 0.35); display: none;" title="Delete selected custom preset">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Delete Preset
+                </button>
             </div>
+            <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 12px; font-weight: 600; margin-bottom: 8px;">
+                <!-- Populated dynamically from localStorage -->
+            </select>
 
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="text" id="map-cache-name" placeholder="Preset Name (e.g. South Runway)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 6px 8px; font-size: 11px;">
+                <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 6px 10px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;" title="Save current coordinates & radius as a named preset">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Save Preset
+                </button>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
                 <span class="data-label" style="font-size: 11px;">Target Coordinates</span>
                 <div style="display: flex; gap: 4px;">
@@ -1562,7 +1556,7 @@
 
         <button id="btn-start-cache-dl" style="width: 100%; justify-content: center; padding: 10px; font-size: 13px; font-weight: 700; background: var(--accent); color: #fff; border: none; border-radius: 8px; margin-top: 6px; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,113,227,0.35);">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Pre-Download Area to Laptop Drive
+            Download Offline Map
         </button>
 
         <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 10px;">
@@ -1880,53 +1874,211 @@
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
         };
 
-        // Offline Map Pre-Downloader Controls
-        const btnToggleMapCache = document.getElementById('btn-toggle-map-cache');
+        // Offline Map & Saved Presets Controls
         const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
-        const btnOpenCachePanel = document.getElementById('btn-open-cache-panel');
         const offlineMapWidget = document.getElementById('offline-map-widget');
         const btnCloseMapCache = document.getElementById('btn-close-map-cache');
+        const chkToggleMapVis = document.getElementById('chk-toggle-map-vis');
+        const mapVisStatus = document.getElementById('map-vis-status');
 
         function toggleOfflineMapWidget() {
             const isHidden = offlineMapWidget.style.display === 'none';
             offlineMapWidget.style.display = isHidden ? 'block' : 'none';
-            if (btnToggleMapCache) btnToggleMapCache.style.opacity = isHidden ? '1.0' : '0.45';
+            if (btnOfflineMapHdr) {
+                btnOfflineMapHdr.style.color = isHidden ? 'var(--accent)' : '';
+                btnOfflineMapHdr.style.borderColor = isHidden ? 'var(--accent)' : '';
+            }
             if (isHidden) {
                 refreshCacheStatus();
                 updateMapEstimate();
-                if (currentPlaneLat && currentPlaneLon && (!document.getElementById('map-cache-lat').value || document.getElementById('map-cache-lat').value == '8.3105')) {
-                    document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
-                    document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
-                }
+                populatePresetDropdown();
             }
         }
 
-        if (btnToggleMapCache) btnToggleMapCache.onclick = toggleOfflineMapWidget;
         if (btnOfflineMapHdr) btnOfflineMapHdr.onclick = toggleOfflineMapWidget;
-        if (btnOpenCachePanel) btnOpenCachePanel.onclick = () => {
-            offlineMapWidget.style.display = 'block';
-            if (btnToggleMapCache) btnToggleMapCache.style.opacity = '1.0';
-            refreshCacheStatus();
-            updateMapEstimate();
+        if (btnCloseMapCache) btnCloseMapCache.onclick = () => {
+            offlineMapWidget.style.display = 'none';
+            if (btnOfflineMapHdr) {
+                btnOfflineMapHdr.style.color = '';
+                btnOfflineMapHdr.style.borderColor = '';
+            }
         };
-        if (btnCloseMapCache) btnCloseMapCache.onclick = () => { offlineMapWidget.style.display = 'none'; };
+
+        // 3D Map Visibility Toggle
+        if (chkToggleMapVis) {
+            chkToggleMapVis.onchange = (e) => {
+                const isVis = e.target.checked;
+                mapGroup.visible = isVis;
+                if (mapVisStatus) {
+                    mapVisStatus.innerText = isVis ? 'ACTIVE' : 'HIDDEN';
+                    mapVisStatus.style.color = isVis ? 'var(--success)' : 'var(--text-secondary)';
+                }
+            };
+        }
 
         makeDraggable(offlineMapWidget, offlineMapWidget.querySelector('.weather-header'));
 
-        // Preset Airfield Selection
+        // Preset Storage Architecture (localStorage)
+        const DEFAULT_PRESET = {
+            id: 'default',
+            name: 'SITL Test Airfield (Padanilam, India)',
+            lat: 8.3105,
+            lon: 77.3137,
+            radius: 3.0,
+            zoom: '18'
+        };
+
+        function getSavedPresets() {
+            try {
+                const raw = localStorage.getItem('pilot_flight_presets');
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCustomPreset(name, lat, lon, radius, zoom) {
+            let presets = getSavedPresets();
+            const id = 'preset_' + Date.now();
+            presets.push({ id, name, lat, lon, radius, zoom });
+            localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
+            return id;
+        }
+
+        function deleteCustomPreset(id) {
+            let presets = getSavedPresets().filter(p => p.id !== id);
+            localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
+        }
+
+        function populatePresetDropdown(selectedId = null) {
+            const select = document.getElementById('map-cache-preset');
+            const deleteBtn = document.getElementById('btn-delete-preset');
+            if (!select) return;
+
+            select.innerHTML = '';
+
+            // Default SITL Airfield
+            const defOpt = document.createElement('option');
+            defOpt.value = DEFAULT_PRESET.id;
+            defOpt.innerText = `★ ${DEFAULT_PRESET.name}`;
+            select.appendChild(defOpt);
+
+            // User Saved Presets
+            const customPresets = getSavedPresets();
+            customPresets.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `📍 ${p.name}`;
+                select.appendChild(opt);
+            });
+
+            // New Preset Option
+            const newOpt = document.createElement('option');
+            newOpt.value = 'new';
+            newOpt.innerText = `+ Enter New Field Location...`;
+            select.appendChild(newOpt);
+
+            if (selectedId) {
+                select.value = selectedId;
+            } else if (!select.value) {
+                select.value = DEFAULT_PRESET.id;
+            }
+
+            // Show delete button only for custom presets
+            if (deleteBtn) {
+                deleteBtn.style.display = (select.value && select.value !== 'default' && select.value !== 'new') ? 'inline-flex' : 'none';
+            }
+        }
+
         const mapPresetEl = document.getElementById('map-cache-preset');
         if (mapPresetEl) {
             mapPresetEl.onchange = (e) => {
-                if (e.target.value !== 'custom') {
-                    const parts = e.target.value.split(',').map(Number);
-                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                        document.getElementById('map-cache-lat').value = parts[0].toFixed(4);
-                        document.getElementById('map-cache-lon').value = parts[1].toFixed(4);
-                        updateMapEstimate();
-                        if (typeof updateMap === 'function') {
-                            updateMap(parts[0], parts[1], true);
-                        }
+                const val = e.target.value;
+                const deleteBtn = document.getElementById('btn-delete-preset');
+                const nameInput = document.getElementById('map-cache-name');
+
+                if (val === 'default') {
+                    document.getElementById('map-cache-lat').value = DEFAULT_PRESET.lat.toFixed(4);
+                    document.getElementById('map-cache-lon').value = DEFAULT_PRESET.lon.toFixed(4);
+                    document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
+                    document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
+                    if (nameInput) nameInput.value = '';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                    updateMapEstimate();
+                    if (typeof updateMap === 'function') updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon, true);
+                } else if (val === 'new') {
+                    if (nameInput) {
+                        nameInput.value = '';
+                        nameInput.focus();
                     }
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                } else {
+                    const preset = getSavedPresets().find(p => p.id === val);
+                    if (preset) {
+                        document.getElementById('map-cache-lat').value = parseFloat(preset.lat).toFixed(4);
+                        document.getElementById('map-cache-lon').value = parseFloat(preset.lon).toFixed(4);
+                        document.getElementById('map-cache-radius').value = preset.radius;
+                        document.getElementById('map-cache-zoom').value = preset.zoom;
+                        if (nameInput) nameInput.value = preset.name;
+                        if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+                        updateMapEstimate();
+                        if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
+                    }
+                }
+            };
+        }
+
+        // Save Current Preset Handler
+        const btnSavePreset = document.getElementById('btn-save-preset');
+        if (btnSavePreset) {
+            btnSavePreset.onclick = () => {
+                const nameInput = document.getElementById('map-cache-name');
+                const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : null;
+                if (!name) {
+                    alert('Please enter a name for this flight field preset (e.g. "Padanilam South Strip").');
+                    if (nameInput) nameInput.focus();
+                    return;
+                }
+                const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+                const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+                const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+                const zoom = document.getElementById('map-cache-zoom').value || '18';
+
+                const newId = saveCustomPreset(name, lat, lon, rad, zoom);
+                populatePresetDropdown(newId);
+
+                // Visual feedback on save button
+                const origHtml = btnSavePreset.innerHTML;
+                btnSavePreset.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Saved!';
+                btnSavePreset.style.borderColor = 'var(--success)';
+                btnSavePreset.style.color = 'var(--success)';
+                setTimeout(() => {
+                    btnSavePreset.innerHTML = origHtml;
+                    btnSavePreset.style.borderColor = '';
+                    btnSavePreset.style.color = '';
+                }, 1500);
+
+                if (typeof updateMap === 'function') updateMap(lat, lon, true);
+            };
+        }
+
+        // Delete Preset Handler
+        const btnDeletePreset = document.getElementById('btn-delete-preset');
+        if (btnDeletePreset) {
+            btnDeletePreset.onclick = () => {
+                const select = document.getElementById('map-cache-preset');
+                const currentId = select ? select.value : null;
+                if (currentId && currentId !== 'default' && currentId !== 'new') {
+                    deleteCustomPreset(currentId);
+                    populatePresetDropdown('default');
+                    const def = DEFAULT_PRESET;
+                    document.getElementById('map-cache-lat').value = def.lat.toFixed(4);
+                    document.getElementById('map-cache-lon').value = def.lon.toFixed(4);
+                    document.getElementById('map-cache-radius').value = def.radius;
+                    document.getElementById('map-cache-zoom').value = def.zoom;
+                    document.getElementById('map-cache-name').value = '';
+                    updateMapEstimate();
+                    if (typeof updateMap === 'function') updateMap(def.lat, def.lon, true);
                 }
             };
         }
@@ -1989,9 +2141,6 @@
                     const countEl = document.getElementById('map-cache-count-label');
                     if (countEl) countEl.innerText = `${data.cached_count} tiles (${data.cached_mb} MB)`;
 
-                    const panelBadge = document.getElementById('panel-cache-badge');
-                    if (panelBadge) panelBadge.innerText = `${data.cached_count} Tiles (${data.cached_mb} MB)`;
-
                     const progBox = document.getElementById('map-cache-prog-box');
                     const progBar = document.getElementById('map-cache-prog-bar');
                     const progPct = document.getElementById('map-cache-prog-pct');
@@ -2015,9 +2164,9 @@
                             progStat.innerText = data.status || 'Complete! Ready for Offline Flight.';
                             btnDl.disabled = false;
                             btnDl.style.opacity = '1.0';
-                            btnDl.innerText = 'Download Complete! (Ready Offline)';
+                            btnDl.innerText = '✓ Offline Map Saved (Ready for Field Flight)';
                             setTimeout(() => {
-                                btnDl.innerText = 'Pre-Download Area to Laptop Drive';
+                                btnDl.innerText = 'Download Offline Map';
                             }, 4000);
                         }
                     }
@@ -2025,9 +2174,10 @@
                 .catch(() => {});
         }
 
-        // Initialize cache status and estimates on page load
+        // Initialize cache status, presets, and estimates on page load
         refreshCacheStatus();
         updateMapEstimate();
+        populatePresetDropdown();
 
         document.getElementById('btn-start-cache-dl').onclick = () => {
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
@@ -2053,7 +2203,7 @@
                 cachePollInterval = setInterval(refreshCacheStatus, 400);
             })
             .catch(err => {
-                alert('Error starting pre-download: ' + err);
+                alert('Error starting download: ' + err);
             });
         };
 
