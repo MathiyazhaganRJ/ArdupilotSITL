@@ -2881,12 +2881,12 @@
                         <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-3l">&lt; SIM_FLOW [1]</span><span class="crt-cyan crt-clickable" id="row-3r">FLOW_USE [1] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>VELOCITY SOURCE</span><span class="dim">SRC FALLBACK</span></div>
-                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-4l">&lt; VEL FLOW [5]</span><span class="crt-cyan crt-clickable" id="row-4r">SRC_OPT [1] &gt;</span></div>
+                        <div class="crt-label-line"><span>VELOCITY SOURCE</span><span class="dim">JAM EXPECTED</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-4l">&lt; VEL FLOW [5]</span><span class="crt-amber crt-clickable" id="row-4r">EK3_OPT [1] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>AHRS GPS SWITCH</span><span class="dim">RESTORE AHRS</span></div>
-                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-5l">&lt; AHRS_GPS [0]</span><span class="crt-green crt-clickable" id="row-5r">AHRS_GPS [1] &gt;</span></div>
+                        <div class="crt-label-line"><span>NO DCM FALLBACK</span><span class="dim">AHRS GPS ISOLATE</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-5l">&lt; AHRS_OPT [3]</span><span class="crt-amber crt-clickable" id="row-5r">AHRS_GPS [0] &gt;</span></div>
                     </div>
                     <div class="crt-row">
                         <div class="crt-label-line"><span>WIND DR ESTIMATE</span><span class="dim">NAV POS PAGE</span></div>
@@ -2902,9 +2902,9 @@
                     '3L': () => stageParam('SIM_FLOW_ENABLE', 1.0, 'ENABLE OPT FLOW'),
                     '3R': () => stageParam('EK3_FLOW_USE', 1.0, 'USE OPT FLOW'),
                     '4L': () => stageParam('EK3_SRC1_VELXY', 5.0, 'VEL FLOW SRC'),
-                    '4R': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
-                    '5L': () => stageParam('AHRS_GPS_USE', 0.0, 'IGNORE GPS'),
-                    '5R': () => stageParam('AHRS_GPS_USE', 1.0, 'RESTORE GPS'),
+                    '4R': () => stageParam('EK3_OPTIONS', 1.0, 'JAMMING EXPECT'),
+                    '5L': () => stageParam('AHRS_OPTIONS', 3.0, 'NO DCM FALLBACK'),
+                    '5R': () => stageParam('AHRS_GPS_USE', 0.0, 'ISOLATE AHRS'),
                     '6L': () => stageParam('EK3_DRAG_BCOEF_X', 25.0, 'DRAG COEFF X'),
                     '6R': () => { cduCurrentPage = 1; renderCduPage(); }
                 };
@@ -2920,24 +2920,24 @@
                         <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-1l">&lt; GPS_EN [0]</span><span class="crt-green crt-clickable" id="row-1r">GPS_EN [1] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>GPS JAMMING</span><span class="dim">OPTICAL FLOW</span></div>
-                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-2l">&lt; GPS_JAM [1]</span><span class="crt-cyan crt-clickable" id="row-2r">FLOW_EN [1] &gt;</span></div>
+                        <div class="crt-label-line"><span>GPS JAMMING</span><span class="dim">CLEAR JAMMING</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-2l">&lt; GPS_JAM [1]</span><span class="crt-green crt-clickable" id="row-2r">CLEAR_JAM [0] &gt;</span></div>
                     </div>
                     <div class="crt-row">
                         <div class="crt-label-line"><span>FLOW FUSION</span><span class="dim">VELOCITY SRC</span></div>
                         <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-3l">&lt; FLOW_USE [1]</span><span class="crt-cyan crt-clickable" id="row-3r">SRC_VEL [5] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>SRC OPTIONS</span><span class="dim">DRAG COEFF X</span></div>
-                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-4l">&lt; SRC_OPT [1]</span><span class="crt-cyan crt-clickable" id="row-4r">DRAG_X [25] &gt;</span></div>
+                        <div class="crt-label-line"><span>JAM EXPECTED</span><span class="dim">DCM LOCKOUT</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-4l">&lt; EK3_OPT [1]</span><span class="crt-green crt-clickable" id="row-4r">AHRS_OPT [3] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>EKF FAILSAFE</span><span class="dim">GLITCH GATE</span></div>
-                        <div class="crt-data-line"><span class="crt-cyan crt-clickable" id="row-5l">&lt; FS_EKF [0.8]</span><span class="crt-cyan crt-clickable" id="row-5r">GLITCH [25m] &gt;</span></div>
+                        <div class="crt-label-line"><span>ISOLATE AHRS</span><span class="dim">DRAG COEFF X</span></div>
+                        <div class="crt-data-line"><span class="crt-amber crt-clickable" id="row-5l">&lt; AHRS_GPS [0]</span><span class="crt-cyan crt-clickable" id="row-5r">DRAG_X [25] &gt;</span></div>
                     </div>
                     <div class="crt-row">
-                        <div class="crt-label-line"><span>ATIS SOP MANUAL</span><span class="dim">RETURN NAV</span></div>
-                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-6l">&lt; ATIS PDF</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
+                        <div class="crt-label-line"><span>SOP MANUAL</span><span class="dim">RETURN NAV</span></div>
+                        <div class="crt-data-line"><span class="crt-green crt-clickable" id="row-6l">&lt; SOP PDF</span><span class="crt-cyan crt-clickable" id="row-6r">NAV POS &gt;</span></div>
                     </div>
                 `;
 
@@ -2945,16 +2945,16 @@
                     '1L': () => stageParam('SIM_GPS1_ENABLE', 0.0, 'GPS DENIAL'),
                     '1R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'GPS RECOVERY'),
                     '2L': () => stageParam('SIM_GPS1_JAM', 1.0, 'GPS JAMMING'),
-                    '2R': () => stageParam('SIM_FLOW_ENABLE', 1.0, 'OPTICAL FLOW'),
+                    '2R': () => stageParam('SIM_GPS1_JAM', 0.0, 'CLEAR JAMMING'),
                     '3L': () => stageParam('EK3_FLOW_USE', 1.0, 'FLOW FUSION'),
                     '3R': () => stageParam('EK3_SRC1_VELXY', 5.0, 'VELOCITY SRC'),
-                    '4L': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
-                    '4R': () => stageParam('EK3_DRAG_BCOEF_X', 25.0, 'DRAG COEFF X'),
-                    '5L': () => stageParam('FS_EKF_THRESH', 0.8, 'FAILSAFE THRESH'),
-                    '5R': () => stageParam('EK3_GLITCH_RAD', 25.0, 'GLITCH RAD'),
+                    '4L': () => stageParam('EK3_OPTIONS', 1.0, 'JAM EXPECT'),
+                    '4R': () => stageParam('AHRS_OPTIONS', 3.0, 'NO DCM FALLBACK'),
+                    '5L': () => stageParam('AHRS_GPS_USE', 0.0, 'ISOLATE AHRS'),
+                    '5R': () => stageParam('EK3_DRAG_BCOEF_X', 25.0, 'DRAG COEFF X'),
                     '6L': () => {
                         window.open('ATIS_GPS_DENIAL_DEAD_RECKONING_SOP.pdf', '_blank');
-                        setCduScratchpad('OPENING ATIS PDF MANUAL', false);
+                        setCduScratchpad('OPENING SOP MANUAL', false);
                     },
                     '6R': () => { cduCurrentPage = 1; renderCduPage(); }
                 };

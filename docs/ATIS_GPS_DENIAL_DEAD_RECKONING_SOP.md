@@ -54,14 +54,14 @@
 
 ---
 
-### `FS_EKF_THRESH` [FLIGHT SAFETY FAILSAFE RATIO]
-- **DEFAULT:** `0.80` $\rightarrow$ **ANTI-JAM TARGET:** `0.60` to `0.65`
+### `AHRS_OPTIONS` [DCM FALLBACK INHIBIT BITMASK]
+- **DEFAULT:** `0` (FALLBACK ALLOWED) $\rightarrow$ **ANTI-JAM TARGET:** `3` (DCM LOCKOUT)
 - **MCDU COMMAND:**  
   ```bash
-  param set FS_EKF_THRESH 0.60
+  param set AHRS_OPTIONS 3
   ```
 - **DESCRIPTION:**  
-  Normalized innovation variance ratio that triggers autonomous EKF Failsafe. Lowering to `0.60` forces ArduPlane to trip failsafe immediately under jamming noise rather than tolerating noisy jumping fixes.
+  Critical anti-hunting parameter. Disables automatic fallback from EKF3 to legacy DCM (`Bit 0: FW`, `Bit 1: VTOL`). Under RF jamming, SITL still outputs `status >= 3D`. Without this parameter, `AP_AHRS` bypasses EKF dead reckoning and feeds raw jumping GPS directly to navigation, commanding erratic banks left and right.
 
 ---
 
@@ -80,7 +80,7 @@
 
 ### `EK3_DRAG_BCOEF_X` & `EK3_DRAG_BCOEF_Y` [DRAG BALLISTICS]
 - **DEFAULT:** `0.0` (DISABLED) $\rightarrow$ **AIRFRAME TARGET:** `25.0` to `35.0` ($kg/m^2$)
-- **LSK 4L COMMANDS:**  
+- **LSK 5R COMMANDS:**  
   ```bash
   param set EK3_DRAG_BCOEF_X 25
   param set EK3_DRAG_BCOEF_Y 25
@@ -90,14 +90,14 @@
 
 ---
 
-### `EK3_SRC_OPTIONS` [SENSOR FALLBACK CASCADE BITMASK]
-- **DEFAULT:** `0` (MANUAL FALLBACK) $\rightarrow$ **AUTONOMOUS TARGET:** `1` (AUTO FALLBACK)
-- **LSK 5L COMMAND:**  
+### `EK3_OPTIONS` [JAMMING EXPECTED EKF BEHAVIOR]
+- **DEFAULT:** `0` (STANDARD EKF) $\rightarrow$ **ANTI-JAM TARGET:** `1` (JAMMING EXPECTED)
+- **LSK 4L COMMAND:**  
   ```bash
-  param set EK3_SRC_OPTIONS 1
+  param set EK3_OPTIONS 1
   ```
 - **DESCRIPTION:**  
-  Enables automatic sensor cascade. Setting Bit 0 allows EKF3 to drop an unhealthy GPS autonomously and switch to Dead Reckoning or Optical Flow without pilot intervention.
+  Bit 0 (`JammingExpected`). In EKF3, prevents automatic position reset to degraded GPS upon timeout. Sets `waitingForGpsChecks = true` and `gpsDataToFuse = false`, isolating the filter in pure Dead Reckoning until all pre-flight quality checks pass continuously.
 
 ---
 
@@ -154,25 +154,30 @@
 
 ## SCENARIO 2: EW RF JAMMING COUNTERMEASURE [ANTI-HUNT PROTOCOL]
 
-* **OBJECTIVE:** Counter hostile broadband RF noise injection. Prevent aircraft from chasing jumping coordinates (the "here-and-there" hunting phenomenon) by forcing automatic innovation rejection and prompt Dead Reckoning fallback.
-* **ROOT CAUSE OF WANDERING:**
-  During RF jamming, receiver does *not* declare $fix\_type = 0$ immediately. It outputs a degraded 3D fix with jumping coordinates. L1 navigation controller turns toward each false jump, and `AHRS_GPS_USE 1` tilts horizon with false ground velocities.
-* **STEP 1 — EXECUTE ANTI-JAM DEFENSIVE PRE-CONFIGURATION (LSK 5L):**
+* **OBJECTIVE:** Counter broadband RF jamming. Prevent aircraft from chasing jumping coordinates (the "here-and-there" hunting phenomenon) by eliminating legacy DCM fallback and locking EKF3 in aerodynamic Dead Reckoning.
+* **ROOT CAUSE OF WANDERING (FROM SOURCE CODE):**
+  1. **Automatic DCM Fallback (`AP_AHRS.cpp:1813`):** Default `AHRS_OPTIONS = 0` causes `AP_AHRS` to drop into DCM whenever EKF stops using GPS while the GPS receiver reports `status >= 3D`. DCM has **no dead reckoning filter**; it feeds raw jumping coordinates (up to 400 m/s noise) straight to navigation!
+  2. **EKF Timeout Reset (`AP_NavEKF3_PosVelFusion.cpp:945`):** Without `EK3_OPTIONS = 1`, when `posTimeout` expires after 5–10 seconds of rejected GPS data, EKF3 automatically calls `ResetPosition()` directly to the bad GPS.
+  3. **Wind Estimation Convergence (`arduplane.py:2025`):** Dead reckoning calculates ground velocity via $\vec{V}_{\text{ground}} = \vec{V}_{\text{tas}} + \vec{W}_{\text{wind}}$. If jamming is injected before EKF learns the wind vector, the aircraft will wander.
+* **STEP 1 — EXECUTE ANTI-JAM PRE-CONFIGURATION (LSK 4L, 4R, 5L, 5R):**
   ```bash
-  param set EK3_SRC_OPTIONS 1
-  param set FS_EKF_THRESH 0.60
-  param set EK3_GLITCH_RAD 15
+  param set AHRS_OPTIONS 3
+  param set EK3_OPTIONS 1
   param set AHRS_GPS_USE 0
+  param set EK3_DRAG_BCOEF_X 25
+  param set EK3_DRAG_BCOEF_Y 25
   ```
-* **STEP 2 — INJECT RF JAMMING NOISE (LSK 2L TRIGGER):**
+* **STEP 2 — MANDATORY WIND-LEARNING ORBIT (PRIOR TO JAMMING):**
+  * Climb to cruise altitude and fly in `AUTO` or `LOITER` turns for **20 seconds** with good GPS to allow EKF3 to converge horizontal wind states ($\vec{W}$).
+* **STEP 3 — INJECT RF JAMMING NOISE (LSK 2L TRIGGER):**
   ```bash
   param set SIM_GPS1_JAM 1
   ```
 * **TELEMETRY DYNAMICS & FLIGHT RESPONSE:**
-  * SITL injects carrier noise: receiver HDOP inflates rapidly ($> 4.5$) and position variance surges.
-  * With `FS_EKF_THRESH 0.60`, EKF failsafe trips within 4–6 seconds.
-  * With `EK3_SRC_OPTIONS 1`, EKF3 severs the noisy GPS and cascades into Dead Reckoning.
-  * With `AHRS_GPS_USE 0`, wings remain completely level; erratic weaving is eliminated.
+  * SITL injects noise; EKF3 detects innovation errors and isolates GPS inputs.
+  * With `AHRS_OPTIONS 3`, DCM lockout blocks bypass; aircraft remains strictly in EKF3.
+  * With `EK3_OPTIONS 1`, EKF3 holds Dead Reckoning without resetting position to noise.
+  * Aircraft flies straight on planned track with zero wandering or wing-rocking.
 * **RECOVERY SEQUENCE:**
   ```bash
   param set SIM_GPS1_JAM 0
@@ -261,7 +266,7 @@
 | SCENARIO | PRE-SETUP | TRIGGER | KEY TELEMETRY | EVALUATION |
 | :--- | :--- | :--- | :--- | :--- |
 | **1. CLEAN LOSS** | Airspeed valid, `BCOEF = 25` | `param set SIM_GPS1_ENABLE 0` | `GPS.fix = 0`<br>`GPS.sats = 0` | Smooth transition to Dead Reckoning; zero wandering or wing-rock. |
-| **2. JAM COUNTER** | `EK3_SRC_OPT 1`<br>`FS_EKF 0.60`<br>`AHRS 0` | `param set SIM_GPS1_JAM 1` | `HDOP > 4.5`<br>`FS_EKF` in $< 6\text{ s}$ | Failsafe trips promptly; drops degraded GPS; zero coordinate hunting. |
+| **2. JAM COUNTER** | `AHRS_OPT 3`<br>`EK3_OPT 1`<br>`AHRS_GPS 0`<br>`20s Wind Orbit` | `param set SIM_GPS1_JAM 1` | `DCM lockout`<br>`waitingChecks 1`<br>`DR active` | DCM lockout active; EKF holds Dead Reckoning without coordinate reset; zero wandering. |
 | **3. SPOOF DEFENSE** | `GLITCH_RAD 15`<br>`AHRS_GPS 0` | `param set SIM_GPS1_GLT_X 60` | `GPS_Glitch` in STATUSTEXT | Measurement rejected at gate; internal dead reckoning maintained. |
 | **4. FLOW HOVER** | `FLOW_ENABLE 1`<br>`SRC1_VELXY 5` | `param set SIM_GPS1_ENABLE 0` | `OPTICAL_FLOW` rate $> 20\text{ Hz}$ | Zero positional drift in low-altitude hover; velocity aided by camera. |
 | **5. HIGH-WIND DR** | `WIND_SPD 12`<br>`WIND_DIR 270` | `param set SIM_GPS1_ENABLE 0` | Crab angle established; track true | Correct crosswind crab computed from drag model; path held in gusts. |
@@ -269,9 +274,9 @@
 ---
 
 ### COCKPIT MCDU / LSK QUICK-KEY MAP REFERENCE:
-* **< LSK 1L:** Clean GPS Cutoff (`SIM_GPS1_ENABLE 0`) $\quad\leftrightarrow\quad$ **LSK 1R >:** EXEC STAGED COMMAND
-* **< LSK 2L:** RF Jamming Noise (`SIM_GPS1_JAM 1`) $\quad\leftrightarrow\quad$ **LSK 2R >:** RE-ESTABLISH 3D FIX
+* **< LSK 1L:** Clean GPS Cutoff (`SIM_GPS1_ENABLE 0`) $\quad\leftrightarrow\quad$ **LSK 1R >:** RECOVER GPS (`ENABLE 1`)
+* **< LSK 2L:** RF Jamming Noise (`SIM_GPS1_JAM 1`) $\quad\leftrightarrow\quad$ **LSK 2R >:** CLEAR JAMMING (`JAM 0`)
 * **< LSK 3L:** Spoofing Offset (`SIM_GPS1_GLT_X/Y`) $\quad\leftrightarrow\quad$ **LSK 3R >:** RESET GLITCH OFFSETS
-* **< LSK 4L:** Wind Dead Reckoning (`BCOEF_X/Y 25`) $\quad\leftrightarrow\quad$ **LSK 4R >:** RESTORE SENSORS
-* **< LSK 5L:** Anti-Jam Config (`SRC 1`, `FS 0.60`, `AHRS 0`) $\quad\leftrightarrow\quad$ **LSK 5R >:** FLIGHT LOG EXPORT
-* **< LSK 6L:** OPEN THIS SOP MANUAL $\quad\leftrightarrow\quad$ **LSK 6R >:** RECOVER ALL NOMINAL
+* **< LSK 4L:** Jamming Expect (`EK3_OPTIONS 1`) $\quad\leftrightarrow\quad$ **LSK 4R >:** DCM Lockout (`AHRS_OPTIONS 3`)
+* **< LSK 5L:** Isolate AHRS (`AHRS_GPS_USE 0`) $\quad\leftrightarrow\quad$ **LSK 5R >:** Drag Coeff (`BCOEF_X 25`)
+* **< LSK 6L:** OPEN THIS SOP MANUAL $\quad\leftrightarrow\quad$ **LSK 6R >:** RETURN TO NAV POS
