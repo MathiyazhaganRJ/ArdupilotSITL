@@ -3141,7 +3141,19 @@
             tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
 
             trackColor: 0xdda14, // Color of the GPS trail line
-            trackOrigin: { x: 1, y: 0, z: 0 } // Placed perfectly at CG to eliminate tail-wag yaw oscillations
+            trackOrigin: { x: 1, y: 0, z: 0 }, // Placed perfectly at CG to eliminate tail-wag yaw oscillations
+
+            // =========================================================================
+            // WAYPOINT GUIDANCE BEAM NOSE ALIGNMENT
+            // =========================================================================
+            // Controls exactly where the active waypoint leading dotted line connects to the aircraft model.
+            // When you import a new 3D model or change the airframe, adjust these coordinates:
+            //   x: Longitudinal axis in meters. Negative (-X) is Forward toward the Nose, Positive (+X) is Backward toward the Tail.
+            //      Default: -0.80m aligns with the nose tip of the Sharkee VTOL fuselage.
+            //   y: Lateral axis in meters. Negative (-Y) is Left Wing, Positive (+Y) is Right Wing. 0.0 is exact Fuselage Centerline.
+            //   z: Vertical axis in meters. Negative (-Z) is Belly/Ground, Positive (+Z) is Canopy/Spine. e.g. 0.02m for nose tip level.
+            waypointOrigin: { x: -0.80, y: 0.0, z: 0.02 },
+            showWaypointOriginHelper: false // Set to true to draw a green marker on the nose to visually verify alignment
         };
         // ==========================================
 
@@ -3183,6 +3195,19 @@
         trackPoint.position.copy(vspToThree(CONFIG.trackOrigin));
         vtolGroup.add(trackPoint);
         const currentTrackPos = new THREE.Vector3();
+
+        // 3D Anchor for Waypoint Guidance Line Origin (Attached directly to aircraft frame)
+        const waypointOriginPoint = new THREE.Object3D();
+        waypointOriginPoint.position.copy(vspToThree(CONFIG.waypointOrigin || { x: -0.80, y: 0.0, z: 0.02 }));
+        vtolGroup.add(waypointOriginPoint);
+
+        // Visual alignment marker to help tune the nose anchor point if enabled in CONFIG
+        if (CONFIG.showWaypointOriginHelper) {
+            const helperGeo = new THREE.SphereGeometry(0.04, 16, 16);
+            const helperMat = new THREE.MeshBasicMaterial({ color: 0x30d158, wireframe: true });
+            const helperMesh = new THREE.Mesh(helperGeo, helperMat);
+            waypointOriginPoint.add(helperMesh);
+        }
 
         const loader = new THREE.GLTFLoader();
         loader.load(CONFIG.modelFile, function (gltf) {
@@ -4666,8 +4691,15 @@
             }
 
             const targetWpPos = activeWp._scenePos || latLonToScene(activeWp.lat, activeWp.lon, activeWp.alt);
-            // Elevate start point above aircraft CG (+0.35m) so it emerges cleanly from the GPS antenna
-            const originPos = new THREE.Vector3(vtolGroup.position.x, vtolGroup.position.y + 0.35, vtolGroup.position.z);
+            
+            // Get exact 3D world position of aircraft nose anchor (automatically tracks pitch, roll, yaw, and model scale)
+            const originPos = new THREE.Vector3();
+            if (typeof waypointOriginPoint !== 'undefined' && waypointOriginPoint) {
+                waypointOriginPoint.getWorldPosition(originPos);
+            } else {
+                originPos.copy(vtolGroup.position);
+            }
+
             const dir = new THREE.Vector3().subVectors(targetWpPos, originPos);
             const dist = dir.length();
 
