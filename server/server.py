@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+import time
 import threading
 import http.server
 import socketserver
@@ -19,13 +20,193 @@ connection = mavutil.mavlink_connection(MAVLINK_URL)
 clients = set()
 heartbeat_received = False
 
+class MissionHandler:
+    def __init__(self, mav_conn):
+        self.conn = mav_conn
+        self.waypoints = []
+        self.current_seq = 0
+        self.is_fetching = False
+        self.expected_count = 0
+        self.next_req_seq = 0
+        self.last_req_time = 0
+        self.retries = 0
+        self.max_retries = 5
+
+    def start_fetch(self):
+        if not self.conn:
+            return False
+        target_sys = getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        self.waypoints = []
+        self.is_fetching = True
+        self.expected_count = 0
+        self.next_req_seq = 0
+        self.retries = 0
+        self.last_req_time = time.time()
+        try:
+            self.conn.mav.mission_request_list_send(target_sys, target_comp)
+            print(f"[Mission] Requested mission list from Sys {target_sys}:{target_comp}")
+            return True
+        except Exception as e:
+            print(f"[Mission] Error requesting mission list: {e}")
+            self.is_fetching = False
+            return False
+
+    def request_item(self, seq):
+        target_sys = getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        self.last_req_time = time.time()
+        try:
+            if hasattr(self.conn.mav, 'mission_request_int_send'):
+                self.conn.mav.mission_request_int_send(target_sys, target_comp, seq)
+            else:
+                self.conn.mav.mission_request_send(target_sys, target_comp, seq)
+        except Exception as e:
+            print(f"[Mission] Error requesting item {seq}: {e}")
+
+    def set_current(self, seq):
+        target_sys = getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        try:
+            self.conn.mav.mission_set_current_send(target_sys, target_comp, int(seq))
+            print(f"[Mission] Sent MISSION_SET_CURRENT seq {seq}")
+        except Exception as e:
+            print(f"[Mission] Error setting current WP: {e}")
+
+    def handle_msg(self, msg):
+        mtype = msg.get_type()
+        target_sys = getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self.conn, 'target_component', 1) or 1
+
+        if mtype == 'MISSION_COUNT':
+            count = msg.count
+            print(f"[Mission] Vehicle reported {count} mission items")
+            self.expected_count = count
+            self.waypoints = [None] * count
+            self.next_req_seq = 0
+            self.retries = 0
+            if count > 0:
+                self.request_item(0)
+            else:
+                self.is_fetching = False
+                return {
+                    "type": "MISSION_WAYPOINTS",
+                    "waypoints": [],
+                    "count": 0,
+                    "current_seq": self.current_seq
+                }
+
+        elif mtype in ['MISSION_ITEM_INT', 'MISSION_ITEM']:
+            seq = msg.seq
+            is_int = (mtype == 'MISSION_ITEM_INT')
+            lat = (msg.x / 1e7) if is_int else msg.x
+            lon = (msg.y / 1e7) if is_int else msg.y
+            cmd_code = msg.command
+
+            item = {
+                "seq": seq,
+                "command": cmd_code,
+                "frame": msg.frame,
+                "lat": lat,
+                "lon": lon,
+                "alt": getattr(msg, 'z', 0.0),
+                "param1": getattr(msg, 'param1', 0.0),
+                "param2": getattr(msg, 'param2', 0.0),
+                "param3": getattr(msg, 'param3', 0.0),
+                "param4": getattr(msg, 'param4', 0.0),
+                "current": getattr(msg, 'current', 0),
+                "autocontinue": getattr(msg, 'autocontinue', 1)
+            }
+
+            if 0 <= seq < len(self.waypoints):
+                self.waypoints[seq] = item
+
+            if self.is_fetching:
+                if seq == self.next_req_seq:
+                    self.next_req_seq += 1
+                    self.retries = 0
+                    if self.next_req_seq < self.expected_count:
+                        self.request_item(self.next_req_seq)
+                    else:
+                        self.is_fetching = False
+                        try:
+                            self.conn.mav.mission_ack_send(
+                                target_sys, target_comp,
+                                mavutil.mavlink.MAV_MISSION_ACCEPTED
+                            )
+                        except Exception: pass
+                        valid_wps = [w for w in self.waypoints if w is not None]
+                        print(f"[Mission] Successfully downloaded {len(valid_wps)} waypoints")
+                        return {
+                            "type": "MISSION_WAYPOINTS",
+                            "waypoints": valid_wps,
+                            "count": len(valid_wps),
+                            "current_seq": self.current_seq
+                        }
+
+        elif mtype == 'MISSION_CURRENT':
+            self.current_seq = msg.seq
+            return {
+                "type": "MISSION_CURRENT",
+                "seq": msg.seq
+            }
+
+        elif mtype == 'MISSION_ITEM_REACHED':
+            return {
+                "type": "MISSION_ITEM_REACHED",
+                "seq": msg.seq
+            }
+
+        elif mtype == 'NAV_CONTROLLER_OUTPUT':
+            return {
+                "type": "NAV_CONTROLLER_OUTPUT",
+                "wp_dist": getattr(msg, 'wp_dist', 0),
+                "nav_bearing": getattr(msg, 'nav_bearing', 0),
+                "nav_roll": getattr(msg, 'nav_roll', 0.0),
+                "nav_pitch": getattr(msg, 'nav_pitch', 0.0),
+                "alt_error": getattr(msg, 'alt_error', 0.0),
+                "aspd_error": getattr(msg, 'aspd_error', 0.0),
+                "xtrack_error": getattr(msg, 'xtrack_error', 0.0)
+            }
+
+        return None
+
+    def check_timeout(self):
+        if self.is_fetching and self.expected_count > 0:
+            if time.time() - self.last_req_time > 1.2:
+                if self.retries < self.max_retries:
+                    self.retries += 1
+                    print(f"[Mission] Retry #{self.retries} requesting seq {self.next_req_seq}")
+                    self.request_item(self.next_req_seq)
+                else:
+                    print(f"[Mission] Timeout downloading mission items after {self.max_retries} retries")
+                    self.is_fetching = False
+
+mission_handler = MissionHandler(connection)
+
 async def mavlink_listener():
     global heartbeat_received
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD', 'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE', 'ESTIMATOR_STATUS'], blocking=False)
+        msg = connection.recv_match(
+            type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
+                  'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
+                  'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
+                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT'],
+            blocking=False
+        )
+        mission_handler.check_timeout()
         if msg:
+            mission_res = mission_handler.handle_msg(msg)
+            if mission_res and clients:
+                msg_str = json.dumps(mission_res)
+                for client in list(clients):
+                    try:
+                        await client.send(msg_str)
+                    except websockets.exceptions.ConnectionClosed:
+                        clients.discard(client)
+
             if msg.get_type() == 'HEARTBEAT':
                 # Ignore GCS (type 6) or non-autopilot component heartbeats so they don't overwrite vehicle telemetry
                 if getattr(msg, 'type', None) == mavutil.mavlink.MAV_TYPE_GCS or getattr(msg, 'autopilot', 0) == mavutil.mavlink.MAV_AUTOPILOT_INVALID:
@@ -75,7 +256,16 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         164, 100000, 0, 0, 0, 0, 0
                     )
+                    # Explicitly request NAV_CONTROLLER_OUTPUT (Msg 62) at 5Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        62, 200000, 0, 0, 0, 0, 0
+                    )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
+
+                    # Trigger initial mission download from vehicle
+                    mission_handler.start_fetch()
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
@@ -161,6 +351,20 @@ async def mavlink_listener():
 async def ws_handler(websocket, path=None):
     clients.add(websocket)
     try:
+        # Deliver cached mission waypoints to newly connected client immediately
+        if mission_handler.waypoints:
+            valid_wps = [w for w in mission_handler.waypoints if w is not None]
+            if valid_wps:
+                try:
+                    await websocket.send(json.dumps({
+                        "type": "MISSION_WAYPOINTS",
+                        "waypoints": valid_wps,
+                        "count": len(valid_wps),
+                        "current_seq": mission_handler.current_seq
+                    }))
+                except Exception as e:
+                    print(f"[Mission] Error sending cached waypoints: {e}")
+
         async for message in websocket:
             try:
                 cmd = json.loads(message)
@@ -179,6 +383,13 @@ async def ws_handler(websocket, path=None):
                         mavutil.mavlink.MAV_PARAM_TYPE_REAL32
                     )
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
+                elif action == "fetch_waypoints":
+                    ok = mission_handler.start_fetch()
+                    print(f"[Mission] Client requested waypoint fetch (initiated: {ok})")
+                elif action == "set_current_waypoint":
+                    seq = int(cmd.get("seq", 0))
+                    mission_handler.set_current(seq)
+                    print(f"[Mission] Client requested set current waypoint seq {seq}")
             except Exception as e:
                 print(f"[Server] Error processing client message: {e}")
     except websockets.exceptions.ConnectionClosed:
