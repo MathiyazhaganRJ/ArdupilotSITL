@@ -1998,25 +1998,52 @@
             };
         }
 
+        // Helper to resolve currently active map coordinates for seamless provider/mode switching
+        function getActiveMapCoords() {
+            // 1. If drone has received GPS telemetry, drone GPS is the active flight location!
+            if (typeof currentPlaneLat === 'number' && currentPlaneLat !== null && Math.abs(currentPlaneLat) > 0.001) {
+                return { lat: currentPlaneLat, lon: (typeof currentPlaneLon === 'number' && currentPlaneLon !== null) ? currentPlaneLon : 77.3137 };
+            }
+            // 2. If map is already centered on a location (homeLat, homeLon), preserve that location!
+            if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
+                return { lat: homeLat, lon: (typeof homeLon === 'number' && homeLon !== null) ? homeLon : 77.3137 };
+            }
+            // 3. Fallback to UI input coordinates or default
+            const latVal = parseFloat(document.getElementById('map-cache-lat')?.value);
+            const lonVal = parseFloat(document.getElementById('map-cache-lon')?.value);
+            return {
+                lat: (!isNaN(latVal) && Math.abs(latVal) > 0.001) ? latVal : 8.3105,
+                lon: (!isNaN(lonVal) && Math.abs(lonVal) > 0.001) ? lonVal : 77.3137
+            };
+        }
+
         // Satellite Provider & Streaming Mode Toggles
         const selMapProvider = document.getElementById('sel-map-provider');
         const selMapMode = document.getElementById('sel-map-mode');
         if (selMapProvider) {
             selMapProvider.value = localStorage.getItem('pilot_map_provider') || 'esri';
             selMapProvider.onchange = (e) => {
-                localStorage.setItem('pilot_map_provider', e.target.value);
-                const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
-                const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
-                if (typeof updateMap === 'function') updateMap(lat, lon, true);
+                const newProvider = e.target.value;
+                localStorage.setItem('pilot_map_provider', newProvider);
+                const coords = getActiveMapCoords();
+                const latInput = document.getElementById('map-cache-lat');
+                const lonInput = document.getElementById('map-cache-lon');
+                if (latInput) latInput.value = coords.lat.toFixed(5);
+                if (lonInput) lonInput.value = coords.lon.toFixed(5);
+                if (typeof updateMap === 'function') updateMap(coords.lat, coords.lon, true);
             };
         }
         if (selMapMode) {
             selMapMode.value = localStorage.getItem('pilot_map_mode') || 'auto';
             selMapMode.onchange = (e) => {
-                localStorage.setItem('pilot_map_mode', e.target.value);
-                const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
-                const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
-                if (typeof updateMap === 'function') updateMap(lat, lon, true);
+                const newMode = e.target.value;
+                localStorage.setItem('pilot_map_mode', newMode);
+                const coords = getActiveMapCoords();
+                const latInput = document.getElementById('map-cache-lat');
+                const lonInput = document.getElementById('map-cache-lon');
+                if (latInput) latInput.value = coords.lat.toFixed(5);
+                if (lonInput) lonInput.value = coords.lon.toFixed(5);
+                if (typeof updateMap === 'function') updateMap(coords.lat, coords.lon, true);
             };
         }
 
@@ -2047,9 +2074,8 @@
                     .then(res => {
                         btnPurgeCache.innerText = 'Purged!';
                         refreshCacheStatus();
-                        const lat = parseFloat(document.getElementById('map-cache-lat').value || homeLat || 8.3105);
-                        const lon = parseFloat(document.getElementById('map-cache-lon').value || homeLon || 77.3137);
-                        if (typeof updateMap === 'function') updateMap(lat, lon, true);
+                        const coords = getActiveMapCoords();
+                        if (typeof updateMap === 'function') updateMap(coords.lat, coords.lon, true);
                         setTimeout(() => {
                             btnPurgeCache.disabled = false;
                             btnPurgeCache.innerText = 'Purge & Fetch Latest';
@@ -2537,8 +2563,8 @@
         let currentWindDir = 270;   // Degrees
         let currentWindTurb = 0.20; // 0.0 - 1.0
         let currentWindGust = 7.5;  // m/s
-        let currentPlaneLat = 8.3113;
-        let currentPlaneLon = 77.3077;
+        let currentPlaneLat = null;
+        let currentPlaneLon = null;
         let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
         let liveFetchedWeather = null;
 
@@ -3998,6 +4024,9 @@
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
         let currentMapZoom = null;
         let currentMapRadius = null;
+        let currentMapProvider = null;
+        let currentMapMode = null;
+        let lastMapUpdateLat = 0, lastMapUpdateLon = 0;
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -4129,18 +4158,36 @@
         function updateMap(lat, lon, recenter = false) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
 
+            const modeEl = document.getElementById('sel-map-mode');
+            const providerEl = document.getElementById('sel-map-provider');
+            const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+            const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+
             const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             renderAirspaceBoundary(radiusKm);
 
             const activeZoom = getOptimalZoom(radiusKm);
             const zoomChanged = (currentMapZoom !== activeZoom);
             const radiusChanged = (currentMapRadius !== radiusKm);
+            const providerChanged = (currentMapProvider !== null && currentMapProvider !== provider);
+            const modeChanged = (currentMapMode !== null && currentMapMode !== mapMode);
 
-            if (homeLat === null || recenter || zoomChanged || radiusChanged) {
+            const needsFullRebuild = (homeLat === null || recenter || zoomChanged || radiusChanged || providerChanged || modeChanged);
+
+            if (needsFullRebuild) {
                 currentMapZoom = activeZoom;
                 currentMapRadius = radiusKm;
+                currentMapProvider = provider;
+                currentMapMode = mapMode;
                 homeLat = lat; 
                 homeLon = lon;
+
+                // Keep manual coordinate inputs in AIRSPACE & MAP panel in sync with active map origin
+                const latInput = document.getElementById('map-cache-lat');
+                const lonInput = document.getElementById('map-cache-lon');
+                if (latInput) latInput.value = Number(lat).toFixed(5);
+                if (lonInput) lonInput.value = Number(lon).toFixed(5);
 
                 // Earth circumference at equator = 40075016.686 meters
                 tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, activeZoom);
@@ -4153,19 +4200,27 @@
                 mapGroup.position.set(posX, 0, posZ);
                 airspaceRingGroup.position.set(posX, 0, posZ);
 
-                if (recenter || zoomChanged || radiusChanged) {
-                    while (mapGroup.children.length > 0) {
-                        const child = mapGroup.children[0];
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            if (child.material.map) child.material.map.dispose();
-                            child.material.dispose();
-                        }
-                        mapGroup.remove(child);
+                while (mapGroup.children.length > 0) {
+                    const child = mapGroup.children[0];
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
                     }
-                    mapTiles.clear();
+                    mapGroup.remove(child);
+                }
+                mapTiles.clear();
+            } else {
+                // Throttle incremental checks during flight (~50m threshold)
+                const dLat = Math.abs(lat - lastMapUpdateLat);
+                const dLon = Math.abs(lon - lastMapUpdateLon);
+                if (dLat < 0.0005 && dLon < 0.0005) {
+                    return;
                 }
             }
+
+            lastMapUpdateLat = lat;
+            lastMapUpdateLon = lon;
 
             const currentTileX = Math.floor(lon2tileFloat(lon, activeZoom));
             const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
@@ -4174,12 +4229,6 @@
             const radMeters = radiusKm * 1000;
             const span = Math.ceil(radMeters / tileSize) + 1;
             const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
-
-            const modeEl = document.getElementById('sel-map-mode');
-            const providerEl = document.getElementById('sel-map-provider');
-            const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
-            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
-            const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
             for (let dx = -span; dx <= span; dx++) {
                 for (let dy = -span; dy <= span; dy++) {
@@ -4377,6 +4426,8 @@
         ws.onclose = () => {
             document.getElementById('status').innerText = "Offline";
             document.getElementById('status').style.color = "var(--danger)";
+            vehicleConnected = false;
+            initialGpsCalibrated = false;
         };
         let vehicleConnected = false;
         ws.onmessage = (event) => {
@@ -4412,20 +4463,32 @@
                 planeHeading = hdg;
                 updateCompass();
             } else if (data.type === 'GLOBAL_POSITION_INT') {
-                if (!initialGpsCalibrated && firstPos) {
-                    initialGpsCalibrated = true;
-                    updateMap(data.lat, data.lon, true);
-                } else {
-                    updateMap(data.lat, data.lon);
-                }
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
-                // data.hdg is GPS track in cdeg; attitude heading is handled by ATTITUDE
-                if (data.lat && data.lon && (Math.abs(data.lat) > 0.01 || Math.abs(data.lon) > 0.01)) {
+                const hasValidGps = data.lat !== undefined && data.lon !== undefined &&
+                                    data.lat !== null && data.lon !== null &&
+                                    !isNaN(data.lat) && !isNaN(data.lon) &&
+                                    (Math.abs(data.lat) > 0.001 || Math.abs(data.lon) > 0.001);
+                if (hasValidGps) {
                     currentPlaneLat = data.lat;
                     currentPlaneLon = data.lon;
                     updateArduPilotDrift();
                     const coordsBadge = document.getElementById('weather-coords-badge');
                     if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
+
+                    // Automatic SITL connection map centering and tile loading:
+                    // Instantly shift map origin to aircraft coordinates as soon as valid GPS is received!
+                    if (!initialGpsCalibrated) {
+                        initialGpsCalibrated = true;
+                        const latInput = document.getElementById('map-cache-lat');
+                        const lonInput = document.getElementById('map-cache-lon');
+                        if (latInput) latInput.value = data.lat.toFixed(5);
+                        if (lonInput) lonInput.value = data.lon.toFixed(5);
+                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
+                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
+                        updateMap(data.lat, data.lon, true);
+                    } else {
+                        updateMap(data.lat, data.lon, false);
+                    }
                 }
             } else if (data.type === 'TERRAIN_REPORT') {
                 if (!hasTerrainData) terrainHistory = []; // Clear relative alt history when transitioning to MSL
@@ -4476,6 +4539,18 @@
                     }
 
                     firstPos = true;
+
+                    // If valid GPS coordinates are already available, immediately calibrate and recenter map
+                    if (!initialGpsCalibrated && currentPlaneLat && currentPlaneLon && (Math.abs(currentPlaneLat) > 0.001 || Math.abs(currentPlaneLon) > 0.001)) {
+                        initialGpsCalibrated = true;
+                        const latInput = document.getElementById('map-cache-lat');
+                        const lonInput = document.getElementById('map-cache-lon');
+                        if (latInput) latInput.value = currentPlaneLat.toFixed(5);
+                        if (lonInput) lonInput.value = currentPlaneLon.toFixed(5);
+                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
+                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
+                        updateMap(currentPlaneLat, currentPlaneLon, true);
+                    }
                 }
 
                 // Background Trail Tracking: Records ONLY when browser is minimized!
@@ -4526,10 +4601,23 @@
                 }
             }
             else if (data.type === 'GPS_RAW_INT') {
-                if (data.gps_lat && data.gps_lon && (Math.abs(data.gps_lat) > 0.01 || Math.abs(data.gps_lon) > 0.01)) {
+                if (data.gps_lat && data.gps_lon && (Math.abs(data.gps_lat) > 0.001 || Math.abs(data.gps_lon) > 0.001)) {
                     arduGpsLat = data.gps_lat;
                     arduGpsLon = data.gps_lon;
                     updateArduPilotDrift();
+
+                    if (!initialGpsCalibrated) {
+                        currentPlaneLat = data.gps_lat;
+                        currentPlaneLon = data.gps_lon;
+                        initialGpsCalibrated = true;
+                        const latInput = document.getElementById('map-cache-lat');
+                        const lonInput = document.getElementById('map-cache-lon');
+                        if (latInput) latInput.value = data.gps_lat.toFixed(5);
+                        if (lonInput) lonInput.value = data.gps_lon.toFixed(5);
+                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
+                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
+                        updateMap(data.gps_lat, data.gps_lon, true);
+                    }
                 }
                 const fixTypes = ['NO GPS', 'NO FIX', '2D FIX', '3D FIX', 'DGPS', 'RTK FLT', 'RTK FIX'];
                 const fixName = fixTypes[data.fix_type] || `FIX (${data.fix_type})`;
