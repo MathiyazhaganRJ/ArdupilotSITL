@@ -4679,7 +4679,6 @@
                 distAttr.setX(0, 0);
                 distAttr.setX(1, dist);
                 distAttr.needsUpdate = true;
-                activeLegLine.computeLineDistances();
 
                 activeLegLine.visible = true;
                 activeLegGlowLine.visible = true;
@@ -4962,7 +4961,7 @@
 
                 // Continuous Background Trail Recording: Never loses track when minimized or hidden!
                 const now = Date.now();
-                const isTabHidden = document.hidden || (now - lastRenderTime > 250);
+                const isTabHidden = document.hidden || (now - lastRenderTime > 1500);
 
                 if (firstPos && isTabHidden && rawTargetPos.distanceTo(lastTrailAddPos) > 0.25) {
                     if (trailCount < maxTrailPoints - 1) {
@@ -5141,35 +5140,39 @@
             requestAnimationFrame(animate);
 
             const now = Date.now();
-            const timeSinceRender = now - lastRenderTime;
-            lastRenderTime = now;
-
-            // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
-            const dt = Math.min(clock.getDelta(), 0.1);
-            const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
-
-            // If tab was sleeping, throttled in background, or plane lagged > 5m, snap immediately
-            if (firstPos && (vtolGroup.position.distanceTo(rawTargetPos) > 5.0 || document.hidden || timeSinceRender > 250)) {
+            if (now - lastRenderTime > 2000 && firstPos) {
+                // Tab just woke up from being minimized (2 seconds asleep)!
+                // Instantly snap the plane to the present to avoid dragging a straight line
                 targetPos.copy(rawTargetPos);
                 vtolGroup.position.copy(rawTargetPos);
                 let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
                 targetRot.setFromQuaternion(qRaw);
                 vtolGroup.setRotationFromQuaternion(qRaw);
                 vtolGroup.updateMatrixWorld(true);
+                
+                // Force the trail to render the background-recorded points!
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
                 trailGeo.attributes.color.needsUpdate = true;
-            } else {
-                targetPos.lerp(rawTargetPos, lerpFactor);
-                vtolGroup.position.lerp(targetPos, lerpFactor);
-
-                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-                let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
-                targetRot.setFromQuaternion(qTarget);
-
-                let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
-                vtolGroup.setRotationFromQuaternion(qFinal);
+                clock.getDelta(); // Drain accumulated clock delta so next frame doesn't spike
             }
+            lastRenderTime = now;
+
+            // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
+
+            // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
+            // This guarantees C1 continuity (smooth velocity), completely erasing 10Hz polygon corners
+            targetPos.lerp(rawTargetPos, lerpFactor);
+            vtolGroup.position.lerp(targetPos, lerpFactor);
+
+            let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
+            targetRot.setFromQuaternion(qTarget);
+
+            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
+            vtolGroup.setRotationFromQuaternion(qFinal);
 
             // Dynamic Floor: Automatically lower the map if the plane flies into a valley, 
             // ensuring the plane physically never sinks underneath the map imagery.
