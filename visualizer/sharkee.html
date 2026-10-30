@@ -4403,45 +4403,6 @@
         const waypointGroup = new THREE.Group();
         waypointGroup.visible = false;
         scene.add(waypointGroup);
-
-        // Preallocated dynamic line geometry (zero GC overhead, 60 FPS)
-        const activeLegPositions = new Float32Array(6);
-        const activeLegGeo = new THREE.BufferGeometry();
-        activeLegGeo.setAttribute('position', new THREE.BufferAttribute(activeLegPositions, 3));
-        const activeLegDistances = new Float32Array([0, 100]);
-        activeLegGeo.setAttribute('lineDistance', new THREE.BufferAttribute(activeLegDistances, 1));
-        
-        // 1. Subtle solid guide underlay core line
-        const activeLegGlowMat = new THREE.LineBasicMaterial({
-            color: 0x30d158,
-            transparent: true,
-            opacity: 0.35,
-            linewidth: 1,
-            depthTest: false,
-            depthWrite: false
-        });
-        const activeLegGlowLine = new THREE.Line(activeLegGeo, activeLegGlowMat);
-        activeLegGlowLine.renderOrder = 99997;
-        activeLegGlowLine.frustumCulled = false;
-        activeLegGlowLine.visible = false;
-        waypointGroup.add(activeLegGlowLine);
-
-        // 2. High-contrast crisp aviation green dotted leading line
-        const activeLegMat = new THREE.LineDashedMaterial({
-            color: 0x30d158,
-            dashSize: 2.8,
-            gapSize: 1.5,
-            transparent: true,
-            opacity: 1.0,
-            depthTest: false,
-            depthWrite: false
-        });
-        const activeLegLine = new THREE.Line(activeLegGeo, activeLegMat);
-        activeLegLine.renderOrder = 99999;
-        activeLegLine.frustumCulled = false;
-        activeLegLine.visible = false;
-        waypointGroup.add(activeLegLine);
-
         // Permanent Geographic Earth Anchor - Synchronized directly to ArduPilot EKF Local NED Origin
         let missionAnchorLat = null;
         let missionAnchorLon = null;
@@ -4537,8 +4498,7 @@
 
         // Render all 3D Waypoints in Professional Aviation Magenta
         function renderWaypoints3D() {
-            const preserved = [activeLegLine, activeLegGlowLine];
-            const toRemove = waypointGroup.children.filter(c => !preserved.includes(c));
+            const toRemove = [...waypointGroup.children];
             toRemove.forEach(c => {
                 if (c.geometry) c.geometry.dispose();
                 if (c.material) {
@@ -4549,11 +4509,7 @@
             });
 
             const validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
-            if (validWps.length === 0) {
-                activeLegLine.visible = false;
-                activeLegGlowLine.visible = false;
-                return;
-            }
+            if (validWps.length === 0) return;
 
             const pts = [];
 
@@ -4641,49 +4597,8 @@
             }
         }
 
-        // Update Dynamic Active Leg Line in 60FPS Loop (Omni-angle visible at EVERY camera angle)
-        function updateActiveLeg3D() {
-            if (!waypointGroup.visible) {
-                if (activeLegLine) activeLegLine.visible = false;
-                if (activeLegGlowLine) activeLegGlowLine.visible = false;
-                return;
-            }
-            const activeWp = (Array.isArray(missionWaypoints) ? missionWaypoints : []).find(w => w && w.seq === currentMissionSeq);
-            if (!activeWp || Math.abs(activeWp.lat) < 0.001 || !firstPos) {
-                if (activeLegLine) activeLegLine.visible = false;
-                if (activeLegGlowLine) activeLegGlowLine.visible = false;
-                return;
-            }
-
-            const targetWpPos = activeWp._scenePos || latLonToScene(activeWp.lat, activeWp.lon, activeWp.alt);
-            
-            // Get exact 3D world position of aircraft nose anchor (automatically tracks pitch, roll, yaw, and model scale)
-            const originPos = new THREE.Vector3();
-            if (typeof waypointOriginPoint !== 'undefined' && waypointOriginPoint) {
-                waypointOriginPoint.getWorldPosition(originPos);
-            } else {
-                originPos.copy(vtolGroup.position);
-            }
-
-            const dir = new THREE.Vector3().subVectors(targetWpPos, originPos);
-            const dist = dir.length();
-
-            if (dist > 0.05) {
-                // Update Line Attributes
-                const posAttr = activeLegGeo.attributes.position;
-                posAttr.setXYZ(0, originPos.x, originPos.y, originPos.z);
-                posAttr.setXYZ(1, targetWpPos.x, targetWpPos.y, targetWpPos.z);
-                posAttr.needsUpdate = true;
-
-                const distAttr = activeLegGeo.attributes.lineDistance;
-                distAttr.setX(0, 0);
-                distAttr.setX(1, dist);
-                distAttr.needsUpdate = true;
-
-                activeLegLine.visible = true;
-                activeLegGlowLine.visible = true;
-            }
-        }
+        // Safe stub
+        function updateActiveLeg3D() {}
 
         // Default Tactical Circuit if no mission is loaded from SITL
         function loadDefaultWaypoints() {
@@ -4883,8 +4798,6 @@
                     // Instantly shift map origin to aircraft coordinates as soon as valid GPS is received!
                     if (!initialGpsCalibrated) {
                         initialGpsCalibrated = true;
-                        setMissionAnchor(data.lat, data.lon, 0, 0);
-                        if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
                         const latInput = document.getElementById('map-cache-lat');
                         const lonInput = document.getElementById('map-cache-lon');
                         if (latInput) latInput.value = data.lat.toFixed(5);
@@ -4959,11 +4872,11 @@
                     }
                 }
 
-                // Continuous Background Trail Recording: Never loses track when minimized or hidden!
+                // Background Trail Tracking: Records ONLY when browser is minimized!
                 const now = Date.now();
-                const isTabHidden = document.hidden || (now - lastRenderTime > 1500);
+                const isRendering = (now - lastRenderTime) < 2000;
 
-                if (firstPos && isTabHidden && rawTargetPos.distanceTo(lastTrailAddPos) > 0.25) {
+                if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
                     if (trailCount < maxTrailPoints - 1) {
                         trailCount++;
                     } else {
@@ -4979,7 +4892,8 @@
                     trailColors[trailCount * 3 - 2] = ac.g;
                     trailColors[trailCount * 3 - 1] = ac.b;
                     
-                    // Crucial: Update active tip so waking up doesn't spike
+                    // Crucial: Update the active tip so it doesn't default to 0,0,0!
+                    // Without this, waking up the browser causes permanent origin spikes!
                     trailPositions[trailCount * 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 + 1] = rawTargetPos.y;
                     trailPositions[trailCount * 3 + 2] = rawTargetPos.z;
@@ -5112,28 +5026,6 @@
             }
         };
 
-        // Tab Wakeup / Visibility Handler: Immediately snaps plane and trail on tab focus
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && firstPos) {
-                targetPos.copy(rawTargetPos);
-                vtolGroup.position.copy(rawTargetPos);
-                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-                targetRot.setFromQuaternion(qRaw);
-                vtolGroup.setRotationFromQuaternion(qRaw);
-                vtolGroup.updateMatrixWorld(true);
-                lastTrailAddPos.copy(rawTargetPos);
-                trailGeo.setDrawRange(0, trailCount + 1);
-                trailGeo.attributes.position.needsUpdate = true;
-                trailGeo.attributes.color.needsUpdate = true;
-                if (cameraMode === 'follow') {
-                    const offset = camera.position.clone().sub(controls.target);
-                    controls.target.copy(vtolGroup.position);
-                    camera.position.copy(controls.target).add(offset);
-                    controls.update();
-                }
-            }
-        });
-
         const clock = new THREE.Clock();
 
         function animate() {
@@ -5153,8 +5045,6 @@
                 // Force the trail to render the background-recorded points!
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
-                trailGeo.attributes.color.needsUpdate = true;
-                clock.getDelta(); // Drain accumulated clock delta so next frame doesn't spike
             }
             lastRenderTime = now;
 
@@ -5215,9 +5105,6 @@
                 trailGeo.attributes.position.needsUpdate = true;
                 trailGeo.attributes.color.needsUpdate = true;
             }
-
-            // Update active waypoint dynamic tracking vector
-            if (typeof updateActiveLeg3D === 'function') updateActiveLeg3D();
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
                 m_br = parseInt(document.getElementById('m_br').value), m_fl = parseInt(document.getElementById('m_fl').value),
