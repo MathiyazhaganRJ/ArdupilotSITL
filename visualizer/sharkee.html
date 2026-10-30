@@ -2020,10 +2020,12 @@
                 btnToggleWaypoints.style.background = waypointsVisible ? 'rgba(217, 70, 239, 0.15)' : '';
             }
             if (waypointsVisible) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: 'fetch_waypoints' }));
+                }
                 if (!missionWaypoints || missionWaypoints.length === 0) {
-                    if (typeof loadDefaultWaypoints === 'function') loadDefaultWaypoints();
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ action: 'fetch_waypoints' }));
+                    if (!vehicleConnected && typeof loadDefaultWaypoints === 'function') {
+                        loadDefaultWaypoints();
                     }
                 } else if (typeof renderWaypoints3D === 'function') {
                     renderWaypoints3D();
@@ -4440,79 +4442,48 @@
         activeLegLine.visible = false;
         waypointGroup.add(activeLegLine);
 
-        // 3. Volumetric 3D Cylindrical Guidance Core (Sleek 8cm beam guarantees visibility at extreme camera angles)
-        const activeLegBeamGeo = new THREE.CylinderGeometry(0.04, 0.04, 1, 8, 1, true);
-        activeLegBeamGeo.translate(0, 0.5, 0); // Origin at cylinder base
-        const activeLegBeamMat = new THREE.MeshBasicMaterial({
-            color: 0x30d158,
-            transparent: true,
-            opacity: 0.20,
-            depthTest: false,
-            depthWrite: false
-        });
-        const activeLegBeam = new THREE.Mesh(activeLegBeamGeo, activeLegBeamMat);
-        activeLegBeam.renderOrder = 99995;
-        activeLegBeam.frustumCulled = false;
-        activeLegBeam.visible = false;
-        waypointGroup.add(activeLegBeam);
+        // Permanent Geographic Earth Anchor - Synchronized directly to ArduPilot EKF Local NED Origin
+        let missionAnchorLat = null;
+        let missionAnchorLon = null;
+        let missionAnchorX = 0;
+        let missionAnchorZ = 0;
 
-        // 4. Traveling Pulsing Guidance Marker (Flows continuously toward active waypoint beacon)
-        const activePulseGeo = new THREE.OctahedronGeometry(0.35);
-        const activePulseMat = new THREE.MeshBasicMaterial({
-            color: 0x30d158,
-            transparent: true,
-            opacity: 0.90,
-            depthTest: false,
-            depthWrite: false
-        });
-        const activePulseMesh = new THREE.Mesh(activePulseGeo, activePulseMat);
-        activePulseMesh.renderOrder = 99999;
-        activePulseMesh.frustumCulled = false;
-        activePulseMesh.visible = false;
-        waypointGroup.add(activePulseMesh);
-
-        // Permanent Geographic Earth Anchor - Guaranteed Rock-Solid Fixed World Coordinates
-        let hardAnchorLat = null;
-        let hardAnchorLon = null;
-
-        function setHardAnchor(lat, lon) {
+        function setMissionAnchor(lat, lon, x = 0, z = 0) {
             if (typeof lat !== 'number' || typeof lon !== 'number' || Math.abs(lat) < 0.001) return;
-            // Only set once, or if moving to a totally different geographic region (> 30 km)
-            if (hardAnchorLat === null) {
-                hardAnchorLat = lat;
-                hardAnchorLon = lon;
-            } else {
-                const dLat = Math.abs(lat - hardAnchorLat);
-                const dLon = Math.abs(lon - hardAnchorLon);
-                if (dLat > 0.3 || dLon > 0.3) {
-                    hardAnchorLat = lat;
-                    hardAnchorLon = lon;
-                }
-            }
+            missionAnchorLat = lat;
+            missionAnchorLon = lon;
+            missionAnchorX = x;
+            missionAnchorZ = z;
         }
 
         // Convert Geodetic (Lat, Lon, Alt) into Three.js Hard-Anchored Local World Position
         function latLonToScene(lat, lon, alt = 30) {
-            if (hardAnchorLat === null) {
-                if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
-                    setHardAnchor(currentPlaneLat, currentPlaneLon);
+            if (missionAnchorLat === null) {
+                // Check if mission seq 0 (HOME) exists
+                const homeWp = (Array.isArray(missionWaypoints) ? missionWaypoints : []).find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
+                if (homeWp) {
+                    setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
+                } else if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
+                    const px = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.x : 0;
+                    const pz = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.z : 0;
+                    setMissionAnchor(currentPlaneLat, currentPlaneLon, px, pz);
                 } else if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
-                    setHardAnchor(homeLat, homeLon);
+                    setMissionAnchor(homeLat, homeLon, 0, 0);
                 } else {
-                    setHardAnchor(8.3105, 77.3137);
+                    setMissionAnchor(8.3105, 77.3137, 0, 0);
                 }
             }
 
-            const dLat = lat - hardAnchorLat;
-            const dLon = lon - hardAnchorLon;
-            const latRad = hardAnchorLat * (Math.PI / 180.0);
+            const dLat = lat - missionAnchorLat;
+            const dLon = lon - missionAnchorLon;
+            const latRad = missionAnchorLat * (Math.PI / 180.0);
 
             // High-precision WGS-84 metric distance formulas matching ArduPilot EKF local NED
             const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
             const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
 
-            const sceneX = dLon * mPerDegLon;
-            const sceneZ = -(dLat * mPerDegLat);
+            const sceneX = missionAnchorX + (dLon * mPerDegLon);
+            const sceneZ = missionAnchorZ - (dLat * mPerDegLat);
             const sceneY = Math.max(1.5, Number(alt) || 30.0);
 
             return new THREE.Vector3(sceneX, sceneY, sceneZ);
@@ -4566,7 +4537,7 @@
 
         // Render all 3D Waypoints in Professional Aviation Magenta
         function renderWaypoints3D() {
-            const preserved = [activeLegLine, activeLegGlowLine, activeLegBeam, activePulseMesh];
+            const preserved = [activeLegLine, activeLegGlowLine];
             const toRemove = waypointGroup.children.filter(c => !preserved.includes(c));
             toRemove.forEach(c => {
                 if (c.geometry) c.geometry.dispose();
@@ -4581,8 +4552,6 @@
             if (validWps.length === 0) {
                 activeLegLine.visible = false;
                 activeLegGlowLine.visible = false;
-                activeLegBeam.visible = false;
-                activePulseMesh.visible = false;
                 return;
             }
 
@@ -4677,16 +4646,12 @@
             if (!waypointGroup.visible) {
                 if (activeLegLine) activeLegLine.visible = false;
                 if (activeLegGlowLine) activeLegGlowLine.visible = false;
-                if (activeLegBeam) activeLegBeam.visible = false;
-                if (activePulseMesh) activePulseMesh.visible = false;
                 return;
             }
             const activeWp = (Array.isArray(missionWaypoints) ? missionWaypoints : []).find(w => w && w.seq === currentMissionSeq);
             if (!activeWp || Math.abs(activeWp.lat) < 0.001 || !firstPos) {
                 if (activeLegLine) activeLegLine.visible = false;
                 if (activeLegGlowLine) activeLegGlowLine.visible = false;
-                if (activeLegBeam) activeLegBeam.visible = false;
-                if (activePulseMesh) activePulseMesh.visible = false;
                 return;
             }
 
@@ -4716,19 +4681,8 @@
                 distAttr.needsUpdate = true;
                 activeLegLine.computeLineDistances();
 
-                // Update 3D Volumetric Cylinder Guidance Beam
-                activeLegBeam.position.copy(originPos);
-                activeLegBeam.scale.set(1, dist, 1);
-                activeLegBeam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-
-                // Update Traveling Guidance Pulse Marker
-                const pulseProg = (Date.now() % 2200) / 2200;
-                activePulseMesh.position.lerpVectors(originPos, targetWpPos, pulseProg);
-
                 activeLegLine.visible = true;
                 activeLegGlowLine.visible = true;
-                activeLegBeam.visible = true;
-                activePulseMesh.visible = true;
             }
         }
 
@@ -4742,10 +4696,10 @@
                 anchorLat = homeLat;
                 anchorLon = homeLon;
             }
-            setHardAnchor(anchorLat, anchorLon);
+            setMissionAnchor(anchorLat, anchorLon, 0, 0);
 
-            const cLat = hardAnchorLat;
-            const cLon = hardAnchorLon;
+            const cLat = missionAnchorLat || 8.3105;
+            const cLon = missionAnchorLon || 77.3137;
             // 80-200m realistic circuit in front of and around aircraft
             const dLat = 0.0008;
             const dLon = 0.0010;
@@ -4869,6 +4823,8 @@
         ws.onopen = () => {
             document.getElementById('status').innerText = "Waiting for Vehicle...";
             document.getElementById('status').style.color = "var(--text-secondary)";
+            // Proactively request waypoints on websocket connect
+            try { ws.send(JSON.stringify({ action: 'fetch_waypoints' })); } catch(e){}
         };
         ws.onclose = () => {
             document.getElementById('status').innerText = "Offline";
@@ -4882,6 +4838,8 @@
                 document.getElementById('status').innerText = "Connected";
                 document.getElementById('status').style.color = "var(--success)";
                 vehicleConnected = true;
+                // Proactively request waypoints when vehicle connection is confirmed
+                try { ws.send(JSON.stringify({ action: 'fetch_waypoints' })); } catch(e){}
             }
             const data = JSON.parse(event.data);
             if (data.type === 'HEARTBEAT') {
@@ -4926,7 +4884,8 @@
                     // Instantly shift map origin to aircraft coordinates as soon as valid GPS is received!
                     if (!initialGpsCalibrated) {
                         initialGpsCalibrated = true;
-                        setHardAnchor(data.lat, data.lon);
+                        setMissionAnchor(data.lat, data.lon, 0, 0);
+                        if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
                         const latInput = document.getElementById('map-cache-lat');
                         const lonInput = document.getElementById('map-cache-lon');
                         if (latInput) latInput.value = data.lat.toFixed(5);
@@ -5001,11 +4960,11 @@
                     }
                 }
 
-                // Background Trail Tracking: Records ONLY when browser is minimized!
+                // Continuous Background Trail Recording: Never loses track when minimized or hidden!
                 const now = Date.now();
-                const isRendering = (now - lastRenderTime) < 2000;
+                const isTabHidden = document.hidden || (now - lastRenderTime > 250);
 
-                if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
+                if (firstPos && isTabHidden && rawTargetPos.distanceTo(lastTrailAddPos) > 0.25) {
                     if (trailCount < maxTrailPoints - 1) {
                         trailCount++;
                     } else {
@@ -5021,8 +4980,7 @@
                     trailColors[trailCount * 3 - 2] = ac.g;
                     trailColors[trailCount * 3 - 1] = ac.b;
                     
-                    // Crucial: Update the active tip so it doesn't default to 0,0,0!
-                    // Without this, waking up the browser causes permanent origin spikes!
+                    // Crucial: Update active tip so waking up doesn't spike
                     trailPositions[trailCount * 3] = rawTargetPos.x;
                     trailPositions[trailCount * 3 + 1] = rawTargetPos.y;
                     trailPositions[trailCount * 3 + 2] = rawTargetPos.z;
@@ -5137,7 +5095,11 @@
                     missionWaypoints = data.waypoints;
                     const homeWp = missionWaypoints.find(w => w.seq === 0 && Math.abs(w.lat) > 0.001);
                     if (homeWp) {
-                        setHardAnchor(homeWp.lat, homeWp.lon);
+                        setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
+                    } else if (currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
+                        const px = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.x : 0;
+                        const pz = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.z : 0;
+                        setMissionAnchor(currentPlaneLat, currentPlaneLon, px, pz);
                     }
                     if (data.current_seq !== undefined) currentMissionSeq = data.current_seq;
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
@@ -5151,43 +5113,63 @@
             }
         };
 
-        const clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const now = Date.now();
-            if (now - lastRenderTime > 2000 && firstPos) {
-                // Tab just woke up from being minimized (2 seconds asleep)!
-                // Instantly snap the plane to the present to avoid dragging a straight line
+        // Tab Wakeup / Visibility Handler: Immediately snaps plane and trail on tab focus
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && firstPos) {
                 targetPos.copy(rawTargetPos);
                 vtolGroup.position.copy(rawTargetPos);
                 let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
                 targetRot.setFromQuaternion(qRaw);
                 vtolGroup.setRotationFromQuaternion(qRaw);
                 vtolGroup.updateMatrixWorld(true);
-                
-                // Force the trail to render the background-recorded points!
+                lastTrailAddPos.copy(rawTargetPos);
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
+                trailGeo.attributes.color.needsUpdate = true;
+                if (cameraMode === 'follow') {
+                    const offset = camera.position.clone().sub(controls.target);
+                    controls.target.copy(vtolGroup.position);
+                    camera.position.copy(controls.target).add(offset);
+                    controls.update();
+                }
             }
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = Date.now();
+            const timeSinceRender = now - lastRenderTime;
             lastRenderTime = now;
 
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
             const dt = Math.min(clock.getDelta(), 0.1);
             const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
 
-            // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
-            // This guarantees C1 continuity (smooth velocity), completely erasing 10Hz polygon corners
-            targetPos.lerp(rawTargetPos, lerpFactor);
-            vtolGroup.position.lerp(targetPos, lerpFactor);
+            // If tab was sleeping, throttled in background, or plane lagged > 5m, snap immediately
+            if (firstPos && (vtolGroup.position.distanceTo(rawTargetPos) > 5.0 || document.hidden || timeSinceRender > 250)) {
+                targetPos.copy(rawTargetPos);
+                vtolGroup.position.copy(rawTargetPos);
+                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                targetRot.setFromQuaternion(qRaw);
+                vtolGroup.setRotationFromQuaternion(qRaw);
+                vtolGroup.updateMatrixWorld(true);
+                trailGeo.setDrawRange(0, trailCount + 1);
+                trailGeo.attributes.position.needsUpdate = true;
+                trailGeo.attributes.color.needsUpdate = true;
+            } else {
+                targetPos.lerp(rawTargetPos, lerpFactor);
+                vtolGroup.position.lerp(targetPos, lerpFactor);
 
-            let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
-            targetRot.setFromQuaternion(qTarget);
+                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
+                targetRot.setFromQuaternion(qTarget);
 
-            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
-            vtolGroup.setRotationFromQuaternion(qFinal);
+                let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
+                vtolGroup.setRotationFromQuaternion(qFinal);
+            }
 
             // Dynamic Floor: Automatically lower the map if the plane flies into a valley, 
             // ensuring the plane physically never sinks underneath the map imagery.

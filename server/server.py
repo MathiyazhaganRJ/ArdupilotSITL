@@ -384,6 +384,18 @@ async def ws_handler(websocket, path=None):
                     )
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
                 elif action == "fetch_waypoints":
+                    if mission_handler.waypoints:
+                        valid_wps = [w for w in mission_handler.waypoints if w is not None]
+                        if valid_wps:
+                            try:
+                                await websocket.send(json.dumps({
+                                    "type": "MISSION_WAYPOINTS",
+                                    "waypoints": valid_wps,
+                                    "count": len(valid_wps),
+                                    "current_seq": mission_handler.current_seq
+                                }))
+                            except Exception:
+                                pass
                     ok = mission_handler.start_fetch()
                     print(f"[Mission] Client requested waypoint fetch (initiated: {ok})")
                 elif action == "set_current_waypoint":
