@@ -1633,11 +1633,11 @@
                <option value="quad" hidden disabled>Quadcopter</option>
             -->
             <select id="v_type" style="width: 100%; margin-bottom: 10px; padding: 6px 10px;">
-                <option value="vtol">QuadPlane (VTOL)</option>
-                <option value="plane">Fixed Wing (Pusher)</option>
+                <option value="vtol"hidden disabled>QuadPlane (VTOL)</option>
+                <option value="plane"hidden disabled>Fixed Wing (Pusher)</option>
                 <option value="twin">Twin Engine (Fixed Wing)</option>
-                <option value="quad">Quadcopter</option>
-                <option value="y3">Y3 Tilt-Rotor</option>
+                <option value="quad"hidden disabled>Quadcopter</option>
+                <option value="y3"hidden disabled>Y3 Tilt-Rotor</option>
             </select>
 
             <div class="data-card" style="margin-bottom: 16px; padding: 10px;">
@@ -3771,7 +3771,7 @@
         // AIRCRAFT GEOMETRY CONFIGURATION
         // ==========================================
         const CONFIG = {
-            modelFile: 'models/Sharkee.glb',
+            modelFile: 'models/grey.glb',
             modelBaseScale: 0.001, // Use 0.001 if Fusion 360 exported in millimeters, 1.0 for meters
             modelRotation: { roll: 0, pitch: 90, yaw: 180 }, // Intuitive Aviation Degrees
 
@@ -3784,15 +3784,15 @@
             modelColor: 0xeeeeee, // Experimental Matte White Livery
 
             cruisePropColor: 0x34c759, // Green
-            cruisePropDia: 0.5,   // Diameter for Pusher and Twin propellers
+            cruisePropDia: 0.38,   // Diameter for Pusher and Twin propellers
             cruisePropBlades: 2,  // Number of blades for cruise propellers
             cruisePropDir: 0, // 0=CW, 1=CCW for main pusher
             pusherPos: { x: 0.65, y: 0, z: -0.05 }, // Tail pusher propeller
 
             twinMotorDia: 0.02,   // Diameter of twin engine nacelle
             twinMotorLength: 0.1, // Length of twin engine nacelle
-            twinPosL: { x: -0.1, y: -0.4, z: 0.03 }, // Left twin engine (negative X is forward)
-            twinPosR: { x: -0.1, y: 0.4, z: 0.03 },  // Right twin engine
+            twinPosL: { x: -0.12, y: -0.31, z: 0.03 }, // Left twin engine (negative X is forward)
+            twinPosR: { x: -0.12, y: 0.31, z: 0.03 },  // Right twin engine
             twinPropDir: [1, 0], // 0=CW, 1=CCW for [Left, Right] twin engines
 
             vtolPropColor: 0xff9500, // Orange
