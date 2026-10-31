@@ -4110,9 +4110,55 @@
         let currentMapProvider = null;
         let currentMapMode = null;
         let lastMapUpdateLat = 0, lastMapUpdateLon = 0;
+        let lastMapFullRebuildTime = 0;
+        let mapNeedsRefreshOnWakeup = false;
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
+
+        // Continuous Mathematical Map-to-Aircraft Geodetic Synchronization
+        function syncMapGroupPosition() {
+            if (homeLat === null || homeLon === null || !currentPlaneLat || !currentPlaneLon) return;
+            if (typeof rawTargetPos === 'undefined' || !rawTargetPos) return;
+            if (currentMapZoom === null || tileSize <= 0) return;
+            const currentTileXFloat = lon2tileFloat(currentPlaneLon, currentMapZoom);
+            const currentTileYFloat = lat2tileFloat(currentPlaneLat, currentMapZoom);
+            const targetMapX = rawTargetPos.x - ((currentTileXFloat - homeTileXFloat) * tileSize);
+            const targetMapZ = rawTargetPos.z - ((currentTileYFloat - homeTileYFloat) * tileSize);
+            mapGroup.position.x = targetMapX;
+            mapGroup.position.z = targetMapZ;
+            airspaceRingGroup.position.x = targetMapX;
+            airspaceRingGroup.position.z = targetMapZ;
+        }
+
+        // Automatic Geodetic Map Re-Alignment (Wakeup from minimize or cross-country flight)
+        function autoAlignMap(force = false) {
+            if (!firstPos || !currentPlaneLat || !currentPlaneLon) return;
+            if (Math.abs(currentPlaneLat) < 0.001 || Math.abs(currentPlaneLon) < 0.001) return;
+            if (typeof updateMap !== 'function') return;
+
+            const now = Date.now();
+            const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
+            const distFromHome = (homeLat !== null && homeLon !== null && typeof calcGeodeticDistance === 'function') 
+                ? calcGeodeticDistance(homeLat, homeLon, currentPlaneLat, currentPlaneLon) 
+                : 999999;
+
+            // Recenter if forced (wakeup), or if aircraft traveled > 250m from map origin and > 3s elapsed,
+            // or if aircraft reached outer half of active airspace radius
+            const shouldRecenter = force || (distFromHome > 250 && (now - lastMapFullRebuildTime > 3000)) || (distFromHome > (radiusKm * 500));
+
+            if (shouldRecenter) {
+                lastMapFullRebuildTime = now;
+                mapNeedsRefreshOnWakeup = false;
+                const latInput = document.getElementById('map-cache-lat');
+                const lonInput = document.getElementById('map-cache-lon');
+                if (latInput) latInput.value = currentPlaneLat.toFixed(5);
+                if (lonInput) lonInput.value = currentPlaneLon.toFixed(5);
+                if (typeof updateMapEstimate === 'function') updateMapEstimate();
+                updateMap(currentPlaneLat, currentPlaneLon, true);
+            }
+            syncMapGroupPosition();
+        }
 
         function getOptimalZoom(radiusKm) {
             const zoomSelect = document.getElementById('map-cache-zoom')?.value;
@@ -4259,6 +4305,7 @@
             const needsFullRebuild = (homeLat === null || recenter || zoomChanged || radiusChanged || providerChanged || modeChanged);
 
             if (needsFullRebuild) {
+                lastMapFullRebuildTime = Date.now();
                 currentMapZoom = activeZoom;
                 currentMapRadius = radiusKm;
                 currentMapProvider = provider;
@@ -4294,10 +4341,19 @@
                 }
                 mapTiles.clear();
             } else {
+                // Auto-recenter if aircraft has flown beyond comfortable distance from home map center
+                if (homeLat !== null && homeLon !== null && typeof calcGeodeticDistance === 'function') {
+                    const distFromHome = calcGeodeticDistance(homeLat, homeLon, lat, lon);
+                    if (distFromHome > (radiusKm * 600)) {
+                        updateMap(lat, lon, true);
+                        return;
+                    }
+                }
                 // Throttle incremental checks during flight (~50m threshold)
                 const dLat = Math.abs(lat - lastMapUpdateLat);
                 const dLon = Math.abs(lon - lastMapUpdateLon);
                 if (dLat < 0.0005 && dLon < 0.0005) {
+                    syncMapGroupPosition();
                     return;
                 }
             }
@@ -4392,6 +4448,7 @@
                     }
                 }
             }
+            syncMapGroupPosition();
         }
 
         // Initialize 3D Satellite Map immediately with default airfield coordinates (so terrain is visible with or without SITL!)
@@ -4808,7 +4865,16 @@
                         if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
                         updateMap(data.lat, data.lon, true);
                     } else {
-                        updateMap(data.lat, data.lon, false);
+                        const isRendering = (Date.now() - lastRenderTime) < 400 && !document.hidden;
+                        if (!isRendering) {
+                            mapNeedsRefreshOnWakeup = true;
+                        } else {
+                            if (typeof autoAlignMap === 'function') {
+                                autoAlignMap(false);
+                            } else {
+                                updateMap(data.lat, data.lon, false);
+                            }
+                        }
                     }
                 }
             } else if (data.type === 'TERRAIN_REPORT') {
@@ -5034,7 +5100,8 @@
             requestAnimationFrame(animate);
 
             const now = Date.now();
-            if (now - lastRenderTime > 400 && firstPos) {
+            const wasMinimized = (now - lastRenderTime > 400);
+            if (wasMinimized && firstPos) {
                 // Tab woke up from being minimized / inactive (> 400ms)!
                 // Instantly snap the plane to the present to avoid dragging a straight line
                 targetPos.copy(rawTargetPos);
@@ -5047,6 +5114,14 @@
                 // Force the trail to render the background-recorded points!
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
+
+                // Automatic map re-alignment immediately upon waking up from minimize
+                if (mapNeedsRefreshOnWakeup || (now - lastRenderTime > 1000)) {
+                    mapNeedsRefreshOnWakeup = false;
+                    if (typeof autoAlignMap === 'function') {
+                        autoAlignMap(true);
+                    }
+                }
             }
             lastRenderTime = now;
 
@@ -5278,9 +5353,21 @@
                 drGroup.visible = false;
             }
 
+            if (typeof syncMapGroupPosition === 'function') {
+                syncMapGroupPosition();
+            }
+
             renderer.render(scene, camera);
         }
         animate();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (typeof autoAlignMap === 'function') {
+                    autoAlignMap(true);
+                }
+            }
+        });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
