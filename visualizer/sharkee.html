@@ -2380,8 +2380,10 @@
                 document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
                 updateMapEstimate();
                 const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+                lastMapUpdateLat = 0;
+                lastMapUpdateLon = 0;
                 if (typeof updateMap === 'function') {
-                    updateMap(currentPlaneLat, currentPlaneLon, true);
+                    updateMap(currentPlaneLat, currentPlaneLon, false);
                 }
             } else {
                 alert('No drone GPS position received yet. Using default coordinates.');
@@ -4094,6 +4096,39 @@
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
         let initialGpsCalibrated = false;
+        let ekfHomeInitialized = false;
+        let latestNedX = 0, latestNedY = 0, hasNedPos = false;
+
+        // Unified Geodetic EKF Origin Lock - Anchors map, waypoints, and vehicle to exact same coordinate
+        function initEkfHome(hLat, hLon) {
+            if (typeof hLat !== 'number' || typeof hLon !== 'number' || Math.abs(hLat) < 0.001) return;
+
+            if (ekfHomeInitialized && homeLat !== null && homeLon !== null) {
+                const d = (typeof calcGeodeticDistance === 'function') ? calcGeodeticDistance(homeLat, homeLon, hLat, hLon) : 0;
+                if (d < 50) return; // Keep locked to confirmed airfield Home
+            }
+
+            ekfHomeInitialized = true;
+            initialGpsCalibrated = true;
+            homeLat = hLat;
+            homeLon = hLon;
+            setMissionAnchor(hLat, hLon, 0, 0);
+
+            const latInput = document.getElementById('map-cache-lat');
+            const lonInput = document.getElementById('map-cache-lon');
+            if (latInput) latInput.value = hLat.toFixed(5);
+            if (lonInput) lonInput.value = hLon.toFixed(5);
+            if (typeof updateMapEstimate === 'function') updateMapEstimate();
+            if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
+
+            if (typeof renderWaypoints3D === 'function') {
+                renderWaypoints3D();
+            }
+
+            if (typeof updateMap === 'function') {
+                updateMap(hLat, hLon, true);
+            }
+        }
 
         // ==========================================
         // DYNAMIC SATELLITE MAP ENGINE & AIRSPACE HUD
@@ -4110,6 +4145,7 @@
         let currentMapProvider = null;
         let currentMapMode = null;
         let lastMapUpdateLat = 0, lastMapUpdateLon = 0;
+        let pendingTileRefresh = false;
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -4277,11 +4313,9 @@
                 homeTileXFloat = lon2tileFloat(lon, activeZoom);
                 homeTileYFloat = lat2tileFloat(lat, activeZoom);
 
-                // Lock the map origin to the plane's physics position (or 0,0,0 if SITL disconnected)
-                const posX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
-                const posZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
-                mapGroup.position.set(posX, 0, posZ);
-                airspaceRingGroup.position.set(posX, 0, posZ);
+                // Map origin is permanently locked to the world origin (0, 0, 0)
+                mapGroup.position.set(0, 0, 0);
+                airspaceRingGroup.position.set(0, 0, 0);
 
                 while (mapGroup.children.length > 0) {
                     const child = mapGroup.children[0];
@@ -4415,8 +4449,8 @@
             if (typeof lat !== 'number' || typeof lon !== 'number' || Math.abs(lat) < 0.001) return;
             missionAnchorLat = lat;
             missionAnchorLon = lon;
-            missionAnchorX = x;
-            missionAnchorZ = z;
+            missionAnchorX = 0;
+            missionAnchorZ = 0;
         }
 
         // Convert Geodetic (Lat, Lon, Alt) into Three.js Hard-Anchored Local World Position
@@ -4426,12 +4460,10 @@
                 const homeWp = (Array.isArray(missionWaypoints) ? missionWaypoints : []).find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
                 if (homeWp) {
                     setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
-                } else if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
-                    const px = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.x : 0;
-                    const pz = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.z : 0;
-                    setMissionAnchor(currentPlaneLat, currentPlaneLon, px, pz);
                 } else if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
                     setMissionAnchor(homeLat, homeLon, 0, 0);
+                } else if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
+                    setMissionAnchor(currentPlaneLat, currentPlaneLon, 0, 0);
                 } else {
                     setMissionAnchor(8.3105, 77.3137, 0, 0);
                 }
@@ -4445,8 +4477,8 @@
             const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
             const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
 
-            const sceneX = missionAnchorX + (dLon * mPerDegLon);
-            const sceneZ = missionAnchorZ - (dLat * mPerDegLat);
+            const sceneX = (dLon * mPerDegLon);
+            const sceneZ = -(dLat * mPerDegLat);
             const sceneY = Math.max(1.5, Number(alt) || 30.0);
 
             return new THREE.Vector3(sceneX, sceneY, sceneZ);
@@ -4747,6 +4779,8 @@
             document.getElementById('status').style.color = "var(--danger)";
             vehicleConnected = false;
             initialGpsCalibrated = false;
+            ekfHomeInitialized = false;
+            hasNedPos = false;
         };
         let vehicleConnected = false;
         ws.onmessage = (event) => {
@@ -4796,19 +4830,23 @@
                     const coordsBadge = document.getElementById('weather-coords-badge');
                     if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
 
-                    // Automatic SITL connection map centering and tile loading:
-                    // Instantly shift map origin to aircraft coordinates as soon as valid GPS is received!
-                    if (!initialGpsCalibrated) {
-                        initialGpsCalibrated = true;
-                        const latInput = document.getElementById('map-cache-lat');
-                        const lonInput = document.getElementById('map-cache-lon');
-                        if (latInput) latInput.value = data.lat.toFixed(5);
-                        if (lonInput) lonInput.value = data.lon.toFixed(5);
-                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
-                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
-                        updateMap(data.lat, data.lon, true);
+                    // Mathematical EKF Home deduction: derived from vehicle GPS and local NED meters
+                    if (!ekfHomeInitialized && hasNedPos) {
+                        const latRad = data.lat * (Math.PI / 180.0);
+                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                        const calcHomeLat = data.lat - (latestNedX / mPerDegLat);
+                        const calcHomeLon = data.lon - (latestNedY / mPerDegLon);
+                        initEkfHome(calcHomeLat, calcHomeLon);
+                    } else if (!ekfHomeInitialized) {
+                        initEkfHome(data.lat, data.lon);
                     } else {
-                        updateMap(data.lat, data.lon, false);
+                        const isTabVisible = !document.hidden && (Date.now() - lastRenderTime < 400);
+                        if (!isTabVisible) {
+                            pendingTileRefresh = true;
+                        } else {
+                            updateMap(data.lat, data.lon, false);
+                        }
                     }
                 }
             } else if (data.type === 'TERRAIN_REPORT') {
@@ -4826,6 +4864,9 @@
                     updateCompass();
                 }
             } else if (data.type === 'LOCAL_POSITION_NED') {
+                latestNedX = data.x;
+                latestNedY = data.y;
+                hasNedPos = true;
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
                 if (data.vx !== undefined && data.vy !== undefined) {
@@ -4837,6 +4878,16 @@
                         updateCompass();
                     }
                 }
+
+                if (!ekfHomeInitialized && currentPlaneLat && currentPlaneLon) {
+                    const latRad = currentPlaneLat * (Math.PI / 180.0);
+                    const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                    const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                    const calcHomeLat = currentPlaneLat - (latestNedX / mPerDegLat);
+                    const calcHomeLon = currentPlaneLon - (latestNedY / mPerDegLon);
+                    initEkfHome(calcHomeLat, calcHomeLon);
+                }
+
                 if (!firstPos) {
                     targetPos.copy(rawTargetPos);
                     vtolGroup.position.copy(rawTargetPos);
@@ -4860,50 +4911,35 @@
                     }
 
                     firstPos = true;
-
-                    // If valid GPS coordinates are already available, immediately calibrate and recenter map
-                    if (!initialGpsCalibrated && currentPlaneLat && currentPlaneLon && (Math.abs(currentPlaneLat) > 0.001 || Math.abs(currentPlaneLon) > 0.001)) {
-                        initialGpsCalibrated = true;
-                        const latInput = document.getElementById('map-cache-lat');
-                        const lonInput = document.getElementById('map-cache-lon');
-                        if (latInput) latInput.value = currentPlaneLat.toFixed(5);
-                        if (lonInput) lonInput.value = currentPlaneLon.toFixed(5);
-                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
-                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
-                        updateMap(currentPlaneLat, currentPlaneLon, true);
-                    }
                 }
 
-                // Background Trail Tracking: Records ONLY when browser is minimized/inactive!
+                // Background Trail Tracking: Records continuous path when browser is minimized/inactive
                 const now = Date.now();
                 const isRendering = (now - lastRenderTime) < 400;
 
-                if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
-                    if (trailCount < maxTrailPoints - 1) {
-                        trailCount++;
-                    } else {
-                        trailPositions.copyWithin(0, 3);
-                        trailColors.copyWithin(0, 3);
+                if (!isRendering && firstPos) {
+                    vtolGroup.position.copy(rawTargetPos);
+                    let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                    vtolGroup.setRotationFromQuaternion(qRaw);
+                    vtolGroup.updateMatrixWorld(true);
+                    trackPoint.getWorldPosition(currentTrackPos);
+
+                    if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.2) {
+                        if (trailCount < maxTrailPoints - 1) {
+                            trailCount++;
+                        } else {
+                            trailPositions.copyWithin(0, 3);
+                            trailColors.copyWithin(0, 3);
+                        }
+                        lastTrailAddPos.copy(currentTrackPos);
                     }
                     const ac = isDeadReckoning ? drTrackColor : normalTrackColor;
-                    // Lock the historical point
-                    trailPositions[trailCount * 3 - 3] = rawTargetPos.x;
-                    trailPositions[trailCount * 3 - 2] = rawTargetPos.y;
-                    trailPositions[trailCount * 3 - 1] = rawTargetPos.z;
-                    trailColors[trailCount * 3 - 3] = ac.r;
-                    trailColors[trailCount * 3 - 2] = ac.g;
-                    trailColors[trailCount * 3 - 1] = ac.b;
-                    
-                    // Crucial: Update the active tip so it doesn't default to 0,0,0!
-                    // Without this, waking up the browser causes permanent origin spikes!
-                    trailPositions[trailCount * 3] = rawTargetPos.x;
-                    trailPositions[trailCount * 3 + 1] = rawTargetPos.y;
-                    trailPositions[trailCount * 3 + 2] = rawTargetPos.z;
+                    trailPositions[trailCount * 3] = currentTrackPos.x;
+                    trailPositions[trailCount * 3 + 1] = currentTrackPos.y;
+                    trailPositions[trailCount * 3 + 2] = currentTrackPos.z;
                     trailColors[trailCount * 3] = ac.r;
                     trailColors[trailCount * 3 + 1] = ac.g;
                     trailColors[trailCount * 3 + 2] = ac.b;
-                    
-                    lastTrailAddPos.copy(rawTargetPos);
                 }
 
                 // Background Terrain Tracking: Records even when browser is minimized!
@@ -4921,23 +4957,29 @@
                     lastGraphUpdate = now;
                 }
             }
+            else if (data.type === 'HOME_POSITION') {
+                if (data.home_lat && data.home_lon && (Math.abs(data.home_lat) > 0.001 || Math.abs(data.home_lon) > 0.001)) {
+                    initEkfHome(data.home_lat, data.home_lon);
+                }
+            }
             else if (data.type === 'GPS_RAW_INT') {
                 if (data.gps_lat && data.gps_lon && (Math.abs(data.gps_lat) > 0.001 || Math.abs(data.gps_lon) > 0.001)) {
                     arduGpsLat = data.gps_lat;
                     arduGpsLon = data.gps_lon;
                     updateArduPilotDrift();
 
-                    if (!initialGpsCalibrated) {
+                    if (!currentPlaneLat) {
                         currentPlaneLat = data.gps_lat;
                         currentPlaneLon = data.gps_lon;
-                        initialGpsCalibrated = true;
-                        const latInput = document.getElementById('map-cache-lat');
-                        const lonInput = document.getElementById('map-cache-lon');
-                        if (latInput) latInput.value = data.gps_lat.toFixed(5);
-                        if (lonInput) lonInput.value = data.gps_lon.toFixed(5);
-                        if (typeof updateMapEstimate === 'function') updateMapEstimate();
-                        if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
-                        updateMap(data.gps_lat, data.gps_lon, true);
+                    }
+
+                    if (!ekfHomeInitialized && hasNedPos) {
+                        const latRad = data.gps_lat * (Math.PI / 180.0);
+                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                        const calcHomeLat = data.gps_lat - (latestNedX / mPerDegLat);
+                        const calcHomeLon = data.gps_lon - (latestNedY / mPerDegLon);
+                        initEkfHome(calcHomeLat, calcHomeLon);
                     }
                 }
                 const fixTypes = ['NO GPS', 'NO FIX', '2D FIX', '3D FIX', 'DGPS', 'RTK FLT', 'RTK FIX'];
@@ -5008,13 +5050,11 @@
             else if (data.type === 'MISSION_WAYPOINTS') {
                 if (Array.isArray(data.waypoints) && data.waypoints.length > 0) {
                     missionWaypoints = data.waypoints;
-                    const homeWp = missionWaypoints.find(w => w.seq === 0 && Math.abs(w.lat) > 0.001);
+                    const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
                     if (homeWp) {
-                        setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
-                    } else if (currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
-                        const px = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.x : 0;
-                        const pz = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.z : 0;
-                        setMissionAnchor(currentPlaneLat, currentPlaneLon, px, pz);
+                        initEkfHome(homeWp.lat, homeWp.lon);
+                    } else if (!ekfHomeInitialized && currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
+                        initEkfHome(currentPlaneLat, currentPlaneLon);
                     }
                     if (data.current_seq !== undefined) currentMissionSeq = data.current_seq;
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
@@ -5043,10 +5083,22 @@
                 targetRot.setFromQuaternion(qRaw);
                 vtolGroup.setRotationFromQuaternion(qRaw);
                 vtolGroup.updateMatrixWorld(true);
+                clock.getDelta(); // Clear accumulated delta after long sleep
                 
                 // Force the trail to render the background-recorded points!
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
+                trailGeo.attributes.color.needsUpdate = true;
+
+                // Load any missing tiles around the aircraft's present position without moving the world origin
+                if (pendingTileRefresh || (now - lastRenderTime > 1000)) {
+                    pendingTileRefresh = false;
+                    lastMapUpdateLat = 0;
+                    lastMapUpdateLon = 0;
+                    if (currentPlaneLat && currentPlaneLon) {
+                        updateMap(currentPlaneLat, currentPlaneLon, false);
+                    }
+                }
             }
             lastRenderTime = now;
 
@@ -5281,6 +5333,16 @@
             renderer.render(scene, camera);
         }
         animate();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (firstPos && currentPlaneLat && currentPlaneLon) {
+                    lastMapUpdateLat = 0;
+                    lastMapUpdateLon = 0;
+                    updateMap(currentPlaneLat, currentPlaneLon, false);
+                }
+            }
+        });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;

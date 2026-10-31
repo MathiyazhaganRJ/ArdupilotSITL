@@ -185,10 +185,12 @@ class MissionHandler:
                     print(f"[Mission] Timeout downloading mission items after {self.max_retries} retries")
                     self.is_fetching = False
 
+heartbeat_received = False
+cached_home_position = None
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received
+    global heartbeat_received, cached_home_position
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
@@ -196,7 +198,7 @@ async def mavlink_listener():
             type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
-                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT'],
+                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION'],
             blocking=False
         )
         mission_handler.check_timeout()
@@ -265,6 +267,12 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         62, 200000, 0, 0, 0, 0, 0
                     )
+                    # Explicitly request HOME_POSITION (Msg 242) at 1Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        242, 1000000, 0, 0, 0, 0, 0
+                    )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
                     # Trigger initial mission download from vehicle
@@ -327,6 +335,16 @@ async def mavlink_listener():
                 data['gps_lon'] = getattr(msg, 'lon', 0) / 1e7
                 data['gps_alt'] = getattr(msg, 'alt', 0) / 1000.0
                 data['h_acc'] = getattr(msg, 'h_acc', 0) / 1000.0
+            elif msg.get_type() == 'HOME_POSITION':
+                data['home_lat'] = msg.latitude / 1e7
+                data['home_lon'] = msg.longitude / 1e7
+                data['home_alt'] = msg.altitude / 1000.0
+                cached_home_position = {
+                    "type": "HOME_POSITION",
+                    "home_lat": data['home_lat'],
+                    "home_lon": data['home_lon'],
+                    "home_alt": data['home_alt']
+                }
             elif msg.get_type() == 'SIMSTATE':
                 data['sim_lat'] = getattr(msg, 'lat', 0) / 1e7
                 data['sim_lon'] = getattr(msg, 'lng', 0) / 1e7
@@ -354,6 +372,13 @@ async def mavlink_listener():
 async def ws_handler(websocket, path=None):
     clients.add(websocket)
     try:
+        # Deliver cached home position to newly connected client immediately
+        if cached_home_position:
+            try:
+                await websocket.send(json.dumps(cached_home_position))
+            except Exception as e:
+                print(f"[Server] Error sending cached home position: {e}")
+
         # Deliver cached mission waypoints to newly connected client immediately
         if mission_handler.waypoints:
             valid_wps = [w for w in mission_handler.waypoints if w is not None]
