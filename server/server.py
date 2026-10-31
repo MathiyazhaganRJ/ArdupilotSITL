@@ -187,10 +187,11 @@ class MissionHandler:
 
 heartbeat_received = False
 cached_home_position = None
+cached_statustext_messages = []
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position
+    global heartbeat_received, cached_home_position, cached_statustext_messages
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
@@ -198,7 +199,8 @@ async def mavlink_listener():
             type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
-                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION'],
+                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
+                  'STATUSTEXT'],
             blocking=False
         )
         mission_handler.check_timeout()
@@ -345,6 +347,23 @@ async def mavlink_listener():
                     "home_lon": data['home_lon'],
                     "home_alt": data['home_alt']
                 }
+            elif msg.get_type() == 'STATUSTEXT':
+                raw_text = getattr(msg, 'text', '')
+                if isinstance(raw_text, bytes):
+                    raw_text = raw_text.decode('utf-8', errors='ignore')
+                clean_text = str(raw_text).strip('\x00').strip()
+                data['type'] = 'STATUSTEXT'
+                data['severity'] = int(getattr(msg, 'severity', 6))
+                data['text'] = clean_text
+                data['timestamp'] = time.time()
+                cached_statustext_messages.append({
+                    "type": "STATUSTEXT",
+                    "severity": data['severity'],
+                    "text": clean_text,
+                    "timestamp": data['timestamp']
+                })
+                if len(cached_statustext_messages) > 100:
+                    cached_statustext_messages.pop(0)
             elif msg.get_type() == 'SIMSTATE':
                 data['sim_lat'] = getattr(msg, 'lat', 0) / 1e7
                 data['sim_lon'] = getattr(msg, 'lng', 0) / 1e7
@@ -378,6 +397,16 @@ async def ws_handler(websocket, path=None):
                 await websocket.send(json.dumps(cached_home_position))
             except Exception as e:
                 print(f"[Server] Error sending cached home position: {e}")
+
+        # Deliver cached status text messages to newly connected client immediately
+        if cached_statustext_messages:
+            try:
+                await websocket.send(json.dumps({
+                    "type": "STATUSTEXT_HISTORY",
+                    "messages": cached_statustext_messages
+                }))
+            except Exception as e:
+                print(f"[Server] Error sending cached status messages: {e}")
 
         # Deliver cached mission waypoints to newly connected client immediately
         if mission_handler.waypoints:

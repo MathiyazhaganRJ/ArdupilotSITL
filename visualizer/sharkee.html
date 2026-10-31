@@ -139,6 +139,321 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ff3b30;
+            color: #ffffff;
+            font-size: 8.5px;
+            font-weight: 800;
+            padding: 1px 4.5px;
+            border-radius: 9px;
+            line-height: 1;
+            margin-left: 2px;
+            box-shadow: 0 1px 3px rgba(255, 59, 48, 0.4);
+            animation: pulseBadge 1.8s infinite;
+        }
+
+        .toolbar-dot-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 7px;
+            height: 7px;
+            background: #ff3b30;
+            border-radius: 50%;
+            border: 1.5px solid var(--panel-bg);
+            box-shadow: 0 0 6px #ff3b30;
+            animation: pulseBadge 1.8s infinite;
+        }
+
+        @keyframes pulseBadge {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.85; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Messages Console Styles */
+        .msg-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 2px 8px 2px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+        }
+
+        .msg-action-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .msg-action-btn:hover {
+            color: var(--text-primary);
+            background: var(--btn-hover);
+        }
+
+        .msg-action-btn.close-btn {
+            color: var(--danger);
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+
+        .msg-action-btn.close-btn:hover {
+            background: rgba(255, 59, 48, 0.15);
+        }
+
+        .msg-filter-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .msg-filter-btn {
+            flex: 1;
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 4px 2px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .msg-filter-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .msg-filter-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 1px 4px rgba(10, 132, 255, 0.3);
+        }
+
+        .msg-search-box {
+            display: flex;
+            align-items: center;
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 3px 6px;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .msg-search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .msg-search-box input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .messages-container {
+            background: rgba(10, 12, 16, 0.65);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px;
+            min-height: 220px;
+            max-height: 340px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'B612 Mono', monospace;
+            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        body:not(.dark-mode) .messages-container {
+            background: rgba(240, 242, 245, 0.9);
+            color: #1a1a1a;
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+        }
+
+        .msg-empty-notice {
+            color: var(--text-secondary);
+            font-size: 10px;
+            text-align: center;
+            padding: 24px 8px;
+            font-style: italic;
+        }
+
+        .msg-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 3px 4px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid transparent;
+            line-height: 1.35;
+            word-break: break-word;
+            transition: background 0.1s ease;
+        }
+
+        .msg-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        body:not(.dark-mode) .msg-row {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        body:not(.dark-mode) .msg-row:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .msg-row.severity-crit {
+            border-left-color: #ff3b30;
+            background: rgba(255, 59, 48, 0.12);
+        }
+
+        .msg-row.severity-error {
+            border-left-color: #ff453a;
+            background: rgba(255, 69, 58, 0.09);
+        }
+
+        .msg-row.severity-warn {
+            border-left-color: #ff9f0a;
+            background: rgba(255, 159, 10, 0.08);
+        }
+
+        .msg-row.severity-notice {
+            border-left-color: #64d2ff;
+        }
+
+        .msg-row.severity-info {
+            border-left-color: #30d158;
+        }
+
+        .msg-time {
+            color: var(--text-secondary);
+            font-size: 9px;
+            flex-shrink: 0;
+            padding-top: 1px;
+            user-select: none;
+        }
+
+        .msg-severity-pill {
+            font-size: 8px;
+            font-weight: 800;
+            padding: 1px 3.5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            letter-spacing: 0.03em;
+            user-select: none;
+        }
+
+        .pill-crit { background: #ff3b30; color: #ffffff; }
+        .pill-error { background: #ff453a; color: #ffffff; }
+        .pill-warn { background: #ff9f0a; color: #000000; font-weight: 700; }
+        .pill-notice { background: rgba(100, 210, 255, 0.25); color: #64d2ff; border: 1px solid rgba(100, 210, 255, 0.4); }
+        .pill-info { background: rgba(48, 209, 88, 0.2); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.35); }
+        .pill-debug { background: rgba(142, 142, 147, 0.2); color: #8e8e93; }
+
+        .msg-text {
+            flex: 1;
+            font-size: 9.8px;
+            color: var(--text-primary);
+        }
+
+        .msg-footer-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            padding: 2px 4px;
+        }
+
+        /* Toast Ticker */
+        .msg-toast-ticker {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(20, 22, 28, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 159, 10, 0.4);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            max-width: 90vw;
+            animation: slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .msg-toast-ticker:hover {
+            transform: translateX(-50%) translateY(-2px);
+            border-color: rgba(255, 159, 10, 0.7);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75);
+        }
+
+        body:not(.dark-mode) .msg-toast-ticker {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(0, 0, 0, 0.15);
+            color: #1a1a1a;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        }
+
+        @keyframes slideUpToast {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .toast-text {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: 'B612 Mono', monospace;
+        }
+
+        .toast-hint {
+            font-size: 9.5px;
+            color: var(--text-secondary);
+            opacity: 0.8;
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -1237,6 +1552,12 @@
                 <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
             </svg>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-messages" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="opacity: 0.45; position: relative;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span id="toolbar-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
+        </button>
     </div>
 
     <div id="ui-panel">
@@ -1246,6 +1567,12 @@
                 <h2>ArduPilot SITL</h2>
             </div>
             <div style="display: flex; gap: 6px;">
+                <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="position: relative;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span id="hdr-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
+                </button>
                 <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Map & Airspace Presets">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
@@ -1268,7 +1595,12 @@
             </button>
             <button id="tab-airspace" class="panel-nav-tab">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                AIRSPACE & MAP
+                AIRSPACE
+            </button>
+            <button id="tab-messages" class="panel-nav-tab">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                MESSAGES
+                <span id="tab-msg-count" class="tab-badge" style="display:none;">0</span>
             </button>
         </div>
 
@@ -1504,6 +1836,60 @@
                         Purge & Fetch Latest
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Autopilot Live Messages Console -->
+        <div id="panel-view-messages" style="display: none;">
+            <div class="msg-header-bar">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">SYSTEM CONSOLE</span>
+                </div>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button id="btn-clear-messages" class="msg-action-btn" title="Clear Message History">
+                        Clear
+                    </button>
+                    <button id="btn-export-messages" class="msg-action-btn" title="Download Text Log">
+                        Export
+                    </button>
+                    <button id="btn-close-messages" class="msg-action-btn close-btn" title="Close Messages Tab (Esc / M)">
+                        Close
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="msg-filter-bar">
+                <button id="filter-all" class="msg-filter-btn active" onclick="setMessageFilter('all')">ALL</button>
+                <button id="filter-warn" class="msg-filter-btn" onclick="setMessageFilter('warn')">WARNINGS</button>
+                <button id="filter-info" class="msg-filter-btn" onclick="setMessageFilter('info')">INFO</button>
+            </div>
+            
+            <!-- Search bar -->
+            <div class="msg-search-box">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6; flex-shrink: 0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="msg-search-input" placeholder="Search logs (e.g. PreArm, GPS, EKF)..." autocomplete="off" spellcheck="false">
+                <button id="btn-clear-search" style="background: none; border: none; padding: 0 4px; color: var(--text-secondary); cursor: pointer; display: none;">&times;</button>
+            </div>
+
+            <!-- Scrollable Console List -->
+            <div id="messages-container" class="messages-container">
+                <div id="messages-empty" class="msg-empty-notice">No autopilot messages received yet.</div>
+                <div id="messages-list"></div>
+            </div>
+
+            <!-- Console Footer -->
+            <div class="msg-footer-bar">
+                <div id="msg-count-label" style="font-size: 9.5px; color: var(--text-secondary); font-family: 'B612 Mono', monospace;">
+                    0 msgs
+                </div>
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 9.5px; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="chk-autoscroll-msgs" checked style="accent-color: var(--accent); width: 12px; height: 12px; cursor: pointer;">
+                    Auto-scroll
+                </label>
             </div>
         </div>
 
@@ -1875,6 +2261,13 @@
         <canvas id="terrain-canvas" style="width: 100%; height: 100%;"></canvas>
     </div>
 
+    <!-- Urgent Message Toast Ticker -->
+    <div id="msg-toast-ticker" class="msg-toast-ticker" style="display: none;" onclick="openMessagesTabFromToast()">
+        <span id="toast-severity-pill" class="msg-severity-pill pill-warn">WARN</span>
+        <span id="toast-text" class="toast-text"></span>
+        <span class="toast-hint">Click to open [M]</span>
+    </div>
+
     <div id="canvas-container"></div>
     <script>
         var missionWaypoints = [];
@@ -1959,28 +2352,56 @@
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
         };
 
-        // Panel View Tab Navigation (Telemetry vs Airspace & Map)
+        // Panel View Tab Navigation (Telemetry vs Airspace vs Messages)
         const tabTelemetry = document.getElementById('tab-telemetry');
         const tabAirspace = document.getElementById('tab-airspace');
+        const tabMessages = document.getElementById('tab-messages');
+        const tabMsgCount = document.getElementById('tab-msg-count');
         const viewTelemetry = document.getElementById('panel-view-telemetry');
         const viewAirspace = document.getElementById('panel-view-airspace');
+        const viewMessages = document.getElementById('panel-view-messages');
         const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
+        const btnMessagesHdr = document.getElementById('btn-messages-hdr');
+        const btnToggleMessages = document.getElementById('btn-toggle-messages');
+        const hdrMsgDot = document.getElementById('hdr-msg-dot');
+        const toolbarMsgDot = document.getElementById('toolbar-msg-dot');
         const btnToggleWaypoints = document.getElementById('btn-toggle-waypoints');
 
         function switchPanelTab(tabName) {
             const isAirspace = tabName === 'airspace';
-            const isTelemetry = !isAirspace;
+            const isMessages = tabName === 'messages';
+            const isTelemetry = !isAirspace && !isMessages;
 
             if (tabTelemetry) tabTelemetry.classList.toggle('active', isTelemetry);
             if (tabAirspace) tabAirspace.classList.toggle('active', isAirspace);
+            if (tabMessages) tabMessages.classList.toggle('active', isMessages);
 
             if (viewTelemetry) viewTelemetry.style.display = isTelemetry ? 'block' : 'none';
             if (viewAirspace) viewAirspace.style.display = isAirspace ? 'block' : 'none';
+            if (viewMessages) viewMessages.style.display = isMessages ? 'block' : 'none';
 
             if (btnOfflineMapHdr) {
                 btnOfflineMapHdr.style.color = isAirspace ? 'var(--accent)' : '';
                 btnOfflineMapHdr.style.borderColor = isAirspace ? 'var(--accent)' : '';
             }
+            if (btnMessagesHdr) {
+                btnMessagesHdr.style.color = isMessages ? 'var(--accent)' : '';
+                btnMessagesHdr.style.borderColor = isMessages ? 'var(--accent)' : '';
+            }
+            if (btnToggleMessages) {
+                btnToggleMessages.style.opacity = isMessages ? '1.0' : '0.45';
+                btnToggleMessages.style.color = isMessages ? 'var(--accent)' : '';
+            }
+
+            if (isMessages) {
+                unreadMessageCount = 0;
+                if (tabMsgCount) tabMsgCount.style.display = 'none';
+                if (hdrMsgDot) hdrMsgDot.style.display = 'none';
+                if (toolbarMsgDot) toolbarMsgDot.style.display = 'none';
+                dismissToastTicker();
+                scrollMessagesToBottom();
+            }
+
             if (typeof airspaceRingGroup !== 'undefined') {
                 const mapVisChecked = chkToggleMapVis ? chkToggleMapVis.checked : true;
                 airspaceRingGroup.visible = isAirspace && mapVisChecked;
@@ -1989,7 +2410,7 @@
                 refreshCacheStatus();
                 updateMapEstimate();
                 populatePresetDropdown();
-            } else {
+            } else if (isTelemetry) {
                 if (typeof cameraMode !== 'undefined' && cameraMode === 'follow' && typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
                     controls.target.copy(vtolGroup.position);
                     camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 3.0, vtolGroup.position.z + 6.0);
@@ -1999,11 +2420,282 @@
         }
 
         if (tabTelemetry) tabTelemetry.onclick = () => switchPanelTab('telemetry');
-        if (tabAirspace) tabAirspace.onclick = () => switchPanelTab('airspace');
+        if (tabAirspace) tabAirspace.onclick = () => {
+            const isAirActive = tabAirspace && tabAirspace.classList.contains('active');
+            switchPanelTab(isAirActive ? 'telemetry' : 'airspace');
+        };
+        if (tabMessages) tabMessages.onclick = () => {
+            const isMsgActive = tabMessages && tabMessages.classList.contains('active');
+            switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
+        };
         if (btnOfflineMapHdr) {
             btnOfflineMapHdr.onclick = () => {
                 const isAirActive = tabAirspace && tabAirspace.classList.contains('active');
                 switchPanelTab(isAirActive ? 'telemetry' : 'airspace');
+            };
+        }
+
+        function toggleMessagesTab() {
+            const uiPanel = document.getElementById('ui-panel');
+            if (uiPanel && uiPanel.style.display === 'none') {
+                uiPanel.style.display = 'block';
+                const btnToggleUi = document.getElementById('btn-toggle-ui');
+                if (btnToggleUi) btnToggleUi.style.opacity = '1.0';
+            }
+            const isMsgActive = tabMessages && tabMessages.classList.contains('active');
+            switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
+        }
+
+        if (btnMessagesHdr) btnMessagesHdr.onclick = toggleMessagesTab;
+        if (btnToggleMessages) btnToggleMessages.onclick = toggleMessagesTab;
+
+        function openMessagesTabFromToast() {
+            dismissToastTicker();
+            const uiPanel = document.getElementById('ui-panel');
+            if (uiPanel && uiPanel.style.display === 'none') {
+                uiPanel.style.display = 'block';
+                const btnToggleUi = document.getElementById('btn-toggle-ui');
+                if (btnToggleUi) btnToggleUi.style.opacity = '1.0';
+            }
+            switchPanelTab('messages');
+        }
+
+        // System & Autopilot Message Console Implementation
+        const messagesHistory = [];
+        let unreadMessageCount = 0;
+        let currentMessageFilter = 'all'; // 'all' | 'warn' | 'info'
+        let currentMessageSearch = '';
+        let toastTimeoutId = null;
+
+        const messagesContainer = document.getElementById('messages-container');
+        const messagesList = document.getElementById('messages-list');
+        const messagesEmpty = document.getElementById('messages-empty');
+        const msgSearchInput = document.getElementById('msg-search-input');
+        const btnClearSearch = document.getElementById('btn-clear-search');
+        const chkAutoscrollMsgs = document.getElementById('chk-autoscroll-msgs');
+        const msgCountLabel = document.getElementById('msg-count-label');
+        const msgToastTicker = document.getElementById('msg-toast-ticker');
+        const toastSeverityPill = document.getElementById('toast-severity-pill');
+        const toastText = document.getElementById('toast-text');
+
+        const SEVERITY_CONFIG = {
+            0: { label: 'EMERG',  badgeClass: 'pill-crit',   rowClass: 'severity-crit',   level: 'warn' },
+            1: { label: 'ALERT',  badgeClass: 'pill-crit',   rowClass: 'severity-crit',   level: 'warn' },
+            2: { label: 'CRIT',   badgeClass: 'pill-crit',   rowClass: 'severity-crit',   level: 'warn' },
+            3: { label: 'ERROR',  badgeClass: 'pill-error',  rowClass: 'severity-error',  level: 'warn' },
+            4: { label: 'WARN',   badgeClass: 'pill-warn',   rowClass: 'severity-warn',   level: 'warn' },
+            5: { label: 'NOTICE', badgeClass: 'pill-notice', rowClass: 'severity-notice', level: 'info' },
+            6: { label: 'INFO',   badgeClass: 'pill-info',   rowClass: 'severity-info',   level: 'info' },
+            7: { label: 'DEBUG',  badgeClass: 'pill-debug',  rowClass: 'severity-debug',  level: 'info' }
+        };
+
+        function formatMsgTime(ts) {
+            const d = ts ? new Date(ts * 1000) : new Date();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            return `${hh}:${mm}:${ss}`;
+        }
+
+        function scrollMessagesToBottom() {
+            if (chkAutoscrollMsgs && chkAutoscrollMsgs.checked && messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        function triggerMessageToast(sevCfg, text) {
+            if (!msgToastTicker || !toastSeverityPill || !toastText) return;
+            if (tabMessages && tabMessages.classList.contains('active')) return;
+            
+            toastSeverityPill.textContent = sevCfg.label;
+            toastSeverityPill.className = 'msg-severity-pill ' + sevCfg.badgeClass;
+            toastText.textContent = text;
+            msgToastTicker.style.display = 'flex';
+
+            if (toastTimeoutId) clearTimeout(toastTimeoutId);
+            toastTimeoutId = setTimeout(() => {
+                dismissToastTicker();
+            }, 4500);
+        }
+
+        function dismissToastTicker() {
+            if (msgToastTicker) msgToastTicker.style.display = 'none';
+            if (toastTimeoutId) {
+                clearTimeout(toastTimeoutId);
+                toastTimeoutId = null;
+            }
+        }
+
+        function addAutopilotMessage(msgObj, isBatch = false) {
+            const sev = (msgObj.severity !== undefined) ? parseInt(msgObj.severity, 10) : 6;
+            const sevCfg = SEVERITY_CONFIG[sev] || SEVERITY_CONFIG[6];
+            const text = String(msgObj.text || '').trim();
+            if (!text) return;
+
+            const timeStr = formatMsgTime(msgObj.timestamp);
+            const entry = {
+                text: text,
+                severity: sev,
+                sevCfg: sevCfg,
+                timestamp: msgObj.timestamp || (Date.now() / 1000),
+                timeStr: timeStr
+            };
+            messagesHistory.push(entry);
+
+            if (messagesHistory.length > 200) {
+                messagesHistory.shift();
+                if (messagesList && messagesList.firstChild) {
+                    messagesList.removeChild(messagesList.firstChild);
+                }
+            }
+
+            if (messagesEmpty) messagesEmpty.style.display = 'none';
+
+            const row = document.createElement('div');
+            row.className = `msg-row ${sevCfg.rowClass}`;
+            row.dataset.severityLevel = sevCfg.level;
+            row.dataset.severity = sev;
+            row.dataset.text = text.toLowerCase();
+
+            const matchFilter = (currentMessageFilter === 'all') || (sevCfg.level === currentMessageFilter);
+            const matchSearch = !currentMessageSearch || text.toLowerCase().includes(currentMessageSearch);
+            row.style.display = (matchFilter && matchSearch) ? 'flex' : 'none';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'msg-time';
+            timeSpan.textContent = `[${timeStr}]`;
+
+            const pillSpan = document.createElement('span');
+            pillSpan.className = `msg-severity-pill ${sevCfg.badgeClass}`;
+            pillSpan.textContent = sevCfg.label;
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'msg-text';
+            textSpan.textContent = text;
+
+            row.appendChild(timeSpan);
+            row.appendChild(pillSpan);
+            row.appendChild(textSpan);
+
+            if (messagesList) messagesList.appendChild(row);
+
+            const isMsgActive = tabMessages && tabMessages.classList.contains('active');
+            if (!isMsgActive && !isBatch) {
+                unreadMessageCount++;
+                if (tabMsgCount) {
+                    tabMsgCount.textContent = (unreadMessageCount > 99) ? '99+' : unreadMessageCount;
+                    tabMsgCount.style.display = 'inline-flex';
+                }
+                if (hdrMsgDot) hdrMsgDot.style.display = 'block';
+                if (toolbarMsgDot) toolbarMsgDot.style.display = 'block';
+
+                if (sev <= 4) {
+                    triggerMessageToast(sevCfg, text);
+                }
+            }
+
+            if (isMsgActive) {
+                scrollMessagesToBottom();
+            }
+
+            updateMessageCountLabel();
+        }
+
+        function updateMessageCountLabel() {
+            if (!msgCountLabel) return;
+            const total = messagesHistory.length;
+            if (messagesList) {
+                let visible = 0;
+                for (let i = 0; i < messagesList.children.length; i++) {
+                    if (messagesList.children[i].style.display !== 'none') visible++;
+                }
+                if (visible === total) {
+                    msgCountLabel.textContent = `${total} msgs`;
+                } else {
+                    msgCountLabel.textContent = `${visible}/${total} msgs`;
+                }
+            } else {
+                msgCountLabel.textContent = `${total} msgs`;
+            }
+        }
+
+        function setMessageFilter(mode) {
+            currentMessageFilter = mode;
+            const btnAll = document.getElementById('filter-all');
+            const btnWarn = document.getElementById('filter-warn');
+            const btnInfo = document.getElementById('filter-info');
+            if (btnAll) btnAll.classList.toggle('active', mode === 'all');
+            if (btnWarn) btnWarn.classList.toggle('active', mode === 'warn');
+            if (btnInfo) btnInfo.classList.toggle('active', mode === 'info');
+            applyMessageFilterAndSearch();
+        }
+
+        function applyMessageFilterAndSearch() {
+            if (!messagesList) return;
+            const rows = messagesList.getElementsByClassName('msg-row');
+            for (let i = 0; i < rows.length; i++) {
+                const r = rows[i];
+                const level = r.dataset.severityLevel;
+                const text = r.dataset.text || '';
+                const matchFilter = (currentMessageFilter === 'all') || (level === currentMessageFilter);
+                const matchSearch = !currentMessageSearch || text.includes(currentMessageSearch);
+                r.style.display = (matchFilter && matchSearch) ? 'flex' : 'none';
+            }
+            updateMessageCountLabel();
+            scrollMessagesToBottom();
+        }
+
+        if (msgSearchInput) {
+            msgSearchInput.addEventListener('input', (e) => {
+                currentMessageSearch = e.target.value.trim().toLowerCase();
+                if (btnClearSearch) btnClearSearch.style.display = currentMessageSearch ? 'inline' : 'none';
+                applyMessageFilterAndSearch();
+            });
+        }
+
+        if (btnClearSearch) {
+            btnClearSearch.onclick = () => {
+                if (msgSearchInput) msgSearchInput.value = '';
+                currentMessageSearch = '';
+                btnClearSearch.style.display = 'none';
+                applyMessageFilterAndSearch();
+            };
+        }
+
+        const btnClearMessages = document.getElementById('btn-clear-messages');
+        if (btnClearMessages) {
+            btnClearMessages.onclick = () => {
+                messagesHistory.length = 0;
+                if (messagesList) messagesList.innerHTML = '';
+                if (messagesEmpty) messagesEmpty.style.display = 'block';
+                updateMessageCountLabel();
+            };
+        }
+
+        const btnExportMessages = document.getElementById('btn-export-messages');
+        if (btnExportMessages) {
+            btnExportMessages.onclick = () => {
+                if (!messagesHistory.length) return;
+                let logText = `=== ARDUPILOT FLIGHT MESSAGES LOG ===\nExported: ${new Date().toISOString()}\nTotal Messages: ${messagesHistory.length}\n\n`;
+                for (const m of messagesHistory) {
+                    logText += `[${m.timeStr}] [${m.sevCfg.label}] ${m.text}\n`;
+                }
+                const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `autopilot_messages_${Date.now()}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        const btnCloseMessages = document.getElementById('btn-close-messages');
+        if (btnCloseMessages) {
+            btnCloseMessages.onclick = () => {
+                switchPanelTab('telemetry');
             };
         }
 
@@ -4057,6 +4749,12 @@
                 toggleDeadReckoningSim();
             } else if (e.key === 'w' || e.key === 'W') {
                 toggleWaypoints();
+            } else if (e.key === 'm' || e.key === 'M') {
+                toggleMessagesTab();
+            } else if (e.key === 'Escape') {
+                if (tabMessages && tabMessages.classList.contains('active')) {
+                    switchPanelTab('telemetry');
+                }
             }
         });
 
@@ -4790,11 +5488,24 @@
                 vehicleConnected = true;
                 // Proactively request waypoints when vehicle connection is confirmed
                 try { ws.send(JSON.stringify({ action: 'fetch_waypoints' })); } catch(e){}
+                addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
             }
             const data = JSON.parse(event.data);
-            if (data.type === 'HEARTBEAT') {
+            if (data.type === 'STATUSTEXT') {
+                addAutopilotMessage(data);
+            } else if (data.type === 'STATUSTEXT_HISTORY') {
+                if (Array.isArray(data.messages)) {
+                    for (const m of data.messages) {
+                        addAutopilotMessage(m, true);
+                    }
+                }
+            } else if (data.type === 'HEARTBEAT') {
                 // Safeguard against raw GCS heartbeat packets (Mode(0x000000c0) or Type 6)
                 if (data.mode && !data.mode.startsWith('Mode(') && data.mode !== 'UNKNOWN') {
+                    const prevMode = document.getElementById('f_mode').innerText;
+                    if (prevMode !== data.mode && prevMode !== 'UNKNOWN') {
+                        addAutopilotMessage({ text: `Flight Mode: ${data.mode}`, severity: 5 });
+                    }
                     document.getElementById('f_mode').innerText = data.mode;
                 }
                 if (data.firmware && !data.firmware.startsWith('Type ') && data.firmware !== '---') {
@@ -5049,6 +5760,7 @@
             }
             else if (data.type === 'MISSION_WAYPOINTS') {
                 if (Array.isArray(data.waypoints) && data.waypoints.length > 0) {
+                    addAutopilotMessage({ text: `Mission: Loaded ${data.waypoints.length} waypoints from flight controller`, severity: 6 });
                     missionWaypoints = data.waypoints;
                     const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
                     if (homeWp) {
@@ -5063,6 +5775,7 @@
             else if (data.type === 'MISSION_CURRENT') {
                 if (data.seq !== undefined && data.seq !== currentMissionSeq) {
                     currentMissionSeq = data.seq;
+                    addAutopilotMessage({ text: `Mission Current: Waypoint #${data.seq}`, severity: 5 });
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
                 }
             }
