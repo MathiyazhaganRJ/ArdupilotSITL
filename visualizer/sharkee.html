@@ -4872,9 +4872,9 @@
                     }
                 }
 
-                // Background Trail Tracking: Records ONLY when browser is minimized!
+                // Background Trail Tracking: Records ONLY when browser is minimized/inactive!
                 const now = Date.now();
-                const isRendering = (now - lastRenderTime) < 2000;
+                const isRendering = (now - lastRenderTime) < 400;
 
                 if (!isRendering && firstPos && rawTargetPos.distanceTo(lastTrailAddPos) > 0.5) {
                     if (trailCount < maxTrailPoints - 1) {
@@ -5032,8 +5032,8 @@
             requestAnimationFrame(animate);
 
             const now = Date.now();
-            if (now - lastRenderTime > 2000 && firstPos) {
-                // Tab just woke up from being minimized (2 seconds asleep)!
+            if (now - lastRenderTime > 400 && firstPos) {
+                // Tab woke up from being minimized / inactive (> 400ms)!
                 // Instantly snap the plane to the present to avoid dragging a straight line
                 targetPos.copy(rawTargetPos);
                 vtolGroup.position.copy(rawTargetPos);
