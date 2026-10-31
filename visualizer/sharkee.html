@@ -2020,14 +2020,16 @@
                 btnToggleWaypoints.style.background = waypointsVisible ? 'rgba(217, 70, 239, 0.15)' : '';
             }
             if (waypointsVisible) {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ action: 'fetch_waypoints' }));
-                }
-                if (!missionWaypoints || missionWaypoints.length === 0) {
-                    if (!vehicleConnected && typeof loadDefaultWaypoints === 'function') {
+                const hasWaypoints = Array.isArray(missionWaypoints) && missionWaypoints.length > 0;
+                if (!hasWaypoints) {
+                    // Fetch only if waypoints are not loaded yet
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ action: 'fetch_waypoints' }));
+                    } else if (!vehicleConnected && typeof loadDefaultWaypoints === 'function') {
                         loadDefaultWaypoints();
                     }
-                } else if (typeof renderWaypoints3D === 'function') {
+                } else if (waypointGroup.children.length === 0 && typeof renderWaypoints3D === 'function') {
+                    // Render only if not already built in 3D scene
                     renderWaypoints3D();
                 }
             }

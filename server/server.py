@@ -32,17 +32,20 @@ class MissionHandler:
         self.retries = 0
         self.max_retries = 5
 
-    def start_fetch(self):
+    def start_fetch(self, force=False):
         if not self.conn:
+            return False
+        now = time.time()
+        if self.is_fetching and (now - self.last_req_time < 3.0) and not force:
+            print("[Mission] Fetch already in progress, ignoring duplicate request")
             return False
         target_sys = getattr(self.conn, 'target_system', 1) or 1
         target_comp = getattr(self.conn, 'target_component', 1) or 1
-        self.waypoints = []
         self.is_fetching = True
         self.expected_count = 0
         self.next_req_seq = 0
         self.retries = 0
-        self.last_req_time = time.time()
+        self.last_req_time = now
         try:
             self.conn.mav.mission_request_list_send(target_sys, target_comp)
             print(f"[Mission] Requested mission list from Sys {target_sys}:{target_comp}")
@@ -384,20 +387,21 @@ async def ws_handler(websocket, path=None):
                     )
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
                 elif action == "fetch_waypoints":
-                    if mission_handler.waypoints:
-                        valid_wps = [w for w in mission_handler.waypoints if w is not None]
-                        if valid_wps:
-                            try:
-                                await websocket.send(json.dumps({
-                                    "type": "MISSION_WAYPOINTS",
-                                    "waypoints": valid_wps,
-                                    "count": len(valid_wps),
-                                    "current_seq": mission_handler.current_seq
-                                }))
-                            except Exception:
-                                pass
-                    ok = mission_handler.start_fetch()
-                    print(f"[Mission] Client requested waypoint fetch (initiated: {ok})")
+                    force = bool(cmd.get("force", False))
+                    valid_wps = [w for w in mission_handler.waypoints if w is not None] if mission_handler.waypoints else []
+                    if valid_wps and not force:
+                        try:
+                            await websocket.send(json.dumps({
+                                "type": "MISSION_WAYPOINTS",
+                                "waypoints": valid_wps,
+                                "count": len(valid_wps),
+                                "current_seq": mission_handler.current_seq
+                            }))
+                        except Exception:
+                            pass
+                    else:
+                        ok = mission_handler.start_fetch(force=force)
+                        print(f"[Mission] Client requested waypoint fetch (initiated: {ok})")
                 elif action == "set_current_waypoint":
                     seq = int(cmd.get("seq", 0))
                     mission_handler.set_current(seq)
