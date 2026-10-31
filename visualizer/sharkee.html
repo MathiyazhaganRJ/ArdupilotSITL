@@ -6,11 +6,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>VTOL Visualizer</title>
-    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=4">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png?v=4">
-    <link rel="icon" type="image/png" sizes="512x512" href="app_icon.png?v=4">
-    <link rel="apple-touch-icon" href="app_icon.png?v=4">
+    <title>Karshak SITL - Digital Twin</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230a84ff'><polygon points='12 2 19 21 12 17 5 21 12 2'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1563,8 +1560,12 @@
     <div id="ui-panel">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
-                <h2>ArduPilot SITL</h2>
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #0a84ff, #0051a8); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 113, 227, 0.35); flex-shrink: 0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+                    </svg>
+                </div>
+                <h2>Karshak SITL</h2>
             </div>
             <div style="display: flex; gap: 6px;">
                 <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="position: relative;">

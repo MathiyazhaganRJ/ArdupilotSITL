@@ -865,18 +865,16 @@ def open_browser(url):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
+    parser = argparse.ArgumentParser(description="Karshak SITL Telemetry & Visualizer Server")
     parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
     args = parser.parse_args()
 
-    # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
+    # Ensure Windows taskbar displays the custom app model ID
     try:
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('ardupilot.sitl.visualizer.1.0')
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('karshak.sitl.visualizer.1.0')
     except Exception:
         pass
-
-    icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app_icon.ico')
 
     api = Api()
 
@@ -898,14 +896,14 @@ if __name__ == "__main__":
         # 2. Launch the native desktop window on the main thread (with fallback if GTK/QT unavailable in WSL)
         try:
             window = webview.create_window(
-                'Shark Hawk Digital Twin', 
+                'Karshak SITL - Digital Twin', 
                 'http://127.0.0.1:8000/sharkee.html', 
                 js_api=api,
                 width=1280, 
                 height=720,
                 background_color='#000000'
             )
-            webview.start(icon=icon_path if os.path.exists(icon_path) else None)
+            webview.start()
         except Exception as e:
             print(f"\n[Notice] Native GUI window could not be started: {e}")
             print("[Server] Falling back to Headless Server Mode.")
