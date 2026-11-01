@@ -833,6 +833,134 @@
             background: rgba(217, 70, 239, 0.15);
         }
 
+        /* LXNAV Circular Glass Cockpit MFD Widget */
+        #lxnav-mfd-widget {
+            position: absolute;
+            bottom: 20px;
+            left: 585px;
+            width: 236px;
+            box-sizing: border-box;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 12px 14px 10px;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            user-select: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .lxnav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .lxnav-title-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lxnav-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-family: 'B612 Mono', monospace;
+        }
+
+        .lxnav-knob-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .lxnav-knob-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .lxnav-page-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(10, 132, 255, 0.15);
+            color: var(--accent);
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            font-family: 'B612 Mono', monospace;
+        }
+
+        .lxnav-dial-viewport {
+            position: relative;
+            width: 196px;
+            height: 196px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: #000000;
+            box-shadow: 
+                0 0 0 3px #1c2026,
+                0 0 0 6px #0e1115,
+                0 8px 24px rgba(0, 0, 0, 0.75),
+                inset 0 2px 5px rgba(255, 255, 255, 0.1),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .lxnav-dial-viewport::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.0) 100%);
+            border-radius: 50% 50% 0 0;
+            pointer-events: none;
+        }
+
+        .lxnav-footer-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .lxnav-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .lxnav-dot.active {
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
 
         /* Live Weather & Terminal Widget */
         #weather-widget {
@@ -1558,6 +1686,15 @@
             </svg>
             <span id="toolbar-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-lxnav" title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')" style="opacity: 1.0; color: var(--accent);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+            </svg>
+        </button>
     </div>
 
     <div id="ui-panel">
@@ -2033,6 +2170,250 @@
         </div>
     </div>
 
+    <!-- LXNAV Glass Cockpit Multi-Function Display (MFD) Widget -->
+    <div id="lxnav-mfd-widget">
+        <div class="lxnav-header">
+            <div class="lxnav-title-group">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="12" x2="15" y2="15"></line>
+                </svg>
+                <span class="lxnav-title" id="lxnav-header-title">PFD HORIZON</span>
+            </div>
+            <div style="display:flex; gap:5px; align-items:center;">
+                <button class="lxnav-knob-btn" onclick="prevLxnavPage()" title="Previous Page (Knob CCW)">◀</button>
+                <div class="lxnav-page-badge" id="lxnav-page-badge" onclick="togglePrimaryDuo()" title="Click to toggle Horizon / Vario">PAGE 5</div>
+                <button class="lxnav-knob-btn" onclick="nextLxnavPage()" title="Next Page (Knob CW)">▶</button>
+            </div>
+        </div>
+
+        <!-- Bezel Viewport -->
+        <div class="lxnav-dial-viewport" id="lxnav-dial-viewport" onclick="togglePrimaryDuo()" title="Click to flip between Horizon and Variometer (Scroll for all pages)">
+            <svg id="lxnav-mfd-svg" width="196" height="196" viewBox="0 0 200 200" style="overflow: visible;">
+                <defs>
+                    <clipPath id="lxnav-clip-circle">
+                        <circle cx="100" cy="100" r="94" />
+                    </clipPath>
+                    <!-- Segmented Rainbow Arcs for Hawk Vario -->
+                    <linearGradient id="lxnav-vario-lift-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+                        <stop offset="0%" stop-color="#ffcc00" />
+                        <stop offset="50%" stop-color="#ff9500" />
+                        <stop offset="100%" stop-color="#ff3b30" />
+                    </linearGradient>
+                    <linearGradient id="lxnav-vario-sink-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+                        <stop offset="0%" stop-color="#00e5ff" />
+                        <stop offset="60%" stop-color="#0078d4" />
+                        <stop offset="100%" stop-color="#5856d6" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Outer Dial Base Bezel -->
+                <circle cx="100" cy="100" r="95" fill="#090b0e" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+
+                <!-- ================= DIAL 5: ARTIFICIAL HORIZON / PFD ================= -->
+                <g id="lxnav-dial-5" clip-path="url(#lxnav-clip-circle)" style="display: inline;">
+                    <!-- Rotating & Translating Pitch Sphere -->
+                    <g id="lxnav-pfd-horizon-group" style="transform-origin: 100px 100px;">
+                        <rect x="-100" y="-150" width="400" height="250" fill="#389bd8" />
+                        <rect x="-100" y="100" width="400" height="250" fill="#8a4819" />
+                        <line x1="-100" y1="100" x2="300" y2="100" stroke="#ffffff" stroke-width="1.8" />
+                        <!-- Pitch ladder -->
+                        <line x1="82" y1="40" x2="118" y2="40" stroke="#ffffff" stroke-width="1.4" />
+                        <text x="76" y="43" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" text-anchor="end">30</text>
+                        <text x="124" y="43" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8">30</text>
+                        <line x1="78" y1="60" x2="122" y2="60" stroke="#ffffff" stroke-width="1.4" />
+                        <text x="72" y="63" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" text-anchor="end">20</text>
+                        <text x="128" y="63" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8">20</text>
+                        <line x1="84" y1="80" x2="116" y2="80" stroke="#ffffff" stroke-width="1.4" />
+                        <text x="78" y="83" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" text-anchor="end">10</text>
+                        <text x="122" y="83" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8">10</text>
+                        <!-- Ground ladder -->
+                        <line x1="84" y1="120" x2="116" y2="120" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4,3" />
+                        <text x="78" y="123" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" text-anchor="end">10</text>
+                        <text x="122" y="123" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8">10</text>
+                        <line x1="78" y1="140" x2="122" y2="140" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4,3" />
+                        <text x="72" y="143" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" text-anchor="end">20</text>
+                        <text x="128" y="143" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8">20</text>
+                    </g>
+
+                    <!-- Roll Bank Arc -->
+                    <path d="M40,55 A80,80 0 0,1 160,55" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" />
+                    <polygon points="100,22 96,28 104,28" fill="#ffffff" />
+                    <line x1="58" y1="36" x2="62" y2="42" stroke="#ffffff" stroke-width="2" />
+                    <text x="54" y="32" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" font-weight="700">30°</text>
+                    <line x1="142" y1="36" x2="138" y2="42" stroke="#ffffff" stroke-width="2" />
+                    <text x="146" y="32" fill="#ffffff" font-family="'Inter', sans-serif" font-size="8" font-weight="700">30°</text>
+
+                    <!-- Aircraft Reference Reticle -->
+                    <circle cx="100" cy="100" r="3.5" fill="#ffcc00" />
+                    <path d="M58,100 L84,100 L84,105" fill="none" stroke="#ffcc00" stroke-width="3" stroke-linecap="round" />
+                    <path d="M142,100 L116,100 L116,105" fill="none" stroke="#ffcc00" stroke-width="3" stroke-linecap="round" />
+
+                    <!-- Speed & Altitude Boxes -->
+                    <rect x="4" y="86" width="32" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+                    <text id="lxnav-pfd-speed" x="20" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="12" font-weight="700" text-anchor="middle">0</text>
+                    <rect x="158" y="86" width="38" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+                    <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
+                    
+                    <!-- Bottom Status Tag -->
+                    <g transform="translate(86, 172)">
+                        <rect x="0" y="0" width="28" height="16" rx="4" fill="#16181c" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+                        <text x="14" y="11" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="middle">VTOL</text>
+                    </g>
+                </g>
+
+                <!-- ================= DIAL 6: HAWK VARIOMETER ================= -->
+                <g id="lxnav-dial-6" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <!-- Colored Lift & Sink Arcs -->
+                    <path d="M100,16 A84,84 0 0,1 184,100" fill="none" stroke="url(#lxnav-vario-lift-grad)" stroke-width="6" stroke-linecap="round" />
+                    <path d="M16,100 A84,84 0 0,1 100,16" fill="none" stroke="url(#lxnav-vario-sink-grad)" stroke-width="6" stroke-linecap="round" />
+                    <path d="M184,100 A84,84 0 0,1 120,181" fill="none" stroke="#ff3b30" stroke-width="6" stroke-linecap="round" />
+                    <path d="M80,181 A84,84 0 0,1 16,100" fill="none" stroke="#0078d4" stroke-width="6" stroke-linecap="round" />
+
+                    <!-- Numbers around scale -->
+                    <g font-family="'Inter', sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">
+                        <text x="100" y="28" text-anchor="middle">0</text>
+                        <text x="138" y="38" text-anchor="middle">1</text>
+                        <text x="166" y="68" text-anchor="middle">2</text>
+                        <text x="176" y="104" text-anchor="middle">3</text>
+                        <text x="166" y="140" text-anchor="middle">4</text>
+                        <text x="140" y="168" text-anchor="middle">5</text>
+                        <text x="100" y="180" text-anchor="middle">6</text>
+                        <text x="62" y="38" text-anchor="middle">1</text>
+                        <text x="34" y="68" text-anchor="middle">2</text>
+                        <text x="24" y="104" text-anchor="middle">3</text>
+                        <text x="34" y="140" text-anchor="middle">4</text>
+                        <text x="60" y="168" text-anchor="middle">5</text>
+                    </g>
+
+                    <!-- Top Wind Readout -->
+                    <text id="lxnav-vario-wind" x="100" y="48" fill="#ff9500" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="middle">---° / 0km/h</text>
+
+                    <!-- Center Bold Netto Readout -->
+                    <text id="lxnav-vario-netto" x="100" y="86" fill="#30d158" font-family="'B612 Mono', monospace" font-size="24" font-weight="700" text-anchor="middle">+0.0</text>
+                    <text x="100" y="98" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">Netto m/s</text>
+
+                    <!-- Secondary Vario Readout -->
+                    <text id="lxnav-vario-vera" x="100" y="128" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="18" font-weight="700" text-anchor="middle">+0.0</text>
+                    <text x="100" y="138" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">VarA m/s</text>
+
+                    <!-- Pointer Needle -->
+                    <g id="lxnav-vario-needle" style="transform-origin: 100px 100px; transform: rotate(0deg); transition: transform 0.08s linear;">
+                        <polygon points="100,24 96,100 104,100" fill="var(--accent-cyan)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))" />
+                        <circle cx="100" cy="100" r="7" fill="#1c2026" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+                        <circle cx="100" cy="100" r="3" fill="var(--accent-cyan)" />
+                    </g>
+                </g>
+
+                <!-- ================= DIAL 2: NEAR WAYPOINTS ================= -->
+                <g id="lxnav-dial-2" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <rect width="200" height="200" fill="#090b0e" />
+                    <text x="100" y="30" fill="#ffffff" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle">Near</text>
+                    <text x="36" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600">Name</text>
+                    <text x="114" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" text-anchor="end">Dist ^</text>
+                    <text x="168" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" text-anchor="end">Arr</text>
+                    <line x1="24" y1="64" x2="176" y2="64" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+                    <g id="lxnav-wpts-rows" transform="translate(0, 78)">
+                        <!-- Populated dynamically from missionWaypoints -->
+                        <circle cx="26" cy="4" r="4" fill="var(--accent)" />
+                        <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9.5" font-weight="700">HOME</text>
+                        <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9.5" text-anchor="end">0<tspan font-size="7.5">km</tspan></text>
+                        <text x="168" y="7" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="end">+100<tspan font-size="7.5">m</tspan></text>
+                    </g>
+                </g>
+
+                <!-- ================= DIAL 4: TACTICAL MAP & WIND ================= -->
+                <g id="lxnav-dial-4" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <rect width="200" height="200" fill="#d9b77d" />
+                    <path d="M-10,120 Q50,70 120,80 T210,50 L210,210 L-10,210 Z" fill="#c6a366" />
+                    <path d="M40,160 Q110,110 160,130 T210,100 L210,210 L40,210 Z" fill="#b08b50" />
+                    <rect x="0" y="0" width="200" height="36" fill="#121519" />
+                    <text id="lxnav-map-hdg" x="100" y="18" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="12" font-weight="700" text-anchor="middle">184°</text>
+                    <g transform="translate(100, 100)">
+                        <circle cx="10" cy="-4" r="3" fill="#ff3b30" />
+                        <circle cx="14" cy="4" r="3" fill="#ff9500" />
+                        <circle cx="4" cy="12" r="3" fill="#ffcc00" />
+                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#000000" stroke-width="2.5" />
+                        <line x1="-9" y1="-2" x2="9" y2="-2" stroke="#000000" stroke-width="2.5" />
+                    </g>
+                    <rect x="20" y="142" width="62" height="24" rx="3" fill="rgba(18,22,28,0.88)" />
+                    <text id="lxnav-map-wind" x="51" y="153" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">WIND</text>
+                    <text id="lxnav-map-spd" x="51" y="163" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">0<tspan font-size="6.5">km/h</tspan></text>
+                    <rect x="58" y="172" width="84" height="16" rx="3" fill="#121519" />
+                    <text x="100" y="183" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">TRACK ACTIVE</text>
+                </g>
+
+                <!-- ================= DIAL 7: FINAL GLIDE / RTL COMPUTER ================= -->
+                <g id="lxnav-dial-7" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <rect width="200" height="200" fill="#e8ebea" />
+                    <rect x="0" y="0" width="200" height="32" fill="#ffffff" opacity="0.95" />
+                    <text x="100" y="20" fill="#000000" font-family="'Inter', sans-serif" font-size="11" font-weight="700" text-anchor="middle">Inside safe zone</text>
+                    <circle cx="100" cy="100" r="56" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-dasharray="2,3" />
+                    <g transform="translate(100, 100)">
+                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#000000" stroke-width="2.5" />
+                        <line x1="-9" y1="-2" x2="9" y2="-2" stroke="#000000" stroke-width="2.5" />
+                    </g>
+                    <rect x="0" y="142" width="200" height="58" fill="#15171a" />
+                    <line x1="0" y1="142" x2="200" y2="142" stroke="#2a2e35" stroke-width="1" />
+                    <text x="50" y="155" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">RTL SAFE</text>
+                    <text x="150" y="155" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">GEO OK</text>
+                    <text id="lxnav-rtl-alt" x="50" y="168" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">--m</text>
+                    <text x="150" y="168" fill="var(--accent-yellow)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">AUTO</text>
+                    <text x="100" y="182" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">MISSION COMPUTER</text>
+                </g>
+
+                <!-- ================= DIAL 3: TRAFFIC & AIRSPACE RADAR ================= -->
+                <g id="lxnav-dial-3" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <rect width="200" height="200" fill="#e2ded4" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" stroke-dasharray="2,3" />
+                    <circle cx="100" cy="100" r="42" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" stroke-dasharray="2,3" />
+                    <text x="100" y="24" fill="#000000" font-family="'Inter', sans-serif" font-size="10" font-weight="800" text-anchor="middle">N</text>
+                    <text x="180" y="104" fill="#000000" font-family="'Inter', sans-serif" font-size="10" font-weight="800" text-anchor="middle">E</text>
+                    <text x="20" y="104" fill="#000000" font-family="'Inter', sans-serif" font-size="10" font-weight="800" text-anchor="middle">W</text>
+                    <g transform="translate(100, 100)">
+                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#000000" stroke-width="2.5" />
+                        <line x1="-10" y1="-2" x2="10" y2="-2" stroke="#000000" stroke-width="2.5" />
+                    </g>
+                    <rect x="0" y="152" width="200" height="48" fill="#15171a" />
+                    <text x="100" y="180" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="middle">ADS-B SCANNING</text>
+                </g>
+
+                <!-- ================= DIAL 1: SETUP MENU ================= -->
+                <g id="lxnav-dial-1" clip-path="url(#lxnav-clip-circle)" style="display: none;">
+                    <rect width="200" height="200" fill="#0d1015" />
+                    <text x="100" y="32" fill="#ffffff" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle">Setup</text>
+                    <g transform="translate(18, 56)">
+                        <text x="24" y="12" fill="rgba(255,255,255,0.7)" font-family="'Inter', sans-serif" font-size="11">Weight & Balance</text>
+                    </g>
+                    <rect x="0" y="78" width="200" height="26" fill="var(--accent)" />
+                    <g transform="translate(18, 80)">
+                        <text x="24" y="14" fill="#ffffff" font-family="'Inter', sans-serif" font-size="11.5" font-weight="700">Flight Modes</text>
+                    </g>
+                    <g transform="translate(18, 114)">
+                        <text x="24" y="12" fill="rgba(255,255,255,0.85)" font-family="'Inter', sans-serif" font-size="11">Logbook & Telemetry</text>
+                    </g>
+                    <g transform="translate(18, 142)">
+                        <text x="24" y="12" fill="rgba(255,255,255,0.6)" font-family="'Inter', sans-serif" font-size="11">Graphics & HUD</text>
+                    </g>
+                </g>
+
+            </svg>
+        </div>
+
+        <!-- Rotary Page Indicator Dots -->
+        <div class="lxnav-footer-dots" id="lxnav-footer-dots">
+            <div class="lxnav-dot" onclick="setLxnavPage(1)" title="Page 1: Setup"></div>
+            <div class="lxnav-dot" onclick="setLxnavPage(2)" title="Page 2: Waypoints"></div>
+            <div class="lxnav-dot" onclick="setLxnavPage(3)" title="Page 3: Radar"></div>
+            <div class="lxnav-dot" onclick="setLxnavPage(4)" title="Page 4: Tactical Map"></div>
+            <div class="lxnav-dot active" onclick="setLxnavPage(5)" title="Page 5: PFD Horizon"></div>
+            <div class="lxnav-dot" onclick="setLxnavPage(6)" title="Page 6: Hawk Vario"></div>
+            <div class="lxnav-dot" onclick="setLxnavPage(7)" title="Page 7: RTL / Task"></div>
+        </div>
+    </div>
+
+    <!-- Live Weather Widget -->
     <div id="weather-widget">
         <div class="weather-header">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -2248,7 +2629,7 @@
 
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
-        style="position: absolute; bottom: 20px; right: 20px; width: 450px; height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 100; pointer-events: none;">
+        style="position: absolute; bottom: 20px; right: 20px; width: min(450px, calc(100vw - 845px)); height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 90; pointer-events: none;">
         <div
             style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
             <span>Terrain & Flight Profile</span>
@@ -2269,6 +2650,8 @@
         var missionWaypoints = [];
         var currentMissionSeq = 0;
         var waypointsVisible = false;
+        var currentLxnavPage = 5;
+        var lxnavWidgetVisible = true;
 
         const SVG_MOON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
         const SVG_SUN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
@@ -3237,8 +3620,16 @@
                 };
             };
         }
-        makeDraggable(compassWidget, compassWidget.querySelector('.compass-header'));
-        makeDraggable(weatherWidget, weatherWidget.querySelector('.weather-header'));
+        if (compassWidget && compassWidget.querySelector('.compass-header')) {
+            makeDraggable(compassWidget, compassWidget.querySelector('.compass-header'));
+        }
+        if (weatherWidget && weatherWidget.querySelector('.weather-header')) {
+            makeDraggable(weatherWidget, weatherWidget.querySelector('.weather-header'));
+        }
+        const lxnavMfdEl = document.getElementById('lxnav-mfd-widget');
+        if (lxnavMfdEl && lxnavMfdEl.querySelector('.lxnav-header')) {
+            makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
+        }
 
         // FMS CDU Navigation Panel Toggle
         const btnToggleFms = document.getElementById('btn-toggle-fms');
@@ -3536,6 +3927,200 @@
                 if (dotEl) dotEl.className = 'live-dot offline';
             } finally {
                 if (fetchBtn) fetchBtn.classList.remove('loading');
+            }
+        }
+
+        // ============================================================
+        // LXNAV ROTARY MFD GLASS COCKPIT CONTROLLER
+        // ============================================================
+        currentLxnavPage = 5; // Default to Page 5: PFD Horizon
+        lxnavWidgetVisible = true;
+        let planeClimbRate = 0.0; // m/s
+        const lxnavPageTitles = [
+            "",
+            "SETUP MENU",
+            "NEAR WPTS",
+            "TRAFFIC RADAR",
+            "TACTICAL MAP",
+            "PFD HORIZON",
+            "HAWK VARIO",
+            "RTL / TASK"
+        ];
+
+        function setLxnavPage(pageNum) {
+            currentLxnavPage = Math.max(1, Math.min(7, pageNum));
+            // Show only the active dial group
+            for (let i = 1; i <= 7; i++) {
+                const dialEl = document.getElementById(`lxnav-dial-${i}`);
+                if (dialEl) {
+                    dialEl.style.display = (i === currentLxnavPage) ? 'inline' : 'none';
+                }
+            }
+            // Update title and page badge
+            const titleEl = document.getElementById('lxnav-header-title');
+            if (titleEl) titleEl.textContent = lxnavPageTitles[currentLxnavPage];
+            const badgeEl = document.getElementById('lxnav-page-badge');
+            if (badgeEl) badgeEl.textContent = `PAGE ${currentLxnavPage}`;
+
+            // Update footer dots
+            const dots = document.querySelectorAll('#lxnav-footer-dots .lxnav-dot');
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', (idx + 1) === currentLxnavPage);
+            });
+
+            // If switching to waypoints (Page 2), refresh waypoint list
+            if (currentLxnavPage === 2) refreshLxnavWaypoints();
+        }
+
+        function nextLxnavPage() {
+            setLxnavPage(currentLxnavPage < 7 ? currentLxnavPage + 1 : 1);
+        }
+
+        function prevLxnavPage() {
+            setLxnavPage(currentLxnavPage > 1 ? currentLxnavPage - 1 : 7);
+        }
+
+        // Toggle between primary flight instruments: Page 5 (Horizon) and Page 6 (Vario)
+        function togglePrimaryDuo() {
+            setLxnavPage(currentLxnavPage === 5 ? 6 : 5);
+        }
+
+        function toggleLxnavWidget() {
+            lxnavWidgetVisible = !lxnavWidgetVisible;
+            const w = document.getElementById('lxnav-mfd-widget');
+            const btn = document.getElementById('btn-toggle-lxnav');
+            if (w) w.style.display = lxnavWidgetVisible ? 'block' : 'none';
+            if (btn) {
+                btn.style.opacity = lxnavWidgetVisible ? '1.0' : '0.45';
+                btn.style.color = lxnavWidgetVisible ? 'var(--accent)' : '';
+            }
+        }
+
+        window.setLxnavPage = setLxnavPage;
+        window.nextLxnavPage = nextLxnavPage;
+        window.prevLxnavPage = prevLxnavPage;
+        window.togglePrimaryDuo = togglePrimaryDuo;
+        window.toggleLxnavWidget = toggleLxnavWidget;
+
+        const btnToggleLxnavEl = document.getElementById('btn-toggle-lxnav');
+        if (btnToggleLxnavEl) btnToggleLxnavEl.onclick = toggleLxnavWidget;
+
+        // Rotary scroll wheel support over bezel
+        const lxnavViewportEl = document.getElementById('lxnav-dial-viewport');
+        if (lxnavViewportEl) {
+            lxnavViewportEl.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.deltaY > 0) nextLxnavPage();
+                else if (e.deltaY < 0) prevLxnavPage();
+            }, { passive: false });
+        }
+
+        // Populate Dial 2 from missionWaypoints
+        function refreshLxnavWaypoints() {
+            const container = document.getElementById('lxnav-wpts-rows');
+            if (!container) return;
+            const wps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001);
+            if (wps.length === 0) {
+                container.innerHTML = `
+                    <circle cx="26" cy="4" r="4" fill="var(--accent)" />
+                    <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9.5" font-weight="700">HOME</text>
+                    <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9.5" text-anchor="end">0<tspan font-size="7.5">km</tspan></text>
+                    <text x="168" y="7" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="end">+100<tspan font-size="7.5">m</tspan></text>
+                `;
+                return;
+            }
+            let rowsHtml = '';
+            const maxShow = Math.min(4, wps.length);
+            for (let i = 0; i < maxShow; i++) {
+                const wp = wps[i];
+                const yOff = i * 24;
+                const name = wp.seq === 0 ? 'HOME' : `WP ${wp.seq}`;
+                let distKm = 0;
+                if (currentPlaneLat && currentPlaneLon) {
+                    const dLat = (wp.lat - currentPlaneLat) * 111.0;
+                    const dLon = (wp.lon - currentPlaneLon) * 111.0 * Math.cos(currentPlaneLat * Math.PI / 180);
+                    distKm = Math.sqrt(dLat * dLat + dLon * dLon);
+                }
+                const altDelta = wp.alt - (currentPlaneAltMSL || 0);
+                const altColor = altDelta >= 0 ? 'var(--accent-green)' : 'var(--danger)';
+                const altStr = (altDelta >= 0 ? '+' : '') + Math.round(altDelta) + 'm';
+                rowsHtml += `
+                    <g transform="translate(0, ${yOff})">
+                        <circle cx="26" cy="4" r="3.5" fill="var(--accent)" />
+                        <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9" font-weight="700">${name}</text>
+                        <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9" text-anchor="end">${distKm.toFixed(1)}<tspan font-size="7">km</tspan></text>
+                        <text x="168" y="7" fill="${altColor}" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="end">${altStr}</text>
+                    </g>
+                `;
+            }
+            container.innerHTML = rowsHtml;
+        }
+
+        // Live 60FPS HUD Telemetry Update (Decoupled & GPU accelerated)
+        function updateLxnavHUD() {
+            if (!lxnavWidgetVisible) return;
+
+            // Pitch & Roll in Degrees
+            const currentPitchDeg = (typeof targetRot !== 'undefined') ? (targetRot.x * (180 / Math.PI)) : 0;
+            const currentRollDeg = (typeof targetRot !== 'undefined') ? (targetRot.z * (180 / Math.PI)) : 0;
+
+            // Dial 5: Artificial Horizon / PFD
+            if (currentLxnavPage === 5) {
+                const horizonGrp = document.getElementById('lxnav-pfd-horizon-group');
+                if (horizonGrp) {
+                    const pitchOffset = Math.max(-80, Math.min(80, currentPitchDeg * 2.0)); // 2px per degree
+                    const rollDeg = -currentRollDeg;
+                    horizonGrp.style.transform = `rotate(${rollDeg}deg) translateY(${pitchOffset}px)`;
+                }
+                const spdEl = document.getElementById('lxnav-pfd-speed');
+                if (spdEl) spdEl.textContent = Math.round(planeAirspeed * 3.6);
+                const altEl = document.getElementById('lxnav-pfd-alt');
+                if (altEl) altEl.textContent = Math.round(currentPlaneAltMSL || 0);
+            }
+
+            // Dial 6: Hawk Variometer
+            else if (currentLxnavPage === 6) {
+                const needleEl = document.getElementById('lxnav-vario-needle');
+                if (needleEl) {
+                    const needleAngle = Math.max(-135, Math.min(135, planeClimbRate * 22.5));
+                    needleEl.style.transform = `rotate(${needleAngle}deg)`;
+                }
+                const nettoEl = document.getElementById('lxnav-vario-netto');
+                if (nettoEl) {
+                    const climbStr = (planeClimbRate >= 0 ? '+' : '') + planeClimbRate.toFixed(1);
+                    nettoEl.textContent = climbStr;
+                    nettoEl.setAttribute('fill', planeClimbRate >= 0 ? '#30d158' : '#ff453a');
+                }
+                const veraEl = document.getElementById('lxnav-vario-vera');
+                if (veraEl) {
+                    veraEl.textContent = (planeClimbRate >= 0 ? '+' : '') + planeClimbRate.toFixed(1);
+                }
+                const varioWindEl = document.getElementById('lxnav-vario-wind');
+                if (varioWindEl) {
+                    const wDir = hasPlaneWind ? planeWindDir : currentWindDir;
+                    const wSpd = hasPlaneWind ? planeWindSpd : currentWindSpd;
+                    varioWindEl.textContent = Math.round(wDir) + '° / ' + Math.round(wSpd * 3.6) + 'km/h';
+                }
+            }
+
+            // Dial 4: Tactical Map & Heading
+            else if (currentLxnavPage === 4) {
+                const mapHdgEl = document.getElementById('lxnav-map-hdg');
+                if (mapHdgEl) mapHdgEl.textContent = Math.round(planeHeading) + '°';
+                const mapSpdEl = document.getElementById('lxnav-map-spd');
+                if (mapSpdEl) mapSpdEl.innerHTML = `${Math.round(planeGroundspeed * 3.6)}<tspan font-size="6.5">km/h</tspan>`;
+                const mapWindEl = document.getElementById('lxnav-map-wind');
+                if (mapWindEl) {
+                    const wDir = hasPlaneWind ? planeWindDir : currentWindDir;
+                    const wSpd = hasPlaneWind ? planeWindSpd : currentWindSpd;
+                    mapWindEl.textContent = `${Math.round(wDir)}°/${Math.round(wSpd * 3.6)}`;
+                }
+            }
+
+            // Dial 7: RTL Computer
+            else if (currentLxnavPage === 7) {
+                const rtlAltEl = document.getElementById('lxnav-rtl-alt');
+                if (rtlAltEl) rtlAltEl.textContent = Math.round(currentPlaneAltMSL || 0) + 'm';
             }
         }
 
@@ -4727,6 +5312,12 @@
                 toggleWaypoints();
             } else if (e.key === 'm' || e.key === 'M') {
                 toggleMessagesTab();
+            } else if (e.key === 'h' || e.key === 'H') {
+                toggleLxnavWidget();
+            } else if (e.key === '[' || e.key === '{') {
+                prevLxnavPage();
+            } else if (e.key === ']' || e.key === '}') {
+                nextLxnavPage();
             } else if (e.key === 'Escape') {
                 if (tabMessages && tabMessages.classList.contains('active')) {
                     switchPanelTab('telemetry');
@@ -5492,6 +6083,9 @@
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
                 planeAirspeed = data.airspeed;
                 planeGroundspeed = data.groundspeed;
+                if (data.climb !== undefined && data.climb !== null) {
+                    planeClimbRate = data.climb;
+                }
                 // Only fallback to integer VFR_HUD heading if no 3D attitude received yet
                 if (data.heading !== undefined && data.heading !== null && !firstPos) {
                     planeHeading = data.heading;
@@ -5943,6 +6537,11 @@
             if (hdgValEl) {
                 const hdgInt = Math.round((planeHeading % 360 + 360) % 360);
                 hdgValEl.innerText = hdgInt.toString().padStart(3, '0');
+            }
+
+            // Live Update LXNAV Rotary MFD Cockpit Gauge
+            if (typeof updateLxnavHUD === 'function') {
+                updateLxnavHUD();
             }
 
             // Animate Dead Reckoning 3D Visual Suite strictly during Dead Reckoning condition
