@@ -838,55 +838,84 @@
             position: absolute;
             bottom: 20px;
             left: 585px;
-            width: 236px;
+            width: 244px;
+            min-width: 244px;
+            max-width: 244px;
+            height: 270px;
+            min-height: 270px;
+            max-height: 270px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 12px 14px 10px;
+            padding: 10px 12px;
             box-shadow: var(--shadow);
             z-index: 100;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
         .lxnav-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            height: 22px;
+            min-height: 22px;
+            max-height: 22px;
+            margin-bottom: 4px;
+            gap: 6px;
+            flex-shrink: 0;
+            overflow: hidden;
         }
 
         .lxnav-title-group {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
         }
 
         .lxnav-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
             color: var(--text-secondary);
             font-family: 'B612 Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lxnav-controls-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
         }
 
         .lxnav-knob-btn {
             background: var(--btn-bg);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            width: 20px;
-            height: 20px;
+            width: 19px;
+            height: 19px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 700;
             cursor: pointer;
+            flex-shrink: 0;
             transition: all 0.15s ease;
         }
 
@@ -896,21 +925,33 @@
         }
 
         .lxnav-page-badge {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 700;
-            padding: 2px 6px;
+            padding: 0 6px;
+            height: 18px;
             border-radius: 4px;
             background: rgba(10, 132, 255, 0.15);
             color: var(--accent);
             cursor: pointer;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             font-family: 'B612 Mono', monospace;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            line-height: 18px;
         }
 
         .lxnav-dial-viewport {
             position: relative;
             width: 196px;
             height: 196px;
+            min-width: 196px;
+            min-height: 196px;
+            max-width: 196px;
+            max-height: 196px;
             margin: 0 auto;
             border-radius: 50%;
             background: #000000;
@@ -925,6 +966,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .lxnav-dial-viewport::after {
@@ -944,7 +986,9 @@
             justify-content: center;
             align-items: center;
             gap: 6px;
-            margin-top: 8px;
+            height: 12px;
+            margin-top: 4px;
+            flex-shrink: 0;
         }
 
         .lxnav-dot {
@@ -953,6 +997,7 @@
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .lxnav-dot.active {
@@ -2174,14 +2219,14 @@
     <div id="lxnav-mfd-widget">
         <div class="lxnav-header">
             <div class="lxnav-title-group">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" style="flex-shrink: 0;">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="12" x2="15" y2="15"></line>
                 </svg>
                 <span class="lxnav-title" id="lxnav-header-title">PFD HORIZON</span>
             </div>
-            <div style="display:flex; gap:5px; align-items:center;">
+            <div class="lxnav-controls-group">
                 <button class="lxnav-knob-btn" onclick="prevLxnavPage()" title="Previous Page (Knob CCW)">◀</button>
                 <div class="lxnav-page-badge" id="lxnav-page-badge" onclick="togglePrimaryDuo()" title="Click to toggle Horizon / Vario">PAGE 5</div>
                 <button class="lxnav-knob-btn" onclick="nextLxnavPage()" title="Next Page (Knob CW)">▶</button>
@@ -3938,13 +3983,13 @@
         let planeClimbRate = 0.0; // m/s
         const lxnavPageTitles = [
             "",
-            "SETUP MENU",
-            "NEAR WPTS",
-            "TRAFFIC RADAR",
-            "TACTICAL MAP",
+            "SETUP",
+            "WAYPOINTS",
+            "AIR RADAR",
+            "TAC MAP",
             "PFD HORIZON",
             "HAWK VARIO",
-            "RTL / TASK"
+            "RTL GLIDE"
         ];
 
         function setLxnavPage(pageNum) {
