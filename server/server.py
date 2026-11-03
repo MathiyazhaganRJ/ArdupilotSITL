@@ -212,7 +212,7 @@ async def mavlink_listener():
     while True:
         msg = connection.recv_match(
             type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
-                  'ESC_TELEMETRY_1_TO_4', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
+                  'ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
                   'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
@@ -290,6 +290,30 @@ async def mavlink_listener():
                         connection.target_system, connection.target_component,
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         242, 1000000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request ESC_TELEMETRY_1_TO_4 (Msg 11030) at 10Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        11030, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request ESC_TELEMETRY_5_TO_8 (Msg 11031) at 10Hz (Fixed-wing plane AUX/motor channels)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        11031, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request ESC_STATUS (Msg 291) at 10Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        291, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request SERVO_OUTPUT_RAW (Msg 36) at 20Hz (Servo/Motor PWM monitoring)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        36, 50000, 0, 0, 0, 0, 0
                     )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
@@ -383,8 +407,14 @@ async def mavlink_listener():
                 })
                 if len(cached_statustext_messages) > 100:
                     cached_statustext_messages.pop(0)
-            elif msg.get_type() == 'ESC_TELEMETRY_1_TO_4':
+            elif msg.get_type() in ('ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12'):
                 data['type'] = 'ESC_TELEMETRY'
+                offset = 0
+                if msg.get_type() == 'ESC_TELEMETRY_5_TO_8':
+                    offset = 4
+                elif msg.get_type() == 'ESC_TELEMETRY_9_TO_12':
+                    offset = 8
+                data['channel_offset'] = offset
                 data['rpm'] = list(getattr(msg, 'rpm', [0, 0, 0, 0]))
                 data['voltage'] = [round(v / 100.0, 2) for v in getattr(msg, 'voltage', [0, 0, 0, 0])]
                 data['current'] = [round(c / 100.0, 2) for c in getattr(msg, 'current', [0, 0, 0, 0])]

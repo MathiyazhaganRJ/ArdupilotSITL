@@ -6577,10 +6577,19 @@
             } else if (data.type === 'ESC_TELEMETRY') {
                 am32Telemetry.hasHardwareTelem = true;
                 am32Telemetry.lastTelemTime = performance.now();
-                if (data.rpm) am32Telemetry.rpm = data.rpm;
-                if (data.voltage) am32Telemetry.voltage = data.voltage;
-                if (data.current) am32Telemetry.current = data.current;
-                if (data.temperature) am32Telemetry.temperature = data.temperature;
+                const offset = data.channel_offset || 0;
+                if (Array.isArray(data.rpm)) {
+                    data.rpm.forEach((v, i) => { am32Telemetry.rpm[offset + i] = v; });
+                }
+                if (Array.isArray(data.voltage)) {
+                    data.voltage.forEach((v, i) => { am32Telemetry.voltage[offset + i] = v; });
+                }
+                if (Array.isArray(data.current)) {
+                    data.current.forEach((v, i) => { am32Telemetry.current[offset + i] = v; });
+                }
+                if (Array.isArray(data.temperature)) {
+                    data.temperature.forEach((v, i) => { am32Telemetry.temperature[offset + i] = v; });
+                }
                 if (data.total_current !== undefined) am32Telemetry.total_current = data.total_current;
             } else if (data.type === 'BATTERY_STATUS') {
                 am32Telemetry.hasHardwareTelem = true;
@@ -7118,10 +7127,10 @@
         const am32Telemetry = {
             hasHardwareTelem: false,
             lastTelemTime: 0,
-            rpm: [0, 0, 0, 0],
-            voltage: [25.2, 25.2, 25.2, 25.2],
-            current: [0.0, 0.0, 0.0, 0.0],
-            temperature: [30.0, 30.0, 30.0, 30.0],
+            rpm: [0, 0, 0, 0, 0, 0, 0, 0],
+            voltage: [25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2],
+            current: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            temperature: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0],
             total_current: 0.0,
             pack_voltage: 25.2,
             consumed_mah: 0,
@@ -7198,15 +7207,19 @@
 
         function cycleEisChannels() {
             if (eisEngineMode === 'single') {
-                eisSingleChannel = (eisSingleChannel % 4) + 1;
+                // Support ESC outputs 1 through 8 (e.g. SERVO3 for plane throttle, SERVO5, etc.)
+                eisSingleChannel = (eisSingleChannel % 8) + 1;
                 localStorage.setItem('eis_single_ch', eisSingleChannel);
             } else {
-                if (eisTwinLeftCh === 1 && eisTwinRightCh === 2) {
+                // Support common fixed-wing twin plane channel pairs
+                if (eisTwinLeftCh === 5 && eisTwinRightCh === 6) {
+                    eisTwinLeftCh = 1; eisTwinRightCh = 2;
+                } else if (eisTwinLeftCh === 1 && eisTwinRightCh === 2) {
                     eisTwinLeftCh = 3; eisTwinRightCh = 4;
                 } else if (eisTwinLeftCh === 3 && eisTwinRightCh === 4) {
-                    eisTwinLeftCh = 2; eisTwinRightCh = 1;
+                    eisTwinLeftCh = 7; eisTwinRightCh = 8;
                 } else {
-                    eisTwinLeftCh = 1; eisTwinRightCh = 2;
+                    eisTwinLeftCh = 5; eisTwinRightCh = 6;
                 }
                 localStorage.setItem('eis_twin_left_ch', eisTwinLeftCh);
                 localStorage.setItem('eis_twin_right_ch', eisTwinRightCh);
@@ -7253,11 +7266,15 @@
             if (!eisWidgetVisible || !eisWidget) return;
 
             const now = performance.now();
-            let throttlePwm = 1000;
-            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length >= 3) {
-                throttlePwm = latestServos[2] || 1000;
+            // Determine active servo PWM based on selected ESC channel
+            let activeChPwm = 1000;
+            const targetChIdx = (eisEngineMode === 'single') ? Math.max(0, eisSingleChannel - 1) : Math.max(0, eisTwinLeftCh - 1);
+            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length > targetChIdx) {
+                activeChPwm = latestServos[targetChIdx] || (latestServos[2] || 1000);
+            } else if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length >= 3) {
+                activeChPwm = latestServos[2] || 1000;
             }
-            const throttleNorm = Math.max(0, Math.min(1, (throttlePwm - 1000) / 1000.0));
+            const throttleNorm = Math.max(0, Math.min(1, (activeChPwm - 1000) / 1000.0));
 
             // If no hardware telemetry packet received in last 2.5s, run realistic SITL emulation
             const isEmulated = (now - am32Telemetry.lastTelemTime) > 2500;
