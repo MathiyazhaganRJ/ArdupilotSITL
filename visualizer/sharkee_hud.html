@@ -647,10 +647,10 @@
             z-index: 200;
         }
 
-        .toolbar-btn {
-            background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+                .toolbar-btn {
+            background: rgba(16, 20, 26, 0.70);
+            color: rgba(255, 255, 255, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 6px;
             width: 34px;
             height: 34px;
@@ -658,15 +658,27 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: all 0.2s;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             font-size: 16px;
             padding: 0;
+            box-sizing: border-box;
+            position: relative;
         }
 
         .toolbar-btn:hover {
-            background: rgba(0, 0, 0, 0.9);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(30, 36, 46, 0.85);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .toolbar-btn.active {
+            background: rgba(10, 132, 255, 0.22) !important;
+            color: var(--accent) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 10px rgba(10, 132, 255, 0.4);
+            opacity: 1.0 !important;
         }
 
         .live-dot {
@@ -833,13 +845,7 @@
             font-size: 11px;
         }
 
-        /* Waypoint Toolbar Toggle Active Indicator */
-        #btn-toggle-waypoints.active {
-            opacity: 1.0;
-            border-color: #d946ef;
-            color: #d946ef;
-            background: rgba(217, 70, 239, 0.15);
-        }
+        /* Waypoint toggle uses unified .toolbar-btn.active */
 
         /* LXNAV Circular Glass Cockpit MFD Widget */
         #lxnav-mfd-widget {
@@ -1669,15 +1675,7 @@
 <body>
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
-        <button class="toolbar-btn" id="btn-open-cesium" title="Open 3D Terrain Map (Cesium)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-ui" title="Toggle Control Panel">
+        <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -1685,27 +1683,42 @@
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-graph" title="Toggle Terrain Profile">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        <button class="toolbar-btn active" id="btn-toggle-lxnav" title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-trace" title="Toggle Flight Trace">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
+        <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.3"></polygon>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
+        <button class="toolbar-btn" id="btn-toggle-waypoints" title="Toggle Waypoints Display (Hotkey 'W')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 22 12 12 22 2 12 12 2"></polygon>
+                <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-trace" title="Toggle Flight Trace">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Terrain Profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
@@ -1717,6 +1730,20 @@
                 <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
             </svg>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-messages" title="Toggle Autopilot Messages Log (Hotkey 'M')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span id="toolbar-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
+        </button>
+        <button class="toolbar-btn" id="btn-open-cesium" title="Open 3D Terrain Map (Cesium)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+        </button>
         <button class="toolbar-btn" id="btn-open-atis-pdf" title="Open ATIS EKF3 Dead Reckoning & EW Parameter Manual (PDF)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -1725,27 +1752,6 @@
                 <line x1="16" y1="13" x2="8" y2="13"></line>
                 <line x1="16" y1="17" x2="8" y2="17"></line>
                 <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-waypoints" title="Toggle Waypoints Display (Hotkey 'W')" style="opacity: 0.45;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 22 12 12 22 2 12 12 2"></polygon>
-                <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-messages" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="opacity: 0.45; position: relative;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span id="toolbar-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-lxnav" title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')" style="opacity: 1.0; color: var(--accent);">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="2" x2="12" y2="6"></line>
-                <line x1="12" y1="18" x2="12" y2="22"></line>
-                <line x1="2" y1="12" x2="6" y2="12"></line>
-                <line x1="18" y1="12" x2="22" y2="12"></line>
             </svg>
         </button>
     </div>
@@ -2638,6 +2644,7 @@
         btnToggleUi.onclick = () => {
             const isHidden = uiPanel.style.display === 'none';
             uiPanel.style.display = isHidden ? 'block' : 'none';
+            btnToggleUi.classList.toggle('active', isHidden);
             if (compassWidget && !compassWidget.dataset.userDragged) {
                 compassWidget.style.left = isHidden ? '315px' : '20px';
             }
@@ -2646,20 +2653,21 @@
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
         const graphContainer = document.getElementById('terrain-graph-container');
         btnToggleGraph.onclick = () => {
-            graphContainer.style.display = graphContainer.style.display === 'none' ? 'flex' : 'none';
+            const isCurrentlyNone = graphContainer.style.display === 'none';
+            graphContainer.style.display = isCurrentlyNone ? 'flex' : 'none';
+            btnToggleGraph.classList.toggle('active', isCurrentlyNone);
         };
 
         const btnToggleTrace = document.getElementById('btn-toggle-trace');
         btnToggleTrace.onclick = () => {
             if (trailLine) {
                 trailLine.visible = !trailLine.visible;
+                btnToggleTrace.classList.toggle('active', trailLine.visible);
                 const eye = btnToggleTrace.querySelector('svg');
                 if (trailLine.visible) {
                     eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-                    btnToggleTrace.style.opacity = '1.0';
                 } else {
                     eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-                    btnToggleTrace.style.opacity = '0.5';
                 }
             }
         };
@@ -2670,7 +2678,7 @@
         btnToggleCompass.onclick = () => {
             const isHidden = compassWidget.style.display === 'none';
             compassWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleCompass.style.opacity = isHidden ? '1.0' : '0.45';
+            btnToggleCompass.classList.toggle('active', isHidden);
             localStorage.setItem('compass_visible', isHidden ? '1' : '0');
         };
 
@@ -2679,7 +2687,7 @@
         btnToggleWeather.onclick = () => {
             const isHidden = weatherWidget.style.display === 'none';
             weatherWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleWeather.style.opacity = isHidden ? '1.0' : '0.45';
+            btnToggleWeather.classList.toggle('active', isHidden);
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
         };
 
@@ -2711,6 +2719,10 @@
             if (viewAirspace) viewAirspace.style.display = isAirspace ? 'block' : 'none';
             if (viewMessages) viewMessages.style.display = isMessages ? 'block' : 'none';
 
+            if (btnToggleMessages) {
+                btnToggleMessages.classList.toggle('active', isMessages);
+            }
+
             if (btnOfflineMapHdr) {
                 btnOfflineMapHdr.style.color = isAirspace ? 'var(--accent)' : '';
                 btnOfflineMapHdr.style.borderColor = isAirspace ? 'var(--accent)' : '';
@@ -2720,8 +2732,7 @@
                 btnMessagesHdr.style.borderColor = isMessages ? 'var(--accent)' : '';
             }
             if (btnToggleMessages) {
-                btnToggleMessages.style.opacity = isMessages ? '1.0' : '0.45';
-                btnToggleMessages.style.color = isMessages ? 'var(--accent)' : '';
+                btnToggleMessages.classList.toggle('active', isMessages);
             }
 
             if (isMessages) {
@@ -2771,7 +2782,7 @@
             if (uiPanel && uiPanel.style.display === 'none') {
                 uiPanel.style.display = 'block';
                 const btnToggleUi = document.getElementById('btn-toggle-ui');
-                if (btnToggleUi) btnToggleUi.style.opacity = '1.0';
+                if (btnToggleUi) btnToggleUi.classList.add('active');
             }
             const isMsgActive = tabMessages && tabMessages.classList.contains('active');
             switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
@@ -2786,7 +2797,7 @@
             if (uiPanel && uiPanel.style.display === 'none') {
                 uiPanel.style.display = 'block';
                 const btnToggleUi = document.getElementById('btn-toggle-ui');
-                if (btnToggleUi) btnToggleUi.style.opacity = '1.0';
+                if (btnToggleUi) btnToggleUi.classList.add('active');
             }
             switchPanelTab('messages');
         }
@@ -3017,10 +3028,7 @@
                 waypointGroup.visible = waypointsVisible;
             }
             if (btnToggleWaypoints) {
-                btnToggleWaypoints.style.opacity = waypointsVisible ? '1.0' : '0.45';
-                btnToggleWaypoints.style.borderColor = waypointsVisible ? '#d946ef' : '';
-                btnToggleWaypoints.style.color = waypointsVisible ? '#d946ef' : '';
-                btnToggleWaypoints.style.background = waypointsVisible ? 'rgba(217, 70, 239, 0.15)' : '';
+                btnToggleWaypoints.classList.toggle('active', waypointsVisible);
             }
             if (waypointsVisible) {
                 const hasWaypoints = Array.isArray(missionWaypoints) && missionWaypoints.length > 0;
@@ -3534,11 +3542,15 @@
         // Restore user toggle preferences
         if (localStorage.getItem('compass_visible') === '0') {
             compassWidget.style.display = 'none';
-            btnToggleCompass.style.opacity = '0.45';
+            btnToggleCompass.classList.remove('active');
+        } else {
+            btnToggleCompass.classList.add('active');
         }
         if (localStorage.getItem('weather_visible') === '0') {
             weatherWidget.style.display = 'none';
-            btnToggleWeather.style.opacity = '0.45';
+            btnToggleWeather.classList.remove('active');
+        } else {
+            btnToggleWeather.classList.add('active');
         }
 
         // Draggable Floating Panels
@@ -3591,7 +3603,7 @@
         function toggleFmsPanel(forceState) {
             const shouldShow = (forceState !== undefined) ? forceState : (fmsWidget.style.display === 'none');
             fmsWidget.style.display = shouldShow ? 'block' : 'none';
-            if (btnToggleFms) btnToggleFms.style.opacity = shouldShow ? '1.0' : '0.45';
+            if (btnToggleFms) btnToggleFms.classList.toggle('active', shouldShow);
             localStorage.setItem('fms_visible', shouldShow ? '1' : '0');
         }
 
@@ -3601,7 +3613,7 @@
         if (localStorage.getItem('fms_visible') === '1') {
             toggleFmsPanel(true);
         } else if (btnToggleFms) {
-            btnToggleFms.style.opacity = '0.45';
+            btnToggleFms.classList.remove('active');
         }
 
         makeDraggable(fmsWidget, fmsWidget.querySelector('.cdu-bezel-top') || fmsWidget);
@@ -3932,10 +3944,7 @@
             const w = document.getElementById('lxnav-mfd-widget');
             const btn = document.getElementById('btn-toggle-lxnav');
             if (w) w.style.display = lxnavWidgetVisible ? 'block' : 'none';
-            if (btn) {
-                btn.style.opacity = lxnavWidgetVisible ? '1.0' : '0.45';
-                btn.style.color = lxnavWidgetVisible ? 'var(--accent)' : '';
-            }
+            if (btn) btn.classList.toggle('active', lxnavWidgetVisible);
         }
 
         function refreshLxnavWaypoints() {}
@@ -3971,17 +3980,17 @@
             const nowTime = performance.now();
             if (typeof window.lastAltCheckTime === 'undefined') {
                 window.lastAltCheckTime = nowTime;
-                window.lastAltCheckVal = currentPlaneAltMSL;
+                window.lastAltCheckVal = currentPlaneAltRel;
             } else if (nowTime - window.lastAltCheckTime >= 200) {
                 const dt = (nowTime - window.lastAltCheckTime) / 1000.0;
-                if (currentPlaneAltMSL !== null && window.lastAltCheckVal !== null && dt > 0) {
-                    const derivedClimb = (currentPlaneAltMSL - window.lastAltCheckVal) / dt;
+                if (currentPlaneAltRel !== null && window.lastAltCheckVal !== null && dt > 0) {
+                    const derivedClimb = (currentPlaneAltRel - window.lastAltCheckVal) / dt;
                     if (Math.abs(planeClimbRate) < 0.05 && Math.abs(derivedClimb) > 0.08) {
                         planeClimbRate = derivedClimb;
                     }
                 }
                 window.lastAltCheckTime = nowTime;
-                window.lastAltCheckVal = currentPlaneAltMSL;
+                window.lastAltCheckVal = currentPlaneAltRel;
             }
 
             // Dial 1: Artificial Horizon / PFD
@@ -3995,7 +4004,7 @@
                 const spdEl = document.getElementById('lxnav-pfd-speed');
                 if (spdEl) spdEl.textContent = Math.round(planeAirspeed * 3.6);
                 const altEl = document.getElementById('lxnav-pfd-alt');
-                if (altEl) altEl.textContent = Math.round(currentPlaneAltMSL || 0);
+                if (altEl) altEl.textContent = Math.round(currentPlaneAltRel || 0);
 
                 // Update bottom flight mode / annunciator badge (Aviation Emerald Green)
                 const modeEl = document.getElementById('lxnav-pfd-mode-text');
@@ -5853,6 +5862,7 @@
         let terrainHistory = [];
         const MAX_HISTORY = 100;
         let hasTerrainData = false;
+        let currentPlaneAltRel = 0;
         let currentPlaneAltMSL = 0;
         let currentTerrainAltMSL = 0;
         let currentAGL = 0;
@@ -6019,6 +6029,7 @@
                 updateCompass();
             } else if (data.type === 'GLOBAL_POSITION_INT') {
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
+                if (data.relative_alt !== undefined) currentPlaneAltRel = data.relative_alt / 1000.0;
                 if (data.vz !== undefined && data.vz !== null) {
                     planeClimbRate = data.vz;
                 }
@@ -6073,6 +6084,7 @@
                 if (data.vz !== undefined && data.vz !== null) {
                     planeClimbRate = data.vz;
                 }
+                currentPlaneAltRel = data.z;
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
                 if (data.vx !== undefined && data.vy !== undefined) {
