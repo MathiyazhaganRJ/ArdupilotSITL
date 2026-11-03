@@ -35,6 +35,7 @@ def parse_mavlink_target():
     return target, baud
 
 MAVLINK_DEVICE, MAVLINK_BAUD = parse_mavlink_target()
+MAVLINK_URL = f'{MAVLINK_DEVICE}:{MAVLINK_BAUD}' if not MAVLINK_DEVICE.startswith(('udp', 'tcp')) else MAVLINK_DEVICE
 if MAVLINK_DEVICE.startswith(('udp', 'tcp')):
     print(f"[MAVLink] Connecting via network: {MAVLINK_DEVICE}")
     connection = mavutil.mavlink_connection(MAVLINK_DEVICE)
