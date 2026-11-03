@@ -1681,20 +1681,20 @@
         }
     
         /* ========================================================= */
-        /* ELECTRONICS INTERNATIONAL CGR-30P ENGINE & POWER MONITOR  */
+        /* GARMIN TXi EIS ENGINE INDICATION SYSTEM (AVIONICS MFD)    */
         /* ========================================================= */
         #eis-widget {
             position: absolute;
             bottom: 20px;
             left: 840px;
-            width: 320px;
-            height: 345px;
+            width: 510px;
+            height: 355px;
             box-sizing: border-box;
-            background: #020407;
-            border: 1.5px solid #242d3c;
+            background: #080d14;
+            border: 2px solid #222d3d;
             border-radius: 8px;
-            padding: 8px 10px 8px 10px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            padding: 6px 8px 6px 8px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), inset 0 1px 1px rgba(255, 255, 255, 0.15);
             z-index: 120;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
@@ -1705,372 +1705,424 @@
             font-family: 'B612', -apple-system, BlinkMacSystemFont, monospace;
         }
 
-        /* Top Header Bar */
-        .cgr-header {
+        /* Garmin Bezel Top Header */
+        .txi-bezel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-            cursor: grab;
+            padding: 1px 4px 4px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
+            cursor: grab;
         }
-        .cgr-header:active { cursor: grabbing; }
+        .txi-bezel-header:active { cursor: grabbing; }
 
-        .cgr-title-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .cgr-title {
-            font-size: 12px;
+        .txi-garmin-logo {
+            font-size: 11px;
             font-weight: 800;
-            letter-spacing: 1.5px;
-            color: #ffffff;
-            font-family: 'B612 Mono', monospace;
+            letter-spacing: 3px;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        .cgr-badge {
+        .txi-title-sub {
             font-size: 8.5px;
             font-weight: 700;
+            letter-spacing: 1.2px;
             color: #00e5ff;
-            background: rgba(0, 229, 255, 0.12);
-            border: 1px solid rgba(0, 229, 255, 0.25);
-            border-radius: 3px;
-            padding: 1px 5px;
             font-family: 'B612 Mono', monospace;
         }
-
-        .cgr-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .cgr-btn-pill {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            padding: 2px 7px;
-            font-size: 9.5px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.85);
-            cursor: pointer;
-            font-family: 'B612 Mono', monospace;
-            transition: all 0.15s ease;
-        }
-        .cgr-btn-pill:hover {
-            background: rgba(0, 229, 255, 0.2);
-            border-color: #00e5ff;
-            color: #ffffff;
-        }
-        .cgr-btn-pill.active {
-            background: rgba(0, 229, 255, 0.25);
-            border-color: #00e5ff;
-            color: #00e5ff;
-            box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
-        }
-        .cgr-close-btn {
+        .txi-bezel-close {
             background: transparent;
             border: none;
             color: rgba(255, 255, 255, 0.45);
             font-size: 16px;
             cursor: pointer;
-            padding: 0 2px;
             line-height: 1;
+            padding: 0 2px;
             transition: color 0.15s;
         }
-        .cgr-close-btn:hover { color: #ff453a; }
+        .txi-bezel-close:hover { color: #ff453a; }
 
-        /* Top Dual Bold Arcs */
-        .cgr-arcs-row {
+        /* 3-Column Cockpit Display Body */
+        .txi-screen-body {
+            display: grid;
+            grid-template-columns: 110px 175px 195px;
+            gap: 6px;
+            flex: 1;
+            margin: 4px 0;
+            overflow: hidden;
+        }
+
+        /* Authentic Garmin Bordered Group Box */
+        .txi-group-box {
+            border: 1px solid #1a2736;
+            border-radius: 4px;
+            background: rgba(10, 16, 24, 0.7);
+            box-sizing: border-box;
+            padding: 4px 6px;
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
-            height: 104px;
-            flex-shrink: 0;
-        }
-        .cgr-arc-box {
             position: relative;
-            width: 145px;
-            height: 104px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
-        .cgr-arc-svg {
+        .txi-group-title {
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #8da4be;
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+            font-family: 'B612', sans-serif;
+        }
+
+        /* COLUMN 1: Vertical Stack of 5 Garmin Curved Dials */
+        .txi-dials-stack {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: calc(100% - 15px);
+        }
+        .txi-dial-item {
+            position: relative;
+            width: 100%;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .txi-dial-svg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
         }
-        .cgr-arc-content {
+        .txi-dial-content {
             position: relative;
             z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 18px;
+            margin-top: 8px;
         }
-        .cgr-arc-label {
-            font-size: 11px;
+        .txi-dial-val {
+            font-size: 13.5px;
             font-weight: 800;
-            letter-spacing: 1px;
             color: #ffffff;
-            text-transform: uppercase;
-            font-family: 'B612', sans-serif;
-        }
-        .cgr-arc-val {
-            font-size: 26px;
-            font-weight: 800;
-            color: #30d158;
-            line-height: 1.1;
+            line-height: 1;
             font-family: 'B612 Mono', monospace;
             letter-spacing: -0.5px;
-            text-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
         }
-
-        /* Crisp White Dividers */
-        .cgr-divider-h {
-            width: 100%;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.35);
-            flex-shrink: 0;
-        }
-
-        /* Middle Split Section */
-        .cgr-mid-row {
-            display: flex;
-            height: 125px;
-            flex-shrink: 0;
-        }
-        .cgr-mid-left {
-            width: 140px;
-            box-sizing: border-box;
-            padding: 6px 8px 4px 2px;
-            border-right: 1px solid rgba(255, 255, 255, 0.35);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .cgr-mid-right {
-            flex: 1;
-            box-sizing: border-box;
-            padding: 6px 2px 4px 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        /* Middle Left: Battery Fuel & Energy Reserves */
-        .cgr-left-header {
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
-            color: rgba(255, 255, 255, 0.6);
+        .txi-dial-unit {
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #8da4be;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
+            margin-top: 1px;
         }
-        .cgr-fuel-display {
+
+        /* COLUMN 2: Fuel Tanks & Electrical */
+        .txi-col-mid {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-            margin: 2px 0;
+            flex-direction: column;
+            gap: 5px;
+            height: 100%;
         }
-        .cgr-tank-col {
-            width: 14px;
-            height: 64px;
-            border: 1.2px solid rgba(255, 255, 255, 0.4);
+        .txi-fuel-box {
+            flex: 1.15;
+        }
+        .txi-fuel-subtitles {
+            display: flex;
+            justify-content: space-around;
+            font-size: 8px;
+            font-weight: 700;
+            color: #8da4be;
+            margin-bottom: 2px;
+        }
+        .txi-fuel-tanks-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex: 1;
+        }
+        .txi-v-ribbon-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .txi-v-bar-track {
+            width: 13px;
+            height: 65px;
+            background: #080d14;
+            border: 1px solid #1a2736;
             border-radius: 2px;
-            background: #000000;
             position: relative;
             overflow: hidden;
         }
-        .cgr-tank-fluid {
+        .txi-v-bar-fill {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(180deg, #00f0ff 0%, #0091ff 100%);
-            box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
-            transition: height 0.3s ease;
+            background: #30d158;
+            transition: height 0.2s ease;
         }
-        .cgr-tank-redline {
+        .txi-v-bar-caution {
             position: absolute;
-            bottom: 12%;
+            bottom: 0;
             left: 0;
             width: 100%;
-            height: 1.5px;
+            height: 25%;
+            background: rgba(255, 214, 10, 0.3);
+        }
+        .txi-v-bar-redline {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10%;
             background: #ff3b30;
         }
-        .cgr-fuel-stats {
-            flex: 1;
+        .txi-v-scale-ticks {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .cgr-pct-huge {
-            font-size: 20px;
-            font-weight: 800;
-            color: #00e5ff;
+            justify-content: space-between;
+            height: 65px;
+            font-size: 7.5px;
+            color: rgba(255, 255, 255, 0.45);
             font-family: 'B612 Mono', monospace;
             line-height: 1;
+            text-align: center;
         }
-        .cgr-mah-sub {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.7);
+        .txi-fuel-readout-row {
+            display: flex;
+            justify-content: space-around;
+            font-size: 11px;
+            font-weight: 800;
+            color: #ffffff;
             font-family: 'B612 Mono', monospace;
             margin-top: 2px;
         }
-        .cgr-endurance-sub {
-            font-size: 9.5px;
-            font-weight: 700;
-            color: #30d158;
-            font-family: 'B612 Mono', monospace;
-            margin-top: 3px;
-        }
 
-        /* Twin Engine Status Cards (Left Pane alternative) */
-        .cgr-twin-box {
+        /* Electrical Group Box */
+        .txi-elec-box {
+            flex: 1;
+        }
+        .txi-h-ribbon-wrap {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            height: 100%;
-            justify-content: space-around;
+            gap: 1px;
+            margin-bottom: 2px;
         }
-        .cgr-twin-eng-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            padding: 3px 6px;
-        }
-        .cgr-twin-title-row {
+        .txi-h-scale-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 8.5px;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 7px;
+            color: rgba(255, 255, 255, 0.45);
+            font-family: 'B612 Mono', monospace;
+            padding: 0 2px;
         }
-        .cgr-twin-rpm {
-            font-size: 14px;
+        .txi-h-track-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .txi-h-bar-track {
+            flex: 1;
+            height: 6px;
+            background: #080d14;
+            border: 1px solid #1a2736;
+            border-radius: 1px;
+            position: relative;
+        }
+        .txi-h-bar-fill {
+            height: 100%;
+            background: #30d158;
+            transition: width 0.15s ease;
+        }
+        .txi-h-bar-ptr {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            background: #ffffff;
+            box-shadow: 0 0 3px #ffffff;
+            transform: translateX(-50%);
+            transition: left 0.15s ease;
+        }
+        .txi-h-num-right {
+            font-size: 13px;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+            min-width: 36px;
+            text-align: right;
+        }
+        .txi-h-num-center {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'B612 Mono', monospace;
+            text-align: center;
+            line-height: 1;
+        }
+
+        /* COLUMN 3: Right Auxiliary & Usage */
+        .txi-col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            height: 100%;
+        }
+        .txi-aux-box {
+            flex: 1.15;
+        }
+        .txi-aux-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+            height: calc(100% - 15px);
+        }
+        .txi-mini-dial {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .txi-mini-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 6px;
+        }
+        .txi-mini-val {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1;
+        }
+        .txi-mini-label {
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #8da4be;
+            margin-top: 1px;
+        }
+
+        /* Twin Engine Card Alternative for Column 3 */
+        .txi-twin-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            height: calc(100% - 15px);
+            justify-content: space-around;
+        }
+        .txi-twin-row-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #1a2736;
+            border-radius: 3px;
+            padding: 2px 5px;
+        }
+        .txi-twin-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            font-weight: 700;
+            color: #8da4be;
+        }
+        .txi-twin-rpm {
+            font-size: 13px;
             font-weight: 800;
             color: #30d158;
             font-family: 'B612 Mono', monospace;
             line-height: 1.1;
         }
-        .cgr-twin-metrics {
+        .txi-twin-sub {
             display: flex;
             justify-content: space-between;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #00e5ff;
             font-family: 'B612 Mono', monospace;
         }
-        .cgr-sync-tag {
-            font-size: 8.5px;
+        .txi-sync-strip {
+            font-size: 8px;
             font-weight: 700;
             text-align: center;
-            padding: 2px 4px;
-            border-radius: 3px;
+            padding: 1px 4px;
+            border-radius: 2px;
             background: rgba(48, 209, 88, 0.12);
             border: 1px solid rgba(48, 209, 88, 0.3);
             color: #30d158;
         }
 
-        /* Middle Right: 3 Horizontal Ribbon Gauges */
-        .cgr-ribbon-item {
+        /* Bottom Softkey Bar (Garmin TXi MFD Touchscreen) */
+        .txi-softkey-bar {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .cgr-ribbon-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .cgr-ribbon-title {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
-            color: #ffffff;
-            font-family: 'B612', sans-serif;
-        }
-        .cgr-ribbon-val {
-            font-size: 13.5px;
-            font-weight: 800;
-            color: #30d158;
-            font-family: 'B612 Mono', monospace;
-            line-height: 1;
-            text-shadow: 0 0 6px rgba(48, 209, 88, 0.3);
-        }
-        .cgr-ribbon-track-wrap {
-            position: relative;
-            width: 100%;
-            height: 8px;
-            background: #141820;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            overflow: visible;
-        }
-        .cgr-ribbon-bar {
-            height: 100%;
-            background: #30d158;
-            border-radius: 1px;
-            transition: width 0.15s ease;
-        }
-        .cgr-ribbon-bar.caution {
-            background: linear-gradient(90deg, #30d158 0%, #30d158 65%, #ffd60a 82%, #ff3b30 100%);
-        }
-        .cgr-ribbon-ptr {
-            position: absolute;
-            top: -7px;
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 6px solid #00e5ff;
-            transform: translateX(-50%);
-            filter: drop-shadow(0 0 2px #00e5ff);
-            transition: left 0.15s ease;
-        }
-
-        /* Bottom Status Row */
-        .cgr-bottom-row {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding-top: 4px;
+            justify-content: space-between;
+            height: 28px;
+            background: #06090e;
+            border-top: 1px solid #1a2736;
+            padding: 0 4px;
+            border-radius: 0 0 5px 5px;
             flex-shrink: 0;
         }
-        .cgr-bot-left {
+        .txi-softkey {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #8da4be;
+            font-size: 8.5px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
             display: flex;
-            align-items: baseline;
-            gap: 6px;
+            align-items: center;
+            gap: 4px;
+            font-family: 'B612', sans-serif;
+            transition: all 0.15s ease;
         }
-        .cgr-bot-tag {
-            font-size: 9.5px;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.65);
-            letter-spacing: 0.5px;
+        .txi-softkey:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
         }
-        .cgr-bot-val-cyan {
-            font-size: 13.5px;
-            font-weight: 800;
+        .txi-softkey.active-engine {
+            background: linear-gradient(180deg, rgba(0, 162, 255, 0.35) 0%, rgba(0, 114, 206, 0.5) 100%);
+            border: 1px solid #00a2ff;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(0, 162, 255, 0.4);
+        }
+        .txi-softkey-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #d1d5db;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'B612 Mono', monospace;
+            transition: all 0.15s ease;
+        }
+        .txi-softkey-pill:hover {
+            border-color: #00e5ff;
             color: #00e5ff;
-            font-family: 'B612 Mono', monospace;
         }
-        .cgr-bot-right {
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
+        .txi-softkey-pill.active {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: #00e5ff;
+            color: #00e5ff;
         }
-        .cgr-bot-val-green {
-            font-size: 15px;
-            font-weight: 800;
-            color: #30d158;
-            font-family: 'B612 Mono', monospace;
-            text-shadow: 0 0 8px rgba(48, 209, 88, 0.35);
-        }
-</style>
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -2774,159 +2826,324 @@
     </div>
 
     
-    <!-- Electronics International CGR-30P Engine & Power Monitor -->
+    <!-- Garmin TXi EIS Engine Indication System -->
     <div id="eis-widget">
-        <!-- Header Bar -->
-        <div class="cgr-header" id="cgr-header">
-            <div class="cgr-title-group">
-                <span class="cgr-title">CGR-30P</span>
-                <span class="cgr-badge">AM32</span>
+        <!-- Top Bezel Header -->
+        <div class="txi-bezel-header" id="txi-bezel-header">
+            <span class="txi-garmin-logo">GARMIN</span>
+            <span class="txi-title-sub">TXi EIS &bull; AM32 TELEMETRY</span>
+            <button class="txi-bezel-close" onclick="toggleEisWidget()" title="Close Dashboard">&times;</button>
+        </div>
+
+        <!-- 3-Column Screen Body -->
+        <div class="txi-screen-body">
+            <!-- COLUMN 1: 5 Stacked Garmin Curved Dials -->
+            <div class="txi-group-box">
+                <div class="txi-group-title">ENGINE</div>
+                <div class="txi-dials-stack">
+                    <!-- Dial 1: % POWER -->
+                    <div class="txi-dial-item">
+                        <svg class="txi-dial-svg" viewBox="0 0 100 50">
+                            <path d="M 23.7 47.6 A 28 28 0 1 1 76.3 47.6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 23.7 47.6 A 28 28 0 0 1 72.9 21.9" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                            <path d="M 72.9 21.9 A 28 28 0 0 1 78.0 37.0" fill="none" stroke="#ffd60a" stroke-width="3.5"/>
+                            <path d="M 78.0 37.0 A 28 28 0 0 1 76.3 47.6" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                            <line id="txi-ptr-pwr" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="50" cy="38" r="2.2" fill="#ffffff"/>
+                        </svg>
+                        <div class="txi-dial-content">
+                            <span class="txi-dial-val" id="txi-val-pwr">0.0</span>
+                            <span class="txi-dial-unit">% PWR</span>
+                        </div>
+                    </div>
+
+                    <!-- Dial 2: RPM -->
+                    <div class="txi-dial-item">
+                        <svg class="txi-dial-svg" viewBox="0 0 100 50">
+                            <path d="M 23.7 47.6 A 28 28 0 1 1 76.3 47.6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 23.7 47.6 A 28 28 0 0 1 72.9 21.9" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                            <path d="M 72.9 21.9 A 28 28 0 0 1 76.3 47.6" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                            <line id="txi-ptr-rpm" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            <line id="txi-ptr-rpm2" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffd60a" stroke-width="1.8" stroke-linecap="round" style="display: none;"/>
+                            <circle cx="50" cy="38" r="2.2" fill="#ffffff"/>
+                        </svg>
+                        <div class="txi-dial-content">
+                            <span class="txi-dial-val" id="txi-val-rpm">0</span>
+                            <span class="txi-dial-unit">RPM</span>
+                        </div>
+                    </div>
+
+                    <!-- Dial 3: AMPS -->
+                    <div class="txi-dial-item">
+                        <svg class="txi-dial-svg" viewBox="0 0 100 50">
+                            <path d="M 23.7 47.6 A 28 28 0 1 1 76.3 47.6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 23.7 47.6 A 28 28 0 0 1 72.9 21.9" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                            <path d="M 72.9 21.9 A 28 28 0 0 1 76.3 47.6" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                            <line id="txi-ptr-amp" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="50" cy="38" r="2.2" fill="#ffffff"/>
+                        </svg>
+                        <div class="txi-dial-content">
+                            <span class="txi-dial-val" id="txi-val-amp">0.0</span>
+                            <span class="txi-dial-unit">AMPS</span>
+                        </div>
+                    </div>
+
+                    <!-- Dial 4: ESC TEMP -->
+                    <div class="txi-dial-item">
+                        <svg class="txi-dial-svg" viewBox="0 0 100 50">
+                            <path d="M 23.7 47.6 A 28 28 0 1 1 76.3 47.6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 23.7 47.6 A 28 28 0 0 1 72.9 21.9" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                            <path d="M 72.9 21.9 A 28 28 0 0 1 76.3 47.6" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                            <line id="txi-ptr-esct" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="50" cy="38" r="2.2" fill="#ffffff"/>
+                        </svg>
+                        <div class="txi-dial-content">
+                            <span class="txi-dial-val" id="txi-val-esct">30</span>
+                            <span class="txi-dial-unit">ESC &deg;C</span>
+                        </div>
+                    </div>
+
+                    <!-- Dial 5: MOTOR TEMP -->
+                    <div class="txi-dial-item">
+                        <svg class="txi-dial-svg" viewBox="0 0 100 50">
+                            <path d="M 23.7 47.6 A 28 28 0 1 1 76.3 47.6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 23.7 47.6 A 28 28 0 0 1 72.9 21.9" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                            <path d="M 72.9 21.9 A 28 28 0 0 1 76.3 47.6" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                            <line id="txi-ptr-mott" x1="50" y1="38" x2="27.4" y2="46.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="50" cy="38" r="2.2" fill="#ffffff"/>
+                        </svg>
+                        <div class="txi-dial-content">
+                            <span class="txi-dial-val" id="txi-val-mott">36</span>
+                            <span class="txi-dial-unit">MOT &deg;C</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="cgr-controls">
-                <button class="cgr-btn-pill active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
-                <button class="cgr-btn-pill" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
-                <button class="cgr-btn-pill" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
-                <button class="cgr-close-btn" onclick="toggleEisWidget()" title="Close Dashboard">&times;</button>
+
+            <!-- COLUMN 2: Fuel Reserves & Electrical -->
+            <div class="txi-col-mid">
+                <!-- Battery Fuel Box -->
+                <div class="txi-group-box txi-fuel-box">
+                    <div class="txi-group-title">BATTERY FUEL</div>
+                    <div class="txi-fuel-subtitles">
+                        <span>L BATT</span>
+                        <span>R BATT</span>
+                    </div>
+                    <div class="txi-fuel-tanks-row">
+                        <!-- Left Tank -->
+                        <div class="txi-v-ribbon-col">
+                            <div class="txi-v-bar-track">
+                                <div class="txi-v-bar-caution"></div>
+                                <div class="txi-v-bar-redline"></div>
+                                <div class="txi-v-bar-fill" id="txi-fuel-bar-l" style="height: 100%;"></div>
+                            </div>
+                        </div>
+                        <!-- Calibration Scale Ticks -->
+                        <div class="txi-v-scale-ticks">
+                            <span>6000</span>
+                            <span>4500</span>
+                            <span>3000</span>
+                            <span>1500</span>
+                            <span>0</span>
+                        </div>
+                        <!-- Right Tank -->
+                        <div class="txi-v-ribbon-col">
+                            <div class="txi-v-bar-track">
+                                <div class="txi-v-bar-caution"></div>
+                                <div class="txi-v-bar-redline"></div>
+                                <div class="txi-v-bar-fill" id="txi-fuel-bar-r" style="height: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="txi-fuel-readout-row">
+                        <span id="txi-fuel-pct">100%</span>
+                        <span id="txi-fuel-mah">0 <span style="font-size: 8px; color: #8da4be;">mAH</span></span>
+                    </div>
+                </div>
+
+                <!-- Electrical Box (Single Pack Voltage & Current) -->
+                <div class="txi-group-box txi-elec-box">
+                    <div class="txi-group-title">ELECTRICAL</div>
+                    <!-- VOLTS -->
+                    <div class="txi-h-ribbon-wrap">
+                        <div class="txi-h-scale-labels">
+                            <span>20</span><span>24</span><span>28</span><span>32</span>
+                        </div>
+                        <div class="txi-h-track-row">
+                            <div class="txi-h-bar-track">
+                                <div class="txi-h-bar-fill" id="txi-bar-volt" style="width: 65%;"></div>
+                                <div class="txi-h-bar-ptr" id="txi-ptr-volt" style="left: 65%;"></div>
+                            </div>
+                            <span class="txi-h-num-right" id="txi-num-volt">25.2</span>
+                        </div>
+                        <div class="txi-h-num-center">VOLTS</div>
+                    </div>
+
+                    <!-- AMPS -->
+                    <div class="txi-h-ribbon-wrap">
+                        <div class="txi-h-scale-labels">
+                            <span>0</span><span>20</span><span>40</span><span>60</span>
+                        </div>
+                        <div class="txi-h-track-row">
+                            <div class="txi-h-bar-track">
+                                <div class="txi-h-bar-fill" id="txi-bar-amp" style="width: 48%;"></div>
+                                <div class="txi-h-bar-ptr" id="txi-ptr-amp" style="left: 48%;"></div>
+                            </div>
+                            <span class="txi-h-num-right" id="txi-num-amp">0.0</span>
+                        </div>
+                        <div class="txi-h-num-center">AMPS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 3: Right Auxiliary & Usage -->
+            <div class="txi-col-right">
+                <!-- Aux Box: 4 Mini Dials (Single mode) or Twin Cards (Twin mode) -->
+                <div class="txi-group-box txi-aux-box">
+                    <div class="txi-group-title" id="txi-aux-title">PROPULSION AUX</div>
+                    <!-- 2x2 Mini Dials for Single Mode -->
+                    <div class="txi-aux-grid" id="txi-aux-single">
+                        <!-- WATTS -->
+                        <div class="txi-mini-dial">
+                            <svg class="txi-dial-svg" viewBox="0 0 80 40">
+                                <path d="M 10 35 A 30 30 0 0 1 70 35" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                                <path d="M 10 35 A 30 30 0 0 1 58 14" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                                <path d="M 58 14 A 30 30 0 0 1 70 35" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                                <line id="txi-ptr-mini-watt" x1="40" y1="35" x2="40" y2="12" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                                <circle cx="40" cy="35" r="2" fill="#ffffff"/>
+                            </svg>
+                            <div class="txi-mini-content">
+                                <span class="txi-mini-val" id="txi-mini-watt-val">0</span>
+                                <span class="txi-mini-label">WATTS</span>
+                            </div>
+                        </div>
+
+                        <!-- MOT °C -->
+                        <div class="txi-mini-dial">
+                            <svg class="txi-dial-svg" viewBox="0 0 80 40">
+                                <path d="M 10 35 A 30 30 0 0 1 70 35" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                                <path d="M 10 35 A 30 30 0 0 1 54 13" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                                <path d="M 54 13 A 30 30 0 0 1 70 35" fill="none" stroke="#ff3b30" stroke-width="3.5" stroke-linecap="round"/>
+                                <line id="txi-ptr-mini-mot" x1="40" y1="35" x2="40" y2="12" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                                <circle cx="40" cy="35" r="2" fill="#ffffff"/>
+                            </svg>
+                            <div class="txi-mini-content">
+                                <span class="txi-mini-val" id="txi-mini-mot-val">36</span>
+                                <span class="txi-mini-label">MOT &deg;C</span>
+                            </div>
+                        </div>
+
+                        <!-- mAH USED -->
+                        <div class="txi-mini-dial">
+                            <svg class="txi-dial-svg" viewBox="0 0 80 40">
+                                <path d="M 10 35 A 30 30 0 0 1 70 35" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                                <path d="M 10 35 A 30 30 0 0 1 50 12" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                                <line id="txi-ptr-mini-mah" x1="40" y1="35" x2="40" y2="12" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                                <circle cx="40" cy="35" r="2" fill="#ffffff"/>
+                            </svg>
+                            <div class="txi-mini-content">
+                                <span class="txi-mini-val" id="txi-mini-mah-val">0</span>
+                                <span class="txi-mini-label">mAH USED</span>
+                            </div>
+                        </div>
+
+                        <!-- ENDURANCE -->
+                        <div class="txi-mini-dial">
+                            <svg class="txi-dial-svg" viewBox="0 0 80 40">
+                                <path d="M 10 35 A 30 30 0 0 1 70 35" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3.5" stroke-linecap="round"/>
+                                <path d="M 10 35 A 30 30 0 0 1 52 12" fill="none" stroke="#30d158" stroke-width="3.5"/>
+                                <line id="txi-ptr-mini-time" x1="40" y1="35" x2="40" y2="12" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                                <circle cx="40" cy="35" r="2" fill="#ffffff"/>
+                            </svg>
+                            <div class="txi-mini-content">
+                                <span class="txi-mini-val" id="txi-mini-time-val">--</span>
+                                <span class="txi-mini-label">MIN ENDUR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Twin Engine Status for Twin Mode -->
+                    <div class="txi-twin-container" id="txi-aux-twin" style="display: none;">
+                        <div class="txi-twin-row-card">
+                            <div class="txi-twin-top">
+                                <span>LEFT MOTOR</span>
+                                <span id="txi-twin-l-ch" style="color: #00e5ff;">ESC 1</span>
+                            </div>
+                            <div class="txi-twin-rpm" id="txi-twin-l-rpm">0</div>
+                            <div class="txi-twin-sub">
+                                <span id="txi-twin-l-amp">0.0 A</span>
+                                <span id="txi-twin-l-temp">30 &deg;C</span>
+                            </div>
+                        </div>
+                        <div class="txi-twin-row-card">
+                            <div class="txi-twin-top">
+                                <span>RIGHT MOTOR</span>
+                                <span id="txi-twin-r-ch" style="color: #30d158;">ESC 2</span>
+                            </div>
+                            <div class="txi-twin-rpm" id="txi-twin-r-rpm">0</div>
+                            <div class="txi-twin-sub">
+                                <span id="txi-twin-r-amp">0.0 A</span>
+                                <span id="txi-twin-r-temp">30 &deg;C</span>
+                            </div>
+                        </div>
+                        <div class="txi-sync-strip" id="txi-sync-strip">SYNC &Delta; 0 RPM</div>
+                    </div>
+                </div>
+
+                <!-- Power & Usage Ribbons -->
+                <div class="txi-group-box txi-elec-box">
+                    <div class="txi-group-title">CONSUMPTION</div>
+                    <!-- POWER WATTS FLOW -->
+                    <div class="txi-h-ribbon-wrap">
+                        <div class="txi-h-scale-labels">
+                            <span>0</span><span>500</span><span>1000</span><span>1500</span>
+                        </div>
+                        <div class="txi-h-track-row">
+                            <div class="txi-h-bar-track">
+                                <div class="txi-h-bar-fill" id="txi-bar-watt" style="width: 5%;"></div>
+                                <div class="txi-h-bar-ptr" id="txi-ptr-watt" style="left: 5%;"></div>
+                            </div>
+                            <span class="txi-h-num-right" id="txi-num-watt">0</span>
+                        </div>
+                        <div class="txi-h-num-center">WATTS FLOW</div>
+                    </div>
+
+                    <!-- MAH ACCUM -->
+                    <div class="txi-h-ribbon-wrap">
+                        <div class="txi-h-scale-labels">
+                            <span>0</span><span>2000</span><span>4000</span><span>6000</span>
+                        </div>
+                        <div class="txi-h-track-row">
+                            <div class="txi-h-bar-track">
+                                <div class="txi-h-bar-fill" id="txi-bar-mah" style="width: 5%;"></div>
+                                <div class="txi-h-bar-ptr" id="txi-ptr-mah" style="left: 5%;"></div>
+                            </div>
+                            <span class="txi-h-num-right" id="txi-num-mah">0</span>
+                        </div>
+                        <div class="txi-h-num-center">mAH ACCUM</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Top Dual Bold Arcs -->
-        <div class="cgr-arcs-row">
-            <!-- Left Arc: PWR / MAN -->
-            <div class="cgr-arc-box">
-                <svg class="cgr-arc-svg" viewBox="0 0 140 100">
-                    <path d="M 26.5 49.7 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="6.5" stroke-linecap="round"/>
-                    <path d="M 26.5 49.7 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="#30d158" stroke-width="6.5" stroke-linecap="round"/>
-                    <line id="cgr-ptr-pwr" x1="70" y1="32" x2="70" y2="16" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
-                </svg>
-                <div class="cgr-arc-content">
-                    <span class="cgr-arc-label">PWR</span>
-                    <span class="cgr-arc-val" id="eis-pwr-val">0%</span>
-                </div>
-            </div>
-
-            <!-- Right Arc: RPM -->
-            <div class="cgr-arc-box">
-                <svg class="cgr-arc-svg" viewBox="0 0 140 100">
-                    <path d="M 26.5 49.7 A 48 48 0 0 1 104.2 36.4" fill="none" stroke="#30d158" stroke-width="6.5" stroke-linecap="round"/>
-                    <path d="M 104.2 36.4 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="#ff3b30" stroke-width="6.5" stroke-linecap="round"/>
-                    <line id="cgr-ptr-rpm" x1="70" y1="32" x2="70" y2="16" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
-                    <line id="cgr-ptr-rpm2" x1="70" y1="32" x2="70" y2="16" stroke="#ffd60a" stroke-width="2.5" stroke-linecap="round" style="display: none;"/>
-                </svg>
-                <div class="cgr-arc-content">
-                    <span class="cgr-arc-label">RPM</span>
-                    <span class="cgr-arc-val" id="eis-rpm-val">0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Horizontal Divider -->
-        <div class="cgr-divider-h"></div>
-
-        <!-- Middle Row: Split Left (Battery Fuel / Twin Motors) & Right (3 Ribbons) -->
-        <div class="cgr-mid-row">
-            <!-- Left Pane: Single Engine Battery Fuel -->
-            <div class="cgr-mid-left" id="eis-left-single">
-                <div class="cgr-left-header">BATTERY FUEL</div>
-                <div class="cgr-fuel-display">
-                    <div class="cgr-tank-col">
-                        <div class="cgr-tank-fluid" id="eis-tank-l" style="height: 100%;"></div>
-                        <div class="cgr-tank-redline"></div>
-                    </div>
-                    <div class="cgr-fuel-stats">
-                        <div class="cgr-pct-huge" id="eis-fuel-pct">100%</div>
-                        <div class="cgr-mah-sub" id="eis-fuel-mah">0 / 6000 mAh</div>
-                        <div class="cgr-endurance-sub" id="eis-fuel-endur">-- MIN</div>
-                    </div>
-                    <div class="cgr-tank-col">
-                        <div class="cgr-tank-fluid" id="eis-tank-r" style="height: 100%;"></div>
-                        <div class="cgr-tank-redline"></div>
-                    </div>
-                </div>
-                <div style="font-size: 8px; color: rgba(255,255,255,0.45); text-align: center; font-family: monospace;">6S LiPo &bull; 25.2V</div>
-            </div>
-
-            <!-- Left Pane: Twin Engine Motor Comparison (toggled in 2 ENG mode) -->
-            <div class="cgr-mid-left" id="eis-left-twin" style="display: none;">
-                <div class="cgr-twin-box">
-                    <div class="cgr-twin-eng-card">
-                        <div class="cgr-twin-title-row">
-                            <span>LEFT MOTOR</span>
-                            <span id="eis-twin-l-ch" style="color: #00e5ff;">ESC 1</span>
-                        </div>
-                        <div class="cgr-twin-rpm" id="eis-twin-l-rpm">0</div>
-                        <div class="cgr-twin-metrics">
-                            <span id="eis-twin-l-amp">0.0 A</span>
-                            <span id="eis-twin-l-temp">30 &deg;C</span>
-                        </div>
-                    </div>
-                    <div class="cgr-twin-eng-card">
-                        <div class="cgr-twin-title-row">
-                            <span>RIGHT MOTOR</span>
-                            <span id="eis-twin-r-ch" style="color: #30d158;">ESC 2</span>
-                        </div>
-                        <div class="cgr-twin-rpm" id="eis-twin-r-rpm">0</div>
-                        <div class="cgr-twin-metrics">
-                            <span id="eis-twin-r-amp">0.0 A</span>
-                            <span id="eis-twin-r-temp">30 &deg;C</span>
-                        </div>
-                    </div>
-                    <div class="cgr-sync-tag" id="eis-sync-tag">SYNC &Delta; 0 RPM</div>
-                </div>
-            </div>
-
-            <!-- Right Pane: 3 Horizontal Ribbons -->
-            <div class="cgr-mid-right">
-                <!-- Ribbon 1: AMPS (Current) -->
-                <div class="cgr-ribbon-item">
-                    <div class="cgr-ribbon-header">
-                        <span class="cgr-ribbon-title">AMPS</span>
-                        <span class="cgr-ribbon-val" id="eis-rib-amp-val">0.0 A</span>
-                    </div>
-                    <div class="cgr-ribbon-track-wrap">
-                        <div class="cgr-ribbon-bar" id="eis-rib-amp-bar" style="width: 5%;"></div>
-                        <div class="cgr-ribbon-ptr" id="eis-rib-amp-ptr" style="left: 5%;"></div>
-                    </div>
-                </div>
-
-                <!-- Ribbon 2: WATTS (Power) -->
-                <div class="cgr-ribbon-item">
-                    <div class="cgr-ribbon-header">
-                        <span class="cgr-ribbon-title">WATTS</span>
-                        <span class="cgr-ribbon-val" id="eis-rib-watt-val">0 W</span>
-                    </div>
-                    <div class="cgr-ribbon-track-wrap">
-                        <div class="cgr-ribbon-bar caution" id="eis-rib-watt-bar" style="width: 5%;"></div>
-                        <div class="cgr-ribbon-ptr" id="eis-rib-watt-ptr" style="left: 5%;"></div>
-                    </div>
-                </div>
-
-                <!-- Ribbon 3: ESC T (Temperature) -->
-                <div class="cgr-ribbon-item">
-                    <div class="cgr-ribbon-header">
-                        <span class="cgr-ribbon-title">ESC T</span>
-                        <span class="cgr-ribbon-val" id="eis-rib-temp-val">30 &deg;C</span>
-                    </div>
-                    <div class="cgr-ribbon-track-wrap">
-                        <div class="cgr-ribbon-bar caution" id="eis-rib-temp-bar" style="width: 25%;"></div>
-                        <div class="cgr-ribbon-ptr" id="eis-rib-temp-ptr" style="left: 25%;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Horizontal Divider -->
-        <div class="cgr-divider-h"></div>
-
-        <!-- Bottom Row: TOTAL A & Single Pack Voltage -->
-        <div class="cgr-bottom-row">
-            <div class="cgr-bot-left">
-                <span class="cgr-bot-tag">TOTAL A:</span>
-                <span class="cgr-bot-val-cyan" id="eis-bot-load">0.0 A</span>
-            </div>
-            <div class="cgr-bot-right">
-                <span class="cgr-bot-tag">VOLT:</span>
-                <span class="cgr-bot-val-green" id="eis-bot-volt">25.2 V</span>
+        <!-- Garmin TXi Bottom Touchscreen Softkey Bar -->
+        <div class="txi-softkey-bar">
+            <button class="txi-softkey" onclick="toggleEisWidget()">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back</span>
+            </button>
+            <button class="txi-softkey" onclick="setEisEngineMode('single')">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="txi-softkey active-engine">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+                <span>Engine</span>
+            </button>
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="txi-softkey-pill active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
+                <button class="txi-softkey-pill" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
+                <button class="txi-softkey-pill" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
             </div>
         </div>
     </div>
@@ -7205,8 +7422,9 @@
         const eisBtnSingle = document.getElementById('eis-btn-single');
         const eisBtnTwin = document.getElementById('eis-btn-twin');
         const eisBtnCh = document.getElementById('eis-btn-ch');
-        const eisLeftSingle = document.getElementById('eis-left-single');
-        const eisLeftTwin = document.getElementById('eis-left-twin');
+        const txiAuxSingle = document.getElementById('txi-aux-single');
+        const txiAuxTwin = document.getElementById('txi-aux-twin');
+        const txiAuxTitle = document.getElementById('txi-aux-title');
 
         function toggleEisWidget() {
             eisWidgetVisible = !eisWidgetVisible;
@@ -7233,10 +7451,11 @@
             const isTwin = (eisEngineMode === 'twin');
             if (eisBtnSingle) eisBtnSingle.classList.toggle('active', !isTwin);
             if (eisBtnTwin) eisBtnTwin.classList.toggle('active', isTwin);
-            if (eisLeftSingle) eisLeftSingle.style.display = !isTwin ? 'flex' : 'none';
-            if (eisLeftTwin) eisLeftTwin.style.display = isTwin ? 'flex' : 'none';
+            if (txiAuxSingle) txiAuxSingle.style.display = !isTwin ? 'grid' : 'none';
+            if (txiAuxTwin) txiAuxTwin.style.display = isTwin ? 'flex' : 'none';
+            if (txiAuxTitle) txiAuxTitle.textContent = isTwin ? 'TWIN PROPULSION' : 'PROPULSION AUX';
 
-            const ptrRpm2 = document.getElementById('cgr-ptr-rpm2');
+            const ptrRpm2 = document.getElementById('txi-ptr-rpm2');
             if (ptrRpm2) ptrRpm2.style.display = isTwin ? 'block' : 'none';
 
             if (eisBtnCh) {
@@ -7247,8 +7466,8 @@
                 }
             }
 
-            const lChEl = document.getElementById('eis-twin-l-ch');
-            const rChEl = document.getElementById('eis-twin-r-ch');
+            const lChEl = document.getElementById('txi-twin-l-ch');
+            const rChEl = document.getElementById('txi-twin-r-ch');
             if (lChEl) lChEl.textContent = `ESC ${eisTwinLeftCh}`;
             if (rChEl) rChEl.textContent = `ESC ${eisTwinRightCh}`;
         }
@@ -7274,23 +7493,33 @@
         updateEisModeUI();
 
         if (eisWidget) {
-            makeDraggable(eisWidget, document.getElementById('cgr-header') || eisWidget);
+            makeDraggable(eisWidget, document.getElementById('txi-bezel-header') || eisWidget);
         }
 
-        // Helper to update SVG radial pointer line on CGR-30P arc
-        function setCgrArcPointer(lineEl, valNorm) {
+        // Helper to update SVG needle pointer line on Garmin TXi curved dial
+        function setTxiDialNeedle(lineEl, valNorm) {
             if (!lineEl) return;
             const norm = Math.max(0, Math.min(1, valNorm));
-            const deg = 155 - norm * 130;
+            const deg = 200 - norm * 220;
             const rad = deg * Math.PI / 180;
-            const cx = 70, cy = 70;
-            const rIn = 38, rOut = 54;
-            const x1 = (cx + rIn * Math.cos(rad)).toFixed(1);
-            const y1 = (cy - rIn * Math.sin(rad)).toFixed(1);
-            const x2 = (cx + rOut * Math.cos(rad)).toFixed(1);
-            const y2 = (cy - rOut * Math.sin(rad)).toFixed(1);
-            lineEl.setAttribute('x1', x1);
-            lineEl.setAttribute('y1', y1);
+            const cx = 50, cy = 38;
+            const rPtr = 24;
+            const x2 = (cx + rPtr * Math.cos(rad)).toFixed(1);
+            const y2 = (cy - rPtr * Math.sin(rad)).toFixed(1);
+            lineEl.setAttribute('x2', x2);
+            lineEl.setAttribute('y2', y2);
+        }
+
+        // Helper to update mini round dial needles (0 to 180 deg)
+        function setTxiMiniNeedle(lineEl, valNorm) {
+            if (!lineEl) return;
+            const norm = Math.max(0, Math.min(1, valNorm));
+            const deg = 180 - norm * 180;
+            const rad = deg * Math.PI / 180;
+            const cx = 40, cy = 35;
+            const rPtr = 24;
+            const x2 = (cx + rPtr * Math.cos(rad)).toFixed(1);
+            const y2 = (cy - rPtr * Math.sin(rad)).toFixed(1);
             lineEl.setAttribute('x2', x2);
             lineEl.setAttribute('y2', y2);
         }
@@ -7361,19 +7590,67 @@
                 totWatt = am32Telemetry.pack_voltage * totAmp;
                 escTempMax = activeTemp1;
 
-                // Update Single RPM & PWR Readouts
-                const pwrValEl = document.getElementById('eis-pwr-val');
-                const pwrPtr = document.getElementById('cgr-ptr-pwr');
-                const rpmValEl = document.getElementById('eis-rpm-val');
-                const rpmPtr = document.getElementById('cgr-ptr-rpm');
+                // Update Column 1 Dials
+                const valPwr = document.getElementById('txi-val-pwr');
+                const ptrPwr = document.getElementById('txi-ptr-pwr');
+                const valRpm = document.getElementById('txi-val-rpm');
+                const ptrRpm = document.getElementById('txi-ptr-rpm');
+                const valAmp = document.getElementById('txi-val-amp');
+                const ptrAmp = document.getElementById('txi-ptr-amp');
+                const valEscT = document.getElementById('txi-val-esct');
+                const ptrEscT = document.getElementById('txi-ptr-esct');
+                const valMotT = document.getElementById('txi-val-mott');
+                const ptrMotT = document.getElementById('txi-ptr-mott');
 
-                const pwrPct = Math.round(throttleNorm * 100);
-                if (pwrValEl) pwrValEl.textContent = `${pwrPct}%`;
-                setCgrArcPointer(pwrPtr, throttleNorm);
+                const pwrPct = (throttleNorm * 100).toFixed(1);
+                if (valPwr) valPwr.textContent = pwrPct;
+                setTxiDialNeedle(ptrPwr, throttleNorm);
 
-                const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 10000.0));
-                if (rpmValEl) rpmValEl.textContent = activeRpm1.toLocaleString();
-                setCgrArcPointer(rpmPtr, rpmNorm);
+                const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
+                if (valRpm) valRpm.textContent = activeRpm1.toLocaleString();
+                setTxiDialNeedle(ptrRpm, rpmNorm);
+
+                const ampNorm = Math.max(0, Math.min(1, totAmp / 60.0));
+                if (valAmp) valAmp.textContent = totAmp.toFixed(1);
+                setTxiDialNeedle(ptrAmp, ampNorm);
+
+                const escTNorm = Math.max(0, Math.min(1, (escTempMax - 20) / 80.0));
+                if (valEscT) valEscT.textContent = Math.round(escTempMax);
+                setTxiDialNeedle(ptrEscT, escTNorm);
+
+                const motT = escTempMax + 6;
+                const motTNorm = Math.max(0, Math.min(1, (motT - 20) / 90.0));
+                if (valMotT) valMotT.textContent = Math.round(motT);
+                setTxiDialNeedle(ptrMotT, motTNorm);
+
+                // Update Column 3 Mini Dials
+                const miniWattVal = document.getElementById('txi-mini-watt-val');
+                const ptrMiniWatt = document.getElementById('txi-ptr-mini-watt');
+                const miniMotVal = document.getElementById('txi-mini-mot-val');
+                const ptrMiniMot = document.getElementById('txi-ptr-mini-mot');
+                const miniMahVal = document.getElementById('txi-mini-mah-val');
+                const ptrMiniMah = document.getElementById('txi-ptr-mini-mah');
+                const miniTimeVal = document.getElementById('txi-mini-time-val');
+                const ptrMiniTime = document.getElementById('txi-ptr-mini-time');
+
+                if (miniWattVal) miniWattVal.textContent = Math.round(totWatt);
+                setTxiMiniNeedle(ptrMiniWatt, totWatt / 1500.0);
+
+                if (miniMotVal) miniMotVal.textContent = Math.round(motT);
+                setTxiMiniNeedle(ptrMiniMot, (motT - 20) / 90.0);
+
+                if (miniMahVal) miniMahVal.textContent = Math.round(am32Telemetry.consumed_mah);
+                setTxiMiniNeedle(ptrMiniMah, am32Telemetry.consumed_mah / 6000.0);
+
+                if (totAmp > 0.8) {
+                    const remMah = Math.max(0, (am32Telemetry.battery_remaining_pct / 100.0) * 6000);
+                    const minsRem = Math.round((remMah / (totAmp * 1000)) * 60);
+                    if (miniTimeVal) miniTimeVal.textContent = minsRem;
+                    setTxiMiniNeedle(ptrMiniTime, minsRem / 45.0);
+                } else {
+                    if (miniTimeVal) miniTimeVal.textContent = '--';
+                    setTxiMiniNeedle(ptrMiniTime, 0);
+                }
             } else {
                 const lCh = Math.max(0, Math.min(3, eisTwinLeftCh - 1));
                 const rCh = Math.max(0, Math.min(3, eisTwinRightCh - 1));
@@ -7388,31 +7665,50 @@
                 totWatt = am32Telemetry.pack_voltage * totAmp;
                 escTempMax = Math.max(activeTemp1, activeTemp2);
 
-                // Update Arcs with dual pointers
-                const pwrValEl = document.getElementById('eis-pwr-val');
-                const pwrPtr = document.getElementById('cgr-ptr-pwr');
-                const rpmValEl = document.getElementById('eis-rpm-val');
-                const rpmPtr = document.getElementById('cgr-ptr-rpm');
-                const rpmPtr2 = document.getElementById('cgr-ptr-rpm2');
+                // Update Column 1 Dials with dual RPM needles
+                const valPwr = document.getElementById('txi-val-pwr');
+                const ptrPwr = document.getElementById('txi-ptr-pwr');
+                const valRpm = document.getElementById('txi-val-rpm');
+                const ptrRpm = document.getElementById('txi-ptr-rpm');
+                const ptrRpm2 = document.getElementById('txi-ptr-rpm2');
+                const valAmp = document.getElementById('txi-val-amp');
+                const ptrAmp = document.getElementById('txi-ptr-amp');
+                const valEscT = document.getElementById('txi-val-esct');
+                const ptrEscT = document.getElementById('txi-ptr-esct');
+                const valMotT = document.getElementById('txi-val-mott');
+                const ptrMotT = document.getElementById('txi-ptr-mott');
 
-                const pwrPct = Math.round(throttleNorm * 100);
-                if (pwrValEl) pwrValEl.textContent = `${pwrPct}%`;
-                setCgrArcPointer(pwrPtr, throttleNorm);
+                const pwrPct = (throttleNorm * 100).toFixed(1);
+                if (valPwr) valPwr.textContent = pwrPct;
+                setTxiDialNeedle(ptrPwr, throttleNorm);
 
-                const rpmNorm1 = Math.max(0, Math.min(1, activeRpm1 / 10000.0));
-                const rpmNorm2 = Math.max(0, Math.min(1, activeRpm2 / 10000.0));
-                if (rpmValEl) rpmValEl.textContent = activeRpm1.toLocaleString();
-                setCgrArcPointer(rpmPtr, rpmNorm1);
-                setCgrArcPointer(rpmPtr2, rpmNorm2);
+                const rpmNorm1 = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
+                const rpmNorm2 = Math.max(0, Math.min(1, activeRpm2 / 9500.0));
+                if (valRpm) valRpm.textContent = activeRpm1.toLocaleString();
+                setTxiDialNeedle(ptrRpm, rpmNorm1);
+                setTxiDialNeedle(ptrRpm2, rpmNorm2);
 
-                // Update Twin Left Card
-                const lRpm = document.getElementById('eis-twin-l-rpm');
-                const rRpm = document.getElementById('eis-twin-r-rpm');
-                const lAmp = document.getElementById('eis-twin-l-amp');
-                const rAmp = document.getElementById('eis-twin-r-amp');
-                const lTemp = document.getElementById('eis-twin-l-temp');
-                const rTemp = document.getElementById('eis-twin-r-temp');
-                const syncTag = document.getElementById('eis-sync-tag');
+                const ampNorm = Math.max(0, Math.min(1, totAmp / 60.0));
+                if (valAmp) valAmp.textContent = totAmp.toFixed(1);
+                setTxiDialNeedle(ptrAmp, ampNorm);
+
+                const escTNorm = Math.max(0, Math.min(1, (escTempMax - 20) / 80.0));
+                if (valEscT) valEscT.textContent = Math.round(escTempMax);
+                setTxiDialNeedle(ptrEscT, escTNorm);
+
+                const motT = escTempMax + 6;
+                const motTNorm = Math.max(0, Math.min(1, (motT - 20) / 90.0));
+                if (valMotT) valMotT.textContent = Math.round(motT);
+                setTxiDialNeedle(ptrMotT, motTNorm);
+
+                // Update Column 3 Twin Cards
+                const lRpm = document.getElementById('txi-twin-l-rpm');
+                const rRpm = document.getElementById('txi-twin-r-rpm');
+                const lAmp = document.getElementById('txi-twin-l-amp');
+                const rAmp = document.getElementById('txi-twin-r-amp');
+                const lTemp = document.getElementById('txi-twin-l-temp');
+                const rTemp = document.getElementById('txi-twin-r-temp');
+                const syncStrip = document.getElementById('txi-sync-strip');
 
                 if (lRpm) lRpm.textContent = activeRpm1.toLocaleString();
                 if (rRpm) rRpm.textContent = activeRpm2.toLocaleString();
@@ -7422,70 +7718,61 @@
                 if (rTemp) rTemp.textContent = `${Math.round(activeTemp2)} °C`;
 
                 const diff = activeRpm2 - activeRpm1;
-                if (syncTag) {
-                    syncTag.textContent = `SYNC ${diff >= 0 ? '+' : ''}${diff} RPM`;
+                if (syncStrip) {
+                    syncStrip.textContent = `SYNC ${diff >= 0 ? '+' : ''}${diff} RPM`;
                     const isSynced = Math.abs(diff) < 120;
-                    syncTag.style.background = isSynced ? 'rgba(48, 209, 88, 0.12)' : 'rgba(255, 149, 0, 0.15)';
-                    syncTag.style.borderColor = isSynced ? 'rgba(48, 209, 88, 0.3)' : 'rgba(255, 149, 0, 0.4)';
-                    syncTag.style.color = isSynced ? '#30d158' : '#ff9500';
+                    syncStrip.style.background = isSynced ? 'rgba(48, 209, 88, 0.12)' : 'rgba(255, 149, 0, 0.15)';
+                    syncStrip.style.borderColor = isSynced ? 'rgba(48, 209, 88, 0.3)' : 'rgba(255, 149, 0, 0.4)';
+                    syncStrip.style.color = isSynced ? '#30d158' : '#ff9500';
                 }
             }
 
-            // Update Middle Right: 3 Horizontal Ribbons
-            // Ribbon 1: Current AMPS (0 - 60A)
-            const ampPct = Math.max(0, Math.min(100, (totAmp / 60.0) * 100));
-            const ribAmpBar = document.getElementById('eis-rib-amp-bar');
-            const ribAmpPtr = document.getElementById('eis-rib-amp-ptr');
-            const ribAmpVal = document.getElementById('eis-rib-amp-val');
-            if (ribAmpBar) ribAmpBar.style.width = `${ampPct}%`;
-            if (ribAmpPtr) ribAmpPtr.style.left = `${ampPct}%`;
-            if (ribAmpVal) ribAmpVal.textContent = `${totAmp.toFixed(1)} A`;
-
-            // Ribbon 2: Power WATTS (0 - 1500W)
-            const wattPct = Math.max(0, Math.min(100, (totWatt / 1500.0) * 100));
-            const ribWattBar = document.getElementById('eis-rib-watt-bar');
-            const ribWattPtr = document.getElementById('eis-rib-watt-ptr');
-            const ribWattVal = document.getElementById('eis-rib-watt-val');
-            if (ribWattBar) ribWattBar.style.width = `${wattPct}%`;
-            if (ribWattPtr) ribWattPtr.style.left = `${wattPct}%`;
-            if (ribWattVal) ribWattVal.textContent = `${Math.round(totWatt)} W`;
-
-            // Ribbon 3: Temperature ESC T (20 - 100°C)
-            const tempPct = Math.max(0, Math.min(100, ((escTempMax - 20) / 80.0) * 100));
-            const ribTempBar = document.getElementById('eis-rib-temp-bar');
-            const ribTempPtr = document.getElementById('eis-rib-temp-ptr');
-            const ribTempVal = document.getElementById('eis-rib-temp-val');
-            if (ribTempBar) ribTempBar.style.width = `${tempPct}%`;
-            if (ribTempPtr) ribTempPtr.style.left = `${tempPct}%`;
-            if (ribTempVal) ribTempVal.textContent = `${Math.round(escTempMax)} °C`;
-
-            // Update Left Pane: Battery Fuel Reserves (Single mode)
+            // Update Column 2: Battery Fuel Ribbons & Electrical
             const pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
-            const fuelPct = document.getElementById('eis-fuel-pct');
-            const fuelMah = document.getElementById('eis-fuel-mah');
-            const fuelEndur = document.getElementById('eis-fuel-endur');
-            const tankL = document.getElementById('eis-tank-l');
-            const tankR = document.getElementById('eis-tank-r');
+            const fuelBarL = document.getElementById('txi-fuel-bar-l');
+            const fuelBarR = document.getElementById('txi-fuel-bar-r');
+            const fuelPct = document.getElementById('txi-fuel-pct');
+            const fuelMah = document.getElementById('txi-fuel-mah');
 
+            if (fuelBarL) fuelBarL.style.height = `${pct}%`;
+            if (fuelBarR) fuelBarR.style.height = `${pct}%`;
             if (fuelPct) fuelPct.textContent = `${pct}%`;
-            if (fuelMah) fuelMah.textContent = `${Math.round(am32Telemetry.consumed_mah)} / 6000 mAh`;
-            if (tankL) tankL.style.height = `${pct}%`;
-            if (tankR) tankR.style.height = `${pct}%`;
+            if (fuelMah) fuelMah.innerHTML = `${Math.round(am32Telemetry.consumed_mah)} <span style="font-size: 8px; color: #8da4be;">mAH</span>`;
 
-            if (totAmp > 0.8) {
-                const remMah = Math.max(0, (pct / 100.0) * 6000);
-                const hrsRem = remMah / (totAmp * 1000);
-                const minsRem = Math.round(hrsRem * 60);
-                if (fuelEndur) fuelEndur.textContent = `${minsRem} MIN`;
-            } else {
-                if (fuelEndur) fuelEndur.textContent = '-- MIN';
-            }
+            // Electrical: Single Overall Pack Voltage (NO cell bars)
+            const voltNorm = Math.max(0, Math.min(1, (am32Telemetry.pack_voltage - 20.0) / 12.0));
+            const barVolt = document.getElementById('txi-bar-volt');
+            const ptrVolt = document.getElementById('txi-ptr-volt');
+            const numVolt = document.getElementById('txi-num-volt');
+            if (barVolt) barVolt.style.width = `${voltNorm * 100}%`;
+            if (ptrVolt) ptrVolt.style.left = `${voltNorm * 100}%`;
+            if (numVolt) numVolt.textContent = am32Telemetry.pack_voltage.toFixed(1);
 
-            // Update Bottom Row: Total Load & Single Pack Voltage
-            const botLoad = document.getElementById('eis-bot-load');
-            const botVolt = document.getElementById('eis-bot-volt');
-            if (botLoad) botLoad.textContent = `${totAmp.toFixed(1)} A`;
-            if (botVolt) botVolt.textContent = `${am32Telemetry.pack_voltage.toFixed(1)} V`;
+            // Electrical: Total AMPS
+            const ampNorm = Math.max(0, Math.min(1, totAmp / 60.0));
+            const barAmp = document.getElementById('txi-bar-amp');
+            const ptrAmp = document.getElementById('txi-ptr-amp');
+            const numAmp = document.getElementById('txi-num-amp');
+            if (barAmp) barAmp.style.width = `${ampNorm * 100}%`;
+            if (ptrAmp) ptrAmp.style.left = `${ampNorm * 100}%`;
+            if (numAmp) numAmp.textContent = totAmp.toFixed(1);
+
+            // Update Column 3 Bottom: Watts Flow & mAh Accum
+            const wattNorm = Math.max(0, Math.min(1, totWatt / 1500.0));
+            const barWatt = document.getElementById('txi-bar-watt');
+            const ptrWatt = document.getElementById('txi-ptr-watt');
+            const numWatt = document.getElementById('txi-num-watt');
+            if (barWatt) barWatt.style.width = `${wattNorm * 100}%`;
+            if (ptrWatt) ptrWatt.style.left = `${wattNorm * 100}%`;
+            if (numWatt) numWatt.textContent = Math.round(totWatt);
+
+            const mahNorm = Math.max(0, Math.min(1, am32Telemetry.consumed_mah / 6000.0));
+            const barMah = document.getElementById('txi-bar-mah');
+            const ptrMah = document.getElementById('txi-ptr-mah');
+            const numMah = document.getElementById('txi-num-mah');
+            if (barMah) barMah.style.width = `${mahNorm * 100}%`;
+            if (ptrMah) ptrMah.style.left = `${mahNorm * 100}%`;
+            if (numMah) numMah.textContent = Math.round(am32Telemetry.consumed_mah);
         }
 
         setInterval(updateEisInstrument, 60);
