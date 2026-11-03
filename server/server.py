@@ -31,6 +31,16 @@ class MissionHandler:
         self.last_req_time = 0
         self.retries = 0
         self.max_retries = 5
+        self.cache_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'waypoints_cache.json'))
+        try:
+            if os.path.exists(self.cache_file):
+                with open(self.cache_file, 'r', encoding='utf-8') as cf:
+                    cached = json.load(cf)
+                    if isinstance(cached, list) and len(cached) > 0:
+                        self.waypoints = cached
+                        print(f"[Mission] Loaded {len(self.waypoints)} cached waypoints from disk on startup")
+        except Exception as e:
+            print(f"[Mission] Error reading waypoint cache: {e}")
 
     def start_fetch(self, force=False):
         if not self.conn:
@@ -140,6 +150,11 @@ class MissionHandler:
                         except Exception: pass
                         valid_wps = [w for w in self.waypoints if w is not None]
                         print(f"[Mission] Successfully downloaded {len(valid_wps)} waypoints")
+                        try:
+                            with open(self.cache_file, 'w', encoding='utf-8') as cf:
+                                json.dump(valid_wps, cf, indent=2)
+                        except Exception as e:
+                            print(f"[Mission] Error writing waypoint cache: {e}")
                         return {
                             "type": "MISSION_WAYPOINTS",
                             "waypoints": valid_wps,
@@ -312,16 +327,19 @@ async def mavlink_listener():
                 data['z'] = -msg.z # Convert down to up
                 data['vx'] = getattr(msg, 'vx', 0.0)
                 data['vy'] = getattr(msg, 'vy', 0.0)
+                data['vz'] = -getattr(msg, 'vz', 0.0) # Vertical climb rate in m/s (NED Down inverted to Up)
             elif msg.get_type() == 'GLOBAL_POSITION_INT':
                 data['lat'] = msg.lat / 1e7
                 data['lon'] = msg.lon / 1e7
                 data['alt'] = msg.alt
                 data['relative_alt'] = msg.relative_alt
                 data['hdg'] = getattr(msg, 'hdg', 0) / 100.0
+                data['vz'] = -getattr(msg, 'vz', 0.0) / 100.0 # Convert cm/s Down to m/s Up
             elif msg.get_type() == 'VFR_HUD':
                 data['airspeed'] = msg.airspeed
                 data['groundspeed'] = msg.groundspeed
                 data['heading'] = getattr(msg, 'heading', None)
+                data['climb'] = getattr(msg, 'climb', 0.0)
             elif msg.get_type() == 'WIND':
                 data['wind_direction'] = getattr(msg, 'direction', 0)
                 data['wind_speed'] = getattr(msg, 'speed', 0.0)

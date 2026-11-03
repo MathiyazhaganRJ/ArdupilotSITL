@@ -23,6 +23,10 @@
             --border-color: rgba(0, 0, 0, 0.1);
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
             --accent: #0071e3;
+            --accent-cyan: #0077b6;
+            --accent-green: #34c759;
+            --accent-yellow: #ff9500;
+            --accent-red: #ff3b30;
             --wind-color: #0077b6; /* High-contrast aviation cyan-blue for light mode */
             --wind-arrow-color: #0099cc; /* High-contrast wind arrow on dial */
             --motor-bg: #e5e5ea;
@@ -42,6 +46,10 @@
             --border-color: rgba(255, 255, 255, 0.15);
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             --accent: #0a84ff;
+            --accent-cyan: #00e5ff;
+            --accent-green: #30d158;
+            --accent-yellow: #ffcc00;
+            --accent-red: #ff453a;
             --wind-color: #00e5ff; /* Vivid Garmin electric cyan for dark mode */
             --wind-arrow-color: #00e5ff;
             --motor-bg: #3a3a3c;
@@ -2301,10 +2309,10 @@
                     <rect x="158" y="86" width="38" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
                     <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
                     
-                    <!-- Bottom Status Tag -->
-                    <g transform="translate(86, 172)">
-                        <rect x="0" y="0" width="28" height="16" rx="4" fill="#16181c" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-                        <text x="14" y="11" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="middle">VTOL</text>
+                    <!-- Bottom Status Tag (Flight Mode / HUD Annunciator) -->
+                    <g transform="translate(64, 168)">
+                        <rect x="0" y="0" width="72" height="18" rx="4" fill="#10141a" stroke="rgba(0, 229, 255, 0.6)" stroke-width="1.2" />
+                        <text id="lxnav-pfd-mode-text" x="36" y="12.5" fill="#00e5ff" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="middle">LXNAV PFD</text>
                     </g>
                 </g>
 
@@ -2708,6 +2716,15 @@
     <div id="canvas-container"></div>
     <script>
         var missionWaypoints = [];
+        try {
+            const cachedWps = localStorage.getItem('sharkee_mission_waypoints');
+            if (cachedWps) {
+                const parsed = JSON.parse(cachedWps);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    missionWaypoints = parsed;
+                }
+            }
+        } catch(e) {}
         var currentMissionSeq = 0;
         var waypointsVisible = false;
         var currentLxnavPage = 1;
@@ -4277,6 +4294,23 @@
             const currentPitchDeg = (typeof targetRot !== 'undefined') ? (targetRot.x * (180 / Math.PI)) : 0;
             const currentRollDeg = (typeof targetRot !== 'undefined') ? (targetRot.z * (180 / Math.PI)) : 0;
 
+            // Fallback: Calculate climb rate from altitude delta if telemetry climb is absent/stale
+            const nowTime = performance.now();
+            if (typeof window.lastAltCheckTime === 'undefined') {
+                window.lastAltCheckTime = nowTime;
+                window.lastAltCheckVal = currentPlaneAltMSL;
+            } else if (nowTime - window.lastAltCheckTime >= 200) {
+                const dt = (nowTime - window.lastAltCheckTime) / 1000.0;
+                if (currentPlaneAltMSL !== null && window.lastAltCheckVal !== null && dt > 0) {
+                    const derivedClimb = (currentPlaneAltMSL - window.lastAltCheckVal) / dt;
+                    if (Math.abs(planeClimbRate) < 0.05 && Math.abs(derivedClimb) > 0.08) {
+                        planeClimbRate = derivedClimb;
+                    }
+                }
+                window.lastAltCheckTime = nowTime;
+                window.lastAltCheckVal = currentPlaneAltMSL;
+            }
+
             // Dial 1: Artificial Horizon / PFD
             if (currentLxnavPage === 1) {
                 const horizonGrp = document.getElementById('lxnav-pfd-horizon-group');
@@ -4289,14 +4323,24 @@
                 if (spdEl) spdEl.textContent = Math.round(planeAirspeed * 3.6);
                 const altEl = document.getElementById('lxnav-pfd-alt');
                 if (altEl) altEl.textContent = Math.round(currentPlaneAltMSL || 0);
+
+                // Update bottom flight mode / annunciator badge
+                const modeEl = document.getElementById('lxnav-pfd-mode-text');
+                if (modeEl) {
+                    const fModeEl = document.getElementById('f_mode');
+                    const currentMode = (fModeEl && fModeEl.innerText && fModeEl.innerText !== 'UNKNOWN') ? fModeEl.innerText : 'LXNAV PFD';
+                    modeEl.textContent = currentMode;
+                }
             }
 
             // Dial 2: Hawk Variometer
             else if (currentLxnavPage === 2) {
                 const needleEl = document.getElementById('lxnav-vario-needle');
                 if (needleEl) {
-                    const needleAngle = Math.max(-135, Math.min(135, planeClimbRate * 22.5));
-                    needleEl.style.transform = `rotate(${needleAngle}deg)`;
+                    // LXNAV Hawk dial is calibrated to +/- 6 m/s scale (~30 deg per m/s)
+                    const needleAngle = Math.max(-175, Math.min(175, planeClimbRate * 30.0));
+                    needleEl.setAttribute('transform', `rotate(${needleAngle.toFixed(1)} 100 100)`);
+                    needleEl.style.transform = `rotate(${needleAngle.toFixed(1)}deg)`;
                 }
                 const nettoEl = document.getElementById('lxnav-vario-netto');
                 if (nettoEl) {
@@ -4307,6 +4351,7 @@
                 const veraEl = document.getElementById('lxnav-vario-vera');
                 if (veraEl) {
                     veraEl.textContent = (planeClimbRate >= 0 ? '+' : '') + planeClimbRate.toFixed(1);
+                    veraEl.setAttribute('fill', '#00e5ff');
                 }
                 const varioWindEl = document.getElementById('lxnav-vario-wind');
                 if (varioWindEl) {
@@ -6318,6 +6363,9 @@
                 updateCompass();
             } else if (data.type === 'GLOBAL_POSITION_INT') {
                 if (data.alt !== undefined) currentPlaneAltMSL = data.alt / 1000.0;
+                if (data.vz !== undefined && data.vz !== null) {
+                    planeClimbRate = data.vz;
+                }
                 const hasValidGps = data.lat !== undefined && data.lon !== undefined &&
                                     data.lat !== null && data.lon !== null &&
                                     !isNaN(data.lat) && !isNaN(data.lon) &&
@@ -6366,6 +6414,9 @@
                 latestNedX = data.x;
                 latestNedY = data.y;
                 hasNedPos = true;
+                if (data.vz !== undefined && data.vz !== null) {
+                    planeClimbRate = data.vz;
+                }
                 document.getElementById('alt').innerText = data.z.toFixed(1) + " m";
                 rawTargetPos.set(data.y, data.z, -data.x);
                 if (data.vx !== undefined && data.vy !== undefined) {
@@ -6550,6 +6601,9 @@
                 if (Array.isArray(data.waypoints) && data.waypoints.length > 0) {
                     addAutopilotMessage({ text: `Mission: Loaded ${data.waypoints.length} waypoints from flight controller`, severity: 6 });
                     missionWaypoints = data.waypoints;
+                    try {
+                        localStorage.setItem('sharkee_mission_waypoints', JSON.stringify(missionWaypoints));
+                    } catch(e) {}
                     const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
                     if (homeWp) {
                         initEkfHome(homeWp.lat, homeWp.lon);
@@ -6558,6 +6612,7 @@
                     }
                     if (data.current_seq !== undefined) currentMissionSeq = data.current_seq;
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+                    if (typeof refreshLxnavWaypoints === 'function') refreshLxnavWaypoints();
                 }
             }
             else if (data.type === 'MISSION_CURRENT') {
@@ -6839,6 +6894,16 @@
             renderer.render(scene, camera);
         }
         animate();
+
+        // Immediate startup initialization of cached mission waypoints and LXNAV displays
+        if (Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
+            const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
+            if (homeWp && !ekfHomeInitialized) {
+                initEkfHome(homeWp.lat, homeWp.lon);
+            }
+            if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+            if (typeof refreshLxnavWaypoints === 'function') refreshLxnavWaypoints();
+        }
 
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
