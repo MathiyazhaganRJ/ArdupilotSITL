@@ -900,8 +900,8 @@ if __name__ == "__main__":
 
     if args.headless:
         print("\n[Server] Running in Headless Server Mode (--headless).")
-        print("[Visualizer] Opening browser tab at: http://127.0.0.1:8000/sharkee.html\n")
-        open_browser("http://127.0.0.1:8000/sharkee.html")
+        print("[Visualizer] Opening browser tab at: http://127.0.0.1:8000/sharkee_hud.html\n")
+        open_browser("http://127.0.0.1:8000/sharkee_hud.html")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -917,7 +917,7 @@ if __name__ == "__main__":
         try:
             window = webview.create_window(
                 'Shark Hawk Digital Twin', 
-                'http://127.0.0.1:8000/sharkee.html', 
+                'http://127.0.0.1:8000/sharkee_hud.html', 
                 js_api=api,
                 width=1280, 
                 height=720,
@@ -927,8 +927,8 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"\n[Notice] Native GUI window could not be started: {e}")
             print("[Server] Falling back to Headless Server Mode.")
-            print("[Visualizer] Opening in your browser tab at: http://127.0.0.1:8000/sharkee.html\n")
-            open_browser("http://127.0.0.1:8000/sharkee.html")
+            print("[Visualizer] Opening in your browser tab at: http://127.0.0.1:8000/sharkee_hud.html\n")
+            open_browser("http://127.0.0.1:8000/sharkee_hud.html")
             try:
                 while server_thread.is_alive():
                     server_thread.join(timeout=1.0)
