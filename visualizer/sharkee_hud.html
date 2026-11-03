@@ -1681,467 +1681,396 @@
         }
     
         /* ========================================================= */
-        /* FULL RECTANGULAR GARMIN EIS ENGINE & POWER DASHBOARD     */
+        /* ELECTRONICS INTERNATIONAL CGR-30P ENGINE & POWER MONITOR  */
         /* ========================================================= */
         #eis-widget {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            right: 20px;
+            position: absolute;
             bottom: 20px;
+            left: 840px;
+            width: 320px;
+            height: 345px;
             box-sizing: border-box;
-            background: rgba(8, 11, 16, 0.94);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1.5px solid rgba(255, 255, 255, 0.16);
-            border-radius: 16px;
-            padding: 14px 18px 16px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-            z-index: 500;
+            background: #020407;
+            border: 1.5px solid #242d3c;
+            border-radius: 8px;
+            padding: 8px 10px 8px 10px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            z-index: 120;
             user-select: none;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: opacity 0.25s ease, transform 0.25s ease;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            justify-content: space-between;
             overflow: hidden;
             font-family: 'B612', -apple-system, BlinkMacSystemFont, monospace;
         }
 
-        #eis-widget.docked {
-            position: absolute;
-            top: auto;
-            bottom: 20px;
-            left: 340px;
-            right: auto;
-            width: 890px;
-            max-width: calc(100vw - 360px);
-            height: 380px;
-            border-radius: 14px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
-            z-index: 100;
-        }
-
-        .eis-header {
+        /* Top Header Bar */
+        .cgr-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             cursor: grab;
             flex-shrink: 0;
         }
-        .eis-header:active { cursor: grabbing; }
+        .cgr-header:active { cursor: grabbing; }
 
-        .eis-title-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .eis-title {
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #ffffff;
+        .cgr-title-group {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-family: 'B612', monospace;
         }
-
-        .eis-callout {
-            font-size: 10px;
+        .cgr-title {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+        }
+        .cgr-badge {
+            font-size: 8.5px;
             font-weight: 700;
-            letter-spacing: 0.08em;
-            color: var(--accent);
-            background: rgba(10, 132, 255, 0.14);
-            border: 1px solid rgba(10, 132, 255, 0.3);
-            border-radius: 4px;
-            padding: 2px 7px;
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-radius: 3px;
+            padding: 1px 5px;
             font-family: 'B612 Mono', monospace;
         }
 
-        .eis-controls {
+        .cgr-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
-
-        .eis-btn-pill {
+        .cgr-btn-pill {
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: 10.5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 9.5px;
             font-weight: 700;
             color: rgba(255, 255, 255, 0.85);
             cursor: pointer;
-            transition: all 0.15s ease;
             font-family: 'B612 Mono', monospace;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            transition: all 0.15s ease;
         }
-        .eis-btn-pill:hover {
-            background: rgba(10, 132, 255, 0.25);
-            border-color: var(--accent);
+        .cgr-btn-pill:hover {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: #00e5ff;
             color: #ffffff;
         }
-        .eis-btn-pill.active {
-            background: rgba(10, 132, 255, 0.35);
-            border-color: var(--accent);
+        .cgr-btn-pill.active {
+            background: rgba(0, 229, 255, 0.25);
+            border-color: #00e5ff;
             color: #00e5ff;
-            box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
         }
-
-        .eis-close-btn {
+        .cgr-close-btn {
             background: transparent;
             border: none;
             color: rgba(255, 255, 255, 0.45);
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
-            padding: 0 4px;
+            padding: 0 2px;
             line-height: 1;
             transition: color 0.15s;
         }
-        .eis-close-btn:hover { color: #ff453a; }
+        .cgr-close-btn:hover { color: #ff453a; }
 
-        /* Full Rectangular 3-Column Cockpit Layout */
-        .eis-dashboard-body {
-            display: grid;
-            grid-template-columns: 1fr 1.15fr 1fr;
-            gap: 16px;
-            flex: 1;
-            align-items: stretch;
-            overflow: hidden;
-        }
-
-        .eis-col {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 12px 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-        }
-
-        .eis-col-header {
-            font-size: 10.5px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.55);
+        /* Top Dual Bold Arcs */
+        .cgr-arcs-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            font-family: 'B612', monospace;
+            height: 104px;
+            flex-shrink: 0;
         }
-
-        /* Column 1: Primary Propulsion Arcs & Twin Views */
-        .eis-propulsion-container {
+        .cgr-arc-box {
+            position: relative;
+            width: 145px;
+            height: 104px;
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex: 1;
-            justify-content: space-around;
+            justify-content: center;
+            align-items: center;
         }
-
-        .eis-single-gauges {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .cgr-arc-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            justify-content: space-around;
         }
-
-        .eis-arc-box {
+        .cgr-arc-content {
+            position: relative;
+            z-index: 2;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 8px 12px;
+            margin-top: 18px;
         }
-
-        .eis-arc-svg {
-            width: 120px;
-            height: 72px;
-        }
-
-        .eis-arc-details {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            text-align: right;
-        }
-        .eis-arc-title {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            color: rgba(255, 255, 255, 0.55);
-        }
-        .eis-arc-val-large {
-            font-size: 24px;
-            font-weight: 800;
-            font-family: 'B612 Mono', monospace;
-            color: #ffffff;
-            line-height: 1.1;
-            margin: 2px 0;
-        }
-        .eis-arc-sub {
-            font-size: 9px;
-            font-weight: 700;
-            color: var(--accent);
-            font-family: 'B612 Mono', monospace;
-        }
-
-        /* Twin Engine Side-by-Side Cards */
-        .eis-twin-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .eis-motor-card {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .eis-motor-card.left { border-left: 3px solid #00e5ff; }
-        .eis-motor-card.right { border-left: 3px solid #30d158; }
-
-        .eis-motor-tag {
-            font-size: 10px;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.7);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .eis-motor-rpm-big {
-            font-size: 22px;
-            font-weight: 800;
-            font-family: 'B612 Mono', monospace;
-            color: #ffffff;
-            margin: 4px 0;
-        }
-
-        .eis-motor-row {
-            display: flex;
-            justify-content: space-between;
+        .cgr-arc-label {
             font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-family: 'B612', sans-serif;
+        }
+        .cgr-arc-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: #30d158;
+            line-height: 1.1;
             font-family: 'B612 Mono', monospace;
-            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
+        }
+
+        /* Crisp White Dividers */
+        .cgr-divider-h {
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.35);
+            flex-shrink: 0;
+        }
+
+        /* Middle Split Section */
+        .cgr-mid-row {
+            display: flex;
+            height: 125px;
+            flex-shrink: 0;
+        }
+        .cgr-mid-left {
+            width: 140px;
+            box-sizing: border-box;
+            padding: 6px 8px 4px 2px;
+            border-right: 1px solid rgba(255, 255, 255, 0.35);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .cgr-mid-right {
+            flex: 1;
+            box-sizing: border-box;
+            padding: 6px 2px 4px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Middle Left: Battery Fuel & Energy Reserves */
+        .cgr-left-header {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+        }
+        .cgr-fuel-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
             margin: 2px 0;
         }
-        .eis-motor-row span { color: rgba(255, 255, 255, 0.45); font-size: 9.5px; }
-
-        .eis-sync-strip {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(48, 209, 88, 0.1);
-            border: 1px solid rgba(48, 209, 88, 0.25);
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: 10.5px;
-            font-weight: 700;
-            font-family: 'B612 Mono', monospace;
-            color: #30d158;
-            margin-top: 6px;
+        .cgr-tank-col {
+            width: 14px;
+            height: 64px;
+            border: 1.2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 2px;
+            background: #000000;
+            position: relative;
+            overflow: hidden;
         }
-
-        /* Column 2: Electrical System & 4 Garmin Ribbon Gauges */
-        .eis-voltage-banner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(10, 132, 255, 0.08);
-            border: 1px solid rgba(10, 132, 255, 0.25);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin-bottom: 8px;
+        .cgr-tank-fluid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(180deg, #00f0ff 0%, #0091ff 100%);
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
+            transition: height 0.3s ease;
         }
-
-        .eis-volt-big {
-            font-size: 24px;
+        .cgr-tank-redline {
+            position: absolute;
+            bottom: 12%;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: #ff3b30;
+        }
+        .cgr-fuel-stats {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .cgr-pct-huge {
+            font-size: 20px;
             font-weight: 800;
+            color: #00e5ff;
             font-family: 'B612 Mono', monospace;
-            color: #ffffff;
             line-height: 1;
         }
-        .eis-volt-label {
+        .cgr-mah-sub {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'B612 Mono', monospace;
+            margin-top: 2px;
+        }
+        .cgr-endurance-sub {
             font-size: 9.5px;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
+            color: #30d158;
+            font-family: 'B612 Mono', monospace;
+            margin-top: 3px;
         }
 
-        .eis-ribbons-container {
+        /* Twin Engine Status Cards (Left Pane alternative) */
+        .cgr-twin-box {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            flex: 1;
+            gap: 4px;
+            height: 100%;
             justify-content: space-around;
         }
-
-        .eis-ribbon-block {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .eis-ribbon-top-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            font-weight: 700;
-            font-family: 'B612 Mono', monospace;
-        }
-        .eis-ribbon-name { color: #ffffff; }
-        .eis-ribbon-val { color: #ffffff; font-weight: 800; }
-
-        .eis-ribbon-track-wrap {
-            position: relative;
-            width: 100%;
-            height: 9px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            overflow: visible;
-        }
-
-        .eis-ribbon-fill-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #30d158 0%, #30d158 75%, #ffcc00 88%, #ff3b30 100%);
-            border-radius: 3px;
-            transition: width 0.15s ease;
-        }
-
-        .eis-ribbon-pointer-tri {
-            position: absolute;
-            top: -5px;
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 6px solid #ffffff;
-            transform: translateX(-5px);
-            transition: left 0.15s ease;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
-        }
-
-        /* Column 3: Battery & Energy Reserves */
-        .eis-energy-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-            gap: 10px;
-        }
-
-        .eis-tanks-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding: 8px 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-
-        .eis-tank-graphic-box {
-            width: 26px;
-            height: 72px;
-            border: 1.5px solid rgba(255, 255, 255, 0.4);
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
-        }
-
-        .eis-tank-fluid {
-            width: 100%;
-            height: 85%;
-            background: linear-gradient(180deg, #00e5ff 0%, #0077b6 100%);
-            border-radius: 0 0 3px 3px;
-            transition: height 0.3s ease;
-            box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
-        }
-
-        .eis-tank-labels {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .eis-tank-pct-huge {
-            font-size: 28px;
-            font-weight: 800;
-            font-family: 'B612 Mono', monospace;
-            color: #00e5ff;
-            line-height: 1;
-        }
-        .eis-tank-sub-text {
-            font-size: 11px;
-            font-weight: 700;
-            color: #ffffff;
-            font-family: 'B612 Mono', monospace;
-            margin-top: 4px;
-        }
-
-        .eis-stat-tile {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .cgr-twin-eng-card {
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-family: 'B612 Mono', monospace;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 3px 6px;
         }
-        .eis-tile-left {
+        .cgr-twin-title-row {
             display: flex;
-            flex-direction: column;
-            text-align: left;
+            justify-content: space-between;
+            font-size: 8.5px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.6);
         }
-        .eis-tile-title {
-            font-size: 9px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-        }
-        .eis-tile-val {
+        .cgr-twin-rpm {
             font-size: 14px;
             font-weight: 800;
-            color: #ffffff;
-        }
-        .eis-tile-badge {
-            font-size: 9.5px;
-            font-weight: 700;
             color: #30d158;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1.1;
+        }
+        .cgr-twin-metrics {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5px;
+            color: #00e5ff;
+            font-family: 'B612 Mono', monospace;
+        }
+        .cgr-sync-tag {
+            font-size: 8.5px;
+            font-weight: 700;
+            text-align: center;
+            padding: 2px 4px;
+            border-radius: 3px;
             background: rgba(48, 209, 88, 0.12);
             border: 1px solid rgba(48, 209, 88, 0.3);
-            border-radius: 4px;
-            padding: 2px 6px;
+            color: #30d158;
         }
-    </style>
+
+        /* Middle Right: 3 Horizontal Ribbon Gauges */
+        .cgr-ribbon-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .cgr-ribbon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .cgr-ribbon-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: #ffffff;
+            font-family: 'B612', sans-serif;
+        }
+        .cgr-ribbon-val {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #30d158;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1;
+            text-shadow: 0 0 6px rgba(48, 209, 88, 0.3);
+        }
+        .cgr-ribbon-track-wrap {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: #141820;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: visible;
+        }
+        .cgr-ribbon-bar {
+            height: 100%;
+            background: #30d158;
+            border-radius: 1px;
+            transition: width 0.15s ease;
+        }
+        .cgr-ribbon-bar.caution {
+            background: linear-gradient(90deg, #30d158 0%, #30d158 65%, #ffd60a 82%, #ff3b30 100%);
+        }
+        .cgr-ribbon-ptr {
+            position: absolute;
+            top: -7px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #00e5ff;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 0 2px #00e5ff);
+            transition: left 0.15s ease;
+        }
+
+        /* Bottom Status Row */
+        .cgr-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 4px;
+            flex-shrink: 0;
+        }
+        .cgr-bot-left {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .cgr-bot-tag {
+            font-size: 9.5px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.65);
+            letter-spacing: 0.5px;
+        }
+        .cgr-bot-val-cyan {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #00e5ff;
+            font-family: 'B612 Mono', monospace;
+        }
+        .cgr-bot-right {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .cgr-bot-val-green {
+            font-size: 15px;
+            font-weight: 800;
+            color: #30d158;
+            font-family: 'B612 Mono', monospace;
+            text-shadow: 0 0 8px rgba(48, 209, 88, 0.35);
+        }
+</style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -2845,241 +2774,162 @@
     </div>
 
     
-    <!-- Full Rectangular Garmin Engine & Power Dashboard (EIS) -->
+    <!-- Electronics International CGR-30P Engine & Power Monitor -->
     <div id="eis-widget">
-        <!-- Dashboard Header -->
-        <div class="eis-header" id="eis-header">
-            <div class="eis-title-group">
-                <div class="eis-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
-                    </svg>
-                    <span>GARMIN EIS &mdash; ENGINE &amp; POWER DASHBOARD</span>
-                </div>
-                <div class="eis-callout">AM32 DSHOT TELEMETRY</div>
+        <!-- Header Bar -->
+        <div class="cgr-header" id="cgr-header">
+            <div class="cgr-title-group">
+                <span class="cgr-title">CGR-30P</span>
+                <span class="cgr-badge">AM32</span>
             </div>
-
-            <div class="eis-controls">
-                <button class="eis-btn-pill active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENGINE</button>
-                <button class="eis-btn-pill" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENGINES</button>
-                <button class="eis-btn-pill" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
-                <button class="eis-btn-pill" id="eis-btn-fs" onclick="toggleEisFullscreen()" title="Toggle Fullscreen / Docked View">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
-                    <span>RESTORE</span>
-                </button>
-                <button class="eis-close-btn" onclick="toggleEisWidget()" title="Close Dashboard">&times;</button>
+            <div class="cgr-controls">
+                <button class="cgr-btn-pill active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
+                <button class="cgr-btn-pill" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
+                <button class="cgr-btn-pill" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
+                <button class="cgr-close-btn" onclick="toggleEisWidget()" title="Close Dashboard">&times;</button>
             </div>
         </div>
 
-        <!-- 3-Column Rectangular Dashboard Body -->
-        <div class="eis-dashboard-body">
-            <!-- COLUMN 1: PRIMARY PROPULSION -->
-            <div class="eis-col">
-                <div class="eis-col-header">
-                    <span>PRIMARY PROPULSION</span>
-                    <span id="eis-prop-mode-label" style="color: var(--accent);">SINGLE</span>
-                </div>
-
-                <div class="eis-propulsion-container">
-                    <!-- Single Engine View -->
-                    <div id="eis-view-single" class="eis-single-gauges">
-                        <!-- Power Arc -->
-                        <div class="eis-arc-box">
-                            <svg class="eis-arc-svg" viewBox="0 0 120 72">
-                                <path d="M 15 62 A 45 45 0 0 1 105 62" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="6.5" stroke-linecap="round"/>
-                                <path id="eis-arc-pwr" d="M 15 62 A 45 45 0 0 1 15 62" fill="none" stroke="#00e5ff" stroke-width="6.5" stroke-linecap="round"/>
-                            </svg>
-                            <div class="eis-arc-details">
-                                <span class="eis-arc-title">THROTTLE / POWER</span>
-                                <span id="eis-single-pwr-val" class="eis-arc-val-large">0%</span>
-                                <span class="eis-arc-sub">MANIFOLD LOAD</span>
-                            </div>
-                        </div>
-
-                        <!-- RPM Arc -->
-                        <div class="eis-arc-box">
-                            <svg class="eis-arc-svg" viewBox="0 0 120 72">
-                                <path d="M 15 62 A 45 45 0 0 1 105 62" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="6.5" stroke-linecap="round"/>
-                                <path id="eis-arc-rpm" d="M 15 62 A 45 45 0 0 1 15 62" fill="none" stroke="#30d158" stroke-width="6.5" stroke-linecap="round"/>
-                            </svg>
-                            <div class="eis-arc-details">
-                                <span class="eis-arc-title">MOTOR RPM</span>
-                                <span id="eis-single-rpm-val" class="eis-arc-val-large">0</span>
-                                <span class="eis-arc-sub" id="eis-rpm-status-label" style="color: #30d158;">NORMAL CRUISE</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Twin Engine View -->
-                    <div id="eis-view-twin" style="display: none; flex-direction: column; gap: 8px; height: 100%; justify-content: space-between;">
-                        <div class="eis-twin-grid">
-                            <!-- Left Motor Card -->
-                            <div class="eis-motor-card left">
-                                <div class="eis-motor-tag">
-                                    <span>LEFT MOTOR</span>
-                                    <b id="eis-twin-l-ch" style="color: #00e5ff;">ESC 1</b>
-                                </div>
-                                <div id="eis-twin-l-rpm" class="eis-motor-rpm-big">0</div>
-                                <div class="eis-motor-row">
-                                    <span>CURRENT</span>
-                                    <b id="eis-twin-l-amp">0.0 A</b>
-                                </div>
-                                <div class="eis-motor-row">
-                                    <span>ESC TEMP</span>
-                                    <b id="eis-twin-l-temp">30 &deg;C</b>
-                                </div>
-                            </div>
-
-                            <!-- Right Motor Card -->
-                            <div class="eis-motor-card right">
-                                <div class="eis-motor-tag">
-                                    <span>RIGHT MOTOR</span>
-                                    <b id="eis-twin-r-ch" style="color: #30d158;">ESC 2</b>
-                                </div>
-                                <div id="eis-twin-r-rpm" class="eis-motor-rpm-big">0</div>
-                                <div class="eis-motor-row">
-                                    <span>CURRENT</span>
-                                    <b id="eis-twin-r-amp">0.0 A</b>
-                                </div>
-                                <div class="eis-motor-row">
-                                    <span>ESC TEMP</span>
-                                    <b id="eis-twin-r-temp">30 &deg;C</b>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="eis-sync-strip" id="eis-twin-sync-banner">
-                            <span>PROPULSION SYNC</span>
-                            <span id="eis-twin-sync-delta">&Delta; 0 RPM</span>
-                        </div>
-                    </div>
+        <!-- Top Dual Bold Arcs -->
+        <div class="cgr-arcs-row">
+            <!-- Left Arc: PWR / MAN -->
+            <div class="cgr-arc-box">
+                <svg class="cgr-arc-svg" viewBox="0 0 140 100">
+                    <path d="M 26.5 49.7 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="6.5" stroke-linecap="round"/>
+                    <path d="M 26.5 49.7 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="#30d158" stroke-width="6.5" stroke-linecap="round"/>
+                    <line id="cgr-ptr-pwr" x1="70" y1="32" x2="70" y2="16" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div class="cgr-arc-content">
+                    <span class="cgr-arc-label">PWR</span>
+                    <span class="cgr-arc-val" id="eis-pwr-val">0%</span>
                 </div>
             </div>
 
-            <!-- COLUMN 2: ELECTRICAL & ESC TELEMETRY -->
-            <div class="eis-col">
-                <div class="eis-col-header">
-                    <span>ELECTRICAL &amp; ESC TELEMETRY</span>
-                    <span style="color: #30d158;">BUS 1 OK</span>
+            <!-- Right Arc: RPM -->
+            <div class="cgr-arc-box">
+                <svg class="cgr-arc-svg" viewBox="0 0 140 100">
+                    <path d="M 26.5 49.7 A 48 48 0 0 1 104.2 36.4" fill="none" stroke="#30d158" stroke-width="6.5" stroke-linecap="round"/>
+                    <path d="M 104.2 36.4 A 48 48 0 0 1 113.5 49.7" fill="none" stroke="#ff3b30" stroke-width="6.5" stroke-linecap="round"/>
+                    <line id="cgr-ptr-rpm" x1="70" y1="32" x2="70" y2="16" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+                    <line id="cgr-ptr-rpm2" x1="70" y1="32" x2="70" y2="16" stroke="#ffd60a" stroke-width="2.5" stroke-linecap="round" style="display: none;"/>
+                </svg>
+                <div class="cgr-arc-content">
+                    <span class="cgr-arc-label">RPM</span>
+                    <span class="cgr-arc-val" id="eis-rpm-val">0</span>
                 </div>
+            </div>
+        </div>
 
-                <!-- Single High-Contrast Voltage Banner -->
-                <div class="eis-voltage-banner">
-                    <div>
-                        <div class="eis-volt-label">PACK VOLTAGE</div>
-                        <div id="eis-val-volt" class="eis-volt-big">25.2 V</div>
+        <!-- Horizontal Divider -->
+        <div class="cgr-divider-h"></div>
+
+        <!-- Middle Row: Split Left (Battery Fuel / Twin Motors) & Right (3 Ribbons) -->
+        <div class="cgr-mid-row">
+            <!-- Left Pane: Single Engine Battery Fuel -->
+            <div class="cgr-mid-left" id="eis-left-single">
+                <div class="cgr-left-header">BATTERY FUEL</div>
+                <div class="cgr-fuel-display">
+                    <div class="cgr-tank-col">
+                        <div class="cgr-tank-fluid" id="eis-tank-l" style="height: 100%;"></div>
+                        <div class="cgr-tank-redline"></div>
                     </div>
-                    <div style="text-align: right;">
-                        <span class="eis-callout" id="eis-sub-volt" style="color: #30d158; border-color: rgba(48,209,88,0.4); background: rgba(48,209,88,0.12);">6S LiPo &bull; 4.20V/C</span>
-                        <div style="font-size: 9.5px; color: rgba(255,255,255,0.5); font-family: 'B612 Mono', monospace; margin-top: 3px;">MAIN DC BUS</div>
+                    <div class="cgr-fuel-stats">
+                        <div class="cgr-pct-huge" id="eis-fuel-pct">100%</div>
+                        <div class="cgr-mah-sub" id="eis-fuel-mah">0 / 6000 mAh</div>
+                        <div class="cgr-endurance-sub" id="eis-fuel-endur">-- MIN</div>
+                    </div>
+                    <div class="cgr-tank-col">
+                        <div class="cgr-tank-fluid" id="eis-tank-r" style="height: 100%;"></div>
+                        <div class="cgr-tank-redline"></div>
                     </div>
                 </div>
+                <div style="font-size: 8px; color: rgba(255,255,255,0.45); text-align: center; font-family: monospace;">6S LiPo &bull; 25.2V</div>
+            </div>
 
-                <!-- 4 Garmin Linear Ribbon Gauges -->
-                <div class="eis-ribbons-container">
-                    <!-- Gauge 1: Current Draw (AMPS) -->
-                    <div class="eis-ribbon-block">
-                        <div class="eis-ribbon-top-row">
-                            <span class="eis-ribbon-name">TOTAL CURRENT (AMPS)</span>
-                            <span id="eis-val-amp" class="eis-ribbon-val">0.0 A</span>
+            <!-- Left Pane: Twin Engine Motor Comparison (toggled in 2 ENG mode) -->
+            <div class="cgr-mid-left" id="eis-left-twin" style="display: none;">
+                <div class="cgr-twin-box">
+                    <div class="cgr-twin-eng-card">
+                        <div class="cgr-twin-title-row">
+                            <span>LEFT MOTOR</span>
+                            <span id="eis-twin-l-ch" style="color: #00e5ff;">ESC 1</span>
                         </div>
-                        <div class="eis-ribbon-track-wrap">
-                            <div id="eis-fill-amp" class="eis-ribbon-fill-bar" style="width: 15%;"></div>
-                            <div id="eis-ptr-amp" class="eis-ribbon-pointer-tri" style="left: 15%;"></div>
+                        <div class="cgr-twin-rpm" id="eis-twin-l-rpm">0</div>
+                        <div class="cgr-twin-metrics">
+                            <span id="eis-twin-l-amp">0.0 A</span>
+                            <span id="eis-twin-l-temp">30 &deg;C</span>
                         </div>
                     </div>
-
-                    <!-- Gauge 2: Electrical Power (WATTS) -->
-                    <div class="eis-ribbon-block">
-                        <div class="eis-ribbon-top-row">
-                            <span class="eis-ribbon-name">ELECTRICAL POWER (WATTS)</span>
-                            <span id="eis-val-watt" class="eis-ribbon-val">0 W</span>
+                    <div class="cgr-twin-eng-card">
+                        <div class="cgr-twin-title-row">
+                            <span>RIGHT MOTOR</span>
+                            <span id="eis-twin-r-ch" style="color: #30d158;">ESC 2</span>
                         </div>
-                        <div class="eis-ribbon-track-wrap">
-                            <div id="eis-fill-watt" class="eis-ribbon-fill-bar" style="width: 10%;"></div>
-                            <div id="eis-ptr-watt" class="eis-ribbon-pointer-tri" style="left: 10%;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Gauge 3: AM32 ESC Temperature (°C) -->
-                    <div class="eis-ribbon-block">
-                        <div class="eis-ribbon-top-row">
-                            <span class="eis-ribbon-name">AM32 ESC TEMPERATURE</span>
-                            <span id="eis-val-temp" class="eis-ribbon-val">30 &deg;C</span>
-                        </div>
-                        <div class="eis-ribbon-track-wrap">
-                            <div id="eis-fill-esct" class="eis-ribbon-fill-bar" style="width: 25%;"></div>
-                            <div id="eis-ptr-esct" class="eis-ribbon-pointer-tri" style="left: 25%;"></div>
+                        <div class="cgr-twin-rpm" id="eis-twin-r-rpm">0</div>
+                        <div class="cgr-twin-metrics">
+                            <span id="eis-twin-r-amp">0.0 A</span>
+                            <span id="eis-twin-r-temp">30 &deg;C</span>
                         </div>
                     </div>
-
-                    <!-- Gauge 4: Motor Temperature (°C) -->
-                    <div class="eis-ribbon-block">
-                        <div class="eis-ribbon-top-row">
-                            <span class="eis-ribbon-name">MOTOR TEMPERATURE</span>
-                            <span id="eis-val-mott" class="eis-ribbon-val">36 &deg;C</span>
-                        </div>
-                        <div class="eis-ribbon-track-wrap">
-                            <div id="eis-fill-mott" class="eis-ribbon-fill-bar" style="width: 28%;"></div>
-                            <div id="eis-ptr-mott" class="eis-ribbon-pointer-tri" style="left: 28%;"></div>
-                        </div>
-                    </div>
+                    <div class="cgr-sync-tag" id="eis-sync-tag">SYNC &Delta; 0 RPM</div>
                 </div>
             </div>
 
-            <!-- COLUMN 3: BATTERY & ENERGY RESERVES -->
-            <div class="eis-col">
-                <div class="eis-col-header">
-                    <span>ENERGY &amp; FUEL RESERVES</span>
-                    <span id="eis-batt-pct-header" style="color: #00e5ff;">100%</span>
-                </div>
-
-                <div class="eis-energy-container">
-                    <!-- Dual Battery / Fuel Tanks -->
-                    <div class="eis-tanks-row">
-                        <div class="eis-tank-graphic-box">
-                            <div id="eis-tank-fill-1" class="eis-tank-fluid" style="height: 100%;"></div>
-                        </div>
-                        <div class="eis-tank-labels">
-                            <div id="eis-batt-pct-text" class="eis-tank-pct-huge">100%</div>
-                            <div id="eis-batt-mah-text" class="eis-tank-sub-text">0 / 6000 mAh</div>
-                            <div style="font-size: 9.5px; color: rgba(255,255,255,0.5); font-family: 'B612', sans-serif; margin-top: 2px;">DUAL PACK ENERGY</div>
-                        </div>
-                        <div class="eis-tank-graphic-box">
-                            <div id="eis-tank-fill-2" class="eis-tank-fluid" style="height: 100%;"></div>
-                        </div>
+            <!-- Right Pane: 3 Horizontal Ribbons -->
+            <div class="cgr-mid-right">
+                <!-- Ribbon 1: AMPS (Current) -->
+                <div class="cgr-ribbon-item">
+                    <div class="cgr-ribbon-header">
+                        <span class="cgr-ribbon-title">AMPS</span>
+                        <span class="cgr-ribbon-val" id="eis-rib-amp-val">0.0 A</span>
                     </div>
-
-                    <!-- Energy Tiles -->
-                    <div class="eis-stat-tile">
-                        <div class="eis-tile-left">
-                            <span class="eis-tile-title">ESTIMATED FLIGHT TIME</span>
-                            <span id="eis-time-rem-val" class="eis-tile-val">-- MIN</span>
-                        </div>
-                        <span class="eis-tile-badge">ENDURANCE</span>
-                    </div>
-
-                    <div class="eis-stat-tile">
-                        <div class="eis-tile-left">
-                            <span class="eis-tile-title">DISCHARGE RATE</span>
-                            <span id="eis-disch-rate-val" class="eis-tile-val">0.0 C</span>
-                        </div>
-                        <span class="eis-tile-badge" id="eis-thermal-badge">NORMAL</span>
-                    </div>
-
-                    <div class="eis-stat-tile">
-                        <div class="eis-tile-left">
-                            <span class="eis-tile-title">ALT / AMPS</span>
-                            <span id="eis-bot-amps" class="eis-tile-val">0.0 A</span>
-                        </div>
-                        <span style="font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,0.6);">MAIN BUS</span>
+                    <div class="cgr-ribbon-track-wrap">
+                        <div class="cgr-ribbon-bar" id="eis-rib-amp-bar" style="width: 5%;"></div>
+                        <div class="cgr-ribbon-ptr" id="eis-rib-amp-ptr" style="left: 5%;"></div>
                     </div>
                 </div>
+
+                <!-- Ribbon 2: WATTS (Power) -->
+                <div class="cgr-ribbon-item">
+                    <div class="cgr-ribbon-header">
+                        <span class="cgr-ribbon-title">WATTS</span>
+                        <span class="cgr-ribbon-val" id="eis-rib-watt-val">0 W</span>
+                    </div>
+                    <div class="cgr-ribbon-track-wrap">
+                        <div class="cgr-ribbon-bar caution" id="eis-rib-watt-bar" style="width: 5%;"></div>
+                        <div class="cgr-ribbon-ptr" id="eis-rib-watt-ptr" style="left: 5%;"></div>
+                    </div>
+                </div>
+
+                <!-- Ribbon 3: ESC T (Temperature) -->
+                <div class="cgr-ribbon-item">
+                    <div class="cgr-ribbon-header">
+                        <span class="cgr-ribbon-title">ESC T</span>
+                        <span class="cgr-ribbon-val" id="eis-rib-temp-val">30 &deg;C</span>
+                    </div>
+                    <div class="cgr-ribbon-track-wrap">
+                        <div class="cgr-ribbon-bar caution" id="eis-rib-temp-bar" style="width: 25%;"></div>
+                        <div class="cgr-ribbon-ptr" id="eis-rib-temp-ptr" style="left: 25%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Divider -->
+        <div class="cgr-divider-h"></div>
+
+        <!-- Bottom Row: TOTAL A & Single Pack Voltage -->
+        <div class="cgr-bottom-row">
+            <div class="cgr-bot-left">
+                <span class="cgr-bot-tag">TOTAL A:</span>
+                <span class="cgr-bot-val-cyan" id="eis-bot-load">0.0 A</span>
+            </div>
+            <div class="cgr-bot-right">
+                <span class="cgr-bot-tag">VOLT:</span>
+                <span class="cgr-bot-val-green" id="eis-bot-volt">25.2 V</span>
             </div>
         </div>
     </div>
-
     <!-- Live Weather Widget -->
     <div id="weather-widget">
         <div class="weather-header">
@@ -7355,9 +7205,8 @@
         const eisBtnSingle = document.getElementById('eis-btn-single');
         const eisBtnTwin = document.getElementById('eis-btn-twin');
         const eisBtnCh = document.getElementById('eis-btn-ch');
-        const eisBtnFs = document.getElementById('eis-btn-fs');
-        const eisViewSingle = document.getElementById('eis-view-single');
-        const eisViewTwin = document.getElementById('eis-view-twin');
+        const eisLeftSingle = document.getElementById('eis-left-single');
+        const eisLeftTwin = document.getElementById('eis-left-twin');
 
         function toggleEisWidget() {
             eisWidgetVisible = !eisWidgetVisible;
@@ -7374,27 +7223,6 @@
             if (btnToggleEis) btnToggleEis.classList.remove('active');
         }
 
-        function toggleEisFullscreen() {
-            eisIsFullscreen = !eisIsFullscreen;
-            localStorage.setItem('eis_fullscreen', eisIsFullscreen ? '1' : '0');
-            updateEisLayoutMode();
-        }
-
-        function updateEisLayoutMode() {
-            if (!eisWidget) return;
-            if (eisIsFullscreen) {
-                eisWidget.classList.remove('docked');
-                if (eisBtnFs) {
-                    eisBtnFs.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg> <span>RESTORE</span>';
-                }
-            } else {
-                eisWidget.classList.add('docked');
-                if (eisBtnFs) {
-                    eisBtnFs.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg> <span>FULLSCREEN</span>';
-                }
-            }
-        }
-
         function setEisEngineMode(mode) {
             eisEngineMode = mode;
             localStorage.setItem('eis_engine_mode', eisEngineMode);
@@ -7405,14 +7233,11 @@
             const isTwin = (eisEngineMode === 'twin');
             if (eisBtnSingle) eisBtnSingle.classList.toggle('active', !isTwin);
             if (eisBtnTwin) eisBtnTwin.classList.toggle('active', isTwin);
-            if (eisViewSingle) eisViewSingle.style.display = !isTwin ? 'flex' : 'none';
-            if (eisViewTwin) eisViewTwin.style.display = isTwin ? 'flex' : 'none';
+            if (eisLeftSingle) eisLeftSingle.style.display = !isTwin ? 'flex' : 'none';
+            if (eisLeftTwin) eisLeftTwin.style.display = isTwin ? 'flex' : 'none';
 
-            const propModeLabel = document.getElementById('eis-prop-mode-label');
-            if (propModeLabel) {
-                propModeLabel.textContent = isTwin ? 'TWIN ENGINE' : 'SINGLE';
-                propModeLabel.style.color = isTwin ? '#00e5ff' : 'var(--accent)';
-            }
+            const ptrRpm2 = document.getElementById('cgr-ptr-rpm2');
+            if (ptrRpm2) ptrRpm2.style.display = isTwin ? 'block' : 'none';
 
             if (eisBtnCh) {
                 if (!isTwin) {
@@ -7446,26 +7271,29 @@
             updateEisModeUI();
         }
 
-        updateEisLayoutMode();
         updateEisModeUI();
 
         if (eisWidget) {
-            makeDraggable(eisWidget, document.getElementById('eis-header') || eisWidget);
+            makeDraggable(eisWidget, document.getElementById('cgr-header') || eisWidget);
         }
 
-        // Helper to generate SVG semi-circle arc path
-        function getSemiArcD(valNorm) {
-            const p = Math.max(0.001, Math.min(0.999, valNorm));
-            const r = 45;
-            const cx = 60, cy = 62;
-            const theta = Math.PI - (p * Math.PI);
-            const x = cx + r * math_cos(theta);
-            const y = cy - r * math_sin(theta);
-            const largeArc = (p > 1.0) ? 1 : 0;
-            return `M 15 62 A 45 45 0 ${largeArc} 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
+        // Helper to update SVG radial pointer line on CGR-30P arc
+        function setCgrArcPointer(lineEl, valNorm) {
+            if (!lineEl) return;
+            const norm = Math.max(0, Math.min(1, valNorm));
+            const deg = 155 - norm * 130;
+            const rad = deg * Math.PI / 180;
+            const cx = 70, cy = 70;
+            const rIn = 38, rOut = 54;
+            const x1 = (cx + rIn * Math.cos(rad)).toFixed(1);
+            const y1 = (cy - rIn * Math.sin(rad)).toFixed(1);
+            const x2 = (cx + rOut * Math.cos(rad)).toFixed(1);
+            const y2 = (cy - rOut * Math.sin(rad)).toFixed(1);
+            lineEl.setAttribute('x1', x1);
+            lineEl.setAttribute('y1', y1);
+            lineEl.setAttribute('x2', x2);
+            lineEl.setAttribute('y2', y2);
         }
-        function math_cos(rad) { return Math.cos(rad); }
-        function math_sin(rad) { return Math.sin(rad); }
 
         // Live AM32 Engine Indication System Render Loop
         function updateEisInstrument() {
@@ -7533,35 +7361,19 @@
                 totWatt = am32Telemetry.pack_voltage * totAmp;
                 escTempMax = activeTemp1;
 
-                // Update Single Propulsion View
-                const pwrEl = document.getElementById('eis-single-pwr-val');
-                const pwrArc = document.getElementById('eis-arc-pwr');
-                const rpmEl = document.getElementById('eis-single-rpm-val');
-                const rpmArc = document.getElementById('eis-arc-rpm');
-                const rpmStatus = document.getElementById('eis-rpm-status-label');
+                // Update Single RPM & PWR Readouts
+                const pwrValEl = document.getElementById('eis-pwr-val');
+                const pwrPtr = document.getElementById('cgr-ptr-pwr');
+                const rpmValEl = document.getElementById('eis-rpm-val');
+                const rpmPtr = document.getElementById('cgr-ptr-rpm');
 
                 const pwrPct = Math.round(throttleNorm * 100);
-                if (pwrEl) pwrEl.textContent = `${pwrPct}%`;
-                if (pwrArc) pwrArc.setAttribute('d', getSemiArcD(throttleNorm));
+                if (pwrValEl) pwrValEl.textContent = `${pwrPct}%`;
+                setCgrArcPointer(pwrPtr, throttleNorm);
 
                 const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 10000.0));
-                if (rpmEl) rpmEl.textContent = activeRpm1.toLocaleString();
-                if (rpmArc) rpmArc.setAttribute('d', getSemiArcD(rpmNorm));
-                if (rpmStatus) {
-                    if (activeRpm1 >= 8500) {
-                        rpmStatus.textContent = 'REDLINE WARNING';
-                        rpmStatus.style.color = '#ff453a';
-                    } else if (activeRpm1 >= 7500) {
-                        rpmStatus.textContent = 'CAUTION POWER';
-                        rpmStatus.style.color = '#ffcc00';
-                    } else if (activeRpm1 >= 2000) {
-                        rpmStatus.textContent = 'NORMAL CRUISE';
-                        rpmStatus.style.color = '#30d158';
-                    } else {
-                        rpmStatus.textContent = 'IDLE / OFF';
-                        rpmStatus.style.color = 'rgba(255,255,255,0.5)';
-                    }
-                }
+                if (rpmValEl) rpmValEl.textContent = activeRpm1.toLocaleString();
+                setCgrArcPointer(rpmPtr, rpmNorm);
             } else {
                 const lCh = Math.max(0, Math.min(3, eisTwinLeftCh - 1));
                 const rCh = Math.max(0, Math.min(3, eisTwinRightCh - 1));
@@ -7576,15 +7388,31 @@
                 totWatt = am32Telemetry.pack_voltage * totAmp;
                 escTempMax = Math.max(activeTemp1, activeTemp2);
 
-                // Update Twin Propulsion View
+                // Update Arcs with dual pointers
+                const pwrValEl = document.getElementById('eis-pwr-val');
+                const pwrPtr = document.getElementById('cgr-ptr-pwr');
+                const rpmValEl = document.getElementById('eis-rpm-val');
+                const rpmPtr = document.getElementById('cgr-ptr-rpm');
+                const rpmPtr2 = document.getElementById('cgr-ptr-rpm2');
+
+                const pwrPct = Math.round(throttleNorm * 100);
+                if (pwrValEl) pwrValEl.textContent = `${pwrPct}%`;
+                setCgrArcPointer(pwrPtr, throttleNorm);
+
+                const rpmNorm1 = Math.max(0, Math.min(1, activeRpm1 / 10000.0));
+                const rpmNorm2 = Math.max(0, Math.min(1, activeRpm2 / 10000.0));
+                if (rpmValEl) rpmValEl.textContent = activeRpm1.toLocaleString();
+                setCgrArcPointer(rpmPtr, rpmNorm1);
+                setCgrArcPointer(rpmPtr2, rpmNorm2);
+
+                // Update Twin Left Card
                 const lRpm = document.getElementById('eis-twin-l-rpm');
                 const rRpm = document.getElementById('eis-twin-r-rpm');
                 const lAmp = document.getElementById('eis-twin-l-amp');
                 const rAmp = document.getElementById('eis-twin-r-amp');
                 const lTemp = document.getElementById('eis-twin-l-temp');
                 const rTemp = document.getElementById('eis-twin-r-temp');
-                const syncDelta = document.getElementById('eis-twin-sync-delta');
-                const syncBanner = document.getElementById('eis-twin-sync-banner');
+                const syncTag = document.getElementById('eis-sync-tag');
 
                 if (lRpm) lRpm.textContent = activeRpm1.toLocaleString();
                 if (rRpm) rRpm.textContent = activeRpm2.toLocaleString();
@@ -7594,103 +7422,70 @@
                 if (rTemp) rTemp.textContent = `${Math.round(activeTemp2)} °C`;
 
                 const diff = activeRpm2 - activeRpm1;
-                if (syncDelta) syncDelta.textContent = (diff >= 0 ? `+${diff}` : `${diff}`) + ' RPM';
-                const isSynced = Math.abs(diff) < 120;
-                if (syncBanner) {
-                    syncBanner.style.background = isSynced ? 'rgba(48, 209, 88, 0.1)' : 'rgba(255, 149, 0, 0.15)';
-                    syncBanner.style.borderColor = isSynced ? 'rgba(48, 209, 88, 0.25)' : 'rgba(255, 149, 0, 0.4)';
-                    syncBanner.style.color = isSynced ? '#30d158' : '#ff9500';
+                if (syncTag) {
+                    syncTag.textContent = `SYNC ${diff >= 0 ? '+' : ''}${diff} RPM`;
+                    const isSynced = Math.abs(diff) < 120;
+                    syncTag.style.background = isSynced ? 'rgba(48, 209, 88, 0.12)' : 'rgba(255, 149, 0, 0.15)';
+                    syncTag.style.borderColor = isSynced ? 'rgba(48, 209, 88, 0.3)' : 'rgba(255, 149, 0, 0.4)';
+                    syncTag.style.color = isSynced ? '#30d158' : '#ff9500';
                 }
             }
 
-            // Update Column 2: Single Voltage + 4 Ribbon Gauges
-            const vEl = document.getElementById('eis-val-volt');
-            if (vEl) vEl.textContent = `${am32Telemetry.pack_voltage.toFixed(1)} V`;
+            // Update Middle Right: 3 Horizontal Ribbons
+            // Ribbon 1: Current AMPS (0 - 60A)
+            const ampPct = Math.max(0, Math.min(100, (totAmp / 60.0) * 100));
+            const ribAmpBar = document.getElementById('eis-rib-amp-bar');
+            const ribAmpPtr = document.getElementById('eis-rib-amp-ptr');
+            const ribAmpVal = document.getElementById('eis-rib-amp-val');
+            if (ribAmpBar) ribAmpBar.style.width = `${ampPct}%`;
+            if (ribAmpPtr) ribAmpPtr.style.left = `${ampPct}%`;
+            if (ribAmpVal) ribAmpVal.textContent = `${totAmp.toFixed(1)} A`;
 
-            // Current Ribbon (0 to 80A)
-            const ampPct = Math.max(0, Math.min(100, (totAmp / 80.0) * 100));
-            const fillAmp = document.getElementById('eis-fill-amp');
-            const ptrAmp = document.getElementById('eis-ptr-amp');
-            const valAmp = document.getElementById('eis-val-amp');
-            if (fillAmp) fillAmp.style.width = `${ampPct}%`;
-            if (ptrAmp) ptrAmp.style.left = `${ampPct}%`;
-            if (valAmp) valAmp.textContent = `${totAmp.toFixed(1)} A`;
+            // Ribbon 2: Power WATTS (0 - 1500W)
+            const wattPct = Math.max(0, Math.min(100, (totWatt / 1500.0) * 100));
+            const ribWattBar = document.getElementById('eis-rib-watt-bar');
+            const ribWattPtr = document.getElementById('eis-rib-watt-ptr');
+            const ribWattVal = document.getElementById('eis-rib-watt-val');
+            if (ribWattBar) ribWattBar.style.width = `${wattPct}%`;
+            if (ribWattPtr) ribWattPtr.style.left = `${wattPct}%`;
+            if (ribWattVal) ribWattVal.textContent = `${Math.round(totWatt)} W`;
 
-            // Power Ribbon (0 to 2000W)
-            const wattPct = Math.max(0, Math.min(100, (totWatt / 2000.0) * 100));
-            const fillWatt = document.getElementById('eis-fill-watt');
-            const ptrWatt = document.getElementById('eis-ptr-watt');
-            const valWatt = document.getElementById('eis-val-watt');
-            if (fillWatt) fillWatt.style.width = `${wattPct}%`;
-            if (ptrWatt) ptrWatt.style.left = `${wattPct}%`;
-            if (valWatt) valWatt.textContent = `${Math.round(totWatt)} W`;
+            // Ribbon 3: Temperature ESC T (20 - 100°C)
+            const tempPct = Math.max(0, Math.min(100, ((escTempMax - 20) / 80.0) * 100));
+            const ribTempBar = document.getElementById('eis-rib-temp-bar');
+            const ribTempPtr = document.getElementById('eis-rib-temp-ptr');
+            const ribTempVal = document.getElementById('eis-rib-temp-val');
+            if (ribTempBar) ribTempBar.style.width = `${tempPct}%`;
+            if (ribTempPtr) ribTempPtr.style.left = `${tempPct}%`;
+            if (ribTempVal) ribTempVal.textContent = `${Math.round(escTempMax)} °C`;
 
-            // ESC Temp Ribbon (20 to 100°C)
-            const escTPct = Math.max(0, Math.min(100, ((escTempMax - 20) / 80.0) * 100));
-            const fillEscT = document.getElementById('eis-fill-esct');
-            const ptrEscT = document.getElementById('eis-ptr-esct');
-            const valEscT = document.getElementById('eis-val-esct');
-            if (fillEscT) fillEscT.style.width = `${escTPct}%`;
-            if (ptrEscT) ptrEscT.style.left = `${escTPct}%`;
-            if (valEscT) valEscT.textContent = `${Math.round(escTempMax)} °C`;
-
-            // Motor Temp Ribbon (20 to 120°C)
-            const motT = escTempMax + 6;
-            const motTPct = Math.max(0, Math.min(100, ((motT - 20) / 90.0) * 100));
-            const fillMotT = document.getElementById('eis-fill-mott');
-            const ptrMotT = document.getElementById('eis-ptr-mott');
-            const valMotT = document.getElementById('eis-val-mott');
-            if (fillMotT) fillMotT.style.width = `${motTPct}%`;
-            if (ptrMotT) ptrMotT.style.left = `${motTPct}%`;
-            if (valMotT) valMotT.textContent = `${Math.round(motT)} °C`;
-
-            // Update Column 3: Battery & Energy Reserves
+            // Update Left Pane: Battery Fuel Reserves (Single mode)
             const pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
-            const pctHeader = document.getElementById('eis-batt-pct-header');
-            const pctText = document.getElementById('eis-batt-pct-text');
-            const mahText = document.getElementById('eis-batt-mah-text');
-            const tank1 = document.getElementById('eis-tank-fill-1');
-            const tank2 = document.getElementById('eis-tank-fill-2');
-            const botAmps = document.getElementById('eis-bot-amps');
-            const timeRem = document.getElementById('eis-time-rem-val');
-            const dischRate = document.getElementById('eis-disch-rate-val');
-            const thermalBadge = document.getElementById('eis-thermal-badge');
+            const fuelPct = document.getElementById('eis-fuel-pct');
+            const fuelMah = document.getElementById('eis-fuel-mah');
+            const fuelEndur = document.getElementById('eis-fuel-endur');
+            const tankL = document.getElementById('eis-tank-l');
+            const tankR = document.getElementById('eis-tank-r');
 
-            if (pctHeader) pctHeader.textContent = `${pct}%`;
-            if (pctText) pctText.textContent = `${pct}%`;
-            if (mahText) mahText.textContent = `${Math.round(am32Telemetry.consumed_mah)} / 6000 mAh`;
-            if (tank1) tank1.style.height = `${pct}%`;
-            if (tank2) tank2.style.height = `${pct}%`;
-            if (botAmps) botAmps.textContent = `${totAmp.toFixed(1)} A`;
+            if (fuelPct) fuelPct.textContent = `${pct}%`;
+            if (fuelMah) fuelMah.textContent = `${Math.round(am32Telemetry.consumed_mah)} / 6000 mAh`;
+            if (tankL) tankL.style.height = `${pct}%`;
+            if (tankR) tankR.style.height = `${pct}%`;
 
-            // Compute estimated remaining flight time (in minutes) based on remaining mAh & current draw
             if (totAmp > 0.8) {
                 const remMah = Math.max(0, (pct / 100.0) * 6000);
                 const hrsRem = remMah / (totAmp * 1000);
                 const minsRem = Math.round(hrsRem * 60);
-                if (timeRem) timeRem.textContent = `${minsRem} MIN`;
-                const cRate = (totAmp / 6.0).toFixed(1);
-                if (dischRate) dischRate.textContent = `${cRate} C`;
+                if (fuelEndur) fuelEndur.textContent = `${minsRem} MIN`;
             } else {
-                if (timeRem) timeRem.textContent = '-- MIN';
-                if (dischRate) dischRate.textContent = '0.0 C';
+                if (fuelEndur) fuelEndur.textContent = '-- MIN';
             }
 
-            if (thermalBadge) {
-                if (escTempMax >= 85) {
-                    thermalBadge.textContent = 'HIGH TEMP';
-                    thermalBadge.style.color = '#ff453a';
-                    thermalBadge.style.borderColor = 'rgba(255, 69, 58, 0.4)';
-                } else if (escTempMax >= 70) {
-                    thermalBadge.textContent = 'ELEVATED';
-                    thermalBadge.style.color = '#ffcc00';
-                    thermalBadge.style.borderColor = 'rgba(255, 204, 0, 0.4)';
-                } else {
-                    thermalBadge.textContent = 'NORMAL';
-                    thermalBadge.style.color = '#30d158';
-                    thermalBadge.style.borderColor = 'rgba(48, 209, 88, 0.3)';
-                }
-            }
+            // Update Bottom Row: Total Load & Single Pack Voltage
+            const botLoad = document.getElementById('eis-bot-load');
+            const botVolt = document.getElementById('eis-bot-volt');
+            if (botLoad) botLoad.textContent = `${totAmp.toFixed(1)} A`;
+            if (botVolt) botVolt.textContent = `${am32Telemetry.pack_voltage.toFixed(1)} V`;
         }
 
         setInterval(updateEisInstrument, 60);
