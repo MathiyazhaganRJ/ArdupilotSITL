@@ -12,10 +12,35 @@ import webview
 import urllib.request
 import math
 import concurrent.futures
+import sys
 from pymavlink import mavutil
 
-MAVLINK_URL = 'udpin:127.0.0.1:14551'
-connection = mavutil.mavlink_connection(MAVLINK_URL)
+def parse_mavlink_target():
+    target = os.environ.get('MAVLINK_URL', 'udpin:127.0.0.1:14551')
+    baud = 115200
+    for i, arg in enumerate(sys.argv):
+        if arg in ('--connect', '--mavlink', '-c') and i + 1 < len(sys.argv):
+            target = sys.argv[i + 1]
+            break
+        elif arg.startswith(('--connect=', '--mavlink=')):
+            target = arg.split('=', 1)[1]
+            break
+    if ':' in target and not target.startswith(('udp', 'tcp')):
+        parts = target.split(':')
+        target = parts[0]
+        try:
+            baud = int(parts[1])
+        except ValueError:
+            pass
+    return target, baud
+
+MAVLINK_DEVICE, MAVLINK_BAUD = parse_mavlink_target()
+if MAVLINK_DEVICE.startswith(('udp', 'tcp')):
+    print(f"[MAVLink] Connecting via network: {MAVLINK_DEVICE}")
+    connection = mavutil.mavlink_connection(MAVLINK_DEVICE)
+else:
+    print(f"[MAVLink] Connecting to serial port {MAVLINK_DEVICE} at {MAVLINK_BAUD} baud...")
+    connection = mavutil.mavlink_connection(MAVLINK_DEVICE, baud=MAVLINK_BAUD)
 
 clients = set()
 heartbeat_received = False
@@ -941,6 +966,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
     parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
+    parser.add_argument("--connect", "--mavlink", "-c", default="udpin:127.0.0.1:14551", help="MAVLink target (e.g. udpin:127.0.0.1:14551, COM3:57600, udpin:0.0.0.0:14550)")
     args = parser.parse_args()
 
     # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
