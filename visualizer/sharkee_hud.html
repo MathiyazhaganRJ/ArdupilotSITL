@@ -2248,17 +2248,6 @@
                     <clipPath id="lxnav-clip-circle">
                         <circle cx="100" cy="100" r="94" />
                     </clipPath>
-                    <!-- Segmented Rainbow Arcs for Hawk Vario -->
-                    <linearGradient id="lxnav-vario-lift-grad" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stop-color="#ffcc00" />
-                        <stop offset="50%" stop-color="#ff9500" />
-                        <stop offset="100%" stop-color="#ff3b30" />
-                    </linearGradient>
-                    <linearGradient id="lxnav-vario-sink-grad" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stop-color="#00e5ff" />
-                        <stop offset="60%" stop-color="#0078d4" />
-                        <stop offset="100%" stop-color="#5856d6" />
-                    </linearGradient>
                 </defs>
 
                 <!-- Outer Dial Base Bezel -->
@@ -2309,20 +2298,18 @@
                     <rect x="158" y="86" width="38" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
                     <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
                     
-                    <!-- Bottom Status Tag (Flight Mode / HUD Annunciator) -->
+                    <!-- Bottom Status Tag (Flight Mode / HUD Annunciator in Aviation Green) -->
                     <g transform="translate(64, 168)">
-                        <rect x="0" y="0" width="72" height="18" rx="4" fill="#10141a" stroke="rgba(0, 229, 255, 0.6)" stroke-width="1.2" />
-                        <text id="lxnav-pfd-mode-text" x="36" y="12.5" fill="#00e5ff" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="middle">LXNAV PFD</text>
+                        <rect id="lxnav-pfd-mode-box" x="0" y="0" width="72" height="18" rx="4" fill="#0d1410" stroke="rgba(48, 209, 88, 0.65)" stroke-width="1.3" />
+                        <text id="lxnav-pfd-mode-text" x="36" y="12.5" fill="#30d158" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="middle">AUTO</text>
                     </g>
                 </g>
 
                 <!-- ================= DIAL 2: HAWK VARIOMETER ================= -->
                 <g id="lxnav-dial-2" clip-path="url(#lxnav-clip-circle)" style="display: none;">
-                    <!-- Colored Lift & Sink Arcs -->
-                    <path d="M100,16 A84,84 0 0,1 184,100" fill="none" stroke="url(#lxnav-vario-lift-grad)" stroke-width="6" stroke-linecap="round" />
-                    <path d="M16,100 A84,84 0 0,1 100,16" fill="none" stroke="url(#lxnav-vario-sink-grad)" stroke-width="6" stroke-linecap="round" />
-                    <path d="M184,100 A84,84 0 0,1 120,181" fill="none" stroke="#ff3b30" stroke-width="6" stroke-linecap="round" />
-                    <path d="M80,181 A84,84 0 0,1 16,100" fill="none" stroke="#0078d4" stroke-width="6" stroke-linecap="round" />
+                    <!-- Colored Lift & Sink Arcs: Solid Aviation Green for Lift (Right), Solid Aviation Red for Sink (Left) -->
+                    <path d="M107.3,16.3 A84,84 0 0,1 107.3,183.7" fill="none" stroke="#30d158" stroke-width="6" stroke-linecap="round" />
+                    <path d="M92.7,16.3 A84,84 0 0,0 92.7,183.7" fill="none" stroke="#ff453a" stroke-width="6" stroke-linecap="round" />
 
                     <!-- Numbers around scale -->
                     <g font-family="'Inter', sans-serif" font-size="11.5" font-weight="700" fill="#ffffff">
@@ -2348,136 +2335,24 @@
                     <text x="100" y="98" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">Netto m/s</text>
 
                     <!-- Secondary Vario Readout -->
-                    <text id="lxnav-vario-vera" x="100" y="128" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="18" font-weight="700" text-anchor="middle">+0.0</text>
+                    <text id="lxnav-vario-vera" x="100" y="128" fill="#30d158" font-family="'B612 Mono', monospace" font-size="18" font-weight="700" text-anchor="middle">+0.0</text>
                     <text x="100" y="138" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">VarA m/s</text>
 
                     <!-- Pointer Needle -->
                     <g id="lxnav-vario-needle" style="transform-origin: 100px 100px; transform: rotate(0deg); transition: transform 0.08s linear;">
-                        <polygon points="100,24 96,100 104,100" fill="var(--accent-cyan)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))" />
-                        <circle cx="100" cy="100" r="7" fill="#1c2026" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
-                        <circle cx="100" cy="100" r="3" fill="var(--accent-cyan)" />
+                        <polygon id="lxnav-vario-needle-poly" points="100,24 96,100 104,100" fill="#ffffff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))" />
+                        <circle cx="100" cy="100" r="7" fill="#1c2026" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+                        <circle id="lxnav-vario-needle-hub" cx="100" cy="100" r="3" fill="#30d158" />
                     </g>
-                </g>
-
-                <!-- ================= DIAL 3: AIR RADAR (OPENSKY ADS-B) ================= -->
-                <g id="lxnav-dial-3" clip-path="url(#lxnav-clip-circle)" style="display: none;">
-                    <!-- Radar Base Background -->
-                    <rect width="200" height="200" fill="#070a0e" />
-                    
-                    <!-- Range Rings (10km, 20km, 30km) centered at (100, 95) -->
-                    <circle cx="100" cy="95" r="26" fill="none" stroke="rgba(0, 229, 255, 0.22)" stroke-width="1" stroke-dasharray="2,3" />
-                    <circle cx="100" cy="95" r="52" fill="none" stroke="rgba(0, 229, 255, 0.25)" stroke-width="1" stroke-dasharray="2,3" />
-                    <circle cx="100" cy="95" r="78" fill="none" stroke="rgba(0, 229, 255, 0.35)" stroke-width="1.2" />
-
-                    <!-- Cardinal Crosshairs -->
-                    <line x1="100" y1="17" x2="100" y2="152" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
-                    <line x1="22" y1="95" x2="178" y2="95" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
-                    
-                    <!-- Cardinal Labels -->
-                    <text x="100" y="27" fill="var(--accent-cyan)" font-family="'Inter', sans-serif" font-size="9" font-weight="800" text-anchor="middle">N</text>
-                    <text x="176" y="98" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="700" text-anchor="middle">E</text>
-                    <text x="24" y="98" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="700" text-anchor="middle">W</text>
-
-                    <!-- Range Ring Labels -->
-                    <text x="103" y="72" fill="rgba(0,229,255,0.7)" font-family="'B612 Mono', monospace" font-size="6" font-weight="700">10k</text>
-                    <text x="103" y="46" fill="rgba(0,229,255,0.7)" font-family="'B612 Mono', monospace" font-size="6" font-weight="700">20k</text>
-                    <text x="103" y="20" fill="rgba(0,229,255,0.9)" font-family="'B612 Mono', monospace" font-size="6.5" font-weight="700">30k</text>
-
-                    <!-- Center Own Drone Silhouette (Cyan/Yellow) -->
-                    <g transform="translate(100, 95)">
-                        <circle cx="0" cy="0" r="2.5" fill="var(--accent-yellow)" />
-                        <line x1="0" y1="-7" x2="0" y2="7" stroke="var(--accent-yellow)" stroke-width="2.2" stroke-linecap="round" />
-                        <line x1="-8" y1="-1" x2="8" y2="-1" stroke="var(--accent-yellow)" stroke-width="2.2" stroke-linecap="round" />
-                        <line x1="-3" y1="5" x2="3" y2="5" stroke="var(--accent-yellow)" stroke-width="1.6" stroke-linecap="round" />
-                    </g>
-
-                    <!-- Dynamic OpenSky Target Blips Container -->
-                    <g id="lxnav-radar-targets">
-                        <!-- Injected via renderOpenSkyRadar() -->
-                    </g>
-
-                    <!-- Bottom Avionics Status Bar -->
-                    <rect x="0" y="152" width="200" height="48" fill="#0d1015" />
-                    <line x1="0" y1="152" x2="200" y2="152" stroke="rgba(255,255,255,0.18)" stroke-width="1" />
-                    
-                    <circle cx="30" cy="163" r="2.5" fill="var(--accent-green)">
-                        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
-                    </circle>
-                    <text x="38" y="166" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8" font-weight="700">OPENSKY</text>
-                    <text id="lxnav-radar-count" x="170" y="166" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="8" font-weight="700" text-anchor="end">0 TGT</text>
-
-                    <text id="lxnav-radar-status" x="100" y="177" fill="#8e9297" font-family="'B612 Mono', monospace" font-size="7.5" font-weight="700" text-anchor="middle">SCANNING AIRSPACE (35km)</text>
-                    <text id="lxnav-radar-nearest" x="100" y="188" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="8" font-weight="700" text-anchor="middle">NO CONFLICTS</text>
-                </g>
-
-                <!-- ================= DIAL 4: TACTICAL MAP & WIND ================= -->
-                <g id="lxnav-dial-4" clip-path="url(#lxnav-clip-circle)" style="display: none;">
-                    <rect width="200" height="200" fill="#d9b77d" />
-                    <path d="M-10,120 Q50,70 120,80 T210,50 L210,210 L-10,210 Z" fill="#c6a366" />
-                    <path d="M40,160 Q110,110 160,130 T210,100 L210,210 L40,210 Z" fill="#b08b50" />
-                    <rect x="0" y="0" width="200" height="36" fill="#121519" />
-                    <text id="lxnav-map-hdg" x="100" y="18" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="12" font-weight="700" text-anchor="middle">184°</text>
-                    <g transform="translate(100, 100)">
-                        <circle cx="10" cy="-4" r="3" fill="#ff3b30" />
-                        <circle cx="14" cy="4" r="3" fill="#ff9500" />
-                        <circle cx="4" cy="12" r="3" fill="#ffcc00" />
-                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#000000" stroke-width="2.5" />
-                        <line x1="-9" y1="-2" x2="9" y2="-2" stroke="#000000" stroke-width="2.5" />
-                    </g>
-                    <rect x="20" y="142" width="62" height="24" rx="3" fill="rgba(18,22,28,0.88)" />
-                    <text id="lxnav-map-wind" x="51" y="153" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">WIND</text>
-                    <text id="lxnav-map-spd" x="51" y="163" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">0<tspan font-size="6.5">km/h</tspan></text>
-                    <rect x="58" y="172" width="84" height="16" rx="3" fill="#121519" />
-                    <text x="100" y="183" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">TRACK ACTIVE</text>
-                </g>
-
-                <!-- ================= DIAL 5: NEAR WAYPOINTS ================= -->
-                <g id="lxnav-dial-5" clip-path="url(#lxnav-clip-circle)" style="display: none;">
-                    <rect width="200" height="200" fill="#090b0e" />
-                    <text x="100" y="30" fill="#ffffff" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle">Near</text>
-                    <text x="36" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600">Name</text>
-                    <text x="114" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" text-anchor="end">Dist ^</text>
-                    <text x="168" y="58" fill="#8e9297" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" text-anchor="end">Arr</text>
-                    <line x1="24" y1="64" x2="176" y2="64" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
-                    <g id="lxnav-wpts-rows" transform="translate(0, 78)">
-                        <!-- Populated dynamically from missionWaypoints -->
-                        <circle cx="26" cy="4" r="4" fill="var(--accent)" />
-                        <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9.5" font-weight="700">HOME</text>
-                        <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9.5" text-anchor="end">0<tspan font-size="7.5">km</tspan></text>
-                        <text x="168" y="7" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="end">+100<tspan font-size="7.5">m</tspan></text>
-                    </g>
-                </g>
-
-                <!-- ================= DIAL 6: FINAL GLIDE / RTL COMPUTER ================= -->
-                <g id="lxnav-dial-6" clip-path="url(#lxnav-clip-circle)" style="display: none;">
-                    <rect width="200" height="200" fill="#e8ebea" />
-                    <rect x="0" y="0" width="200" height="32" fill="#ffffff" opacity="0.95" />
-                    <text x="100" y="20" fill="#000000" font-family="'Inter', sans-serif" font-size="11" font-weight="700" text-anchor="middle">Inside safe zone</text>
-                    <circle cx="100" cy="100" r="56" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" stroke-dasharray="2,3" />
-                    <g transform="translate(100, 100)">
-                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#000000" stroke-width="2.5" />
-                        <line x1="-9" y1="-2" x2="9" y2="-2" stroke="#000000" stroke-width="2.5" />
-                    </g>
-                    <rect x="0" y="142" width="200" height="58" fill="#15171a" />
-                    <line x1="0" y1="142" x2="200" y2="142" stroke="#2a2e35" stroke-width="1" />
-                    <text x="50" y="155" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">RTL SAFE</text>
-                    <text x="150" y="155" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">GEO OK</text>
-                    <text id="lxnav-rtl-alt" x="50" y="168" fill="var(--accent-cyan)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">--m</text>
-                    <text x="150" y="168" fill="var(--accent-yellow)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">AUTO</text>
-                    <text x="100" y="182" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">MISSION COMPUTER</text>
                 </g>
 
             </svg>
         </div>
 
-        <!-- Rotary Page Indicator Dots (6 Active Flight Gauges) -->
+        <!-- Rotary Page Indicator Dots (2 Flight Instruments: PFD & Vario) -->
         <div class="lxnav-footer-dots" id="lxnav-footer-dots">
             <div class="lxnav-dot active" onclick="setLxnavPage(1)" title="Page 1: PFD Horizon"></div>
             <div class="lxnav-dot" onclick="setLxnavPage(2)" title="Page 2: Hawk Vario"></div>
-            <div class="lxnav-dot" onclick="setLxnavPage(3)" title="Page 3: Air Radar (OpenSky)"></div>
-            <div class="lxnav-dot" onclick="setLxnavPage(4)" title="Page 4: Tactical Map"></div>
-            <div class="lxnav-dot" onclick="setLxnavPage(5)" title="Page 5: Waypoints"></div>
-            <div class="lxnav-dot" onclick="setLxnavPage(6)" title="Page 6: RTL Glide"></div>
         </div>
     </div>
 
@@ -4008,7 +3883,7 @@
         }
 
         // ============================================================
-        // LXNAV ROTARY MFD GLASS COCKPIT CONTROLLER (6 FLIGHT GAUGES)
+        // LXNAV ROTARY MFD GLASS COCKPIT CONTROLLER (PFD & HAWK VARIO)
         // ============================================================
         currentLxnavPage = 1; // Default to Page 1: PFD Horizon
         lxnavWidgetVisible = true;
@@ -4016,22 +3891,16 @@
         const lxnavPageTitles = [
             "",
             "PFD HORIZON",
-            "HAWK VARIO",
-            "AIR RADAR",
-            "TAC MAP",
-            "WAYPOINTS",
-            "RTL GLIDE"
+            "HAWK VARIO"
         ];
 
         function setLxnavPage(pageNum) {
-            currentLxnavPage = Math.max(1, Math.min(6, pageNum));
-            // Show only the active dial group
-            for (let i = 1; i <= 6; i++) {
-                const dialEl = document.getElementById(`lxnav-dial-${i}`);
-                if (dialEl) {
-                    dialEl.style.display = (i === currentLxnavPage) ? 'inline' : 'none';
-                }
-            }
+            currentLxnavPage = (pageNum === 2) ? 2 : 1;
+            const dial1 = document.getElementById('lxnav-dial-1');
+            const dial2 = document.getElementById('lxnav-dial-2');
+            if (dial1) dial1.style.display = (currentLxnavPage === 1) ? 'inline' : 'none';
+            if (dial2) dial2.style.display = (currentLxnavPage === 2) ? 'inline' : 'none';
+
             // Update title and page badge
             const titleEl = document.getElementById('lxnav-header-title');
             if (titleEl) titleEl.textContent = lxnavPageTitles[currentLxnavPage];
@@ -4043,18 +3912,14 @@
             dots.forEach((dot, idx) => {
                 dot.classList.toggle('active', (idx + 1) === currentLxnavPage);
             });
-
-            // Page-specific trigger actions
-            if (currentLxnavPage === 5) refreshLxnavWaypoints();
-            if (currentLxnavPage === 3) fetchOpenSkyTraffic();
         }
 
         function nextLxnavPage() {
-            setLxnavPage(currentLxnavPage < 6 ? currentLxnavPage + 1 : 1);
+            setLxnavPage(currentLxnavPage === 1 ? 2 : 1);
         }
 
         function prevLxnavPage() {
-            setLxnavPage(currentLxnavPage > 1 ? currentLxnavPage - 1 : 6);
+            setLxnavPage(currentLxnavPage === 1 ? 2 : 1);
         }
 
         // Toggle between primary flight instruments: Page 1 (Horizon) and Page 2 (Vario)
@@ -4073,217 +3938,25 @@
             }
         }
 
+        function refreshLxnavWaypoints() {}
+
         window.setLxnavPage = setLxnavPage;
         window.nextLxnavPage = nextLxnavPage;
         window.prevLxnavPage = prevLxnavPage;
         window.togglePrimaryDuo = togglePrimaryDuo;
         window.toggleLxnavWidget = toggleLxnavWidget;
+        window.refreshLxnavWaypoints = refreshLxnavWaypoints;
 
         const btnToggleLxnavEl = document.getElementById('btn-toggle-lxnav');
         if (btnToggleLxnavEl) btnToggleLxnavEl.onclick = toggleLxnavWidget;
 
-        // Rotary scroll wheel support over bezel
+        // Rotary scroll wheel over bezel (toggles between PFD and Vario)
         const lxnavViewportEl = document.getElementById('lxnav-dial-viewport');
         if (lxnavViewportEl) {
             lxnavViewportEl.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                if (e.deltaY > 0) nextLxnavPage();
-                else if (e.deltaY < 0) prevLxnavPage();
+                togglePrimaryDuo();
             }, { passive: false });
-        }
-
-        // ============================================================
-        // OPENSKY NETWORK LIVE ADS-B AIR RADAR ENGINE
-        // ============================================================
-        let openskyLastFetchTime = 0;
-        let openskyTrafficData = [];
-        let openskyFetchInProgress = false;
-
-        async function fetchOpenSkyTraffic() {
-            if (openskyFetchInProgress) return;
-            const now = Date.now();
-            if (now - openskyLastFetchTime < 9500) {
-                renderOpenSkyRadar();
-                return;
-            }
-
-            openskyFetchInProgress = true;
-            openskyLastFetchTime = now;
-
-            const refLat = (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) ? currentPlaneLat : 8.3113;
-            const refLon = (typeof currentPlaneLon === 'number' && Math.abs(currentPlaneLon) > 0.001) ? currentPlaneLon : 77.3077;
-
-            try {
-                const response = await fetch(`/api/opensky?lat=${refLat}&lon=${refLon}`);
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                const json = await response.json();
-                if (json.states && Array.isArray(json.states) && json.states.length > 0) {
-                    openskyTrafficData = json.states;
-                } else {
-                    // Airspace quiet (0 flights within local 35km) - populate advisory traffic so radar displays active targets
-                    openskyTrafficData = generateSyntheticAdsbTraffic(refLat, refLon);
-                }
-            } catch (err) {
-                console.warn('[OpenSky ADS-B] Notice:', err.message);
-                if (openskyTrafficData.length === 0) {
-                    openskyTrafficData = generateSyntheticAdsbTraffic(refLat, refLon);
-                }
-            } finally {
-                openskyFetchInProgress = false;
-                renderOpenSkyRadar();
-            }
-        }
-
-        // Realistic fallback targets if offline or flying in remote low-traffic airspace
-        function generateSyntheticAdsbTraffic(refLat, refLon) {
-            const t = Date.now() / 1000;
-            return [
-                ['a1b2c3', 'AIC502  ', 'India', 0, 0, refLon + 0.09 * Math.cos(t * 0.03), refLat + 0.09 * Math.sin(t * 0.03), (currentPlaneAltMSL || 120) + 650, false, 120, 140, 1.2],
-                ['b4c5d6', 'IGO119  ', 'India', 0, 0, refLon - 0.16 + (t * 0.002) % 0.3, refLat + 0.13, (currentPlaneAltMSL || 120) + 1800, false, 195, 85, -1.5],
-                ['c7d8e9', 'VT-UAS  ', 'India', 0, 0, refLon + 0.04 * Math.sin(t * 0.05), refLat - 0.06 * Math.cos(t * 0.05), (currentPlaneAltMSL || 120) + 180, false, 45, 270, 0.0]
-            ];
-        }
-
-        function renderOpenSkyRadar() {
-            const container = document.getElementById('lxnav-radar-targets');
-            const countEl = document.getElementById('lxnav-radar-count');
-            const statusEl = document.getElementById('lxnav-radar-status');
-            const nearestEl = document.getElementById('lxnav-radar-nearest');
-            if (!container) return;
-
-            const refLat = (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) ? currentPlaneLat : 8.3113;
-            const refLon = (typeof currentPlaneLon === 'number' && Math.abs(currentPlaneLon) > 0.001) ? currentPlaneLon : 77.3077;
-            const droneAlt = (typeof currentPlaneAltMSL === 'number') ? currentPlaneAltMSL : 0;
-            const maxRangeKm = 35.0;
-
-            let plottedCount = 0;
-            let nearestDist = 999;
-            let nearestCallsign = '';
-            let nearestAltDelta = 0;
-            let html = '';
-
-            for (let i = 0; i < openskyTrafficData.length; i++) {
-                const s = openskyTrafficData[i];
-                const callsign = (s[1] || '').trim() || (s[0] ? s[0].toUpperCase() : 'ACFT');
-                const tLon = s[5];
-                const tLat = s[6];
-                if (typeof tLat !== 'number' || typeof tLon !== 'number') continue;
-
-                const tAlt = s[7] || s[13] || 0;
-                const tTrack = s[10] || 0;
-
-                // Spherical distance & bearing to target
-                const dLat = (tLat - refLat) * 111.0;
-                const dLon = (tLon - refLon) * 111.0 * Math.cos(refLat * Math.PI / 180.0);
-                const distKm = Math.sqrt(dLat * dLat + dLon * dLon);
-                if (distKm > maxRangeKm) continue;
-
-                plottedCount++;
-                if (distKm < nearestDist) {
-                    nearestDist = distKm;
-                    nearestCallsign = callsign;
-                    nearestAltDelta = Math.round(tAlt - droneAlt);
-                }
-
-                // Bearing from North (0° = North, 90° = East)
-                const bearingDeg = ((Math.atan2(dLon, dLat) * 180 / Math.PI) + 360) % 360;
-
-                // Radius on dial: 35km maps to 76px around center (100, 95)
-                const rPx = Math.max(5, (distKm / maxRangeKm) * 76.0);
-                const angleRad = bearingDeg * Math.PI / 180.0;
-                const tx = 100 + rPx * Math.sin(angleRad);
-                const ty = 95 - rPx * Math.cos(angleRad);
-
-                const altDelta = Math.round(tAlt - droneAlt);
-                const altTag = (altDelta >= 0 ? '+' : '') + Math.round(altDelta / 100);
-
-                // Collision / Advisory Color logic
-                let color = 'var(--accent-cyan)';
-                let isAlert = false;
-                if (distKm < 3.0 && Math.abs(altDelta) < 350) {
-                    color = 'var(--accent-red)';
-                    isAlert = true;
-                } else if (distKm < 8.0 && Math.abs(altDelta) < 600) {
-                    color = 'var(--accent-yellow)';
-                }
-
-                html += `
-                    <g transform="translate(${tx.toFixed(1)}, ${ty.toFixed(1)})">
-                        ${isAlert ? '<circle cx="0" cy="0" r="9" fill="none" stroke="var(--accent-red)" stroke-width="1.2" stroke-dasharray="2,2"><animate attributeName="r" values="6;11;6" dur="0.9s" repeatCount="indefinite" /></circle>' : ''}
-                        <g transform="rotate(${tTrack.toFixed(1)})">
-                            <polygon points="0,-4 3,3 0,1.2 -3,3" fill="${color}" stroke="#000000" stroke-width="0.5" />
-                        </g>
-                        <text x="4" y="-2" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="6.5" font-weight="700">${callsign}</text>
-                        <text x="4" y="5" fill="${color}" font-family="'B612 Mono', monospace" font-size="6" font-weight="700">${altTag}</text>
-                    </g>
-                `;
-            }
-
-            container.innerHTML = html;
-            if (countEl) countEl.textContent = `${plottedCount} TGT`;
-
-            if (statusEl && nearestEl) {
-                if (plottedCount === 0) {
-                    statusEl.textContent = 'SCANNING AIRSPACE (35km)';
-                    nearestEl.textContent = 'NO CONFLICTS';
-                    nearestEl.setAttribute('fill', 'var(--accent-green)');
-                } else {
-                    const altStr = (nearestAltDelta >= 0 ? '+' : '') + nearestAltDelta + 'm';
-                    statusEl.textContent = `CLOSEST: ${nearestCallsign} (${nearestDist.toFixed(1)}km)`;
-                    if (nearestDist < 3.0 && Math.abs(nearestAltDelta) < 350) {
-                        nearestEl.textContent = `TRAFFIC ALERT ${nearestDist.toFixed(1)}km ${altStr}`;
-                        nearestEl.setAttribute('fill', 'var(--accent-red)');
-                    } else {
-                        nearestEl.textContent = `CLEAR: ${nearestDist.toFixed(1)}km ${altStr}`;
-                        nearestEl.setAttribute('fill', 'var(--accent-cyan)');
-                    }
-                }
-            }
-        }
-
-        // Auto-refresh OpenSky Radar data every 10 seconds
-        setInterval(fetchOpenSkyTraffic, 10000);
-        setTimeout(fetchOpenSkyTraffic, 2000);
-
-        // Populate Dial 5 from missionWaypoints
-        function refreshLxnavWaypoints() {
-            const container = document.getElementById('lxnav-wpts-rows');
-            if (!container) return;
-            const wps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001);
-            if (wps.length === 0) {
-                container.innerHTML = `
-                    <circle cx="26" cy="4" r="4" fill="var(--accent)" />
-                    <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9.5" font-weight="700">HOME</text>
-                    <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9.5" text-anchor="end">0<tspan font-size="7.5">km</tspan></text>
-                    <text x="168" y="7" fill="var(--accent-green)" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="end">+100<tspan font-size="7.5">m</tspan></text>
-                `;
-                return;
-            }
-            let rowsHtml = '';
-            const maxShow = Math.min(4, wps.length);
-            for (let i = 0; i < maxShow; i++) {
-                const wp = wps[i];
-                const yOff = i * 24;
-                const name = wp.seq === 0 ? 'HOME' : `WP ${wp.seq}`;
-                let distKm = 0;
-                if (currentPlaneLat && currentPlaneLon) {
-                    const dLat = (wp.lat - currentPlaneLat) * 111.0;
-                    const dLon = (wp.lon - currentPlaneLon) * 111.0 * Math.cos(currentPlaneLat * Math.PI / 180);
-                    distKm = Math.sqrt(dLat * dLat + dLon * dLon);
-                }
-                const altDelta = wp.alt - (currentPlaneAltMSL || 0);
-                const altColor = altDelta >= 0 ? 'var(--accent-green)' : 'var(--danger)';
-                const altStr = (altDelta >= 0 ? '+' : '') + Math.round(altDelta) + 'm';
-                rowsHtml += `
-                    <g transform="translate(0, ${yOff})">
-                        <circle cx="26" cy="4" r="3.5" fill="var(--accent)" />
-                        <text x="36" y="7" fill="#ffffff" font-family="'Inter', sans-serif" font-size="9" font-weight="700">${name}</text>
-                        <text x="114" y="7" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="9" text-anchor="end">${distKm.toFixed(1)}<tspan font-size="7">km</tspan></text>
-                        <text x="168" y="7" fill="${altColor}" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="end">${altStr}</text>
-                    </g>
-                `;
-            }
-            container.innerHTML = rowsHtml;
         }
 
         // Live 60FPS HUD Telemetry Update (Decoupled & GPU accelerated)
@@ -4324,34 +3997,42 @@
                 const altEl = document.getElementById('lxnav-pfd-alt');
                 if (altEl) altEl.textContent = Math.round(currentPlaneAltMSL || 0);
 
-                // Update bottom flight mode / annunciator badge
+                // Update bottom flight mode / annunciator badge (Aviation Emerald Green)
                 const modeEl = document.getElementById('lxnav-pfd-mode-text');
                 if (modeEl) {
                     const fModeEl = document.getElementById('f_mode');
                     const currentMode = (fModeEl && fModeEl.innerText && fModeEl.innerText !== 'UNKNOWN') ? fModeEl.innerText : 'LXNAV PFD';
                     modeEl.textContent = currentMode;
+                    modeEl.setAttribute('fill', '#30d158');
                 }
             }
 
-            // Dial 2: Hawk Variometer
+            // Dial 2: Hawk Variometer (Solid Aviation Green Lift & Solid Aviation Red Sink)
             else if (currentLxnavPage === 2) {
                 const needleEl = document.getElementById('lxnav-vario-needle');
                 if (needleEl) {
-                    // LXNAV Hawk dial is calibrated to +/- 6 m/s scale (~30 deg per m/s)
+                    // LXNAV Hawk dial calibrated to +/- 6 m/s scale (~30 deg per m/s)
                     const needleAngle = Math.max(-175, Math.min(175, planeClimbRate * 30.0));
                     needleEl.setAttribute('transform', `rotate(${needleAngle.toFixed(1)} 100 100)`);
                     needleEl.style.transform = `rotate(${needleAngle.toFixed(1)}deg)`;
                 }
+                const isClimbing = planeClimbRate >= 0;
+                const climbColor = isClimbing ? '#30d158' : '#ff453a';
+                const climbStr = (isClimbing ? '+' : '') + planeClimbRate.toFixed(1);
+
                 const nettoEl = document.getElementById('lxnav-vario-netto');
                 if (nettoEl) {
-                    const climbStr = (planeClimbRate >= 0 ? '+' : '') + planeClimbRate.toFixed(1);
                     nettoEl.textContent = climbStr;
-                    nettoEl.setAttribute('fill', planeClimbRate >= 0 ? '#30d158' : '#ff453a');
+                    nettoEl.setAttribute('fill', climbColor);
                 }
                 const veraEl = document.getElementById('lxnav-vario-vera');
                 if (veraEl) {
-                    veraEl.textContent = (planeClimbRate >= 0 ? '+' : '') + planeClimbRate.toFixed(1);
-                    veraEl.setAttribute('fill', '#00e5ff');
+                    veraEl.textContent = climbStr;
+                    veraEl.setAttribute('fill', climbColor);
+                }
+                const hubEl = document.getElementById('lxnav-vario-needle-hub');
+                if (hubEl) {
+                    hubEl.setAttribute('fill', climbColor);
                 }
                 const varioWindEl = document.getElementById('lxnav-vario-wind');
                 if (varioWindEl) {
@@ -4359,31 +4040,6 @@
                     const wSpd = hasPlaneWind ? planeWindSpd : currentWindSpd;
                     varioWindEl.textContent = Math.round(wDir) + '° / ' + Math.round(wSpd * 3.6) + 'km/h';
                 }
-            }
-
-            // Dial 3: Air Radar (OpenSky ADS-B)
-            else if (currentLxnavPage === 3) {
-                renderOpenSkyRadar();
-            }
-
-            // Dial 4: Tactical Map & Heading
-            else if (currentLxnavPage === 4) {
-                const mapHdgEl = document.getElementById('lxnav-map-hdg');
-                if (mapHdgEl) mapHdgEl.textContent = Math.round(planeHeading) + '°';
-                const mapSpdEl = document.getElementById('lxnav-map-spd');
-                if (mapSpdEl) mapSpdEl.innerHTML = `${Math.round(planeGroundspeed * 3.6)}<tspan font-size="6.5">km/h</tspan>`;
-                const mapWindEl = document.getElementById('lxnav-map-wind');
-                if (mapWindEl) {
-                    const wDir = hasPlaneWind ? planeWindDir : currentWindDir;
-                    const wSpd = hasPlaneWind ? planeWindSpd : currentWindSpd;
-                    mapWindEl.textContent = `${Math.round(wDir)}°/${Math.round(wSpd * 3.6)}`;
-                }
-            }
-
-            // Dial 6: RTL Computer
-            else if (currentLxnavPage === 6) {
-                const rtlAltEl = document.getElementById('lxnav-rtl-alt');
-                if (rtlAltEl) rtlAltEl.textContent = Math.round(currentPlaneAltMSL || 0) + 'm';
             }
         }
 
