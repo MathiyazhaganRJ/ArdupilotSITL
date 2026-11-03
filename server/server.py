@@ -212,6 +212,7 @@ async def mavlink_listener():
     while True:
         msg = connection.recv_match(
             type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
+                  'ESC_TELEMETRY_1_TO_4', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
                   'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
@@ -382,6 +383,31 @@ async def mavlink_listener():
                 })
                 if len(cached_statustext_messages) > 100:
                     cached_statustext_messages.pop(0)
+            elif msg.get_type() == 'ESC_TELEMETRY_1_TO_4':
+                data['type'] = 'ESC_TELEMETRY'
+                data['rpm'] = list(getattr(msg, 'rpm', [0, 0, 0, 0]))
+                data['voltage'] = [round(v / 100.0, 2) for v in getattr(msg, 'voltage', [0, 0, 0, 0])]
+                data['current'] = [round(c / 100.0, 2) for c in getattr(msg, 'current', [0, 0, 0, 0])]
+                data['temperature'] = [round(t / 100.0, 1) for t in getattr(msg, 'temperature', [0, 0, 0, 0])]
+                data['total_current'] = round(getattr(msg, 'total_current', 0) / 100.0, 2)
+            elif msg.get_type() == 'ESC_STATUS':
+                data['type'] = 'ESC_STATUS'
+                data['index'] = getattr(msg, 'index', 0)
+                data['rpm'] = list(getattr(msg, 'rpm', []))
+                data['voltage'] = [round(v / 100.0, 2) for v in getattr(msg, 'voltage', [])]
+                data['current'] = [round(c / 100.0, 2) for c in getattr(msg, 'current', [])]
+            elif msg.get_type() == 'BATTERY_STATUS':
+                data['type'] = 'BATTERY_STATUS'
+                raw_cell_mv = getattr(msg, 'voltages', [])
+                data['cell_voltages'] = [round(v / 1000.0, 2) for v in raw_cell_mv if 0 < v < 65000]
+                data['current_battery'] = round(getattr(msg, 'current_battery', 0) / 100.0, 2)
+                data['current_consumed'] = getattr(msg, 'current_consumed', 0)
+                data['battery_remaining'] = getattr(msg, 'battery_remaining', -1)
+            elif msg.get_type() == 'SYS_STATUS':
+                data['type'] = 'SYS_STATUS'
+                data['voltage_battery'] = round(getattr(msg, 'voltage_battery', 0) / 1000.0, 2)
+                data['current_battery'] = round(getattr(msg, 'current_battery', 0) / 100.0, 2)
+                data['battery_remaining'] = getattr(msg, 'battery_remaining', -1)
             elif msg.get_type() == 'SIMSTATE':
                 data['sim_lat'] = getattr(msg, 'lat', 0) / 1e7
                 data['sim_lon'] = getattr(msg, 'lng', 0) / 1e7

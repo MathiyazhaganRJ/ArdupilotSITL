@@ -1679,6 +1679,346 @@
             border-color: #00ff66;
             box-shadow: 0 0 8px #00ff66, 0 0 14px rgba(0, 255, 102, 0.7);
         }
+    
+        /* ========================================================= */
+        /* GARMIN GI 275 EIS ENGINE & POWER MONITOR WIDGET            */
+        /* ========================================================= */
+        #eis-widget {
+            position: absolute;
+            bottom: 20px;
+            left: 840px;
+            width: 326px;
+            height: 412px;
+            box-sizing: border-box;
+            background: radial-gradient(circle at 50% 30%, #151a22 0%, #0d1016 75%, #080a0e 100%);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1.5px solid rgba(255, 255, 255, 0.16);
+            border-radius: 18px;
+            padding: 8px 10px 10px;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            z-index: 100;
+            user-select: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .eis-screw {
+            position: absolute;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #555c68 20%, #2a303a 80%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 25;
+        }
+        .eis-screw::after {
+            content: '';
+            width: 7px;
+            height: 1.5px;
+            background: #111418;
+            border-radius: 1px;
+        }
+        .eis-screw.tl { top: 6px; left: 6px; transform: rotate(25deg); }
+        .eis-screw.tr { top: 6px; right: 6px; transform: rotate(-40deg); }
+        .eis-screw.bl { bottom: 6px; left: 6px; transform: rotate(65deg); }
+        .eis-screw.br { bottom: 6px; right: 6px; transform: rotate(-15deg); }
+
+        .eis-rotary-knob {
+            position: absolute;
+            bottom: 8px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2d3440 30%, #151922 90%);
+            border: 1.5px solid #4a5465;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.8), inset 0 1px 2px rgba(255,255,255,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, border-color 0.2s ease;
+            z-index: 30;
+        }
+        .eis-rotary-knob:hover {
+            border-color: var(--accent);
+        }
+        .eis-rotary-knob:active {
+            transform: scale(0.92);
+        }
+        .eis-knob-indicator {
+            width: 2.5px;
+            height: 8px;
+            background: #ffffff;
+            border-radius: 1px;
+            box-shadow: 0 0 3px rgba(255,255,255,0.8);
+        }
+
+        .eis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px 4px 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: grab;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+        .eis-header:active { cursor: grabbing; }
+
+        .eis-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'B612', monospace;
+        }
+
+        .eis-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .eis-badge-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: 'B612 Mono', monospace;
+        }
+        .eis-badge-btn:hover {
+            background: rgba(10, 132, 255, 0.25);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+        .eis-badge-btn.active {
+            background: rgba(10, 132, 255, 0.35);
+            border-color: var(--accent);
+            color: #00e5ff;
+        }
+
+        .eis-close-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+            transition: color 0.15s;
+        }
+        .eis-close-btn:hover {
+            color: #ff453a;
+        }
+
+        .eis-viewport {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            padding-top: 2px;
+        }
+
+        .eis-top-arcs {
+            width: 100%;
+            height: 96px;
+            flex-shrink: 0;
+        }
+
+        .eis-mid-section {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 6px 4px;
+            flex: 1;
+            align-items: center;
+        }
+
+        .eis-bars-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding-right: 6px;
+        }
+        .eis-bars-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.65);
+            font-family: 'B612 Mono', monospace;
+            margin-bottom: 2px;
+        }
+        .eis-bars-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 68px;
+            padding: 0 2px;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+        }
+        .eis-bar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 14px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        .eis-bar-fill {
+            width: 10px;
+            border-radius: 2px 2px 0 0;
+            background: #30d158;
+            transition: height 0.2s ease, background 0.2s ease;
+            box-shadow: 0 0 4px rgba(48, 209, 88, 0.4);
+        }
+        .eis-bar-label {
+            font-size: 8.5px;
+            font-family: 'B612 Mono', monospace;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 2px;
+        }
+
+        .eis-ribbons-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 4px;
+            height: 100%;
+        }
+        .eis-ribbon-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .eis-ribbon-name {
+            font-size: 9px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'B612 Mono', monospace;
+            width: 44px;
+            text-align: left;
+        }
+        .eis-ribbon-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            position: relative;
+            overflow: visible;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .eis-ribbon-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #30d158 0%, #30d158 70%, #ff9500 85%, #ff453a 100%);
+            border-radius: 2px;
+            transition: width 0.15s ease;
+        }
+        .eis-ribbon-pointer {
+            position: absolute;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #ffffff;
+            transform: translateX(-4px);
+            transition: left 0.15s ease;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+        }
+        .eis-ribbon-val {
+            font-size: 10px;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+            width: 46px;
+            text-align: right;
+        }
+
+        .eis-bottom-section {
+            display: grid;
+            grid-template-columns: 75px 1fr 75px;
+            align-items: center;
+            padding: 4px 8px 0 28px; /* Leave space for bottom knob */
+            flex-shrink: 0;
+            gap: 6px;
+        }
+        .eis-bot-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .eis-bot-val {
+            font-size: 13px;
+            font-weight: 800;
+            font-family: 'B612 Mono', monospace;
+            color: #ffffff;
+            line-height: 1.1;
+        }
+        .eis-bot-label {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        .eis-fuel-tanks {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .eis-tank-graphic {
+            width: 14px;
+            height: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .eis-tank-fill {
+            width: 100%;
+            height: 80%;
+            background: linear-gradient(180deg, #00e5ff 0%, #0077b6 100%);
+            border-radius: 0 0 2px 2px;
+            transition: height 0.3s ease;
+        }
+    
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -1696,7 +2036,14 @@
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-lxnav" title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')">
+        <button class="toolbar-btn active" id="btn-toggle-eis" title="Toggle GI 275 EIS Engine & Power Monitor (Hotkey 'E')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+                <path d="m4.93 4.93 2.12 2.12m9.9 9.9 2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"></path>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-lxnav"  title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="2" x2="12" y2="6"></line>
@@ -2374,6 +2721,183 @@
             <div class="lxnav-dot" onclick="setLxnavPage(2)" title="Page 2: Hawk Vario"></div>
         </div>
     </div>
+
+    
+    <!-- Garmin GI 275 EIS Engine & Power Monitoring Widget (AM32 Telemetry) -->
+    <div id="eis-widget">
+        <!-- 4 Corner Dzus Screws -->
+        <div class="eis-screw tl"></div>
+        <div class="eis-screw tr"></div>
+        <div class="eis-screw bl"></div>
+        <div class="eis-screw br"></div>
+
+        <!-- Lower-Left Knurled Rotary Push-Knob -->
+        <div class="eis-rotary-knob" id="eis-rotary-knob" title="Push: Toggle Single/Twin Engine Mode | AM32 Config" onclick="toggleEisEngineMode()">
+            <div class="eis-knob-indicator"></div>
+        </div>
+
+        <!-- Header: Drag Handle & Mode Switchers -->
+        <div class="eis-header" id="eis-header">
+            <div class="eis-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+                </svg>
+                <span>GI 275 EIS</span>
+            </div>
+            <div class="eis-controls">
+                <button class="eis-badge-btn active" id="eis-btn-mode" onclick="toggleEisEngineMode()" title="Toggle Single / Twin Engine Configuration">1 ENG</button>
+                <button class="eis-badge-btn" id="eis-btn-ch" onclick="cycleEisChannels()" title="Cycle Monitored ESC Channels">CH: ESC 1</button>
+                <button class="eis-close-btn" onclick="toggleEisWidget()" title="Close EIS Display">&times;</button>
+            </div>
+        </div>
+
+        <!-- Main Viewport -->
+        <div class="eis-viewport">
+            <!-- Upper Section: Dual Sweeping Arcs (Power % and Motor RPM) -->
+            <svg class="eis-top-arcs" viewBox="0 0 300 96">
+                <!-- Left Arc: Power Output % (0 to 100%) -->
+                <g transform="translate(74, 52)">
+                    <!-- Background Arc -->
+                    <path d="M -56 22 A 60 60 0 1 1 28 -53" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="6" stroke-linecap="round"/>
+                    <!-- Green Operating Arc (0 to 80%) -->
+                    <path d="M -56 22 A 60 60 0 0 1 -18 -57" fill="none" stroke="#30d158" stroke-width="6"/>
+                    <!-- Yellow Caution Band (80 to 92%) -->
+                    <path d="M -18 -57 A 60 60 0 0 1 12 -58" fill="none" stroke="#ffcc00" stroke-width="6"/>
+                    <!-- Redline Limit Tick (92 to 100%) -->
+                    <path d="M 12 -58 A 60 60 0 0 1 28 -53" fill="none" stroke="#ff453a" stroke-width="6.5"/>
+                    <!-- Power Needle Pointer -->
+                    <line id="eis-pwr-needle" x1="0" y1="0" x2="-44" y2="17" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="transition: transform 0.15s ease;"/>
+                    <circle cx="0" cy="0" r="4.5" fill="#2d3440" stroke="#ffffff" stroke-width="1.5"/>
+                    <!-- Labels -->
+                    <text x="0" y="-12" fill="rgba(255,255,255,0.6)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">POWER</text>
+                    <text id="eis-pwr-val" x="0" y="8" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="16" font-weight="800" text-anchor="middle">0%</text>
+                </g>
+
+                <!-- Center Divider / Sync Tag (Twin Mode) -->
+                <text id="eis-sync-tag" x="150" y="24" fill="#30d158" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle" style="display: none;">SYNC</text>
+                <text id="eis-sync-diff" x="150" y="38" fill="rgba(255,255,255,0.7)" font-family="'B612 Mono', monospace" font-size="8" font-weight="700" text-anchor="middle" style="display: none;">&Delta; 0</text>
+
+                <!-- Right Arc: Motor RPM (0 to 10,000 RPM) -->
+                <g transform="translate(226, 52)">
+                    <!-- Background Arc -->
+                    <path d="M -28 -53 A 60 60 0 1 1 56 22" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="6" stroke-linecap="round"/>
+                    <!-- Green Cruise Arc (2500 - 7500 RPM) -->
+                    <path d="M -16 -57 A 60 60 0 0 1 40 -44" fill="none" stroke="#30d158" stroke-width="6"/>
+                    <!-- Yellow Caution Band (7500 - 8500 RPM) -->
+                    <path d="M 40 -44 A 60 60 0 0 1 52 -30" fill="none" stroke="#ffcc00" stroke-width="6"/>
+                    <!-- Redline Limit Tick (8500+ RPM) -->
+                    <path d="M 52 -30 A 60 60 0 0 1 58 10" fill="none" stroke="#ff453a" stroke-width="6.5"/>
+                    <!-- Single RPM Needle (or Left Engine Needle in Twin) -->
+                    <line id="eis-rpm-needle-1" x1="0" y1="0" x2="-22" y2="-41" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="transition: transform 0.15s ease;"/>
+                    <!-- Right Engine RPM Needle (Twin Mode) -->
+                    <line id="eis-rpm-needle-2" x1="0" y1="0" x2="-22" y2="-41" stroke="#30d158" stroke-width="2.5" stroke-linecap="round" style="display: none; transition: transform 0.15s ease;"/>
+                    <circle cx="0" cy="0" r="4.5" fill="#2d3440" stroke="#ffffff" stroke-width="1.5"/>
+                    <!-- Labels -->
+                    <text x="0" y="-12" fill="rgba(255,255,255,0.6)" font-family="'B612 Mono', monospace" font-size="8.5" font-weight="700" text-anchor="middle">RPM</text>
+                    <text id="eis-rpm-val" x="0" y="8" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="15" font-weight="800" text-anchor="middle">0</text>
+                </g>
+            </svg>
+
+            <!-- Middle Section: 6S LiPo Bar Graph + 4 Horizontal Linear Gauges -->
+            <div class="eis-mid-section">
+                <!-- Left: 6-Cell Pack Histogram -->
+                <div class="eis-bars-box">
+                    <div class="eis-bars-header">
+                        <span id="eis-cell-title">CELL V</span>
+                        <span id="eis-cell-delta" style="color: #30d158;">&Delta; 0.02</span>
+                    </div>
+                    <div class="eis-bars-container" id="eis-bars-container">
+                        <div class="eis-bar-col"><div id="eis-bar-1" class="eis-bar-fill" style="height: 85%;"></div><span class="eis-bar-label">1</span></div>
+                        <div class="eis-bar-col"><div id="eis-bar-2" class="eis-bar-fill" style="height: 86%;"></div><span class="eis-bar-label">2</span></div>
+                        <div class="eis-bar-col"><div id="eis-bar-3" class="eis-bar-fill" style="height: 84%;"></div><span class="eis-bar-label">3</span></div>
+                        <div class="eis-bar-col"><div id="eis-bar-4" class="eis-bar-fill" style="height: 85%;"></div><span class="eis-bar-label">4</span></div>
+                        <div class="eis-bar-col"><div id="eis-bar-5" class="eis-bar-fill" style="height: 85%;"></div><span class="eis-bar-label">5</span></div>
+                        <div class="eis-bar-col"><div id="eis-bar-6" class="eis-bar-fill" style="height: 83%;"></div><span class="eis-bar-label">6</span></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:8.5px; color:rgba(255,255,255,0.5); font-family:'B612 Mono', monospace;">
+                        <span>MIN <b id="eis-cell-min" style="color:#ffffff;">4.12</b></span>
+                        <span>MAX <b id="eis-cell-max" style="color:#ffffff;">4.15</b></span>
+                    </div>
+                </div>
+
+                <!-- Right: 4 Linear Ribbon Gauges (Current, Power, ESC Temp, Motor Temp) -->
+                <div class="eis-ribbons-box">
+                    <!-- Gauge 1: Current Draw (Amps) -->
+                    <div class="eis-ribbon-row">
+                        <span class="eis-ribbon-name">CURR</span>
+                        <div class="eis-ribbon-track">
+                            <div id="eis-fill-amp" class="eis-ribbon-fill" style="width: 15%;"></div>
+                            <div id="eis-ptr-amp" class="eis-ribbon-pointer" style="left: 15%;"></div>
+                        </div>
+                        <span id="eis-val-amp" class="eis-ribbon-val">0.0 A</span>
+                    </div>
+
+                    <!-- Gauge 2: Electrical Power (Watts) -->
+                    <div class="eis-ribbon-row">
+                        <span class="eis-ribbon-name">POWER</span>
+                        <div class="eis-ribbon-track">
+                            <div id="eis-fill-watt" class="eis-ribbon-fill" style="width: 12%;"></div>
+                            <div id="eis-ptr-watt" class="eis-ribbon-pointer" style="left: 12%;"></div>
+                        </div>
+                        <span id="eis-val-watt" class="eis-ribbon-val">0 W</span>
+                    </div>
+
+                    <!-- Gauge 3: AM32 ESC Temperature (°C) -->
+                    <div class="eis-ribbon-row">
+                        <span class="eis-ribbon-name">ESC T</span>
+                        <div class="eis-ribbon-track">
+                            <div id="eis-fill-esct" class="eis-ribbon-fill" style="width: 32%;"></div>
+                            <div id="eis-ptr-esct" class="eis-ribbon-pointer" style="left: 32%;"></div>
+                        </div>
+                        <span id="eis-val-esct" class="eis-ribbon-val">32 °C</span>
+                    </div>
+
+                    <!-- Gauge 4: Motor Temperature (°C) -->
+                    <div class="eis-ribbon-row">
+                        <span class="eis-ribbon-name">MOT T</span>
+                        <div class="eis-ribbon-track">
+                            <div id="eis-fill-mott" class="eis-ribbon-fill" style="width: 28%;"></div>
+                            <div id="eis-ptr-mott" class="eis-ribbon-pointer" style="left: 28%;"></div>
+                        </div>
+                        <span id="eis-val-mott" class="eis-ribbon-val">35 °C</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Section: Total Current | Battery Fuel Tanks | Pack Voltage -->
+            <div class="eis-bottom-section">
+                <!-- Total Amperage -->
+                <div class="eis-bot-cell">
+                    <span id="eis-bot-amps" class="eis-bot-val">0.0 A</span>
+                    <span class="eis-bot-label">ALT / BUS</span>
+                </div>
+
+                <!-- Center Fuel / Battery Level Tanks -->
+                <div class="eis-bot-cell">
+                    <div class="eis-fuel-tanks">
+                        <div class="eis-tank-graphic">
+                            <div id="eis-tank-fill-1" class="eis-tank-fill" style="height: 85%;"></div>
+                        </div>
+                        <div>
+                            <div id="eis-bot-cap" class="eis-bot-val" style="font-size: 11px;">0 mAh</div>
+                            <span id="eis-bot-pct" class="eis-bot-label" style="color: #30d158;">85% FUEL</span>
+                        </div>
+                        <div class="eis-tank-graphic">
+                            <div id="eis-tank-fill-2" class="eis-tank-fill" style="height: 85%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Pack Voltage -->
+                <div class="eis-bot-cell">
+                    <span id="eis-bot-volt" class="eis-bot-val">24.8 V</span>
+                    <span class="eis-bot-label">BATT V</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 
     <!-- Live Weather Widget -->
     <div id="weather-widget">
@@ -6090,6 +6614,25 @@
                     planeWindDir = ((data.wind_direction % 360) + 360) % 360;
                     updateCompass();
                 }
+            
+            } else if (data.type === 'ESC_TELEMETRY') {
+                am32Telemetry.hasHardwareTelem = true;
+                am32Telemetry.lastTelemTime = performance.now();
+                if (data.rpm) am32Telemetry.rpm = data.rpm;
+                if (data.voltage) am32Telemetry.voltage = data.voltage;
+                if (data.current) am32Telemetry.current = data.current;
+                if (data.temperature) am32Telemetry.temperature = data.temperature;
+                if (data.total_current !== undefined) am32Telemetry.total_current = data.total_current;
+            } else if (data.type === 'BATTERY_STATUS') {
+                am32Telemetry.hasHardwareTelem = true;
+                am32Telemetry.lastTelemTime = performance.now();
+                if (data.cell_voltages && data.cell_voltages.length > 0) am32Telemetry.cell_voltages = data.cell_voltages;
+                if (data.current_consumed !== undefined) am32Telemetry.consumed_mah = data.current_consumed;
+                if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+            } else if (data.type === 'SYS_STATUS') {
+                if (data.voltage_battery !== undefined) am32Telemetry.pack_voltage = data.voltage_battery;
+                if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+    
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 latestNedX = data.x;
                 latestNedY = data.y;
@@ -6601,6 +7144,326 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+    
+        // =========================================================
+        // GARMIN GI 275 EIS ENGINE & POWER MONITOR CONTROLLER
+        // =========================================================
+        let eisWidgetVisible = true;
+        let eisEngineMode = localStorage.getItem('eis_engine_mode') || 'single'; // 'single' | 'twin'
+        let eisSingleChannel = parseInt(localStorage.getItem('eis_single_ch') || '1', 10);
+        let eisTwinLeftCh = parseInt(localStorage.getItem('eis_twin_left_ch') || '1', 10);
+        let eisTwinRightCh = parseInt(localStorage.getItem('eis_twin_right_ch') || '2', 10);
+
+        // AM32 ESC Telemetry State (Hardware buffers or Simulated)
+        const am32Telemetry = {
+            hasHardwareTelem: false,
+            lastTelemTime: 0,
+            rpm: [0, 0, 0, 0],
+            voltage: [25.2, 25.2, 25.2, 25.2],
+            current: [0.0, 0.0, 0.0, 0.0],
+            temperature: [32.0, 32.0, 32.0, 32.0],
+            total_current: 0.0,
+            cell_voltages: [4.18, 4.19, 4.17, 4.18, 4.19, 4.18],
+            pack_voltage: 25.1,
+            consumed_mah: 0,
+            battery_remaining_pct: 95
+        };
+
+        const eisWidget = document.getElementById('eis-widget');
+        const btnToggleEis = document.getElementById('btn-toggle-eis');
+        const eisBtnMode = document.getElementById('eis-btn-mode');
+        const eisBtnCh = document.getElementById('eis-btn-ch');
+
+        function toggleEisWidget() {
+            eisWidgetVisible = !eisWidgetVisible;
+            if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
+            if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
+            localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
+        }
+
+        if (btnToggleEis) btnToggleEis.onclick = toggleEisWidget;
+
+        if (localStorage.getItem('eis_widget_visible') === '0') {
+            eisWidgetVisible = false;
+            if (eisWidget) eisWidget.style.display = 'none';
+            if (btnToggleEis) btnToggleEis.classList.remove('active');
+        }
+
+        function updateEisHeaderPills() {
+            if (eisBtnMode) {
+                eisBtnMode.textContent = eisEngineMode === 'twin' ? '2 ENG' : '1 ENG';
+                eisBtnMode.classList.toggle('active', eisEngineMode === 'twin');
+            }
+            if (eisBtnCh) {
+                if (eisEngineMode === 'single') {
+                    eisBtnCh.textContent = `CH: ESC ${eisSingleChannel}`;
+                } else {
+                    eisBtnCh.textContent = `L:${eisTwinLeftCh} | R:${eisTwinRightCh}`;
+                }
+            }
+            const syncTag = document.getElementById('eis-sync-tag');
+            const syncDiff = document.getElementById('eis-sync-diff');
+            const needle2 = document.getElementById('eis-rpm-needle-2');
+            if (syncTag && syncDiff && needle2) {
+                const isTwin = eisEngineMode === 'twin';
+                syncTag.style.display = isTwin ? 'block' : 'none';
+                syncDiff.style.display = isTwin ? 'block' : 'none';
+                needle2.style.display = isTwin ? 'block' : 'none';
+            }
+        }
+
+        function toggleEisEngineMode() {
+            eisEngineMode = (eisEngineMode === 'single') ? 'twin' : 'single';
+            localStorage.setItem('eis_engine_mode', eisEngineMode);
+            updateEisHeaderPills();
+        }
+
+        function cycleEisChannels() {
+            if (eisEngineMode === 'single') {
+                eisSingleChannel = (eisSingleChannel % 4) + 1;
+                localStorage.setItem('eis_single_ch', eisSingleChannel);
+            } else {
+                if (eisTwinLeftCh === 1 && eisTwinRightCh === 2) {
+                    eisTwinLeftCh = 3; eisTwinRightCh = 4;
+                } else if (eisTwinLeftCh === 3 && eisTwinRightCh === 4) {
+                    eisTwinLeftCh = 2; eisTwinRightCh = 1;
+                } else {
+                    eisTwinLeftCh = 1; eisTwinRightCh = 2;
+                }
+                localStorage.setItem('eis_twin_left_ch', eisTwinLeftCh);
+                localStorage.setItem('eis_twin_right_ch', eisTwinRightCh);
+            }
+            updateEisHeaderPills();
+        }
+
+        updateEisHeaderPills();
+
+        if (eisWidget) {
+            makeDraggable(eisWidget, document.getElementById('eis-header') || eisWidget);
+        }
+
+        // Live AM32 Engine Indication System Render Loop
+        function updateEisInstrument() {
+            if (!eisWidgetVisible || !eisWidget) return;
+
+            const now = performance.now();
+            let throttlePwm = 1000;
+            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length >= 3) {
+                throttlePwm = latestServos[2] || 1000;
+            }
+            const throttleNorm = Math.max(0, Math.min(1, (throttlePwm - 1000) / 1000.0));
+
+            // If no hardware telemetry packet received in last 2.5s, run realistic SITL emulation
+            const isEmulated = (now - am32Telemetry.lastTelemTime) > 2500;
+            if (isEmulated) {
+                const t = throttleNorm;
+                if (t > 0.02) {
+                    const noiseRpm = (Math.random() - 0.5) * 45;
+                    const noiseAmp = (Math.random() - 0.5) * 0.4;
+                    // Scale RPM based on throttle: 2000 to 9200 RPM
+                    const baseRpm = 1800 + Math.pow(t, 0.9) * 7400;
+                    am32Telemetry.rpm[0] = Math.round(baseRpm + noiseRpm);
+                    am32Telemetry.rpm[1] = Math.round(baseRpm * 1.008 + noiseRpm);
+                    am32Telemetry.rpm[2] = Math.round(baseRpm * 0.994 + noiseRpm);
+                    am32Telemetry.rpm[3] = Math.round(baseRpm * 1.002 + noiseRpm);
+
+                    // Amps: exponential load curve up to ~38A per motor
+                    const baseAmp = 0.6 + Math.pow(t, 1.7) * 36.0;
+                    am32Telemetry.current[0] = Math.max(0.4, baseAmp + noiseAmp);
+                    am32Telemetry.current[1] = Math.max(0.4, baseAmp * 1.015 + noiseAmp);
+                    am32Telemetry.current[2] = Math.max(0.4, baseAmp * 0.985 + noiseAmp);
+                    am32Telemetry.current[3] = Math.max(0.4, baseAmp + noiseAmp);
+
+                    // Thermal heating model
+                    const targetTemp = 32.0 + t * 42.0;
+                    am32Telemetry.temperature[0] += (targetTemp - am32Telemetry.temperature[0]) * 0.03;
+                    am32Telemetry.temperature[1] += (targetTemp * 1.03 - am32Telemetry.temperature[1]) * 0.03;
+
+                    // Voltage sag under load
+                    const totLoad = (eisEngineMode === 'twin') ? (am32Telemetry.current[0] + am32Telemetry.current[1]) : am32Telemetry.current[0];
+                    am32Telemetry.total_current = totLoad;
+                    const vSag = totLoad * 0.024;
+                    am32Telemetry.pack_voltage = Math.max(20.5, 25.15 - vSag);
+
+                    // Accumulate mAh
+                    am32Telemetry.consumed_mah += (totLoad * 1000 / 3600) * 0.05;
+                } else {
+                    am32Telemetry.rpm = [0, 0, 0, 0];
+                    am32Telemetry.current = [0.4, 0.4, 0.4, 0.4];
+                    am32Telemetry.total_current = (eisEngineMode === 'twin') ? 0.8 : 0.4;
+                    am32Telemetry.temperature[0] += (30.0 - am32Telemetry.temperature[0]) * 0.02;
+                    am32Telemetry.temperature[1] += (30.0 - am32Telemetry.temperature[1]) * 0.02;
+                    am32Telemetry.pack_voltage = 25.18;
+                }
+
+                // Balance cell voltages
+                const perCell = am32Telemetry.pack_voltage / 6.0;
+                am32Telemetry.cell_voltages = [
+                    perCell + 0.012, perCell - 0.008, perCell + 0.005,
+                    perCell - 0.006, perCell + 0.010, perCell - 0.004
+                ];
+                am32Telemetry.battery_remaining_pct = Math.max(5, Math.round(100 - (am32Telemetry.consumed_mah / 6000.0) * 100));
+            }
+
+            // Determine active motor parameters based on Single/Twin mode
+            let activeRpm1 = 0, activeRpm2 = 0;
+            let activeAmp = 0, activeWatt = 0, activeEscTemp = 0;
+
+            if (eisEngineMode === 'single') {
+                const chIdx = Math.max(0, Math.min(3, eisSingleChannel - 1));
+                activeRpm1 = am32Telemetry.rpm[chIdx] || 0;
+                activeAmp = am32Telemetry.current[chIdx] || 0;
+                activeEscTemp = am32Telemetry.temperature[chIdx] || 30;
+                activeWatt = am32Telemetry.pack_voltage * activeAmp;
+            } else {
+                const lIdx = Math.max(0, Math.min(3, eisTwinLeftCh - 1));
+                const rIdx = Math.max(0, Math.min(3, eisTwinRightCh - 1));
+                activeRpm1 = am32Telemetry.rpm[lIdx] || 0;
+                activeRpm2 = am32Telemetry.rpm[rIdx] || 0;
+                const lAmp = am32Telemetry.current[lIdx] || 0;
+                const rAmp = am32Telemetry.current[rIdx] || 0;
+                activeAmp = lAmp + rAmp;
+                activeWatt = am32Telemetry.pack_voltage * activeAmp;
+                activeEscTemp = Math.max(am32Telemetry.temperature[lIdx] || 30, am32Telemetry.temperature[rIdx] || 30);
+
+                // Update sync indicator
+                const syncDiffEl = document.getElementById('eis-sync-diff');
+                const syncTagEl = document.getElementById('eis-sync-tag');
+                const deltaRpm = activeRpm2 - activeRpm1;
+                if (syncDiffEl) {
+                    syncDiffEl.textContent = (deltaRpm >= 0 ? `+${deltaRpm}` : `${deltaRpm}`) + ' RPM';
+                    const isSynced = Math.abs(deltaRpm) < 120;
+                    syncDiffEl.style.color = isSynced ? '#30d158' : '#ff9500';
+                    if (syncTagEl) syncTagEl.style.color = isSynced ? '#30d158' : '#ff9500';
+                }
+            }
+
+            // 1. Update Power % Arc (Left Arc: -135° to +25°)
+            const pwrPct = Math.round(throttleNorm * 100);
+            const pwrEl = document.getElementById('eis-pwr-val');
+            if (pwrEl) pwrEl.textContent = `${pwrPct}%`;
+            const pwrAngle = -135 + (throttleNorm * 160); // from -135° to +25°
+            const pwrNeedle = document.getElementById('eis-pwr-needle');
+            if (pwrNeedle) {
+                pwrNeedle.setAttribute('transform', `rotate(${pwrAngle}, 0, 0)`);
+            }
+
+            // 2. Update RPM Arc (Right Arc: 45° to 205°)
+            const rpmNorm1 = Math.max(0, Math.min(1, activeRpm1 / 10000.0));
+            const rpmAngle1 = 45 + (rpmNorm1 * 160);
+            const rpmNeedle1 = document.getElementById('eis-rpm-needle-1');
+            if (rpmNeedle1) {
+                rpmNeedle1.setAttribute('transform', `rotate(${rpmAngle1}, 0, 0)`);
+            }
+
+            if (eisEngineMode === 'twin') {
+                const rpmNorm2 = Math.max(0, Math.min(1, activeRpm2 / 10000.0));
+                const rpmAngle2 = 45 + (rpmNorm2 * 160);
+                const rpmNeedle2 = document.getElementById('eis-rpm-needle-2');
+                if (rpmNeedle2) {
+                    rpmNeedle2.setAttribute('transform', `rotate(${rpmAngle2}, 0, 0)`);
+                }
+            }
+
+            const rpmValEl = document.getElementById('eis-rpm-val');
+            if (rpmValEl) {
+                if (eisEngineMode === 'single') {
+                    rpmValEl.textContent = activeRpm1.toLocaleString();
+                } else {
+                    rpmValEl.textContent = `${activeRpm1} / ${activeRpm2}`;
+                    rpmValEl.style.fontSize = '12px';
+                }
+            }
+
+            // 3. Update 6-Cell Bar Graph
+            const cells = am32Telemetry.cell_voltages;
+            let minV = 5.0, maxV = 0.0;
+            cells.forEach((v, idx) => {
+                if (v < minV) minV = v;
+                if (v > maxV) maxV = v;
+                const barEl = document.getElementById(`eis-bar-${idx + 1}`);
+                if (barEl) {
+                    // Height scale: 3.0V = 5%, 4.2V = 95%
+                    const h = Math.max(5, Math.min(95, ((v - 3.0) / 1.2) * 90 + 5));
+                    barEl.style.height = `${h}%`;
+                    barEl.style.background = (v >= 3.7) ? '#30d158' : (v >= 3.5 ? '#ffcc00' : '#ff453a');
+                }
+            });
+            const minEl = document.getElementById('eis-cell-min');
+            const maxEl = document.getElementById('eis-cell-max');
+            const deltaEl = document.getElementById('eis-cell-delta');
+            if (minEl) minEl.textContent = minV.toFixed(2);
+            if (maxEl) maxEl.textContent = maxV.toFixed(2);
+            if (deltaEl) deltaEl.textContent = `Δ ${(maxV - minV).toFixed(2)}`;
+
+            // 4. Update Horizontal Linear Ribbon Gauges
+            // Current (0 to 60A)
+            const ampPct = Math.max(0, Math.min(100, (activeAmp / 60.0) * 100));
+            const fillAmp = document.getElementById('eis-fill-amp');
+            const ptrAmp = document.getElementById('eis-ptr-amp');
+            const valAmp = document.getElementById('eis-val-amp');
+            if (fillAmp) fillAmp.style.width = `${ampPct}%`;
+            if (ptrAmp) ptrAmp.style.left = `${ampPct}%`;
+            if (valAmp) valAmp.textContent = `${activeAmp.toFixed(1)} A`;
+
+            // Power (0 to 1500W)
+            const wattPct = Math.max(0, Math.min(100, (activeWatt / 1500.0) * 100));
+            const fillWatt = document.getElementById('eis-fill-watt');
+            const ptrWatt = document.getElementById('eis-ptr-watt');
+            const valWatt = document.getElementById('eis-val-watt');
+            if (fillWatt) fillWatt.style.width = `${wattPct}%`;
+            if (ptrWatt) ptrWatt.style.left = `${wattPct}%`;
+            if (valWatt) valWatt.textContent = `${Math.round(activeWatt)} W`;
+
+            // ESC Temp (20 to 100°C)
+            const escTPct = Math.max(0, Math.min(100, ((activeEscTemp - 20) / 80.0) * 100));
+            const fillEscT = document.getElementById('eis-fill-esct');
+            const ptrEscT = document.getElementById('eis-ptr-esct');
+            const valEscT = document.getElementById('eis-val-esct');
+            if (fillEscT) fillEscT.style.width = `${escTPct}%`;
+            if (ptrEscT) ptrEscT.style.left = `${escTPct}%`;
+            if (valEscT) valEscT.textContent = `${Math.round(activeEscTemp)} °C`;
+
+            // Motor Temp (est 20 to 110°C)
+            const motT = activeEscTemp + 6;
+            const motTPct = Math.max(0, Math.min(100, ((motT - 20) / 90.0) * 100));
+            const fillMotT = document.getElementById('eis-fill-mott');
+            const ptrMotT = document.getElementById('eis-ptr-mott');
+            const valMotT = document.getElementById('eis-val-mott');
+            if (fillMotT) fillMotT.style.width = `${motTPct}%`;
+            if (ptrMotT) ptrMotT.style.left = `${motTPct}%`;
+            if (valMotT) valMotT.textContent = `${Math.round(motT)} °C`;
+
+            // 5. Update Bottom Section
+            const botAmps = document.getElementById('eis-bot-amps');
+            if (botAmps) botAmps.textContent = `${activeAmp.toFixed(1)} A`;
+
+            const botCap = document.getElementById('eis-bot-cap');
+            if (botCap) botCap.textContent = `${Math.round(am32Telemetry.consumed_mah)} mAh`;
+
+            const botPct = document.getElementById('eis-bot-pct');
+            if (botPct) botPct.textContent = `${am32Telemetry.battery_remaining_pct}% FUEL`;
+
+            const tank1 = document.getElementById('eis-tank-fill-1');
+            const tank2 = document.getElementById('eis-tank-fill-2');
+            if (tank1) tank1.style.height = `${am32Telemetry.battery_remaining_pct}%`;
+            if (tank2) tank2.style.height = `${am32Telemetry.battery_remaining_pct}%`;
+
+            const botVolt = document.getElementById('eis-bot-volt');
+            if (botVolt) botVolt.textContent = `${am32Telemetry.pack_voltage.toFixed(1)} V`;
+        }
+
+        // Register in fast telemetry loop
+        setInterval(updateEisInstrument, 60);
+
+        // Hotkey 'E' to toggle EIS
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'e' || e.key === 'E') {
+                toggleEisWidget();
+            }
+        });
+    
     </script>
 </body>
 
