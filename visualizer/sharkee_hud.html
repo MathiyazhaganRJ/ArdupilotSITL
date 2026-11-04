@@ -803,7 +803,7 @@
 
         /* ========================================================
            AEROSPACE PRIMARY FLIGHT ANNUNCIATOR (FMA) RIBBON
-           Authentic Glass Cockpit Status Display (Garmin / Collins FMA)
+           Integrated Status Deck for Sidebar Control Panel
            ======================================================== */
         .flight-annunciator-ribbon {
             position: relative;
@@ -811,29 +811,15 @@
             box-sizing: border-box;
             display: flex;
             align-items: stretch;
-            background: linear-gradient(180deg, rgba(14, 18, 25, 0.95) 0%, rgba(8, 11, 16, 0.98) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.28);
-            border-radius: 6px;
-            padding: 3px 2px;
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            padding: 4px 6px;
             margin-bottom: 10px;
-            backdrop-filter: blur(14px) saturate(180%);
-            -webkit-backdrop-filter: blur(14px) saturate(180%);
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             user-select: none;
             pointer-events: auto;
-            font-family: 'B612', 'Inter', -apple-system, sans-serif;
-        }
-
-        body:not(.dark-mode) .flight-annunciator-ribbon {
-            background: linear-gradient(180deg, #1e2634 0%, #131a26 100%);
-            border-color: rgba(0, 0, 0, 0.2);
-            color: #ffffff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        body:not(.dark-mode) .fma-label {
-            color: #8fa0b5;
+            font-family: 'B612', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
 
         .fma-cell {
@@ -843,101 +829,97 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2px 3px 3px;
+            padding: 2px 4px;
         }
 
         .fma-label {
-            font-size: 7px;
+            font-size: 7.5px;
             font-weight: 700;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #7a869a;
+            color: var(--text-secondary);
             margin-bottom: 2px;
             line-height: 1;
             white-space: nowrap;
         }
 
+        .fma-divider {
+            width: 1px;
+            background: var(--border-color);
+            margin: 3px 2px;
+            align-self: stretch;
+        }
+
         .fma-val {
-            font-family: 'B612 Mono', monospace;
-            font-size: 11px;
+            font-family: 'B612', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 10.5px;
             font-weight: 800;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             line-height: 1.15;
             display: inline-flex;
             align-items: center;
             gap: 4px;
             text-transform: uppercase;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
         }
 
-        /* Master Arm State Styling (Single Authorized Position) */
+        /* Master Arm State Styling */
         .fma-arm-disarmed {
-            color: #9aa2af;
+            color: var(--text-secondary);
         }
 
         .fma-arm-led {
-            width: 6px;
-            height: 6px;
+            width: 5.5px;
+            height: 5.5px;
             border-radius: 50%;
-            background: #5a6270;
+            background: var(--text-secondary);
+            opacity: 0.7;
             display: inline-block;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
 
         .fma-val.fma-arm-armed {
-            color: #ff453a;
-            background: rgba(255, 59, 48, 0.18);
-            border: 1px solid rgba(255, 59, 48, 0.7);
-            border-radius: 3px;
-            padding: 1px 6px;
-            box-shadow: 0 0 10px rgba(255, 59, 48, 0.35);
+            color: var(--danger);
         }
 
         .fma-val.fma-arm-armed .fma-arm-led {
-            background: #ff3b30;
-            box-shadow: 0 0 8px #ff3b30;
+            background: var(--danger);
+            box-shadow: 0 0 6px var(--danger);
+            opacity: 1;
             animation: fma-led-pulse 1.2s infinite alternate ease-in-out;
         }
 
         @keyframes fma-led-pulse {
-            from { opacity: 0.55; transform: scale(0.9); }
+            from { opacity: 0.6; transform: scale(0.9); }
             to { opacity: 1.0; transform: scale(1.15); }
         }
 
         /* Flight Mode Styling */
         .fma-mode-text {
-            color: #00d2ff;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+            color: var(--accent);
         }
 
         /* Navigation Fix Styling */
         .fma-nav-standby {
-            color: #ff9f0a;
+            color: var(--accent-yellow);
         }
 
         .fma-nav-good {
-            color: #30d158;
-            text-shadow: 0 0 8px rgba(48, 209, 88, 0.3);
+            color: var(--success);
         }
 
         .fma-nav-dr {
-            color: #ff9f0a;
+            color: var(--accent-yellow);
             animation: fma-dr-flash 1.0s infinite ease-in-out;
         }
 
         @keyframes fma-dr-flash {
-            0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255, 159, 10, 0.6); }
-            50% { opacity: 0.4; text-shadow: none; }
-        }
-
-        .fma-divider {
-            width: 1px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.04) 100%);
-            margin: 2px 0;
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
         }
 
         .dr-toggle-badge.active {
@@ -2783,7 +2765,7 @@
                 <div class="data-row" style="cursor: pointer;" onclick="togglePfdQnhUnit(event)" title="Click to toggle hPa / inHg"><span class="data-label">QNH</span><span id="telemetry-qnh" class="data-val"
                         style="color: var(--accent); font-family: 'B612 Mono', monospace;">1013 hPa</span></div>
                 <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
-                        style="color: var(--success); font-weight:700;">3D FIX</span></div>
+                        style="color: var(--accent-yellow); font-weight:700;">NO GPS</span></div>
             </div>
 
             <div class="section-title">Vehicle Config</div>
@@ -3751,17 +3733,26 @@
         const SVG_SUN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
 
         const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.onclick = () => {
-            const isDark = document.body.classList.contains('dark-mode');
+        const applyTheme = (isDark) => {
             if (isDark) {
-                document.body.classList.remove('dark-mode');
-                themeToggle.innerHTML = SVG_MOON;
-            } else {
                 document.body.classList.add('dark-mode');
                 themeToggle.innerHTML = SVG_SUN;
+                localStorage.setItem('app_theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.innerHTML = SVG_MOON;
+                localStorage.setItem('app_theme', 'light');
             }
-            updateSceneTheme();
+            if (typeof updateSceneTheme === 'function') updateSceneTheme();
         };
+
+        themeToggle.onclick = () => {
+            applyTheme(!document.body.classList.contains('dark-mode'));
+        };
+
+        if (new URLSearchParams(window.location.search).get('theme') === 'dark' || localStorage.getItem('app_theme') === 'dark') {
+            applyTheme(true);
+        }
 
         // UI Panel Toggles
         const btnOpenCesium = document.getElementById('btn-open-cesium');
