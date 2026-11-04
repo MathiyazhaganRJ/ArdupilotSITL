@@ -8553,7 +8553,11 @@
             const resolveEscTemp = (raw) => {
                 let t = (typeof raw === 'number') ? raw : 0;
                 if (t > 0 && t < 1.0) t = Math.round(t * 100.0);
-                return (t >= 10.0) ? Math.round(t) : modeledEscTemp;
+                // When receiving live telemetry from ArduPilot/SITL, display genuine reported values directly
+                if (am32Telemetry.hasHardwareTelem) {
+                    return Math.round(t);
+                }
+                return (t > 0) ? Math.round(t) : modeledEscTemp;
             };
 
             if (eisEngineMode === 'single') {
