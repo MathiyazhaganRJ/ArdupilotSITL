@@ -1968,7 +1968,7 @@
             letter-spacing: -0.5px;
         }
 
-        /* 6-Box Grid (Aviation Certified Bordered Grid) */
+        /* 6-Box Grid (Digital Numbers-Only Layout - Pure High-Legibility Avionics) */
         .gi-engine-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1982,11 +1982,12 @@
         }
         .gi-grid-cell {
             box-sizing: border-box;
-            padding: 4px 8px;
+            padding: 5px 9px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             border-bottom: 1px solid #1f2733;
+            background: #000000;
         }
         .gi-grid-cell:nth-child(odd) {
             border-right: 1px solid #1f2733;
@@ -1995,96 +1996,45 @@
             border-bottom: none;
         }
 
-        /* Grid Header Row: Title on Left, Value on Right */
+        /* Grid Header Row: Tag on Left, Unit / Scale on Right */
         .gi-cell-title-row {
             display: flex;
             justify-content: space-between;
-            align-items: baseline;
+            align-items: center;
+            width: 100%;
         }
         .gi-cell-tag {
-            font-size: 11px;
+            font-size: 9.5px;
             font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.3px;
+            color: #8a9bb2;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
         }
-        .gi-cell-val {
-            font-size: 14px;
+        .gi-cell-unit {
+            font-size: 9.5px;
             font-weight: 700;
-            color: #ffffff;
+            color: #55667a;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
             font-family: 'B612 Mono', monospace;
         }
 
-        /* Ribbon Scale Track with End Caps and Down Pointer */
-        .gi-scale-track {
-            position: relative;
-            width: 100%;
-            height: 14px;
+        /* Large Centered Number for Pure Digital Readout */
+        .gi-cell-val-wrap {
+            flex: 1;
             display: flex;
             align-items: center;
+            justify-content: center;
+            padding: 2px 0 1px 0;
         }
-        .gi-track-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.4);
-        }
-        .gi-track-cap-l {
-            position: absolute;
-            left: 0;
-            width: 2px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.6);
-        }
-        .gi-track-cap-r {
-            position: absolute;
-            right: 0;
-            width: 2px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.6);
-        }
-        .gi-track-green {
-            position: absolute;
-            height: 5px;
-            background: #00e676;
-            border-radius: 1px;
-        }
-        .gi-track-yellow {
-            position: absolute;
-            height: 5px;
-            background: #ffd60a;
-        }
-        .gi-track-red-tick {
-            position: absolute;
-            width: 2.5px;
-            height: 10px;
-            background: #ff3b30;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        .gi-track-pointer-down {
-            position: absolute;
-            top: 0px;
-            width: 0;
-            height: 0;
-            border-left: 4.5px solid transparent;
-            border-right: 4.5px solid transparent;
-            border-top: 6px solid #ffffff;
-            transform: translateX(-50%);
-            transition: left 0.15s ease;
-            z-index: 5;
-            filter: drop-shadow(0 0 1px #ffffff);
-        }
-        .gi-track-pointer-up {
-            position: absolute;
-            bottom: 0px;
-            width: 0;
-            height: 0;
-            border-left: 4.5px solid transparent;
-            border-right: 4.5px solid transparent;
-            border-bottom: 6px solid #ffd60a;
-            transform: translateX(-50%);
-            transition: left 0.15s ease;
-            z-index: 5;
+        .gi-cell-val {
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            transition: color 0.15s ease;
         }
 
         /* Box 6: Batt Amps & Batt Volts Two-Row Display */
@@ -2092,7 +2042,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 3px;
+            gap: 5px;
             height: 100%;
         }
         .gi-elec-row {
@@ -2101,14 +2051,29 @@
             align-items: baseline;
         }
         .gi-elec-label {
-            font-size: 11px;
+            font-size: 9.5px;
             font-weight: 700;
-            color: rgba(255, 255, 255, 0.9);
+            color: #8a9bb2;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+        .gi-elec-val-group {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
         }
         .gi-elec-val {
-            font-size: 14.5px;
+            font-size: 16.5px;
             font-weight: 700;
             color: #ffffff;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+        .gi-elec-unit {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #55667a;
             font-family: 'B612 Mono', monospace;
         }
 
@@ -3286,54 +3251,38 @@
             </div>
         </div>
 
-        <!-- 6-Box Grid -->
-        <div class="gi-engine-grid">
+        <!-- 6-Box Grid (Digital Numbers-Only Layout - Pure High-Legibility Avionics) -->
+        <div class="gi-engine-grid" id="gi-engine-grid">
             <!-- Box 1: AMPS (Current Draw - Green Zone 5 to 12A) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box1">AMPS</span>
+                    <span class="gi-cell-unit" id="gi-unit-box1">A</span>
+                </div>
+                <div class="gi-cell-val-wrap">
                     <span class="gi-cell-val" id="gi-val-box1">0.0</span>
                 </div>
-                <div class="gi-scale-track">
-                    <div class="gi-track-line"></div>
-                    <div class="gi-track-cap-l"></div>
-                    <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-yellow" style="left: 5%; width: 20%;"></div>
-                    <div class="gi-track-green" style="left: 25%; width: 35%;"></div>
-                    <div class="gi-track-red-tick" style="left: 85%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box1" style="left: 5%;"></div>
-                </div>
             </div>
 
-            <!-- Box 2: ESC °C (ESC Temperature) -->
+            <!-- Box 2: ESC TEMP (ESC Temperature) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
-                    <span class="gi-cell-tag" id="gi-tag-box2">ESC &deg;C</span>
+                    <span class="gi-cell-tag" id="gi-tag-box2">ESC TEMP</span>
+                    <span class="gi-cell-unit" id="gi-unit-box2">&deg;C</span>
+                </div>
+                <div class="gi-cell-val-wrap">
                     <span class="gi-cell-val" id="gi-val-box2">30</span>
                 </div>
-                <div class="gi-scale-track">
-                    <div class="gi-track-line"></div>
-                    <div class="gi-track-cap-l"></div>
-                    <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-green" style="left: 20%; width: 55%;"></div>
-                    <div class="gi-track-red-tick" style="left: 80%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box2" style="left: 20%;"></div>
-                </div>
             </div>
 
-            <!-- Box 3: WATTS (Electrical Power) -->
+            <!-- Box 3: POWER (Electrical Watts) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
-                    <span class="gi-cell-tag" id="gi-tag-box3">WATTS</span>
-                    <span class="gi-cell-val" id="gi-val-box3">0</span>
+                    <span class="gi-cell-tag" id="gi-tag-box3">POWER</span>
+                    <span class="gi-cell-unit" id="gi-unit-box3">W</span>
                 </div>
-                <div class="gi-scale-track">
-                    <div class="gi-track-line"></div>
-                    <div class="gi-track-cap-l"></div>
-                    <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-green" style="left: 10%; width: 75%;"></div>
-                    <div class="gi-track-red-tick" style="left: 85%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box3" style="left: 5%;"></div>
+                <div class="gi-cell-val-wrap">
+                    <span class="gi-cell-val" id="gi-val-box3">0</span>
                 </div>
             </div>
 
@@ -3341,45 +3290,40 @@
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box4">mAH USED</span>
-                    <span class="gi-cell-val" id="gi-val-box4">0 <span style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:500;">/ 6000</span></span>
+                    <span class="gi-cell-unit" id="gi-unit-box4">/ 6000</span>
                 </div>
-                <div class="gi-scale-track">
-                    <div class="gi-track-line"></div>
-                    <div class="gi-track-cap-l"></div>
-                    <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-green" style="left: 0%; width: 75%;"></div>
-                    <div class="gi-track-red-tick" style="left: 75%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box4" style="left: 5%;"></div>
-                    <div class="gi-track-pointer-up" id="gi-ptr-box4-up" style="left: 5%; display: none;"></div>
+                <div class="gi-cell-val-wrap">
+                    <span class="gi-cell-val" id="gi-val-box4">0</span>
                 </div>
             </div>
 
             <!-- Box 5: mAH / KM (Cruise Energy Efficiency) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
-                    <span class="gi-cell-tag" id="gi-tag-box5">mAH / KM</span>
-                    <span class="gi-cell-val" id="gi-val-box5">---</span>
+                    <span class="gi-cell-tag" id="gi-tag-box5">EFFICIENCY</span>
+                    <span class="gi-cell-unit" id="gi-unit-box5">mAH/KM</span>
                 </div>
-                <div class="gi-scale-track">
-                    <div class="gi-track-line"></div>
-                    <div class="gi-track-cap-l"></div>
-                    <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-green" style="left: 18%; width: 37%;"></div>
-                    <div class="gi-track-red-tick" style="left: 80%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box5" style="left: 5%;"></div>
+                <div class="gi-cell-val-wrap">
+                    <span class="gi-cell-val" id="gi-val-box5">---</span>
                 </div>
             </div>
 
-            <!-- Box 6: Batt Amps & Batt Volts (Direct Replica of Reference Photo) -->
+            <!-- Box 6: Batt Amps & Batt Volts -->
             <div class="gi-grid-cell">
                 <div class="gi-electrical-box">
                     <div class="gi-elec-row">
-                        <span class="gi-elec-label">Batt Amps</span>
-                        <span class="gi-elec-val" id="gi-val-batt-amps">0.0</span>
+                        <span class="gi-elec-label">BATT AMPS</span>
+                        <div class="gi-elec-val-group">
+                            <span class="gi-elec-val" id="gi-val-batt-amps">0.0</span>
+                            <span class="gi-elec-unit">A</span>
+                        </div>
                     </div>
                     <div class="gi-elec-row">
-                        <span class="gi-elec-label">Batt Volts</span>
-                        <span class="gi-elec-val" id="gi-val-batt-volts">25.2</span>
+                        <span class="gi-elec-label">BATT VOLTS</span>
+                        <div class="gi-elec-val-group">
+                            <span class="gi-elec-val" id="gi-val-batt-volts">25.2</span>
+                            <span class="gi-elec-unit">V</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -8201,6 +8145,8 @@
                         localStorage.setItem('eis_battery_cap', val);
                         const valSubBatt = document.getElementById('gi-sub-batt');
                         if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
+                        const unitBox4 = document.getElementById('gi-unit-box4');
+                        if (unitBox4 && eisEngineMode === 'single') unitBox4.textContent = `/ ${batteryCapacityMah}`;
                         addAutopilotMessage({ text: `Battery Pack Capacity updated to ${batteryCapacityMah} mAh`, severity: 6 });
                     }
                 }
@@ -8238,25 +8184,40 @@
                 }
             }
 
-            // Update box labels for Single vs Twin mode
+            // Update box labels and units for Single vs Twin mode
             const lblBox1 = document.getElementById('gi-tag-box1');
             const lblBox2 = document.getElementById('gi-tag-box2');
             const lblBox3 = document.getElementById('gi-tag-box3');
             const lblBox4 = document.getElementById('gi-tag-box4');
             const lblBox5 = document.getElementById('gi-tag-box5');
+            const unitBox1 = document.getElementById('gi-unit-box1');
+            const unitBox2 = document.getElementById('gi-unit-box2');
+            const unitBox3 = document.getElementById('gi-unit-box3');
+            const unitBox4 = document.getElementById('gi-unit-box4');
+            const unitBox5 = document.getElementById('gi-unit-box5');
 
             if (!isTwin) {
                 if (lblBox1) lblBox1.textContent = 'AMPS';
-                if (lblBox2) lblBox2.textContent = 'ESC °C';
-                if (lblBox3) lblBox3.textContent = 'WATTS';
+                if (unitBox1) unitBox1.textContent = 'A';
+                if (lblBox2) lblBox2.textContent = 'ESC TEMP';
+                if (unitBox2) unitBox2.innerHTML = '&deg;C';
+                if (lblBox3) lblBox3.textContent = 'POWER';
+                if (unitBox3) unitBox3.textContent = 'W';
                 if (lblBox4) lblBox4.textContent = 'mAH USED';
-                if (lblBox5) lblBox5.textContent = 'mAH / KM';
+                if (unitBox4) unitBox4.textContent = `/ ${batteryCapacityMah}`;
+                if (lblBox5) lblBox5.textContent = 'EFFICIENCY';
+                if (unitBox5) unitBox5.textContent = 'mAH/KM';
             } else {
                 if (lblBox1) lblBox1.textContent = `L AMPS (E${eisTwinLeftCh})`;
+                if (unitBox1) unitBox1.textContent = 'A';
                 if (lblBox2) lblBox2.textContent = `R AMPS (E${eisTwinRightCh})`;
-                if (lblBox3) lblBox3.textContent = `L ESC °C`;
-                if (lblBox4) lblBox4.textContent = `R ESC °C`;
-                if (lblBox5) lblBox5.textContent = 'mAH / KM';
+                if (unitBox2) unitBox2.textContent = 'A';
+                if (lblBox3) lblBox3.textContent = `L ESC TEMP`;
+                if (unitBox3) unitBox3.innerHTML = '&deg;C';
+                if (lblBox4) lblBox4.textContent = `R ESC TEMP`;
+                if (unitBox4) unitBox4.innerHTML = '&deg;C';
+                if (lblBox5) lblBox5.textContent = 'EFFICIENCY';
+                if (unitBox5) unitBox5.textContent = 'mAH/KM';
             }
         }
 
@@ -8688,47 +8649,62 @@
                 const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
                 setGiArchPointer(ptrRpm, rpmNorm);
 
-                // Box 1: AMPS (0 - 20A, Green Zone: 5 - 12A)
+                // Box 1: AMPS (Green: 5 - 12A)
                 const valBox1 = document.getElementById('gi-val-box1');
-                const ptrBox1 = document.getElementById('gi-ptr-box1');
-                if (valBox1) valBox1.textContent = activeAmp1.toFixed(1);
-                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 20.0) * 100))}%`;
+                if (valBox1) {
+                    valBox1.textContent = activeAmp1.toFixed(1);
+                    if (activeAmp1 > 22.0) valBox1.style.color = '#ff3b30';
+                    else if (activeAmp1 > 15.0) valBox1.style.color = '#ffd60a';
+                    else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) valBox1.style.color = '#00e676';
+                    else valBox1.style.color = '#ffffff';
+                }
 
-                // Box 2: ESC °C (20 - 100°C)
+                // Box 2: ESC TEMP
                 const valBox2 = document.getElementById('gi-val-box2');
-                const ptrBox2 = document.getElementById('gi-ptr-box2');
-                if (valBox2) valBox2.textContent = Math.round(escTempMax);
-                if (ptrBox2) ptrBox2.style.left = `${Math.max(5, Math.min(95, ((escTempMax - 20) / 80.0) * 100))}%`;
+                if (valBox2) {
+                    valBox2.textContent = Math.round(escTempMax);
+                    if (escTempMax > 80) valBox2.style.color = '#ff3b30';
+                    else if (escTempMax > 65) valBox2.style.color = '#ffd60a';
+                    else valBox2.style.color = '#ffffff';
+                }
 
-                // Box 3: WATTS (0 - 1500W)
+                // Box 3: POWER (WATTS)
                 const valBox3 = document.getElementById('gi-val-box3');
-                const ptrBox3 = document.getElementById('gi-ptr-box3');
-                if (valBox3) valBox3.textContent = Math.round(totWatt);
-                if (ptrBox3) ptrBox3.style.left = `${Math.max(5, Math.min(95, (totWatt / 1500.0) * 100))}%`;
+                if (valBox3) {
+                    valBox3.textContent = Math.round(totWatt);
+                    if (totWatt > 1000) valBox3.style.color = '#ff3b30';
+                    else if (totWatt > 700) valBox3.style.color = '#ffd60a';
+                    else valBox3.style.color = '#ffffff';
+                }
 
-                // Box 4: mAH Used (0 - batteryCapacityMah)
+                // Box 4: mAH Used (Consumption vs Capacity)
                 const valBox4 = document.getElementById('gi-val-box4');
-                const ptrBox4 = document.getElementById('gi-ptr-box4');
+                const unitBox4 = document.getElementById('gi-unit-box4');
                 const consumedMah = Math.round(am32Telemetry.consumed_mah);
-                if (valBox4) valBox4.innerHTML = `${consumedMah} <span style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:500;">/ ${batteryCapacityMah}</span>`;
-                if (ptrBox4) ptrBox4.style.left = `${Math.max(5, Math.min(95, (consumedMah / batteryCapacityMah) * 100))}%`;
+                if (valBox4) {
+                    valBox4.textContent = consumedMah.toLocaleString();
+                    const usedRatio = consumedMah / batteryCapacityMah;
+                    if (usedRatio > 0.90) valBox4.style.color = '#ff3b30';
+                    else if (usedRatio > 0.75) valBox4.style.color = '#ffd60a';
+                    else valBox4.style.color = '#ffffff';
+                }
+                if (unitBox4) unitBox4.textContent = `/ ${batteryCapacityMah}`;
 
                 // Box 5: mAH / KM (Cruise Energy Efficiency)
-                // mAh/km = (current in mA) / (groundspeed in km/h) = (totAmp * 1000) / (planeGroundspeed * 3.6)
                 let mahPerKmVal = '---';
-                let mahPerKmNorm = 0.05;
                 if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
                     const gndSpdKmH = planeGroundspeed * 3.6;
                     const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
                     if (isFinite(mahPerKm) && mahPerKm > 0) {
                         mahPerKmVal = Math.round(mahPerKm);
-                        mahPerKmNorm = Math.max(0.05, Math.min(0.95, mahPerKm / 400.0));
                     }
                 }
                 const valBox5 = document.getElementById('gi-val-box5');
-                const ptrBox5 = document.getElementById('gi-ptr-box5');
-                if (valBox5) valBox5.textContent = mahPerKmVal;
-                if (ptrBox5) ptrBox5.style.left = `${(mahPerKmNorm * 100).toFixed(1)}%`;
+                if (valBox5) {
+                    valBox5.textContent = mahPerKmVal;
+                    if (mahPerKmVal !== '---') valBox5.style.color = '#00e5ff';
+                    else valBox5.style.color = '#55667a';
+                }
             } else {
                 const lCh = Math.max(0, Math.min(7, eisTwinLeftCh - 1));
                 const rCh = Math.max(0, Math.min(7, eisTwinRightCh - 1));
@@ -8760,45 +8736,59 @@
                 setGiArchPointer(ptrRpm, rpmNorm1);
                 setGiArchPointer(ptrRpm2, rpmNorm2);
 
-                // Box 1: L AMPS (Green: 5 - 12A)
+                // Box 1: L AMPS
                 const valBox1 = document.getElementById('gi-val-box1');
-                const ptrBox1 = document.getElementById('gi-ptr-box1');
-                if (valBox1) valBox1.textContent = activeAmp1.toFixed(1);
-                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 20.0) * 100))}%`;
+                if (valBox1) {
+                    valBox1.textContent = activeAmp1.toFixed(1);
+                    if (activeAmp1 > 22.0) valBox1.style.color = '#ff3b30';
+                    else if (activeAmp1 > 15.0) valBox1.style.color = '#ffd60a';
+                    else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) valBox1.style.color = '#00e676';
+                    else valBox1.style.color = '#ffffff';
+                }
 
-                // Box 2: R AMPS (Green: 5 - 12A)
+                // Box 2: R AMPS
                 const valBox2 = document.getElementById('gi-val-box2');
-                const ptrBox2 = document.getElementById('gi-ptr-box2');
-                if (valBox2) valBox2.textContent = activeAmp2.toFixed(1);
-                if (ptrBox2) ptrBox2.style.left = `${Math.max(5, Math.min(95, (activeAmp2 / 20.0) * 100))}%`;
+                if (valBox2) {
+                    valBox2.textContent = activeAmp2.toFixed(1);
+                    if (activeAmp2 > 22.0) valBox2.style.color = '#ff3b30';
+                    else if (activeAmp2 > 15.0) valBox2.style.color = '#ffd60a';
+                    else if (activeAmp2 >= 5.0 && activeAmp2 <= 12.0) valBox2.style.color = '#00e676';
+                    else valBox2.style.color = '#ffffff';
+                }
 
-                // Box 3: L ESC °C
+                // Box 3: L ESC TEMP
                 const valBox3 = document.getElementById('gi-val-box3');
-                const ptrBox3 = document.getElementById('gi-ptr-box3');
-                if (valBox3) valBox3.textContent = Math.round(activeTemp1);
-                if (ptrBox3) ptrBox3.style.left = `${Math.max(5, Math.min(95, ((activeTemp1 - 20) / 80.0) * 100))}%`;
+                if (valBox3) {
+                    valBox3.textContent = Math.round(activeTemp1);
+                    if (activeTemp1 > 80) valBox3.style.color = '#ff3b30';
+                    else if (activeTemp1 > 65) valBox3.style.color = '#ffd60a';
+                    else valBox3.style.color = '#ffffff';
+                }
 
-                // Box 4: R ESC °C
+                // Box 4: R ESC TEMP
                 const valBox4 = document.getElementById('gi-val-box4');
-                const ptrBox4 = document.getElementById('gi-ptr-box4');
-                if (valBox4) valBox4.textContent = Math.round(activeTemp2);
-                if (ptrBox4) ptrBox4.style.left = `${Math.max(5, Math.min(95, ((activeTemp2 - 20) / 80.0) * 100))}%`;
+                if (valBox4) {
+                    valBox4.textContent = Math.round(activeTemp2);
+                    if (activeTemp2 > 80) valBox4.style.color = '#ff3b30';
+                    else if (activeTemp2 > 65) valBox4.style.color = '#ffd60a';
+                    else valBox4.style.color = '#ffffff';
+                }
 
                 // Box 5: mAH / KM (Cruise Energy Efficiency)
                 let mahPerKmVal = '---';
-                let mahPerKmNorm = 0.05;
                 if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
                     const gndSpdKmH = planeGroundspeed * 3.6;
                     const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
                     if (isFinite(mahPerKm) && mahPerKm > 0) {
                         mahPerKmVal = Math.round(mahPerKm);
-                        mahPerKmNorm = Math.max(0.05, Math.min(0.95, mahPerKm / 400.0));
                     }
                 }
                 const valBox5 = document.getElementById('gi-val-box5');
-                const ptrBox5 = document.getElementById('gi-ptr-box5');
-                if (valBox5) valBox5.textContent = mahPerKmVal;
-                if (ptrBox5) ptrBox5.style.left = `${(mahPerKmNorm * 100).toFixed(1)}%`;
+                if (valBox5) {
+                    valBox5.textContent = mahPerKmVal;
+                    if (mahPerKmVal !== '---') valBox5.style.color = '#00e5ff';
+                    else valBox5.style.color = '#55667a';
+                }
             }
 
             // Top Arch Right: Battery Remaining % & Total Pack Capacity
@@ -8811,8 +8801,17 @@
             // Box 6: Batt Amps & Batt Volts
             const valBattAmps = document.getElementById('gi-val-batt-amps');
             const valBattVolts = document.getElementById('gi-val-batt-volts');
-            if (valBattAmps) valBattAmps.textContent = totAmp.toFixed(1);
-            if (valBattVolts) valBattVolts.textContent = packVolt.toFixed(1);
+            if (valBattAmps) {
+                valBattAmps.textContent = totAmp.toFixed(1);
+                if (totAmp > 25.0) valBattAmps.style.color = '#ffd60a';
+                else valBattAmps.style.color = '#ffffff';
+            }
+            if (valBattVolts) {
+                valBattVolts.textContent = packVolt.toFixed(1);
+                if (packVolt > 0 && packVolt < 21.0) valBattVolts.style.color = '#ff3b30';
+                else if (packVolt > 0 && packVolt < 21.6) valBattVolts.style.color = '#ffd60a';
+                else valBattVolts.style.color = '#ffffff';
+            }
 
             // Bottom Status Pill: OAT & Battery Endurance with Capacity
             const botPill = document.getElementById('gi-bot-pill');
