@@ -2126,6 +2126,341 @@
             flex-shrink: 0;
             box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
         }
+    
+        /* ========================================================= */
+        /* CLASSIC AVIATION SIX-PACK INSTRUMENT COCKPIT PANEL        */
+        /* Authentic Steam & Analog Flight Panel with Engine Stack   */
+        /* ========================================================= */
+        #sixpack-panel {
+            position: absolute;
+            top: 70px;
+            left: 340px;
+            width: 790px;
+            background: linear-gradient(180deg, #181c24 0%, #11141a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            z-index: 140;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            font-family: 'B612', -apple-system, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .sixpack-titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: rgba(8, 10, 14, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: move;
+        }
+
+        .sixpack-title-text {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #9ab0c7;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sixpack-title-text svg {
+            color: var(--accent);
+        }
+
+        .sixpack-tb-btns {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sixpack-btn-unit {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #d0d7de;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .sixpack-btn-unit:hover {
+            background: rgba(10, 132, 255, 0.25);
+            border-color: #0a84ff;
+            color: #ffffff;
+        }
+
+        .sixpack-btn-close {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+            transition: color 0.15s ease;
+        }
+        .sixpack-btn-close:hover {
+            color: #ff453a;
+        }
+
+        .sixpack-body {
+            display: flex;
+            padding: 12px 14px 14px;
+            gap: 14px;
+            background: radial-gradient(circle at 50% 50%, #151921 0%, #0d1015 100%);
+        }
+
+        /* 3x2 Flight Instruments Matrix */
+        .sixpack-grid-6 {
+            display: grid;
+            grid-template-columns: repeat(3, 160px);
+            grid-template-rows: repeat(2, auto);
+            gap: 12px 14px;
+            flex-shrink: 0;
+        }
+
+        /* Single Round Instrument Cell */
+        .sp-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .sp-bezel-outer {
+            width: 146px;
+            height: 146px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #2a2e38 0%, #111318 100%);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7), inset 0 2px 3px rgba(255, 255, 255, 0.12), inset 0 -3px 4px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Corner Screws for authentic instrument panel plate */
+        .sp-screw {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #404652;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.6);
+        }
+        .sp-screw-tl { top: -2px; left: -2px; }
+        .sp-screw-tr { top: -2px; right: -2px; }
+        .sp-screw-bl { bottom: -2px; left: -2px; }
+        .sp-screw-br { bottom: -2px; right: -2px; }
+
+        .sp-dial-inner {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: #090b0f;
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.9), 0 0 0 1.5px #1a1e26;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sp-label-row {
+            margin-top: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #8b9bb0;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 18px;
+        }
+
+        .sp-btn-sub {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #cbd5e1;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            line-height: 1.2;
+            transition: all 0.12s ease;
+        }
+        .sp-btn-sub:hover {
+            background: rgba(10, 132, 255, 0.3);
+            border-color: #0a84ff;
+            color: #ffffff;
+        }
+
+        /* Right Column: Tachometer + Engine + Status */
+        .sixpack-engine-col {
+            width: 220px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            padding-left: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sp-tacho-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Secondary Vertical Bar Gauges (THR, FUEL, FLAPS) */
+        .sp-secondary-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            background: rgba(12, 15, 20, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 10px 6px;
+            height: 94px;
+            box-sizing: border-box;
+        }
+
+        .sp-vbar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            width: 52px;
+        }
+
+        .sp-vbar-lbl {
+            font-size: 9px;
+            font-weight: 800;
+            color: #8b9bb0;
+            letter-spacing: 0.5px;
+        }
+
+        .sp-vbar-track {
+            width: 14px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .sp-vbar-fill {
+            width: 100%;
+            transition: height 0.1s ease;
+        }
+
+        .sp-vbar-val {
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'B612 Mono', monospace;
+            color: #ffffff;
+        }
+
+        /* Flaps stepped box */
+        .sp-flaps-box {
+            border: 1.5px solid #ffd60a;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #ffd60a;
+            font-family: 'B612 Mono', monospace;
+            background: rgba(255, 214, 10, 0.08);
+            margin-bottom: 2px;
+        }
+
+        .sp-flaps-ticks {
+            font-size: 8px;
+            color: #64748b;
+            font-family: 'B612 Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            align-items: center;
+        }
+
+        /* 6 Korry Warning / Annunciator Lamps */
+        .sp-annun-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .sp-annun-lamp {
+            background: #11141a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            padding: 3px 0;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-align: center;
+            color: #475569;
+            text-transform: uppercase;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+            transition: all 0.15s ease;
+        }
+
+        .sp-annun-lamp.lamp-red {
+            color: #ff453a;
+            border-color: #ff453a;
+            background: rgba(255, 69, 58, 0.2);
+            box-shadow: 0 0 8px rgba(255, 69, 58, 0.5);
+        }
+
+        .sp-annun-lamp.lamp-amber {
+            color: #ffd60a;
+            border-color: #ffd60a;
+            background: rgba(255, 214, 10, 0.2);
+            box-shadow: 0 0 8px rgba(255, 214, 10, 0.5);
+        }
+
+        .sp-annun-lamp.lamp-green {
+            color: #30d158;
+            border-color: #30d158;
+            background: rgba(48, 209, 88, 0.2);
+            box-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
+        }
+
+        .sp-annun-lamp.lamp-cyan {
+            color: #00e5ff;
+            border-color: #00e5ff;
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+        }
+
+        /* Bottom Status Banner */
+        .sp-bottom-banner {
+            background: rgba(10, 13, 18, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'B612 Mono', monospace;
+            color: #e2e8f0;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -2176,6 +2511,14 @@
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
                 <path d="m4.93 4.93 2.12 2.12m9.9 9.9 2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"></path>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-sixpack" title="Toggle Classic Six-Pack Cockpit (Hotkey '6')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
             </svg>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-lxnav"  title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')">
@@ -3014,6 +3357,386 @@
             OAT 22 &deg;C &bull; 6S LiPo &bull; 6000 mAh CAP &bull; 6000 mAh REM &bull; -- MIN
         </div>
     </div>
+
+    <!-- Classic Six-Pack Flight Instrument Cockpit Panel -->
+    <div id="sixpack-panel">
+        <div class="sixpack-titlebar" id="sixpack-header">
+            <div class="sixpack-title-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                </svg>
+                Classic Six-Pack Cockpit
+            </div>
+            <div class="sixpack-tb-btns">
+                <button class="sixpack-btn-unit" id="sp-btn-unit-toggle" onclick="toggleSixPackUnits()" title="Toggle Knots/Feet vs m/s, m">UNITS: KTS / FT</button>
+                <button class="sixpack-btn-close" onclick="toggleSixPackPanel()" title="Close Six-Pack Panel">&times;</button>
+            </div>
+        </div>
+
+        <div class="sixpack-body">
+            <!-- 3x2 Primary Flight Instruments Grid -->
+            <div class="sixpack-grid-6">
+                <!-- 1. Airspeed Indicator (KIAS) -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <!-- Dial ticks & arcs -->
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <!-- White Arc: Flaps range (40 - 85 kt) -->
+                                <path d="M 23 88 A 49 49 0 0 1 54 16" fill="none" stroke="#ffffff" stroke-width="3.5" opacity="0.9" />
+                                <!-- Green Arc: Normal operating range (50 - 135 kt) -->
+                                <path d="M 18 73 A 49 49 0 0 1 106 36" fill="none" stroke="#30d158" stroke-width="4.5" />
+                                <!-- Yellow Arc: Caution range (135 - 165 kt) -->
+                                <path d="M 106 36 A 49 49 0 0 1 113 74" fill="none" stroke="#ffd60a" stroke-width="4.5" />
+                                <!-- Red Radial: Vne (165 kt) -->
+                                <line x1="113" y1="74" x2="104" y2="72" stroke="#ff453a" stroke-width="2.5" />
+                                <!-- Dial Numbers -->
+                                <text x="65" y="27" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">100</text>
+                                <text x="91" y="38" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">120</text>
+                                <text x="103" y="60" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">140</text>
+                                <text x="98" y="85" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">160</text>
+                                <text x="79" y="105" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">180</text>
+                                <text x="52" y="105" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">200</text>
+                                <text x="31" y="86" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">40</text>
+                                <text x="25" y="62" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">60</text>
+                                <text x="38" y="38" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">80</text>
+                                <!-- Dial Label -->
+                                <text x="65" y="76" fill="#8b9bb0" font-size="8" font-weight="800" text-anchor="middle" letter-spacing="1">KNOTS</text>
+                                <text id="sp-digit-asi" x="65" y="88" fill="#00e5ff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
+                                <!-- Pointer Needle -->
+                                <g id="sp-ptr-asi" transform="rotate(-150 65 65)">
+                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
+                                    <polygon points="63,65 65,80 67,65" fill="#ffffff" />
+                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <span id="sp-lbl-asi">Airspeed (KIAS)</span>
+                    </div>
+                </div>
+
+                <!-- 2. Attitude Indicator (Artificial Horizon) -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <defs>
+                                    <clipPath id="sp-horizon-clip">
+                                        <circle cx="65" cy="65" r="62" />
+                                    </clipPath>
+                                </defs>
+                                <g clip-path="url(#sp-horizon-clip)">
+                                    <!-- Rotating / Translating Horizon Disc -->
+                                    <g id="sp-horizon-sphere" transform="rotate(0 65 65) translate(0 0)">
+                                        <!-- Sky -->
+                                        <rect x="-70" y="-140" width="270" height="205" fill="#1e70ba" />
+                                        <!-- Ground -->
+                                        <rect x="-70" y="65" width="270" height="205" fill="#7a5228" />
+                                        <!-- Horizon Reference Line -->
+                                        <line x1="-70" y1="65" x2="200" y2="65" stroke="#ffffff" stroke-width="2.5" />
+                                        <!-- Pitch Ladder lines (±10°, ±20°) -->
+                                        <line x1="53" y1="45" x2="77" y2="45" stroke="#ffffff" stroke-width="1.5" />
+                                        <text x="47" y="48" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">10</text>
+                                        <text x="83" y="48" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">10</text>
+
+                                        <line x1="47" y1="25" x2="83" y2="25" stroke="#ffffff" stroke-width="1.8" />
+                                        <text x="41" y="28" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">20</text>
+                                        <text x="89" y="28" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">20</text>
+
+                                        <line x1="53" y1="85" x2="77" y2="85" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3 2" />
+                                        <text x="47" y="88" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">10</text>
+                                        <text x="83" y="88" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">10</text>
+
+                                        <line x1="47" y1="105" x2="83" y2="105" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="4 2" />
+                                        <text x="41" y="108" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">20</text>
+                                        <text x="89" y="108" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">20</text>
+                                    </g>
+                                    <!-- Top Roll Index Arc & Ticks -->
+                                    <path d="M 25 35 A 55 55 0 0 1 105 35" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+                                    <polygon points="65,11 61,18 69,18" fill="#ffffff" />
+                                    <!-- Fixed Miniature Aircraft Yellow Delta Symbol -->
+                                    <path d="M 36 65 L 53 65 L 58 70 L 65 67 L 72 70 L 77 65 L 94 65" fill="none" stroke="#ffd60a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                                    <circle cx="65" cy="65" r="2.5" fill="#ffd60a" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <button class="sp-btn-sub" onclick="adjustAttitudePitch(1)" title="Pitch Up Adjustment">&Delta;</button>
+                        <span>Attitude</span>
+                        <button class="sp-btn-sub" onclick="adjustAttitudePitch(-1)" title="Pitch Down Adjustment">&nabla;</button>
+                    </div>
+                </div>
+
+                <!-- 3. Altimeter -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <!-- 0 - 9 Numerals -->
+                                <text x="65" y="24" fill="#ffffff" font-size="12" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
+                                <text x="89" y="32" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">1</text>
+                                <text x="106" y="52" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">2</text>
+                                <text x="109" y="76" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">3</text>
+                                <text x="96" y="99" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">4</text>
+                                <text x="65" y="112" fill="#ffffff" font-size="12" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
+                                <text x="34" y="99" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">6</text>
+                                <text x="21" y="76" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">7</text>
+                                <text x="24" y="52" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">8</text>
+                                <text x="41" y="32" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">9</text>
+                                <!-- Labels -->
+                                <text x="65" y="44" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">ALT</text>
+                                <text x="65" y="88" fill="#8b9bb0" font-size="6.5" font-weight="700" text-anchor="middle">100 FEET</text>
+                                <!-- Kollsman Baro Window at 3 o'clock -->
+                                <rect x="80" y="58" width="30" height="13" fill="#000000" stroke="rgba(255,255,255,0.3)" rx="2" />
+                                <text id="sp-kollsman-val" x="95" y="68" fill="#ffffff" font-size="7.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">29.92</text>
+                                <!-- 1,000 ft Short Pointer -->
+                                <g id="sp-ptr-alt-short" transform="rotate(0 65 65)">
+                                    <polygon points="62,65 63,32 67,32 68,65" fill="#ffffff" />
+                                </g>
+                                <!-- 100 ft Long Pointer -->
+                                <g id="sp-ptr-alt-long" transform="rotate(0 65 65)">
+                                    <polygon points="63.5,65 64.5,14 65.5,14 66.5,65" fill="#ffffff" />
+                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
+                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <button class="sp-btn-sub" onclick="adjustAltimeterBaro(-0.01)">-</button>
+                        <span id="sp-lbl-alt">Altimeter</span>
+                        <button class="sp-btn-sub" onclick="adjustAltimeterBaro(0.01)">+</button>
+                        <button class="sp-btn-sub" onclick="resetAltimeterBaro()" title="Standard Atmosphere 29.92 / 1013">Local</button>
+                    </div>
+                </div>
+
+                <!-- 4. Turn Coordinator -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <text x="65" y="28" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">2 MIN</text>
+                                <text x="65" y="98" fill="#64748b" font-size="6" font-weight="700" text-anchor="middle">NO PITCH INFORMATION</text>
+                                <!-- Level Reference Ticks -->
+                                <line x1="22" y1="65" x2="38" y2="65" stroke="#ffffff" stroke-width="2" />
+                                <line x1="92" y1="65" x2="108" y2="65" stroke="#ffffff" stroke-width="2" />
+                                <!-- 2-Min Rate of Turn Marks (L / R) -->
+                                <line x1="24" y1="78" x2="38" y2="78" stroke="#ffffff" stroke-width="2.5" />
+                                <text x="28" y="90" fill="#ffffff" font-size="8" font-weight="800">L</text>
+                                <line x1="92" y1="78" x2="106" y2="78" stroke="#ffffff" stroke-width="2.5" />
+                                <text x="98" y="90" fill="#ffffff" font-size="8" font-weight="800">R</text>
+                                <!-- Banking Aircraft Symbol -->
+                                <g id="sp-turn-aircraft" transform="rotate(0 65 65)">
+                                    <line x1="30" y1="65" x2="100" y2="65" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+                                    <circle cx="65" cy="65" r="5" fill="#ffffff" />
+                                    <line x1="65" y1="56" x2="65" y2="65" stroke="#ffffff" stroke-width="2.5" />
+                                    <circle cx="30" cy="65" r="2.5" fill="#ffffff" />
+                                    <circle cx="100" cy="65" r="2.5" fill="#ffffff" />
+                                </g>
+                                <!-- Inclinometer Curved Tube -->
+                                <path d="M 38 85 Q 65 91 92 85" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="8" stroke-linecap="round" />
+                                <!-- Inclinometer Center Reference Lines -->
+                                <line x1="59" y1="81" x2="59" y2="92" stroke="#ffffff" stroke-width="1.2" />
+                                <line x1="71" y1="81" x2="71" y2="92" stroke="#ffffff" stroke-width="1.2" />
+                                <!-- Moving Ball -->
+                                <circle id="sp-slip-ball" cx="65" cy="87.5" r="4.2" fill="#000000" stroke="#8b9bb0" stroke-width="1.2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <span>Turn coordinator</span>
+                    </div>
+                </div>
+
+                <!-- 5. Heading Indicator (Directional Gyro) -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <!-- Rotating Compass Rose -->
+                                <g id="sp-compass-card" transform="rotate(0 65 65)">
+                                    <circle cx="65" cy="65" r="58" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" />
+                                    <!-- Cardinal Points -->
+                                    <text x="65" y="22" fill="#30d158" font-size="11" font-family="'B612 Mono', monospace" font-weight="800" text-anchor="middle">N</text>
+                                    <text x="108" y="69" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">E</text>
+                                    <text x="65" y="114" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">S</text>
+                                    <text x="22" y="69" fill="#30d158" font-size="11" font-family="'B612 Mono', monospace" font-weight="800" text-anchor="middle">W</text>
+                                    <!-- Compass numbers -->
+                                    <text x="89" y="30" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">3</text>
+                                    <text x="105" y="49" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">6</text>
+                                    <text x="104" y="87" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">12</text>
+                                    <text x="88" y="106" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
+                                    <text x="42" y="106" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">21</text>
+                                    <text x="26" y="87" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">24</text>
+                                    <text x="26" y="49" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">30</text>
+                                    <text x="42" y="30" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">33</text>
+                                </g>
+                                <!-- Heading Bug -->
+                                <g id="sp-heading-bug" transform="rotate(0 65 65)">
+                                    <polygon points="65,7 61,1 69,1" fill="#ff9500" stroke="#000000" stroke-width="0.5" />
+                                </g>
+                                <!-- Fixed Center Airplane Symbol (Yellow Cross) -->
+                                <path d="M 65 48 L 65 82 M 50 58 L 80 58 M 58 78 L 72 78" stroke="#ffd60a" stroke-width="2.5" stroke-linecap="round" />
+                                <!-- Top Index Lubber Line -->
+                                <polygon points="65,11 62,5 68,5" fill="#ffffff" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <button class="sp-btn-sub" onclick="syncSixPackHeadingBug()" title="Sync Bug to Current Heading">Sync</button>
+                        <span id="sp-lbl-hdg">Heading · compass 000</span>
+                        <button class="sp-btn-sub" onclick="adjustSixPackBug(-5)">-</button>
+                        <button class="sp-btn-sub" onclick="adjustSixPackBug(5)">+</button>
+                    </div>
+                </div>
+
+                <!-- 6. Vertical Speed Indicator (VSI) -->
+                <div class="sp-cell">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <!-- 0 at 9 o'clock -->
+                                <text x="24" y="68" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
+                                <!-- Up Ticks & Numbers -->
+                                <text x="35" y="42" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
+                                <text x="65" y="26" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
+                                <text x="95" y="42" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
+                                <text x="105" y="65" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">20</text>
+                                <text x="95" y="52" fill="#8b9bb0" font-size="6.5" font-weight="800">UP</text>
+                                <!-- Down Ticks & Numbers -->
+                                <text x="35" y="93" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
+                                <text x="65" y="110" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
+                                <text x="95" y="93" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
+                                <text x="95" y="80" fill="#8b9bb0" font-size="6.5" font-weight="800">DN</text>
+                                <!-- Center Label -->
+                                <text x="65" y="76" fill="#8b9bb0" font-size="6.5" font-weight="800" text-anchor="middle">100 FPM</text>
+                                <!-- VSI Needle (Starts at 9 o'clock / -90 deg) -->
+                                <g id="sp-ptr-vsi" transform="rotate(-90 65 65)">
+                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
+                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
+                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <span id="sp-lbl-vsi">Vertical speed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Tachometer + Secondary Indicators -->
+            <div class="sixpack-engine-col">
+                <!-- Tachometer -->
+                <div class="sp-tacho-wrap">
+                    <div class="sp-bezel-outer">
+                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
+                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
+                        <div class="sp-dial-inner">
+                            <svg viewBox="0 0 130 130" width="130" height="130">
+                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
+                                <!-- Green Operating Arc (20 - 27 x100 RPM) -->
+                                <path d="M 85 24 A 49 49 0 0 1 113 74" fill="none" stroke="#30d158" stroke-width="4.5" />
+                                <!-- Redline (27+) -->
+                                <line x1="113" y1="74" x2="104" y2="72" stroke="#ff453a" stroke-width="2.5" />
+                                <!-- Numbers -->
+                                <text x="32" y="88" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
+                                <text x="25" y="62" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
+                                <text x="38" y="38" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
+                                <text x="65" y="27" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
+                                <text x="91" y="38" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">20</text>
+                                <text x="103" y="60" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">25</text>
+                                <text x="98" y="85" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">30</text>
+                                <text x="76" y="105" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">35</text>
+                                <text x="65" y="76" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">RPM x100</text>
+                                <!-- Digital Inset Box -->
+                                <rect x="46" y="84" width="38" height="15" fill="#000000" stroke="rgba(255,255,255,0.25)" rx="2" />
+                                <text id="sp-digit-rpm" x="65" y="95" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
+                                <!-- Needle -->
+                                <g id="sp-ptr-rpm" transform="rotate(-135 65 65)">
+                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
+                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
+                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sp-label-row">
+                        <span>Tachometer</span>
+                    </div>
+                </div>
+
+                <!-- Secondary Vertical Bar Gauges -->
+                <div class="sp-secondary-bars">
+                    <!-- THR (Throttle) -->
+                    <div class="sp-vbar-col">
+                        <span class="sp-vbar-lbl">THR</span>
+                        <div class="sp-vbar-track">
+                            <div class="sp-vbar-fill" id="sp-fill-thr" style="height: 0%; background: #ffffff;"></div>
+                        </div>
+                        <span class="sp-vbar-val" id="sp-val-thr">0%</span>
+                    </div>
+                    <!-- FUEL / BATT -->
+                    <div class="sp-vbar-col">
+                        <span class="sp-vbar-lbl" id="sp-lbl-fuel">BATT</span>
+                        <div class="sp-vbar-track">
+                            <div class="sp-vbar-fill" id="sp-fill-fuel" style="height: 100%; background: #30d158;"></div>
+                        </div>
+                        <span class="sp-vbar-val" id="sp-val-fuel">100%</span>
+                    </div>
+                    <!-- FLAPS -->
+                    <div class="sp-vbar-col">
+                        <span class="sp-vbar-lbl">FLAPS</span>
+                        <div class="sp-flaps-box" id="sp-val-flaps">0&deg;</div>
+                        <div class="sp-flaps-ticks">
+                            <span>10</span>
+                            <span>20</span>
+                            <span>30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6 Annunciator Warning Lamps (Korry style) -->
+                <div class="sp-annun-grid">
+                    <div class="sp-annun-lamp" id="sp-lamp-stall">STALL</div>
+                    <div class="sp-annun-lamp lamp-amber" id="sp-lamp-gnd">GND</div>
+                    <div class="sp-annun-lamp" id="sp-lamp-hdg">HDG</div>
+                    <div class="sp-annun-lamp" id="sp-lamp-alt">ALT</div>
+                    <div class="sp-annun-lamp" id="sp-lamp-rpm">RPM</div>
+                    <div class="sp-annun-lamp lamp-amber" id="sp-lamp-pause">PAUSE</div>
+                </div>
+
+                <!-- Bottom Status Strip (Groundspeed & AGL) -->
+                <div class="sp-bottom-banner" id="sp-banner-status">
+                    GS 0 kt &bull; AGL 0 ft
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Live Weather Widget -->
     <div id="weather-widget">
         <div class="weather-header">
@@ -5957,6 +6680,10 @@
         }
 
         window.addEventListener('keydown', (e) => {
+            if (e.key === '6' || (e.key === 'c' && !e.ctrlKey && !e.metaKey)) {
+                if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                toggleSixPackPanel();
+            }
             // Ignore when typing in input boxes
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
             if (e.key === 'd' || e.key === 'D') {
@@ -7259,6 +7986,9 @@
             if (typeof updateLxnavHUD === 'function') {
                 updateLxnavHUD();
             }
+            if (typeof updateSixPackHUD === 'function') {
+                updateSixPackHUD();
+            }
 
             // Animate Dead Reckoning 3D Visual Suite strictly during Dead Reckoning condition
             if (isDeadReckoning) {
@@ -7532,7 +8262,265 @@
             polyEl.setAttribute('points', `${x_tip.toFixed(1)},${y_tip.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`);
         }
 
-        // Live AM32 Engine Indication System Render Loop
+
+        // =========================================================
+        // CLASSIC SIX-PACK COCKPIT PANEL LOGIC & 60FPS TELEMETRY
+        // =========================================================
+        let sixPackVisible = localStorage.getItem('sixpack_visible') !== '0'; // default true
+        let sixPackUnits = localStorage.getItem('sixpack_units') || 'imperial'; // 'imperial' (kts/ft) | 'metric' (m/s, m)
+        let sixPackPitchOffset = 0.0;
+        let sixPackBaroSetting = 29.92; // inHg
+        let sixPackBugHeading = 360;
+
+        const sixPackPanel = document.getElementById('sixpack-panel');
+        const btnToggleSixPack = document.getElementById('btn-toggle-sixpack');
+
+        function toggleSixPackPanel() {
+            sixPackVisible = !sixPackVisible;
+            if (sixPackPanel) sixPackPanel.style.display = sixPackVisible ? 'flex' : 'none';
+            if (btnToggleSixPack) btnToggleSixPack.classList.toggle('active', sixPackVisible);
+            localStorage.setItem('sixpack_visible', sixPackVisible ? '1' : '0');
+        }
+
+        if (btnToggleSixPack) btnToggleSixPack.onclick = toggleSixPackPanel;
+
+        if (sixPackPanel && !sixPackVisible) {
+            sixPackPanel.style.display = 'none';
+            if (btnToggleSixPack) btnToggleSixPack.classList.remove('active');
+        }
+
+        function toggleSixPackUnits() {
+            sixPackUnits = (sixPackUnits === 'imperial') ? 'metric' : 'imperial';
+            localStorage.setItem('sixpack_units', sixPackUnits);
+            const btn = document.getElementById('sp-btn-unit-toggle');
+            if (btn) btn.textContent = (sixPackUnits === 'imperial') ? 'UNITS: KTS / FT' : 'UNITS: M/S, M';
+            const lblAsi = document.getElementById('sp-lbl-asi');
+            if (lblAsi) lblAsi.textContent = (sixPackUnits === 'imperial') ? 'Airspeed (KIAS)' : 'Airspeed (m/s)';
+            const lblAlt = document.getElementById('sp-lbl-alt');
+            if (lblAlt) lblAlt.textContent = (sixPackUnits === 'imperial') ? 'Altimeter (ft)' : 'Altimeter (m)';
+            const lblVsi = document.getElementById('sp-lbl-vsi');
+            if (lblVsi) lblVsi.textContent = (sixPackUnits === 'imperial') ? 'Vertical speed (FPM)' : 'Vertical speed (m/s)';
+        }
+
+        function adjustAttitudePitch(delta) {
+            sixPackPitchOffset = Math.max(-15, Math.min(15, sixPackPitchOffset + delta));
+        }
+
+        function adjustAltimeterBaro(delta) {
+            sixPackBaroSetting = Math.max(27.0, Math.min(32.0, Math.round((sixPackBaroSetting + delta) * 100) / 100.0));
+            const el = document.getElementById('sp-kollsman-val');
+            if (el) el.textContent = sixPackBaroSetting.toFixed(2);
+        }
+
+        function resetAltimeterBaro() {
+            sixPackBaroSetting = 29.92;
+            const el = document.getElementById('sp-kollsman-val');
+            if (el) el.textContent = '29.92';
+        }
+
+        function syncSixPackHeadingBug() {
+            sixPackBugHeading = Math.round((planeHeading % 360 + 360) % 360);
+            updateSixPackBugDisplay();
+        }
+
+        function adjustSixPackBug(delta) {
+            sixPackBugHeading = (sixPackBugHeading + delta + 360) % 360;
+            if (sixPackBugHeading === 0) sixPackBugHeading = 360;
+            updateSixPackBugDisplay();
+        }
+
+        function updateSixPackBugDisplay() {
+            const bugEl = document.getElementById('sp-heading-bug');
+            if (bugEl) bugEl.style.transform = `rotate(${sixPackBugHeading}deg)`;
+        }
+
+        // Draggable Six-Pack Header
+        (function initSixPackDraggable() {
+            const header = document.getElementById('sixpack-header');
+            const panel = document.getElementById('sixpack-panel');
+            if (!header || !panel) return;
+            let isDragging = false, startX, startY, initLeft, initTop;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = panel.getBoundingClientRect();
+                initLeft = rect.left;
+                initTop = rect.top;
+                panel.style.transition = 'none';
+                document.body.style.userSelect = 'none';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                panel.style.left = Math.max(10, Math.min(window.innerWidth - 300, initLeft + dx)) + 'px';
+                panel.style.top = Math.max(10, Math.min(window.innerHeight - 150, initTop + dy)) + 'px';
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    panel.style.transition = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        })();
+
+        // 60FPS Live Telemetry Update for Classic Six-Pack Cockpit
+        function updateSixPackHUD() {
+            if (!sixPackVisible || !sixPackPanel) return;
+
+            // 1. Airspeed Indicator (0 - 200 knots or m/s)
+            const speedKts = (typeof planeAirspeed === 'number' && planeAirspeed >= 0) ? (planeAirspeed * 1.94384) : 0;
+            const speedMs = (typeof planeAirspeed === 'number' && planeAirspeed >= 0) ? planeAirspeed : 0;
+            const displaySpd = (sixPackUnits === 'imperial') ? speedKts : speedMs;
+            const asiPtrAngle = Math.max(-150, Math.min(150, -150 + (Math.min(200, displaySpd) / 200.0) * 300.0));
+            const ptrAsi = document.getElementById('sp-ptr-asi');
+            const digitAsi = document.getElementById('sp-digit-asi');
+            if (ptrAsi) ptrAsi.style.transform = `rotate(${asiPtrAngle}deg)`;
+            if (digitAsi) digitAsi.textContent = Math.round(displaySpd);
+
+            // 2. Attitude Indicator
+            const pitchDeg = (typeof rawTargetRot !== 'undefined') ? (rawTargetRot.x * 180.0 / Math.PI + sixPackPitchOffset) : 0;
+            const rollDeg = (typeof rawTargetRot !== 'undefined') ? (-rawTargetRot.z * 180.0 / Math.PI) : 0;
+            const horizonSphere = document.getElementById('sp-horizon-sphere');
+            if (horizonSphere) {
+                // Pitch shift: 2px per degree, clamped ±42px
+                const pitchShiftY = Math.max(-42, Math.min(42, pitchDeg * 2.0));
+                horizonSphere.style.transform = `rotate(${-rollDeg}deg) translateY(${pitchShiftY}px)`;
+            }
+
+            // 3. Altimeter (0 - 10,000 ft or meters)
+            const altM = (typeof currentPlaneAltRel === 'number') ? currentPlaneAltRel : 0;
+            const altFt = altM * 3.28084;
+            const displayAlt = (sixPackUnits === 'imperial') ? altFt : altM;
+            const altLongAngle = ((displayAlt % 1000) / 1000.0) * 360.0;
+            const altShortAngle = ((displayAlt % 10000) / 10000.0) * 360.0;
+            const ptrAltLong = document.getElementById('sp-ptr-alt-long');
+            const ptrAltShort = document.getElementById('sp-ptr-alt-short');
+            if (ptrAltLong) ptrAltLong.style.transform = `rotate(${altLongAngle}deg)`;
+            if (ptrAltShort) ptrAltShort.style.transform = `rotate(${altShortAngle}deg)`;
+
+            // 4. Turn Coordinator
+            const turnPlane = document.getElementById('sp-turn-aircraft');
+            const slipBall = document.getElementById('sp-slip-ball');
+            // Estimate turn rate from roll and groundspeed
+            const gSpd = (typeof planeGroundspeed === 'number') ? planeGroundspeed : 0;
+            const estBank = Math.max(-30, Math.min(30, rollDeg));
+            if (turnPlane) turnPlane.style.transform = `rotate(${estBank}deg)`;
+            // Lateral ball coordination: centered when coordinated
+            if (slipBall) {
+                const ballOffset = Math.max(-20, Math.min(20, Math.sin(rollDeg * Math.PI / 180.0) * 8.0));
+                slipBall.setAttribute('cx', (65 + ballOffset).toFixed(1));
+            }
+
+            // 5. Heading Indicator (Directional Gyro)
+            const compassCard = document.getElementById('sp-compass-card');
+            const hdgBug = document.getElementById('sp-heading-bug');
+            const lblHdg = document.getElementById('sp-lbl-hdg');
+            const curHdg = Math.round((planeHeading % 360 + 360) % 360);
+            if (compassCard) compassCard.style.transform = `rotate(${-curHdg}deg)`;
+            if (hdgBug) hdgBug.style.transform = `rotate(${sixPackBugHeading - curHdg}deg)`;
+            if (lblHdg) lblHdg.textContent = `Heading · compass ${curHdg.toString().padStart(3, '0')}`;
+
+            // 6. Vertical Speed Indicator (0 - 2000 FPM or m/s)
+            const climbMs = (typeof planeClimbRate === 'number') ? planeClimbRate : 0;
+            const climbFpm = climbMs * 196.85;
+            const displayClimb = (sixPackUnits === 'imperial') ? climbFpm : climbMs;
+            const maxClimbScale = (sixPackUnits === 'imperial') ? 2000.0 : 10.0;
+            // 0 is at -90 deg (9 o'clock). Clockwise up to 80 deg (+2000 FPM), CCW down to -260 deg (-2000 FPM)
+            const vsiFrac = Math.max(-1.0, Math.min(1.0, displayClimb / maxClimbScale));
+            const vsiAngle = -90.0 + (vsiFrac * 170.0);
+            const ptrVsi = document.getElementById('sp-ptr-vsi');
+            if (ptrVsi) ptrVsi.style.transform = `rotate(${vsiAngle}deg)`;
+
+            // 7. Tachometer (RPM)
+            let rpm = 0;
+            if (typeof am32Telemetry !== 'undefined' && Array.isArray(am32Telemetry.rpm)) {
+                rpm = am32Telemetry.rpm[0] || 0;
+            }
+            if (rpm === 0) {
+                const pusherEl = document.getElementById('pusher-rpm');
+                if (pusherEl) rpm = parseInt(pusherEl.innerText, 10) || 0;
+            }
+            const rpmNorm = Math.max(0, Math.min(1.0, rpm / 3500.0));
+            const rpmAngle = -135.0 + (rpmNorm * 270.0);
+            const ptrRpm = document.getElementById('sp-ptr-rpm');
+            const digitRpm = document.getElementById('sp-digit-rpm');
+            if (ptrRpm) ptrRpm.style.transform = `rotate(${rpmAngle}deg)`;
+            if (digitRpm) digitRpm.textContent = rpm.toLocaleString();
+
+            // 8. Secondary Vertical Bars
+            // Throttle Bar
+            let thrPct = 0;
+            if (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.throttle_pct === 'number') {
+                thrPct = Math.round(am32Telemetry.throttle_pct);
+            }
+            const fillThr = document.getElementById('sp-fill-thr');
+            const valThr = document.getElementById('sp-val-thr');
+            if (fillThr) fillThr.style.height = `${Math.max(0, Math.min(100, thrPct))}%`;
+            if (valThr) valThr.textContent = `${thrPct}%`;
+
+            // Fuel / Battery Bar
+            let battPct = 100;
+            if (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.battery_remaining_pct === 'number') {
+                battPct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
+            }
+            const fillFuel = document.getElementById('sp-fill-fuel');
+            const valFuel = document.getElementById('sp-val-fuel');
+            if (fillFuel) {
+                fillFuel.style.height = `${battPct}%`;
+                fillFuel.style.background = (battPct > 35) ? '#30d158' : (battPct > 15 ? '#ffd60a' : '#ff453a');
+            }
+            if (valFuel) valFuel.textContent = `${battPct}%`;
+
+            // Flaps Readout
+            const valFlaps = document.getElementById('sp-val-flaps');
+            let flapDeg = 0;
+            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length >= 6) {
+                const flapPwm = latestServos[5] || latestServos[4] || 1000;
+                if (flapPwm > 1700) flapDeg = 30;
+                else if (flapPwm > 1400) flapDeg = 15;
+            }
+            if (valFlaps) valFlaps.innerHTML = `${flapDeg}&deg;`;
+
+            // Annunciator Warning Lamps
+            const lampStall = document.getElementById('sp-lamp-stall');
+            const lampGnd = document.getElementById('sp-lamp-gnd');
+            const lampHdg = document.getElementById('sp-lamp-hdg');
+            const lampAlt = document.getElementById('sp-lamp-alt');
+            const lampRpm = document.getElementById('sp-lamp-rpm');
+            const lampPause = document.getElementById('sp-lamp-pause');
+
+            const isAglLow = (typeof currentAGL === 'number') ? (currentAGL < 2.0) : (altM < 2.0);
+            const isStalling = (typeof isArmed !== 'undefined' && isArmed && !isAglLow && speedMs < 9.0 && speedMs > 0.5);
+
+            if (lampStall) lampStall.className = isStalling ? 'sp-annun-lamp lamp-red' : 'sp-annun-lamp';
+            if (lampGnd) lampGnd.className = isAglLow ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
+            if (lampHdg) lampHdg.className = (typeof flightMode !== 'undefined' && ['CRUISE', 'AUTO', 'LOITER'].includes(flightMode)) ? 'sp-annun-lamp lamp-cyan' : 'sp-annun-lamp';
+            if (lampAlt) lampAlt.className = (typeof isArmed !== 'undefined' && isArmed && altM > 5.0) ? 'sp-annun-lamp lamp-green' : 'sp-annun-lamp';
+            if (lampRpm) lampRpm.className = (rpm > 3200) ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
+            if (lampPause) lampPause.className = (typeof isArmed !== 'undefined' && !isArmed) ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
+
+            // Bottom Banner: GS & AGL
+            const bannerStatus = document.getElementById('sp-banner-status');
+            if (bannerStatus) {
+                const aglVal = (typeof currentAGL === 'number' && hasTerrainData) ? currentAGL : altM;
+                if (sixPackUnits === 'imperial') {
+                    const gsKt = Math.round(gSpd * 1.94384);
+                    const aglFt = Math.round(aglVal * 3.28084);
+                    bannerStatus.innerHTML = `GS ${gsKt} kt &bull; AGL ${aglFt} ft`;
+                } else {
+                    bannerStatus.innerHTML = `GS ${gSpd.toFixed(1)} m/s &bull; AGL ${aglVal.toFixed(1)} m`;
+                }
+            }
+        }
+
+                // Live AM32 Engine Indication System Render Loop
         function updateEisInstrument() {
             if (!eisWidgetVisible || !eisWidget) return;
 
