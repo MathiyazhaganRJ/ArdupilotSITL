@@ -243,7 +243,7 @@ async def mavlink_listener():
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
                   'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
-                  'STATUSTEXT'],
+                  'STATUSTEXT', 'PARAM_VALUE'],
             blocking=False
         )
         mission_handler.check_timeout()
@@ -355,6 +355,15 @@ async def mavlink_listener():
                         147, 200000, 0, 0, 0, 0, 0
                     )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
+
+                    # Request Battery Capacity parameter
+                    try:
+                        connection.mav.param_request_read_send(
+                            connection.target_system, connection.target_component,
+                            b'BATT_CAPACITY', -1
+                        )
+                    except Exception:
+                        pass
 
                     # Trigger initial mission download from vehicle
                     mission_handler.start_fetch()
@@ -487,6 +496,12 @@ async def mavlink_listener():
             elif msg.get_type() == 'SIMSTATE':
                 data['sim_lat'] = getattr(msg, 'lat', 0) / 1e7
                 data['sim_lon'] = getattr(msg, 'lng', 0) / 1e7
+            elif msg.get_type() == 'PARAM_VALUE':
+                param_id = getattr(msg, 'param_id', '')
+                if isinstance(param_id, bytes):
+                    param_id = param_id.decode('utf-8', errors='ignore').strip('\x00')
+                data['param_id'] = str(param_id)
+                data['param_value'] = float(getattr(msg, 'param_value', 0.0))
             elif msg.get_type() == 'ESTIMATOR_STATUS':
                 flags = getattr(msg, 'flags', 0)
                 data['flags'] = flags

@@ -2862,7 +2862,7 @@
     <div id="eis-widget">
         <!-- Minimal Top Bar with Controls -->
         <div class="gi-top-bar" id="gi-header">
-            <span class="gi-inst-title">GARMIN GI 275 EIS</span>
+            <span class="gi-inst-title">GI 275 EIS</span>
             <div class="gi-controls-row">
                 <button class="gi-mode-btn active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
                 <button class="gi-mode-btn" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
@@ -2903,16 +2903,16 @@
                 </div>
             </div>
 
-            <!-- Right: Battery Remaining % -->
-            <div class="gi-capsule-side">
+            <!-- Right: Battery Remaining % & Total Capacity -->
+            <div class="gi-capsule-side" id="gi-capsule-batt" style="cursor: pointer;" title="Battery Capacity: Click to edit (e.g. 6000, 8000, 10000 mAh)">
                 <span class="gi-capsule-num" id="gi-num-batt">100%</span>
-                <span class="gi-capsule-sub">BATTERY</span>
+                <span class="gi-capsule-sub" id="gi-sub-batt">6000 mAh</span>
             </div>
         </div>
 
         <!-- 6-Box Grid -->
         <div class="gi-engine-grid">
-            <!-- Box 1: AMPS (Current Draw) -->
+            <!-- Box 1: AMPS (Current Draw - Green Zone 5 to 12A) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box1">AMPS</span>
@@ -2922,9 +2922,9 @@
                     <div class="gi-track-line"></div>
                     <div class="gi-track-cap-l"></div>
                     <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-yellow" style="left: 15%; width: 25%;"></div>
-                    <div class="gi-track-green" style="left: 40%; width: 45%;"></div>
-                    <div class="gi-track-red-tick" style="left: 88%;"></div>
+                    <div class="gi-track-yellow" style="left: 5%; width: 20%;"></div>
+                    <div class="gi-track-green" style="left: 25%; width: 35%;"></div>
+                    <div class="gi-track-red-tick" style="left: 85%;"></div>
                     <div class="gi-track-pointer-down" id="gi-ptr-box1" style="left: 5%;"></div>
                 </div>
             </div>
@@ -2961,11 +2961,11 @@
                 </div>
             </div>
 
-            <!-- Box 4: mAH Used (Consumption) -->
+            <!-- Box 4: mAH Used (Consumption vs Capacity) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
-                    <span class="gi-cell-tag" id="gi-tag-box4">mAH Used</span>
-                    <span class="gi-cell-val" id="gi-val-box4">0</span>
+                    <span class="gi-cell-tag" id="gi-tag-box4">mAH USED</span>
+                    <span class="gi-cell-val" id="gi-val-box4">0 <span style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:500;">/ 6000</span></span>
                 </div>
                 <div class="gi-scale-track">
                     <div class="gi-track-line"></div>
@@ -2978,19 +2978,19 @@
                 </div>
             </div>
 
-            <!-- Box 5: MOT °C (Motor Temperature / Sync) -->
+            <!-- Box 5: mAH / KM (Cruise Energy Efficiency) -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
-                    <span class="gi-cell-tag" id="gi-tag-box5">MOT &deg;C</span>
-                    <span class="gi-cell-val" id="gi-val-box5">36</span>
+                    <span class="gi-cell-tag" id="gi-tag-box5">mAH / KM</span>
+                    <span class="gi-cell-val" id="gi-val-box5">---</span>
                 </div>
                 <div class="gi-scale-track">
                     <div class="gi-track-line"></div>
                     <div class="gi-track-cap-l"></div>
                     <div class="gi-track-cap-r"></div>
-                    <div class="gi-track-green" style="left: 20%; width: 60%;"></div>
-                    <div class="gi-track-red-tick" style="left: 85%;"></div>
-                    <div class="gi-track-pointer-down" id="gi-ptr-box5" style="left: 20%;"></div>
+                    <div class="gi-track-green" style="left: 18%; width: 37%;"></div>
+                    <div class="gi-track-red-tick" style="left: 80%;"></div>
+                    <div class="gi-track-pointer-down" id="gi-ptr-box5" style="left: 5%;"></div>
                 </div>
             </div>
 
@@ -3011,7 +3011,7 @@
 
         <!-- Bottom Avionics Status Pill -->
         <div class="gi-bottom-status-pill" id="gi-bot-pill">
-            OAT 22 &deg;C &bull; 6S LiPo &bull; 0 / 6000 mAH &bull; -- MIN
+            OAT 22 &deg;C &bull; 6S LiPo &bull; 6000 mAh CAP &bull; 6000 mAh REM &bull; -- MIN
         </div>
     </div>
     <!-- Live Weather Widget -->
@@ -6713,7 +6713,12 @@
                 addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
             }
             const data = JSON.parse(event.data);
-            if (data.type === 'STATUSTEXT') {
+            if (data.type === 'PARAM_VALUE') {
+                if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
+                    batteryCapacityMah = Math.round(data.param_value);
+                    localStorage.setItem('eis_battery_cap', batteryCapacityMah);
+                }
+            } else if (data.type === 'STATUSTEXT') {
                 addAutopilotMessage(data);
             } else if (data.type === 'STATUSTEXT_HISTORY') {
                 if (Array.isArray(data.messages)) {
@@ -7368,6 +7373,7 @@
         let eisSingleChannel = parseInt(localStorage.getItem('eis_single_ch') || '1', 10);
         let eisTwinLeftCh = parseInt(localStorage.getItem('eis_twin_left_ch') || '1', 10);
         let eisTwinRightCh = parseInt(localStorage.getItem('eis_twin_right_ch') || '2', 10);
+        let batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
 
         // AM32 ESC Telemetry State (Hardware buffers or Simulated)
         const am32Telemetry = {
@@ -7399,6 +7405,23 @@
         }
 
         if (btnToggleEis) btnToggleEis.onclick = toggleEisWidget;
+
+        const capsuleBatt = document.getElementById('gi-capsule-batt');
+        if (capsuleBatt) {
+            capsuleBatt.onclick = () => {
+                const input = prompt("Set Battery Capacity (mAh):", batteryCapacityMah);
+                if (input) {
+                    const val = parseInt(input, 10);
+                    if (!isNaN(val) && val >= 500 && val <= 50000) {
+                        batteryCapacityMah = val;
+                        localStorage.setItem('eis_battery_cap', val);
+                        const valSubBatt = document.getElementById('gi-sub-batt');
+                        if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
+                        addAutopilotMessage({ text: `Battery Pack Capacity updated to ${batteryCapacityMah} mAh`, severity: 6 });
+                    }
+                }
+            };
+        }
 
         if (localStorage.getItem('eis_widget_visible') === '0') {
             eisWidgetVisible = false;
@@ -7442,14 +7465,14 @@
                 if (lblBox1) lblBox1.textContent = 'AMPS';
                 if (lblBox2) lblBox2.textContent = 'ESC °C';
                 if (lblBox3) lblBox3.textContent = 'WATTS';
-                if (lblBox4) lblBox4.textContent = 'mAH Used';
-                if (lblBox5) lblBox5.textContent = 'MOT °C';
+                if (lblBox4) lblBox4.textContent = 'mAH USED';
+                if (lblBox5) lblBox5.textContent = 'mAH / KM';
             } else {
                 if (lblBox1) lblBox1.textContent = `L AMPS (E${eisTwinLeftCh})`;
                 if (lblBox2) lblBox2.textContent = `R AMPS (E${eisTwinRightCh})`;
                 if (lblBox3) lblBox3.textContent = `L ESC °C`;
                 if (lblBox4) lblBox4.textContent = `R ESC °C`;
-                if (lblBox5) lblBox5.textContent = 'SYNC Δ';
+                if (lblBox5) lblBox5.textContent = 'mAH / KM';
             }
         }
 
@@ -7620,11 +7643,11 @@
                 const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
                 setGiArchPointer(ptrRpm, rpmNorm);
 
-                // Box 1: AMPS (0 - 60A)
+                // Box 1: AMPS (0 - 20A, Green Zone: 5 - 12A)
                 const valBox1 = document.getElementById('gi-val-box1');
                 const ptrBox1 = document.getElementById('gi-ptr-box1');
                 if (valBox1) valBox1.textContent = activeAmp1.toFixed(1);
-                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 60.0) * 100))}%`;
+                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 20.0) * 100))}%`;
 
                 // Box 2: ESC °C (20 - 100°C)
                 const valBox2 = document.getElementById('gi-val-box2');
@@ -7638,18 +7661,29 @@
                 if (valBox3) valBox3.textContent = Math.round(totWatt);
                 if (ptrBox3) ptrBox3.style.left = `${Math.max(5, Math.min(95, (totWatt / 1500.0) * 100))}%`;
 
-                // Box 4: mAH Used (0 - 6000 mAH)
+                // Box 4: mAH Used (0 - batteryCapacityMah)
                 const valBox4 = document.getElementById('gi-val-box4');
                 const ptrBox4 = document.getElementById('gi-ptr-box4');
-                if (valBox4) valBox4.textContent = Math.round(am32Telemetry.consumed_mah);
-                if (ptrBox4) ptrBox4.style.left = `${Math.max(5, Math.min(95, (am32Telemetry.consumed_mah / 6000.0) * 100))}%`;
+                const consumedMah = Math.round(am32Telemetry.consumed_mah);
+                if (valBox4) valBox4.innerHTML = `${consumedMah} <span style="font-size:10px; color:rgba(255,255,255,0.45); font-weight:500;">/ ${batteryCapacityMah}</span>`;
+                if (ptrBox4) ptrBox4.style.left = `${Math.max(5, Math.min(95, (consumedMah / batteryCapacityMah) * 100))}%`;
 
-                // Box 5: MOT °C (20 - 120°C)
-                const motT = escTempMax + 6;
+                // Box 5: mAH / KM (Cruise Energy Efficiency)
+                // mAh/km = (current in mA) / (groundspeed in km/h) = (totAmp * 1000) / (planeGroundspeed * 3.6)
+                let mahPerKmVal = '---';
+                let mahPerKmNorm = 0.05;
+                if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
+                    const gndSpdKmH = planeGroundspeed * 3.6;
+                    const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
+                    if (isFinite(mahPerKm) && mahPerKm > 0) {
+                        mahPerKmVal = Math.round(mahPerKm);
+                        mahPerKmNorm = Math.max(0.05, Math.min(0.95, mahPerKm / 400.0));
+                    }
+                }
                 const valBox5 = document.getElementById('gi-val-box5');
                 const ptrBox5 = document.getElementById('gi-ptr-box5');
-                if (valBox5) valBox5.textContent = Math.round(motT);
-                if (ptrBox5) ptrBox5.style.left = `${Math.max(5, Math.min(95, ((motT - 20) / 90.0) * 100))}%`;
+                if (valBox5) valBox5.textContent = mahPerKmVal;
+                if (ptrBox5) ptrBox5.style.left = `${(mahPerKmNorm * 100).toFixed(1)}%`;
             } else {
                 const lCh = Math.max(0, Math.min(7, eisTwinLeftCh - 1));
                 const rCh = Math.max(0, Math.min(7, eisTwinRightCh - 1));
@@ -7681,17 +7715,17 @@
                 setGiArchPointer(ptrRpm, rpmNorm1);
                 setGiArchPointer(ptrRpm2, rpmNorm2);
 
-                // Box 1: L AMPS
+                // Box 1: L AMPS (Green: 5 - 12A)
                 const valBox1 = document.getElementById('gi-val-box1');
                 const ptrBox1 = document.getElementById('gi-ptr-box1');
                 if (valBox1) valBox1.textContent = activeAmp1.toFixed(1);
-                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 40.0) * 100))}%`;
+                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 20.0) * 100))}%`;
 
-                // Box 2: R AMPS
+                // Box 2: R AMPS (Green: 5 - 12A)
                 const valBox2 = document.getElementById('gi-val-box2');
                 const ptrBox2 = document.getElementById('gi-ptr-box2');
                 if (valBox2) valBox2.textContent = activeAmp2.toFixed(1);
-                if (ptrBox2) ptrBox2.style.left = `${Math.max(5, Math.min(95, (activeAmp2 / 40.0) * 100))}%`;
+                if (ptrBox2) ptrBox2.style.left = `${Math.max(5, Math.min(95, (activeAmp2 / 20.0) * 100))}%`;
 
                 // Box 3: L ESC °C
                 const valBox3 = document.getElementById('gi-val-box3');
@@ -7705,36 +7739,46 @@
                 if (valBox4) valBox4.textContent = Math.round(activeTemp2);
                 if (ptrBox4) ptrBox4.style.left = `${Math.max(5, Math.min(95, ((activeTemp2 - 20) / 80.0) * 100))}%`;
 
-                // Box 5: SYNC Δ
-                const diff = activeRpm2 - activeRpm1;
+                // Box 5: mAH / KM (Cruise Energy Efficiency)
+                let mahPerKmVal = '---';
+                let mahPerKmNorm = 0.05;
+                if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
+                    const gndSpdKmH = planeGroundspeed * 3.6;
+                    const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
+                    if (isFinite(mahPerKm) && mahPerKm > 0) {
+                        mahPerKmVal = Math.round(mahPerKm);
+                        mahPerKmNorm = Math.max(0.05, Math.min(0.95, mahPerKm / 400.0));
+                    }
+                }
                 const valBox5 = document.getElementById('gi-val-box5');
                 const ptrBox5 = document.getElementById('gi-ptr-box5');
-                if (valBox5) valBox5.textContent = `${diff >= 0 ? '+' : ''}${diff} RPM`;
-                const syncNorm = Math.max(0, Math.min(1, (diff + 250) / 500.0));
-                if (ptrBox5) ptrBox5.style.left = `${(syncNorm * 100).toFixed(1)}%`;
+                if (valBox5) valBox5.textContent = mahPerKmVal;
+                if (ptrBox5) ptrBox5.style.left = `${(mahPerKmNorm * 100).toFixed(1)}%`;
             }
 
-            // Top Arch Right: Battery Remaining %
+            // Top Arch Right: Battery Remaining % & Total Pack Capacity
             const pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
             const valRem = document.getElementById('gi-num-batt');
+            const valSubBatt = document.getElementById('gi-sub-batt');
             if (valRem) valRem.textContent = `${pct}%`;
+            if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
 
-            // Box 6: Batt Amps & Batt Volts (Direct from Photo!)
+            // Box 6: Batt Amps & Batt Volts
             const valBattAmps = document.getElementById('gi-val-batt-amps');
             const valBattVolts = document.getElementById('gi-val-batt-volts');
             if (valBattAmps) valBattAmps.textContent = totAmp.toFixed(1);
             if (valBattVolts) valBattVolts.textContent = packVolt.toFixed(1);
 
-            // Bottom Status Pill: OAT & Battery Endurance
+            // Bottom Status Pill: OAT & Battery Endurance with Capacity
             const botPill = document.getElementById('gi-bot-pill');
             if (botPill) {
                 let minsRem = '--';
                 if (totAmp > 0.8) {
-                    const remMah = Math.max(0, (pct / 100.0) * 6000);
-                    minsRem = Math.round((remMah / (totAmp * 1000)) * 60);
+                    const remMah = Math.max(0, (pct / 100.0) * batteryCapacityMah);
+                    minsRem = Math.round((remMah / (totAmp * 1000.0)) * 60);
                 }
-                const remMahTotal = Math.max(0, Math.round(6000 - am32Telemetry.consumed_mah));
-                botPill.innerHTML = `OAT 22 &deg;C &bull; 6S LiPo &bull; ${remMahTotal} mAH REM &bull; ${minsRem} MIN`;
+                const remMahTotal = Math.max(0, Math.round(batteryCapacityMah - am32Telemetry.consumed_mah));
+                botPill.innerHTML = `OAT 22 &deg;C &bull; 6S LiPo &bull; ${batteryCapacityMah} mAh CAP &bull; ${remMahTotal} mAh REM &bull; ${minsRem} MIN`;
             }
         }
 
