@@ -2750,8 +2750,8 @@
                         m/s</span></div>
                 <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
                         m/s</span></div>
-                <div class="data-row"><span class="data-label">RPM (Cruise)</span><span id="pusher-rpm" class="data-val"
-                        style="color: var(--success);">0</span></div>
+                <div class="data-row" style="cursor: pointer;" onclick="togglePfdQnhUnit(event)" title="Click to toggle hPa / inHg"><span class="data-label">QNH</span><span id="telemetry-qnh" class="data-val"
+                        style="color: var(--accent); font-family: 'B612 Mono', monospace;">1013 hPa</span></div>
                 <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
                         style="color: var(--success); font-weight:700;">3D FIX</span></div>
             </div>
@@ -5136,7 +5136,7 @@
         function updatePfdQnh() {
             const qnhEl = document.getElementById('lxnav-pfd-qnh');
             const qnhLbl = document.getElementById('lxnav-pfd-qnh-lbl');
-            if (!qnhEl) return;
+            const telemQnhEl = document.getElementById('telemetry-qnh');
             let pressHpa = 1013.2;
             if (typeof liveFetchedWeather !== 'undefined' && liveFetchedWeather && liveFetchedWeather.press) {
                 pressHpa = liveFetchedWeather.press;
@@ -5144,14 +5144,19 @@
                 pressHpa = activeWeather.press;
             }
             if (pfdQnhUnit === 'hPa') {
-                qnhEl.textContent = Math.round(pressHpa);
+                const valHpa = Math.round(pressHpa);
+                if (qnhEl) qnhEl.textContent = valHpa;
                 if (qnhLbl) qnhLbl.textContent = 'QNH';
+                if (telemQnhEl) telemQnhEl.textContent = `${valHpa} hPa`;
             } else {
                 const inHg = pressHpa * 0.02952998;
-                qnhEl.textContent = inHg.toFixed(2);
+                const valInHg = inHg.toFixed(2);
+                if (qnhEl) qnhEl.textContent = valInHg;
                 if (qnhLbl) qnhLbl.textContent = 'BARO';
+                if (telemQnhEl) telemQnhEl.textContent = `${valInHg} inHg`;
             }
         }
+        updatePfdQnh();
         window.updatePfdQnh = updatePfdQnh;
 
         function refreshLxnavWaypoints() {}
@@ -7611,7 +7616,9 @@
                 // RPM = KV * V * Throttle%. (Multiplying by 0.90 matches real-world observation of ~4500 RPM at 50% throttle)
                 let maxRpm = MOTOR_KV * BATTERY_VOLTAGE;
                 let currentRpm = maxRpm * throttlePct * 0.90;
-                document.getElementById('pusher-rpm').innerText = Math.round(currentRpm);
+                window.simulatedCruiseRpm = Math.round(currentRpm);
+                const pusherEl = document.getElementById('pusher-rpm');
+                if (pusherEl) pusherEl.innerText = Math.round(currentRpm);
             }
             else if (data.type === 'MISSION_WAYPOINTS') {
                 if (Array.isArray(data.waypoints) && data.waypoints.length > 0) {
@@ -8310,8 +8317,7 @@
                 rpm = am32Telemetry.rpm[0] || 0;
             }
             if (rpm === 0) {
-                const pusherEl = document.getElementById('pusher-rpm');
-                if (pusherEl) rpm = parseInt(pusherEl.innerText, 10) || 0;
+                rpm = window.simulatedCruiseRpm || 0;
             }
             const rpmNorm = Math.max(0, Math.min(1.0, rpm / 3500.0));
             const rpmAngle = -135.0 + (rpmNorm * 270.0);
