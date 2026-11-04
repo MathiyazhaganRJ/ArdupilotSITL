@@ -988,32 +988,38 @@
 
         /* Waypoint toggle uses unified .toolbar-btn.active */
 
-        /* LXNAV Circular Glass Cockpit MFD Widget */
-        #lxnav-mfd-widget {
+        /* ========================================================= */
+        /* UNIFIED AVIONICS GLASS COCKPIT STACK (PFD + EIS)          */
+        /* ========================================================= */
+        #avionics-stack {
             position: absolute;
             bottom: 20px;
-            left: 585px;
-            width: 244px;
-            min-width: 244px;
-            max-width: 244px;
-            height: 270px;
-            min-height: 270px;
-            max-height: 270px;
-            box-sizing: border-box;
-            background: var(--panel-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            padding: 10px 12px;
-            box-shadow: var(--shadow);
-            z-index: 100;
+            left: 840px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            z-index: 120;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        /* Top Bezel: PFD Horizon / Variometer MFD */
+        #lxnav-mfd-widget {
+            position: relative;
+            width: 320px;
+            height: 254px;
+            box-sizing: border-box;
+            background: #000000;
+            border: 3px solid #1a212b;
+            border-radius: 8px;
+            padding: 8px 10px 6px 10px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), inset 0 2px 4px rgba(255, 255, 255, 0.08);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
+            font-family: 'B612', -apple-system, BlinkMacSystemFont, monospace;
         }
 
         .lxnav-header {
@@ -1812,9 +1818,7 @@
         /* GARMIN GI 275 EIS AVIATION-GRADE ENGINE INSTRUMENT        */
         /* ========================================================= */
         #eis-widget {
-            position: absolute;
-            bottom: 20px;
-            left: 840px;
+            position: relative;
             width: 320px;
             height: 425px;
             box-sizing: border-box;
@@ -1823,9 +1827,7 @@
             border-radius: 8px;
             padding: 6px 8px 6px 8px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), inset 0 2px 4px rgba(255, 255, 255, 0.08), inset 0 -3px 6px rgba(0, 0, 0, 0.8);
-            z-index: 120;
             user-select: none;
-            transition: opacity 0.25s ease, transform 0.25s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -2603,28 +2605,12 @@
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-eis" title="Toggle GI 275 EIS Engine & Power Monitor (Hotkey 'E')">
+        <button class="toolbar-btn active" id="btn-toggle-avionics" title="Toggle Glass Cockpit Avionics Stack (PFD + EIS) [Hotkey 'E' / 'H']">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
-                <path d="m4.93 4.93 2.12 2.12m9.9 9.9 2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"></path>
-            </svg>
-        </button>
-        <button class="toolbar-btn active" id="btn-toggle-sixpack" title="Toggle Classic Six-Pack Cockpit (Hotkey '6')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
-                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-            </svg>
-        </button>
-        <button class="toolbar-btn active" id="btn-toggle-lxnav"  title="Toggle LXNAV Glass Cockpit HUD (Hotkey 'H')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="2" x2="12" y2="6"></line>
-                <line x1="12" y1="18" x2="12" y2="22"></line>
-                <line x1="2" y1="12" x2="6" y2="12"></line>
-                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <circle cx="12" cy="9" r="4"></circle>
+                <line x1="5" y1="17" x2="19" y2="17"></line>
+                <polyline points="8 20 12 17 16 20"></polyline>
             </svg>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
@@ -3166,7 +3152,9 @@
         </div>
     </div>
 
-    <!-- LXNAV Glass Cockpit Multi-Function Display (MFD) Widget -->
+    <!-- Unified Glass Cockpit Avionics Stack (PFD Horizon + GI 275 EIS) -->
+    <div id="avionics-stack">
+        <!-- LXNAV Glass Cockpit Multi-Function Display (MFD) Widget -->
     <div id="lxnav-mfd-widget">
         <div class="lxnav-header">
             <div class="lxnav-title-group">
@@ -3310,7 +3298,7 @@
                 <button class="gi-mode-btn active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
                 <button class="gi-mode-btn" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
                 <button class="gi-mode-btn" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
-                <button class="gi-btn-close" onclick="toggleEisWidget()" title="Close Dashboard">&times;</button>
+                <button class="gi-btn-close" onclick="toggleAvionicsStack()" title="Close Avionics Stack">&times;</button>
             </div>
         </div>
 
@@ -3464,391 +3452,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Classic Six-Pack Flight Instrument Cockpit Panel -->
-    <div id="sixpack-panel">
-        <div class="sixpack-titlebar" id="sixpack-header">
-            <div class="sixpack-title-text">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-                    <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-                    <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
-                    <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-                </svg>
-                Classic Six-Pack Cockpit
-            </div>
-            <div class="sixpack-tb-btns">
-                <button class="sixpack-btn-unit" id="sp-btn-unit-toggle" onclick="toggleSixPackUnits()" title="Toggle Knots/Feet vs m/s, m">UNITS: KTS / FT</button>
-                <button class="sixpack-btn-close" onclick="toggleSixPackPanel()" title="Close Six-Pack Panel">&times;</button>
-            </div>
-        </div>
-
-        <div class="sixpack-body">
-            <!-- 3x2 Primary Flight Instruments Grid -->
-            <div class="sixpack-grid-6">
-                <!-- 1. Airspeed Indicator (KIAS) -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <!-- Dial ticks & arcs -->
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <!-- White Arc: Flaps range (40 - 85 kt) -->
-                                <path d="M 23 88 A 49 49 0 0 1 54 16" fill="none" stroke="#ffffff" stroke-width="3.5" opacity="0.9" />
-                                <!-- Green Arc: Normal operating range (50 - 135 kt) -->
-                                <path d="M 18 73 A 49 49 0 0 1 106 36" fill="none" stroke="#30d158" stroke-width="4.5" />
-                                <!-- Yellow Arc: Caution range (135 - 165 kt) -->
-                                <path d="M 106 36 A 49 49 0 0 1 113 74" fill="none" stroke="#ffd60a" stroke-width="4.5" />
-                                <!-- Red Radial: Vne (165 kt) -->
-                                <line x1="113" y1="74" x2="104" y2="72" stroke="#ff453a" stroke-width="2.5" />
-                                <!-- Dial Numbers -->
-                                <text x="65" y="27" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">100</text>
-                                <text x="91" y="38" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">120</text>
-                                <text x="103" y="60" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">140</text>
-                                <text x="98" y="85" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">160</text>
-                                <text x="79" y="105" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">180</text>
-                                <text x="52" y="105" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">200</text>
-                                <text x="31" y="86" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">40</text>
-                                <text x="25" y="62" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">60</text>
-                                <text x="38" y="38" fill="#ffffff" font-size="8" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">80</text>
-                                <!-- Dial Label -->
-                                <text x="65" y="76" fill="#8b9bb0" font-size="8" font-weight="800" text-anchor="middle" letter-spacing="1">KNOTS</text>
-                                <text id="sp-digit-asi" x="65" y="88" fill="#00e5ff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
-                                <!-- Pointer Needle -->
-                                <g id="sp-ptr-asi" transform="rotate(-150 65 65)">
-                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
-                                    <polygon points="63,65 65,80 67,65" fill="#ffffff" />
-                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <span id="sp-lbl-asi">Airspeed (KIAS)</span>
-                    </div>
-                </div>
-
-                <!-- 2. Attitude Indicator (Artificial Horizon) -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <defs>
-                                    <clipPath id="sp-horizon-clip">
-                                        <circle cx="65" cy="65" r="62" />
-                                    </clipPath>
-                                </defs>
-                                <g clip-path="url(#sp-horizon-clip)">
-                                    <!-- Rotating / Translating Horizon Disc -->
-                                    <g id="sp-horizon-sphere" transform="rotate(0 65 65) translate(0 0)">
-                                        <!-- Sky -->
-                                        <rect x="-70" y="-140" width="270" height="205" fill="#1e70ba" />
-                                        <!-- Ground -->
-                                        <rect x="-70" y="65" width="270" height="205" fill="#7a5228" />
-                                        <!-- Horizon Reference Line -->
-                                        <line x1="-70" y1="65" x2="200" y2="65" stroke="#ffffff" stroke-width="2.5" />
-                                        <!-- Pitch Ladder lines (±10°, ±20°) -->
-                                        <line x1="53" y1="45" x2="77" y2="45" stroke="#ffffff" stroke-width="1.5" />
-                                        <text x="47" y="48" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">10</text>
-                                        <text x="83" y="48" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">10</text>
-
-                                        <line x1="47" y1="25" x2="83" y2="25" stroke="#ffffff" stroke-width="1.8" />
-                                        <text x="41" y="28" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">20</text>
-                                        <text x="89" y="28" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">20</text>
-
-                                        <line x1="53" y1="85" x2="77" y2="85" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3 2" />
-                                        <text x="47" y="88" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">10</text>
-                                        <text x="83" y="88" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">10</text>
-
-                                        <line x1="47" y1="105" x2="83" y2="105" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="4 2" />
-                                        <text x="41" y="108" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="end">20</text>
-                                        <text x="89" y="108" fill="#ffffff" font-size="7" font-family="'B612 Mono', monospace" text-anchor="start">20</text>
-                                    </g>
-                                    <!-- Top Roll Index Arc & Ticks -->
-                                    <path d="M 25 35 A 55 55 0 0 1 105 35" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-                                    <polygon points="65,11 61,18 69,18" fill="#ffffff" />
-                                    <!-- Fixed Miniature Aircraft Yellow Delta Symbol -->
-                                    <path d="M 36 65 L 53 65 L 58 70 L 65 67 L 72 70 L 77 65 L 94 65" fill="none" stroke="#ffd60a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                                    <circle cx="65" cy="65" r="2.5" fill="#ffd60a" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <button class="sp-btn-sub" onclick="adjustAttitudePitch(1)" title="Pitch Up Adjustment">&Delta;</button>
-                        <span>Attitude</span>
-                        <button class="sp-btn-sub" onclick="adjustAttitudePitch(-1)" title="Pitch Down Adjustment">&nabla;</button>
-                    </div>
-                </div>
-
-                <!-- 3. Altimeter -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <!-- 0 - 9 Numerals -->
-                                <text x="65" y="24" fill="#ffffff" font-size="12" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
-                                <text x="89" y="32" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">1</text>
-                                <text x="106" y="52" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">2</text>
-                                <text x="109" y="76" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">3</text>
-                                <text x="96" y="99" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">4</text>
-                                <text x="65" y="112" fill="#ffffff" font-size="12" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
-                                <text x="34" y="99" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">6</text>
-                                <text x="21" y="76" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">7</text>
-                                <text x="24" y="52" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">8</text>
-                                <text x="41" y="32" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">9</text>
-                                <!-- Labels -->
-                                <text x="65" y="44" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">ALT</text>
-                                <text x="65" y="88" fill="#8b9bb0" font-size="6.5" font-weight="700" text-anchor="middle">100 FEET</text>
-                                <!-- Kollsman Baro Window at 3 o'clock -->
-                                <rect x="80" y="58" width="30" height="13" fill="#000000" stroke="rgba(255,255,255,0.3)" rx="2" />
-                                <text id="sp-kollsman-val" x="95" y="68" fill="#ffffff" font-size="7.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">29.92</text>
-                                <!-- 1,000 ft Short Pointer -->
-                                <g id="sp-ptr-alt-short" transform="rotate(0 65 65)">
-                                    <polygon points="62,65 63,32 67,32 68,65" fill="#ffffff" />
-                                </g>
-                                <!-- 100 ft Long Pointer -->
-                                <g id="sp-ptr-alt-long" transform="rotate(0 65 65)">
-                                    <polygon points="63.5,65 64.5,14 65.5,14 66.5,65" fill="#ffffff" />
-                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
-                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <button class="sp-btn-sub" onclick="adjustAltimeterBaro(-0.01)">-</button>
-                        <span id="sp-lbl-alt">Altimeter</span>
-                        <button class="sp-btn-sub" onclick="adjustAltimeterBaro(0.01)">+</button>
-                        <button class="sp-btn-sub" onclick="resetAltimeterBaro()" title="Standard Atmosphere 29.92 / 1013">Local</button>
-                    </div>
-                </div>
-
-                <!-- 4. Turn Coordinator -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <text x="65" y="28" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">2 MIN</text>
-                                <text x="65" y="98" fill="#64748b" font-size="6" font-weight="700" text-anchor="middle">NO PITCH INFORMATION</text>
-                                <!-- Level Reference Ticks -->
-                                <line x1="22" y1="65" x2="38" y2="65" stroke="#ffffff" stroke-width="2" />
-                                <line x1="92" y1="65" x2="108" y2="65" stroke="#ffffff" stroke-width="2" />
-                                <!-- 2-Min Rate of Turn Marks (L / R) -->
-                                <line x1="24" y1="78" x2="38" y2="78" stroke="#ffffff" stroke-width="2.5" />
-                                <text x="28" y="90" fill="#ffffff" font-size="8" font-weight="800">L</text>
-                                <line x1="92" y1="78" x2="106" y2="78" stroke="#ffffff" stroke-width="2.5" />
-                                <text x="98" y="90" fill="#ffffff" font-size="8" font-weight="800">R</text>
-                                <!-- Banking Aircraft Symbol -->
-                                <g id="sp-turn-aircraft" transform="rotate(0 65 65)">
-                                    <line x1="30" y1="65" x2="100" y2="65" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
-                                    <circle cx="65" cy="65" r="5" fill="#ffffff" />
-                                    <line x1="65" y1="56" x2="65" y2="65" stroke="#ffffff" stroke-width="2.5" />
-                                    <circle cx="30" cy="65" r="2.5" fill="#ffffff" />
-                                    <circle cx="100" cy="65" r="2.5" fill="#ffffff" />
-                                </g>
-                                <!-- Inclinometer Curved Tube -->
-                                <path d="M 38 85 Q 65 91 92 85" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="8" stroke-linecap="round" />
-                                <!-- Inclinometer Center Reference Lines -->
-                                <line x1="59" y1="81" x2="59" y2="92" stroke="#ffffff" stroke-width="1.2" />
-                                <line x1="71" y1="81" x2="71" y2="92" stroke="#ffffff" stroke-width="1.2" />
-                                <!-- Moving Ball -->
-                                <circle id="sp-slip-ball" cx="65" cy="87.5" r="4.2" fill="#000000" stroke="#8b9bb0" stroke-width="1.2" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <span>Turn coordinator</span>
-                    </div>
-                </div>
-
-                <!-- 5. Heading Indicator (Directional Gyro) -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <!-- Rotating Compass Rose -->
-                                <g id="sp-compass-card" transform="rotate(0 65 65)">
-                                    <circle cx="65" cy="65" r="58" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" />
-                                    <!-- Cardinal Points -->
-                                    <text x="65" y="22" fill="#30d158" font-size="11" font-family="'B612 Mono', monospace" font-weight="800" text-anchor="middle">N</text>
-                                    <text x="108" y="69" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">E</text>
-                                    <text x="65" y="114" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">S</text>
-                                    <text x="22" y="69" fill="#30d158" font-size="11" font-family="'B612 Mono', monospace" font-weight="800" text-anchor="middle">W</text>
-                                    <!-- Compass numbers -->
-                                    <text x="89" y="30" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">3</text>
-                                    <text x="105" y="49" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">6</text>
-                                    <text x="104" y="87" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">12</text>
-                                    <text x="88" y="106" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
-                                    <text x="42" y="106" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">21</text>
-                                    <text x="26" y="87" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">24</text>
-                                    <text x="26" y="49" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">30</text>
-                                    <text x="42" y="30" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">33</text>
-                                </g>
-                                <!-- Heading Bug -->
-                                <g id="sp-heading-bug" transform="rotate(0 65 65)">
-                                    <polygon points="65,7 61,1 69,1" fill="#ff9500" stroke="#000000" stroke-width="0.5" />
-                                </g>
-                                <!-- Fixed Center Airplane Symbol (Yellow Cross) -->
-                                <path d="M 65 48 L 65 82 M 50 58 L 80 58 M 58 78 L 72 78" stroke="#ffd60a" stroke-width="2.5" stroke-linecap="round" />
-                                <!-- Top Index Lubber Line -->
-                                <polygon points="65,11 62,5 68,5" fill="#ffffff" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <button class="sp-btn-sub" onclick="syncSixPackHeadingBug()" title="Sync Bug to Current Heading">Sync</button>
-                        <span id="sp-lbl-hdg">Heading · compass 000</span>
-                        <button class="sp-btn-sub" onclick="adjustSixPackBug(-5)">-</button>
-                        <button class="sp-btn-sub" onclick="adjustSixPackBug(5)">+</button>
-                    </div>
-                </div>
-
-                <!-- 6. Vertical Speed Indicator (VSI) -->
-                <div class="sp-cell">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <!-- 0 at 9 o'clock -->
-                                <text x="24" y="68" fill="#ffffff" font-size="11" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
-                                <!-- Up Ticks & Numbers -->
-                                <text x="35" y="42" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
-                                <text x="65" y="26" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
-                                <text x="95" y="42" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
-                                <text x="105" y="65" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">20</text>
-                                <text x="95" y="52" fill="#8b9bb0" font-size="6.5" font-weight="800">UP</text>
-                                <!-- Down Ticks & Numbers -->
-                                <text x="35" y="93" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
-                                <text x="65" y="110" fill="#ffffff" font-size="10" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
-                                <text x="95" y="93" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
-                                <text x="95" y="80" fill="#8b9bb0" font-size="6.5" font-weight="800">DN</text>
-                                <!-- Center Label -->
-                                <text x="65" y="76" fill="#8b9bb0" font-size="6.5" font-weight="800" text-anchor="middle">100 FPM</text>
-                                <!-- VSI Needle (Starts at 9 o'clock / -90 deg) -->
-                                <g id="sp-ptr-vsi" transform="rotate(-90 65 65)">
-                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
-                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
-                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <span id="sp-lbl-vsi">Vertical speed</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Tachometer + Secondary Indicators -->
-            <div class="sixpack-engine-col">
-                <!-- Tachometer -->
-                <div class="sp-tacho-wrap">
-                    <div class="sp-bezel-outer">
-                        <div class="sp-screw sp-screw-tl"></div><div class="sp-screw sp-screw-tr"></div>
-                        <div class="sp-screw sp-screw-bl"></div><div class="sp-screw sp-screw-br"></div>
-                        <div class="sp-dial-inner">
-                            <svg viewBox="0 0 130 130" width="130" height="130">
-                                <circle cx="65" cy="65" r="63" fill="#0c0e14" />
-                                <!-- Green Operating Arc (20 - 27 x100 RPM) -->
-                                <path d="M 85 24 A 49 49 0 0 1 113 74" fill="none" stroke="#30d158" stroke-width="4.5" />
-                                <!-- Redline (27+) -->
-                                <line x1="113" y1="74" x2="104" y2="72" stroke="#ff453a" stroke-width="2.5" />
-                                <!-- Numbers -->
-                                <text x="32" y="88" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
-                                <text x="25" y="62" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">5</text>
-                                <text x="38" y="38" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">10</text>
-                                <text x="65" y="27" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">15</text>
-                                <text x="91" y="38" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">20</text>
-                                <text x="103" y="60" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">25</text>
-                                <text x="98" y="85" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">30</text>
-                                <text x="76" y="105" fill="#ffffff" font-size="9" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">35</text>
-                                <text x="65" y="76" fill="#8b9bb0" font-size="7" font-weight="800" text-anchor="middle">RPM x100</text>
-                                <!-- Digital Inset Box -->
-                                <rect x="46" y="84" width="38" height="15" fill="#000000" stroke="rgba(255,255,255,0.25)" rx="2" />
-                                <text id="sp-digit-rpm" x="65" y="95" fill="#ffffff" font-size="8.5" font-family="'B612 Mono', monospace" font-weight="700" text-anchor="middle">0</text>
-                                <!-- Needle -->
-                                <g id="sp-ptr-rpm" transform="rotate(-135 65 65)">
-                                    <polygon points="63.5,65 64.5,18 65.5,18 66.5,65" fill="#ffffff" />
-                                    <polygon points="63,65 65,78 67,65" fill="#ffffff" />
-                                    <circle cx="65" cy="65" r="5" fill="#1c202a" stroke="#ffffff" stroke-width="1.5" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="sp-label-row">
-                        <span>Tachometer</span>
-                    </div>
-                </div>
-
-                <!-- Secondary Vertical Bar Gauges -->
-                <div class="sp-secondary-bars">
-                    <!-- THR (Throttle) -->
-                    <div class="sp-vbar-col">
-                        <span class="sp-vbar-lbl">THR</span>
-                        <div class="sp-vbar-track">
-                            <div class="sp-vbar-fill" id="sp-fill-thr" style="height: 0%; background: #ffffff;"></div>
-                        </div>
-                        <span class="sp-vbar-val" id="sp-val-thr">0%</span>
-                    </div>
-                    <!-- FUEL / BATT -->
-                    <div class="sp-vbar-col">
-                        <span class="sp-vbar-lbl" id="sp-lbl-fuel">BATT</span>
-                        <div class="sp-vbar-track">
-                            <div class="sp-vbar-fill" id="sp-fill-fuel" style="height: 100%; background: #30d158;"></div>
-                        </div>
-                        <span class="sp-vbar-val" id="sp-val-fuel">100%</span>
-                    </div>
-                    <!-- FLAPS -->
-                    <div class="sp-vbar-col">
-                        <span class="sp-vbar-lbl">FLAPS</span>
-                        <div class="sp-flaps-box" id="sp-val-flaps">0&deg;</div>
-                        <div class="sp-flaps-ticks">
-                            <span>10</span>
-                            <span>20</span>
-                            <span>30</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Master Autopilot Status: Arm State & Flight Mode -->
-                <div class="sp-ap-status-row">
-                    <div class="sp-ap-card" id="sp-card-arm">
-                        <span class="sp-ap-sub">ARM STATUS</span>
-                        <div class="sp-ap-badge arm-disarmed" id="sp-badge-arm">
-                            <span class="sp-ap-dot" id="sp-dot-arm"></span>
-                            <span id="sp-txt-arm">DISARMED</span>
-                        </div>
-                    </div>
-                    <div class="sp-ap-card" id="sp-card-mode">
-                        <span class="sp-ap-sub">FLIGHT MODE</span>
-                        <div class="sp-ap-badge badge-mode" id="sp-badge-mode">
-                            <span id="sp-txt-mode">MANUAL</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bottom Status Strip (Groundspeed & AGL) -->
-                <div class="sp-bottom-banner" id="sp-banner-status">
-                    GS 0 kt &bull; AGL 0 ft
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Live Weather Widget -->
@@ -5144,7 +4747,12 @@
         }
         const lxnavMfdEl = document.getElementById('lxnav-mfd-widget');
         if (lxnavMfdEl && lxnavMfdEl.querySelector('.lxnav-header')) {
-            makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
+            const avStack = document.getElementById('avionics-stack');
+            if (avStack) {
+                makeDraggable(avStack, avStack.querySelector('.lxnav-header') || avStack.querySelector('.gi-top-bar') || avStack);
+            } else if (lxnavMfdEl) {
+                makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
+            }
         }
 
         // FMS CDU Navigation Panel Toggle
@@ -5491,13 +5099,29 @@
             setLxnavPage(currentLxnavPage === 1 ? 2 : 1);
         }
 
-        function toggleLxnavWidget() {
-            const w = document.getElementById('lxnav-mfd-widget');
-            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
-            lxnavWidgetVisible = !isVisible;
-            const btn = document.getElementById('btn-toggle-lxnav');
-            if (w) w.style.display = lxnavWidgetVisible ? 'block' : 'none';
-            if (btn) btn.classList.toggle('active', lxnavWidgetVisible);
+        // Unified Avionics Stack (PFD Horizon + GI 275 EIS)
+        const btnToggleAvionics = document.getElementById('btn-toggle-avionics');
+        const avionicsStack = document.getElementById('avionics-stack');
+        var avionicsStackVisible = localStorage.getItem('avionics_stack_visible') !== '0';
+
+        function toggleAvionicsStack() {
+            const stack = document.getElementById('avionics-stack');
+            const btn = document.getElementById('btn-toggle-avionics');
+            const isVisible = stack && (stack.style.display !== 'none' && window.getComputedStyle(stack).display !== 'none');
+            avionicsStackVisible = !isVisible;
+            if (stack) stack.style.display = avionicsStackVisible ? 'flex' : 'none';
+            if (btn) btn.classList.toggle('active', avionicsStackVisible);
+            localStorage.setItem('avionics_stack_visible', avionicsStackVisible ? '1' : '0');
+        }
+        window.toggleAvionicsStack = toggleAvionicsStack;
+        window.toggleLxnavWidget = toggleAvionicsStack;
+        window.toggleEisWidget = toggleAvionicsStack;
+
+        if (btnToggleAvionics) btnToggleAvionics.onclick = toggleAvionicsStack;
+
+        if (avionicsStack && !avionicsStackVisible) {
+            avionicsStack.style.display = 'none';
+            if (btnToggleAvionics) btnToggleAvionics.classList.remove('active');
         }
 
         function refreshLxnavWaypoints() {}
@@ -5506,11 +5130,7 @@
         window.nextLxnavPage = nextLxnavPage;
         window.prevLxnavPage = prevLxnavPage;
         window.togglePrimaryDuo = togglePrimaryDuo;
-        window.toggleLxnavWidget = toggleLxnavWidget;
         window.refreshLxnavWaypoints = refreshLxnavWaypoints;
-
-        const btnToggleLxnavEl = document.getElementById('btn-toggle-lxnav');
-        if (btnToggleLxnavEl) btnToggleLxnavEl.onclick = toggleLxnavWidget;
 
         // Rotary scroll wheel over bezel (toggles between PFD and Vario)
         const lxnavViewportEl = document.getElementById('lxnav-dial-viewport');
@@ -6870,7 +6490,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === '6') {
+            if (false) {
                 if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
                 toggleSixPackPanel();
             }
@@ -6882,8 +6502,8 @@
                 toggleWaypoints();
             } else if (e.key === 'm' || e.key === 'M') {
                 toggleMessagesTab();
-            } else if (e.key === 'h' || e.key === 'H') {
-                toggleLxnavWidget();
+            } else if (e.key === 'h' || e.key === 'H' || e.key === 'e' || e.key === 'E') {
+                toggleAvionicsStack();
             } else if (e.key === '[' || e.key === '{') {
                 prevLxnavPage();
             } else if (e.key === ']' || e.key === '}') {
@@ -8319,16 +7939,10 @@
         const eisBtnTwin = document.getElementById('eis-btn-twin');
         const eisBtnCh = document.getElementById('eis-btn-ch');
 
-        function toggleEisWidget() {
-            const isVisible = eisWidget && (eisWidget.style.display !== 'none' && window.getComputedStyle(eisWidget).display !== 'none');
-            eisWidgetVisible = !isVisible;
-            if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
-            if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
-            localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
-        }
-        window.toggleEisWidget = toggleEisWidget;
+        
+        
 
-        if (btnToggleEis) btnToggleEis.onclick = toggleEisWidget;
+        
 
         const capsuleBatt = document.getElementById('gi-capsule-batt');
         if (capsuleBatt) {
@@ -8489,16 +8103,10 @@
         const sixPackPanel = document.getElementById('sixpack-panel');
         const btnToggleSixPack = document.getElementById('btn-toggle-sixpack');
 
-        function toggleSixPackPanel() {
-            const isVisible = sixPackPanel && (sixPackPanel.style.display !== 'none' && window.getComputedStyle(sixPackPanel).display !== 'none');
-            sixPackVisible = !isVisible;
-            if (sixPackPanel) sixPackPanel.style.display = sixPackVisible ? 'flex' : 'none';
-            if (btnToggleSixPack) btnToggleSixPack.classList.toggle('active', sixPackVisible);
-            localStorage.setItem('sixpack_visible', sixPackVisible ? '1' : '0');
-        }
-        window.toggleSixPackPanel = toggleSixPackPanel;
+        
+        
 
-        if (btnToggleSixPack) btnToggleSixPack.onclick = toggleSixPackPanel;
+        
 
         if (sixPackPanel && !sixPackVisible) {
             sixPackPanel.style.display = 'none';
