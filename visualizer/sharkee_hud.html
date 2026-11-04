@@ -2112,26 +2112,7 @@
             filter: drop-shadow(0 0 1px #ffffff);
         }
 
-        /* Universal Clean Panel Close Button */
-        .panel-close-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 0 4px;
-            line-height: 1;
-            border-radius: 4px;
-            transition: all 0.15s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .panel-close-btn:hover {
-            background: rgba(255, 59, 48, 0.25);
-            color: #ff3b30;
-        }
+
 
         /* Box 6: Batt Amps & Batt Volts Two-Row Display */
         .gi-electrical-box {
@@ -2713,7 +2694,7 @@
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
-                <button id="btn-close-ui-panel" class="icon-btn" title="Close Control Panel" onclick="toggleUiPanel()" style="font-size: 17px; line-height: 1;">&times;</button>
+                
             </div>
         </div>
 
@@ -3034,7 +3015,7 @@
             <div style="display:flex; gap:6px; align-items:center;">
                 <div id="btn-toggle-dr" class="compass-badge dr-toggle-badge" title="Toggle Dead Reckoning Simulation (Hotkey 'D')">DR TEST</div>
                 <div id="compass-mode-btn" class="compass-badge" title="Click to toggle Heading-Up / North-Up">HDG UP</div>
-                <button class="panel-close-btn" onclick="toggleCompassWidget()" title="Close Compass" style="padding: 0 2px; font-size: 16px;">&times;</button>
+                
             </div>
         </div>
 
@@ -3178,7 +3159,7 @@
                 <button class="lxnav-knob-btn" onclick="prevLxnavPage()" title="Previous Page (Knob CCW)">◀</button>
                 <div class="lxnav-page-badge" id="lxnav-page-badge" onclick="togglePrimaryDuo()" title="Click to toggle Horizon / Vario">PAGE 1</div>
                 <button class="lxnav-knob-btn" onclick="nextLxnavPage()" title="Next Page (Knob CW)">▶</button>
-                <button class="panel-close-btn" onclick="toggleLxnavWidget()" title="Close PFD HUD" style="margin-left: 2px;">&times;</button>
+                
             </div>
         </div>
 
@@ -3846,7 +3827,7 @@
                     </svg>
                     Fetch
                 </button>
-                <button class="panel-close-btn" onclick="toggleWeatherWidget()" title="Close Weather Panel" style="padding: 2px 4px; font-size: 17px;">&times;</button>
+                
             </div>
         </div>
 
@@ -4108,12 +4089,23 @@
 
         const btnToggleUi = document.getElementById('btn-toggle-ui');
         const uiPanel = document.getElementById('ui-panel');
+        const compassWidget = document.getElementById('compass-widget');
+        const weatherWidget = document.getElementById('weather-widget');
+
         function toggleUiPanel() {
-            const isHidden = uiPanel.style.display === 'none';
-            uiPanel.style.display = isHidden ? 'block' : 'none';
-            if (btnToggleUi) btnToggleUi.classList.toggle('active', isHidden);
-            if (compassWidget && !compassWidget.dataset.userDragged) {
-                compassWidget.style.left = isHidden ? '315px' : '20px';
+            const comp = document.getElementById('compass-widget');
+            const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+            const shouldOpen = !isVisible;
+            uiPanel.style.display = shouldOpen ? 'block' : 'none';
+            if (btnToggleUi) btnToggleUi.classList.toggle('active', shouldOpen);
+            if (!shouldOpen && btnToggleMessages) {
+                btnToggleMessages.classList.remove('active');
+            }
+            if (shouldOpen && tabMessages && tabMessages.classList.contains('active') && btnToggleMessages) {
+                btnToggleMessages.classList.add('active');
+            }
+            if (comp && !comp.dataset.userDragged) {
+                comp.style.left = shouldOpen ? '315px' : '20px';
             }
         }
         window.toggleUiPanel = toggleUiPanel;
@@ -4122,9 +4114,9 @@
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
         const graphContainer = document.getElementById('terrain-graph-container');
         btnToggleGraph.onclick = () => {
-            const isCurrentlyNone = graphContainer.style.display === 'none';
-            graphContainer.style.display = isCurrentlyNone ? 'flex' : 'none';
-            btnToggleGraph.classList.toggle('active', isCurrentlyNone);
+            const isVisible = graphContainer && (graphContainer.style.display !== 'none' && window.getComputedStyle(graphContainer).display !== 'none');
+            graphContainer.style.display = isVisible ? 'none' : 'flex';
+            btnToggleGraph.classList.toggle('active', !isVisible);
         };
 
         const btnToggleTrace = document.getElementById('btn-toggle-trace');
@@ -4143,23 +4135,25 @@
 
         // Compass & Weather Toolbar Toggles
         const btnToggleCompass = document.getElementById('btn-toggle-compass');
-        const compassWidget = document.getElementById('compass-widget');
         function toggleCompassWidget() {
-            const isHidden = compassWidget.style.display === 'none';
-            compassWidget.style.display = isHidden ? 'block' : 'none';
-            if (btnToggleCompass) btnToggleCompass.classList.toggle('active', isHidden);
-            localStorage.setItem('compass_visible', isHidden ? '1' : '0');
+            const comp = document.getElementById('compass-widget');
+            const isVisible = comp && (comp.style.display !== 'none' && window.getComputedStyle(comp).display !== 'none');
+            const shouldOpen = !isVisible;
+            if (comp) comp.style.display = shouldOpen ? 'block' : 'none';
+            if (btnToggleCompass) btnToggleCompass.classList.toggle('active', shouldOpen);
+            localStorage.setItem('compass_visible', shouldOpen ? '1' : '0');
         }
         window.toggleCompassWidget = toggleCompassWidget;
         if (btnToggleCompass) btnToggleCompass.onclick = toggleCompassWidget;
 
         const btnToggleWeather = document.getElementById('btn-toggle-weather');
-        const weatherWidget = document.getElementById('weather-widget');
         function toggleWeatherWidget() {
-            const isHidden = weatherWidget.style.display === 'none';
-            weatherWidget.style.display = isHidden ? 'block' : 'none';
-            if (btnToggleWeather) btnToggleWeather.classList.toggle('active', isHidden);
-            localStorage.setItem('weather_visible', isHidden ? '1' : '0');
+            const w = document.getElementById('weather-widget');
+            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
+            const shouldOpen = !isVisible;
+            if (w) w.style.display = shouldOpen ? 'block' : 'none';
+            if (btnToggleWeather) btnToggleWeather.classList.toggle('active', shouldOpen);
+            localStorage.setItem('weather_visible', shouldOpen ? '1' : '0');
         }
         window.toggleWeatherWidget = toggleWeatherWidget;
         if (btnToggleWeather) btnToggleWeather.onclick = toggleWeatherWidget;
@@ -4235,29 +4229,32 @@
         }
 
         if (tabTelemetry) tabTelemetry.onclick = () => {
-            const isTelemActive = tabTelemetry && tabTelemetry.classList.contains('active');
-            if (isTelemActive && viewTelemetry && viewTelemetry.style.display !== 'none') {
+            const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+            const isTelemActive = tabTelemetry.classList.contains('active');
+            if (isVisible && isTelemActive) {
                 toggleUiPanel(); // Clicking already active telemetry tab closes/toggles panel
             } else {
-                if (uiPanel.style.display === 'none') toggleUiPanel();
+                if (!isVisible) toggleUiPanel();
                 switchPanelTab('telemetry');
             }
         };
         if (tabAirspace) tabAirspace.onclick = () => {
-            const isAirActive = tabAirspace && tabAirspace.classList.contains('active');
-            if (isAirActive && viewAirspace && viewAirspace.style.display !== 'none') {
+            const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+            const isAirActive = tabAirspace.classList.contains('active');
+            if (isVisible && isAirActive) {
                 toggleUiPanel(); // Clicking already active airspace tab closes/toggles panel
             } else {
-                if (uiPanel.style.display === 'none') toggleUiPanel();
+                if (!isVisible) toggleUiPanel();
                 switchPanelTab('airspace');
             }
         };
         if (tabMessages) tabMessages.onclick = () => {
-            const isMsgActive = tabMessages && tabMessages.classList.contains('active');
-            if (isMsgActive && viewMessages && viewMessages.style.display !== 'none') {
+            const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+            const isMsgActive = tabMessages.classList.contains('active');
+            if (isVisible && isMsgActive) {
                 toggleUiPanel(); // Clicking already active messages tab closes/toggles panel
             } else {
-                if (uiPanel.style.display === 'none') toggleUiPanel();
+                if (!isVisible) toggleUiPanel();
                 switchPanelTab('messages');
             }
         };
@@ -4270,16 +4267,36 @@
 
         function toggleMessagesTab() {
             const uiPanel = document.getElementById('ui-panel');
-            if (uiPanel && uiPanel.style.display === 'none') {
-                uiPanel.style.display = 'block';
-                const btnToggleUi = document.getElementById('btn-toggle-ui');
-                if (btnToggleUi) btnToggleUi.classList.add('active');
-            }
+            const comp = document.getElementById('compass-widget');
+            const isPanelVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
             const isMsgActive = tabMessages && tabMessages.classList.contains('active');
-            switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
+
+            if (isPanelVisible && isMsgActive) {
+                // Toggling the top message icon when messages is already active CLOSES the panel
+                uiPanel.style.display = 'none';
+                if (btnToggleUi) btnToggleUi.classList.remove('active');
+                if (btnToggleMessages) btnToggleMessages.classList.remove('active');
+                if (comp && !comp.dataset.userDragged) {
+                    comp.style.left = '20px';
+                }
+            } else {
+                // Open panel and switch to messages tab
+                if (uiPanel) uiPanel.style.display = 'block';
+                if (btnToggleUi) btnToggleUi.classList.add('active');
+                if (btnToggleMessages) btnToggleMessages.classList.add('active');
+                if (comp && !comp.dataset.userDragged) {
+                    comp.style.left = '315px';
+                }
+                switchPanelTab('messages');
+            }
         }
 
-        if (btnMessagesHdr) btnMessagesHdr.onclick = toggleMessagesTab;
+        if (btnMessagesHdr) {
+            btnMessagesHdr.onclick = () => {
+                const isMsgActive = tabMessages && tabMessages.classList.contains('active');
+                switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
+            };
+        }
         if (btnToggleMessages) btnToggleMessages.onclick = toggleMessagesTab;
 
         function openMessagesTabFromToast() {
@@ -4508,7 +4525,7 @@
         const btnCloseMessages = document.getElementById('btn-close-messages');
         if (btnCloseMessages) {
             btnCloseMessages.onclick = () => {
-                switchPanelTab('telemetry');
+                toggleUiPanel();
             };
         }
 
@@ -5051,7 +5068,7 @@
             handle.style.cursor = 'grab';
 
             handle.onmousedown = (e) => {
-                if (e.target.closest('button, input, select, textarea, .compass-badge, .icon-btn, .gi-btn-close, .sixpack-btn-close, .panel-close-btn, .lxnav-knob-btn, .btn-refresh, [onclick]')) return;
+                if (e.target.closest('button, input, select, textarea, .compass-badge, .icon-btn, .gi-btn-close, .sixpack-btn-close, .lxnav-knob-btn, .btn-refresh, [onclick]')) return;
                 e.preventDefault();
                 handle.style.cursor = 'grabbing';
                 p3 = e.clientX;
@@ -5431,8 +5448,9 @@
         }
 
         function toggleLxnavWidget() {
-            lxnavWidgetVisible = !lxnavWidgetVisible;
             const w = document.getElementById('lxnav-mfd-widget');
+            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
+            lxnavWidgetVisible = !isVisible;
             const btn = document.getElementById('btn-toggle-lxnav');
             if (w) w.style.display = lxnavWidgetVisible ? 'block' : 'none';
             if (btn) btn.classList.toggle('active', lxnavWidgetVisible);
@@ -6808,7 +6826,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === '6' || (e.key === 'c' && !e.ctrlKey && !e.metaKey)) {
+            if (e.key === '6') {
                 if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
                 toggleSixPackPanel();
             }
@@ -6827,8 +6845,9 @@
             } else if (e.key === ']' || e.key === '}') {
                 nextLxnavPage();
             } else if (e.key === 'Escape') {
-                if (tabMessages && tabMessages.classList.contains('active')) {
-                    switchPanelTab('telemetry');
+                const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+                if (isVisible) {
+                    toggleUiPanel();
                 }
             }
         });
@@ -8258,7 +8277,8 @@
         const eisBtnCh = document.getElementById('eis-btn-ch');
 
         function toggleEisWidget() {
-            eisWidgetVisible = !eisWidgetVisible;
+            const isVisible = eisWidget && (eisWidget.style.display !== 'none' && window.getComputedStyle(eisWidget).display !== 'none');
+            eisWidgetVisible = !isVisible;
             if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
             if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
             localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
@@ -8427,7 +8447,8 @@
         const btnToggleSixPack = document.getElementById('btn-toggle-sixpack');
 
         function toggleSixPackPanel() {
-            sixPackVisible = !sixPackVisible;
+            const isVisible = sixPackPanel && (sixPackPanel.style.display !== 'none' && window.getComputedStyle(sixPackPanel).display !== 'none');
+            sixPackVisible = !isVisible;
             if (sixPackPanel) sixPackPanel.style.display = sixPackVisible ? 'flex' : 'none';
             if (btnToggleSixPack) btnToggleSixPack.classList.toggle('active', sixPackVisible);
             localStorage.setItem('sixpack_visible', sixPackVisible ? '1' : '0');
