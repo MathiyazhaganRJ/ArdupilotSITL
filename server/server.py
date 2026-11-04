@@ -342,6 +342,18 @@ async def mavlink_listener():
                         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
                         36, 50000, 0, 0, 0, 0, 0
                     )
+                    # Explicitly request SYS_STATUS (Msg 1) at 10Hz (Live battery volts & amps)
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        1, 100000, 0, 0, 0, 0, 0
+                    )
+                    # Explicitly request BATTERY_STATUS (Msg 147) at 5Hz
+                    connection.mav.command_long_send(
+                        connection.target_system, connection.target_component,
+                        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+                        147, 200000, 0, 0, 0, 0, 0
+                    )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
                     # Trigger initial mission download from vehicle
@@ -398,6 +410,7 @@ async def mavlink_listener():
                 data['groundspeed'] = msg.groundspeed
                 data['heading'] = getattr(msg, 'heading', None)
                 data['climb'] = getattr(msg, 'climb', 0.0)
+                data['throttle'] = int(getattr(msg, 'throttle', 0))
             elif msg.get_type() == 'WIND':
                 data['wind_direction'] = getattr(msg, 'direction', 0)
                 data['wind_speed'] = getattr(msg, 'speed', 0.0)

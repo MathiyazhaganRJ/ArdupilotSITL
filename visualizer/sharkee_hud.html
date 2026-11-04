@@ -6010,6 +6010,7 @@
         document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
 
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
+        let latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
         let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
         let firstPos = false;
@@ -6747,6 +6748,9 @@
                 if (data.climb !== undefined && data.climb !== null) {
                     planeClimbRate = data.climb;
                 }
+                if (data.throttle !== undefined) {
+                    am32Telemetry.throttle_pct = data.throttle;
+                }
                 // Only fallback to integer VFR_HUD heading if no 3D attitude received yet
                 if (data.heading !== undefined && data.heading !== null && !firstPos) {
                     planeHeading = data.heading;
@@ -6833,8 +6837,12 @@
                 if (data.cell_voltages && data.cell_voltages.length > 0) am32Telemetry.cell_voltages = data.cell_voltages;
                 if (data.current_consumed !== undefined) am32Telemetry.consumed_mah = data.current_consumed;
                 if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
             } else if (data.type === 'SYS_STATUS') {
-                if (data.voltage_battery !== undefined) am32Telemetry.pack_voltage = data.voltage_battery;
+                am32Telemetry.hasHardwareTelem = true;
+                am32Telemetry.lastTelemTime = performance.now();
+                if (data.voltage_battery !== undefined && data.voltage_battery > 0) am32Telemetry.pack_voltage = data.voltage_battery;
+                if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
                 if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
     
             } else if (data.type === 'LOCAL_POSITION_NED') {
@@ -7007,6 +7015,7 @@
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
                 servoSpeeds = data.servos;
+                latestServos = data.servos;
                 for (let i = 0; i < 8; i++) {
                     let pwm = servoSpeeds[i]; uiPwms[i].innerText = pwm;
                     let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
@@ -7369,9 +7378,11 @@
             current: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             temperature: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0],
             total_current: 0.0,
+            battery_current: 0.0,
             pack_voltage: 25.2,
             consumed_mah: 0,
-            battery_remaining_pct: 100
+            battery_remaining_pct: 100,
+            throttle_pct: 0
         };
 
         const eisWidget = document.getElementById('eis-widget');
@@ -7503,15 +7514,40 @@
             if (!eisWidgetVisible || !eisWidget) return;
 
             const now = performance.now();
-            // Determine active servo PWM based on selected ESC channel
-            let activeChPwm = 1000;
-            const targetChIdx = (eisEngineMode === 'single') ? Math.max(0, eisSingleChannel - 1) : Math.max(0, eisTwinLeftCh - 1);
-            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length > targetChIdx) {
-                activeChPwm = latestServos[targetChIdx] || (latestServos[2] || 1000);
-            } else if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length >= 3) {
-                activeChPwm = latestServos[2] || 1000;
+
+            // 1. Resolve live Throttle Percentage (0 - 100%)
+            let throttlePercent = 0;
+            // A. Direct from autopilot VFR_HUD telemetry
+            if (typeof am32Telemetry.throttle_pct === 'number' && am32Telemetry.throttle_pct > 0) {
+                throttlePercent = Math.round(am32Telemetry.throttle_pct);
             }
-            const throttleNorm = Math.max(0, Math.min(1, (activeChPwm - 1000) / 1000.0));
+            // B. Or from active motor channel PWM in SERVO_OUTPUT_RAW
+            const targetChIdx = (eisEngineMode === 'single') ? Math.max(0, eisSingleChannel - 1) : Math.max(0, eisTwinLeftCh - 1);
+            let activeChPwm = 1000;
+            const servosArr = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length > 0) 
+                ? latestServos 
+                : ((typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds)) ? servoSpeeds : []);
+
+            if (servosArr.length > targetChIdx && servosArr[targetChIdx] >= 900) {
+                activeChPwm = servosArr[targetChIdx];
+            } else if (servosArr.length >= 3 && servosArr[2] >= 900) {
+                activeChPwm = servosArr[2]; // Fallback to Servo 3 (Throttle)
+            }
+
+            if (activeChPwm > 1050) {
+                const pwmPct = Math.round(((activeChPwm - 1000) / 1000.0) * 100);
+                if (throttlePercent === 0 || pwmPct > 0) {
+                    throttlePercent = Math.max(0, Math.min(100, pwmPct));
+                }
+            }
+            const throttleNorm = Math.max(0, Math.min(1, throttlePercent / 100.0));
+
+            // 2. Battery & Electrical Current Resolution
+            // Genuine total battery current measured by the flight controller power module / SYS_STATUS / BATTERY_STATUS
+            const genuineBattAmps = (typeof am32Telemetry.battery_current === 'number' && am32Telemetry.battery_current > 0) 
+                ? am32Telemetry.battery_current 
+                : 0.0;
+            const packVolt = (am32Telemetry.pack_voltage > 3.0) ? am32Telemetry.pack_voltage : 12.0;
 
             // If no hardware telemetry packet received in last 2.5s, run realistic SITL emulation
             const isEmulated = (now - am32Telemetry.lastTelemTime) > 2500;
@@ -7539,7 +7575,7 @@
                     const totLoad = (eisEngineMode === 'twin') ? (am32Telemetry.current[0] + am32Telemetry.current[1]) : am32Telemetry.current[0];
                     am32Telemetry.total_current = totLoad;
                     const vSag = totLoad * 0.025;
-                    am32Telemetry.pack_voltage = Math.max(20.5, 25.2 - vSag);
+                    am32Telemetry.pack_voltage = Math.max(10.5, 25.2 - vSag);
 
                     am32Telemetry.consumed_mah += (totLoad * 1000 / 3600) * 0.05;
                 } else {
@@ -7560,20 +7596,26 @@
             let totAmp = 0, totWatt = 0, escTempMax = 0;
 
             if (eisEngineMode === 'single') {
-                const ch = Math.max(0, Math.min(3, eisSingleChannel - 1));
+                const ch = Math.max(0, Math.min(7, eisSingleChannel - 1));
                 activeRpm1 = am32Telemetry.rpm[ch] || 0;
                 activeAmp1 = am32Telemetry.current[ch] || 0;
                 activeTemp1 = am32Telemetry.temperature[ch] || 30;
-                totAmp = activeAmp1;
-                totWatt = am32Telemetry.pack_voltage * totAmp;
                 escTempMax = activeTemp1;
+
+                // If ESC doesn't report shunt current (reporting idle <0.8A) while the vehicle is drawing power,
+                // prioritize the genuine flight controller battery current measurement!
+                if (genuineBattAmps > 0.5 && activeAmp1 <= 0.8) {
+                    activeAmp1 = genuineBattAmps;
+                }
+                totAmp = (genuineBattAmps > 0) ? genuineBattAmps : activeAmp1;
+                totWatt = packVolt * totAmp;
 
                 // Top Arch
                 const valPwr = document.getElementById('gi-num-pwr');
                 const valRpm = document.getElementById('gi-digits-rpm');
                 const ptrRpm = document.getElementById('gi-ptr-rpm-polygon');
 
-                if (valPwr) valPwr.textContent = `${Math.round(throttleNorm * 100)}%`;
+                if (valPwr) valPwr.textContent = `${throttlePercent}%`;
                 if (valRpm) valRpm.textContent = activeRpm1.toLocaleString();
                 const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
                 setGiArchPointer(ptrRpm, rpmNorm);
@@ -7581,8 +7623,8 @@
                 // Box 1: AMPS (0 - 60A)
                 const valBox1 = document.getElementById('gi-val-box1');
                 const ptrBox1 = document.getElementById('gi-ptr-box1');
-                if (valBox1) valBox1.textContent = totAmp.toFixed(1);
-                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (totAmp / 60.0) * 100))}%`;
+                if (valBox1) valBox1.textContent = activeAmp1.toFixed(1);
+                if (ptrBox1) ptrBox1.style.left = `${Math.max(5, Math.min(95, (activeAmp1 / 60.0) * 100))}%`;
 
                 // Box 2: ESC °C (20 - 100°C)
                 const valBox2 = document.getElementById('gi-val-box2');
@@ -7609,8 +7651,8 @@
                 if (valBox5) valBox5.textContent = Math.round(motT);
                 if (ptrBox5) ptrBox5.style.left = `${Math.max(5, Math.min(95, ((motT - 20) / 90.0) * 100))}%`;
             } else {
-                const lCh = Math.max(0, Math.min(3, eisTwinLeftCh - 1));
-                const rCh = Math.max(0, Math.min(3, eisTwinRightCh - 1));
+                const lCh = Math.max(0, Math.min(7, eisTwinLeftCh - 1));
+                const rCh = Math.max(0, Math.min(7, eisTwinRightCh - 1));
                 activeRpm1 = am32Telemetry.rpm[lCh] || 0;
                 activeRpm2 = am32Telemetry.rpm[rCh] || 0;
                 activeAmp1 = am32Telemetry.current[lCh] || 0;
@@ -7618,8 +7660,12 @@
                 activeTemp1 = am32Telemetry.temperature[lCh] || 30;
                 activeTemp2 = am32Telemetry.temperature[rCh] || 30;
 
-                totAmp = activeAmp1 + activeAmp2;
-                totWatt = am32Telemetry.pack_voltage * totAmp;
+                if (genuineBattAmps > 0.5 && (activeAmp1 <= 0.8 || activeAmp2 <= 0.8)) {
+                    activeAmp1 = genuineBattAmps / 2.0;
+                    activeAmp2 = genuineBattAmps / 2.0;
+                }
+                totAmp = (genuineBattAmps > 0) ? genuineBattAmps : (activeAmp1 + activeAmp2);
+                totWatt = packVolt * totAmp;
                 escTempMax = Math.max(activeTemp1, activeTemp2);
 
                 // Top Arch with dual pointers
@@ -7628,7 +7674,7 @@
                 const ptrRpm = document.getElementById('gi-ptr-rpm-polygon');
                 const ptrRpm2 = document.getElementById('gi-ptr-rpm2-polygon');
 
-                if (valPwr) valPwr.textContent = `${Math.round(throttleNorm * 100)}%`;
+                if (valPwr) valPwr.textContent = `${throttlePercent}%`;
                 if (valRpm) valRpm.textContent = activeRpm1.toLocaleString();
                 const rpmNorm1 = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
                 const rpmNorm2 = Math.max(0, Math.min(1, activeRpm2 / 9500.0));
@@ -7677,7 +7723,7 @@
             const valBattAmps = document.getElementById('gi-val-batt-amps');
             const valBattVolts = document.getElementById('gi-val-batt-volts');
             if (valBattAmps) valBattAmps.textContent = totAmp.toFixed(1);
-            if (valBattVolts) valBattVolts.textContent = am32Telemetry.pack_voltage.toFixed(1);
+            if (valBattVolts) valBattVolts.textContent = packVolt.toFixed(1);
 
             // Bottom Status Pill: OAT & Battery Endurance
             const botPill = document.getElementById('gi-bot-pill');
