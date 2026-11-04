@@ -988,26 +988,11 @@
 
         /* Waypoint toggle uses unified .toolbar-btn.active */
 
-        /* ========================================================= */
-        /* UNIFIED AVIONICS GLASS COCKPIT STACK (PFD + EIS)          */
-        /* ========================================================= */
-        #avionics-stack {
-            position: absolute;
-            bottom: 20px;
-            left: 840px;
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            z-index: 120;
-            user-select: none;
-            transition: opacity 0.25s ease, transform 0.25s ease;
-        }
-
-        /* Top Bezel: PFD Horizon / Variometer MFD (Original Authentic 244x270 Size) */
+        /* LXNAV Circular Glass Cockpit MFD Widget (Individually Movable, Right Side Aligned) */
         #lxnav-mfd-widget {
-            position: relative;
+            position: absolute;
+            top: 70px;
+            right: 58px;
             width: 244px;
             min-width: 244px;
             max-width: 244px;
@@ -1022,6 +1007,7 @@
             border-radius: 18px;
             padding: 10px 12px;
             box-shadow: var(--shadow);
+            z-index: 100;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
             display: flex;
@@ -1827,7 +1813,9 @@
         /* GARMIN GI 275 EIS AVIATION-GRADE ENGINE INSTRUMENT        */
         /* ========================================================= */
         #eis-widget {
-            position: relative;
+            position: absolute;
+            top: 350px;
+            right: 20px;
             width: 320px;
             min-width: 320px;
             max-width: 320px;
@@ -1840,6 +1828,7 @@
             border-radius: 18px;
             padding: 10px 12px;
             box-shadow: var(--shadow);
+            z-index: 100;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
             display: flex;
@@ -2175,10 +2164,10 @@
             background: rgba(0, 0, 0, 0.65);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
-            padding: 5px 8px;
+            padding: 5px 14px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: space-around;
             flex-shrink: 0;
             box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
             font-family: 'B612 Mono', monospace;
@@ -2619,12 +2608,20 @@
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-avionics" title="Toggle Glass Cockpit Avionics Stack (PFD + EIS) [Hotkey 'E' / 'H']">
+        <button class="toolbar-btn active" id="btn-toggle-lxnav" title="Toggle LXNAV Glass Cockpit PFD (Hotkey 'H')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                <circle cx="12" cy="9" r="4"></circle>
-                <line x1="5" y1="17" x2="19" y2="17"></line>
-                <polyline points="8 20 12 17 16 20"></polyline>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+            </svg>
+        </button>
+        <button class="toolbar-btn active" id="btn-toggle-eis" title="Toggle GI 275 EIS Engine & Power Monitor (Hotkey 'E')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+                <path d="m4.93 4.93 2.12 2.12m9.9 9.9 2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"></path>
             </svg>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
@@ -3166,9 +3163,7 @@
         </div>
     </div>
 
-    <!-- Unified Glass Cockpit Avionics Stack (PFD Horizon + GI 275 EIS) -->
-    <div id="avionics-stack">
-        <!-- LXNAV Glass Cockpit Multi-Function Display (MFD) Widget -->
+    <!-- LXNAV Glass Cockpit Multi-Function Display (MFD) Widget -->
     <div id="lxnav-mfd-widget">
         <div class="lxnav-header">
             <div class="lxnav-title-group">
@@ -3243,6 +3238,13 @@
                     <text id="lxnav-pfd-speed" x="20" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="12" font-weight="700" text-anchor="middle">0</text>
                     <rect x="158" y="86" width="38" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
                     <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
+
+                    <!-- QNH Barometric Altimeter Setting -->
+                    <g id="lxnav-pfd-qnh-box" style="cursor: pointer;" onclick="togglePfdQnhUnit(event)" title="Barometric QNH Setting (Click to toggle hPa / inHg)">
+                        <rect x="146" y="117" width="38" height="17" rx="3" fill="#06090e" stroke="rgba(0, 229, 255, 0.55)" stroke-width="1" />
+                        <text id="lxnav-pfd-qnh-lbl" x="165" y="123.5" fill="#8a9bb2" font-family="'Inter', sans-serif" font-size="5.5" font-weight="700" letter-spacing="0.5" text-anchor="middle">QNH</text>
+                        <text id="lxnav-pfd-qnh" x="165" y="131" fill="#00e5ff" font-family="'B612 Mono', monospace" font-size="7.5" font-weight="700" text-anchor="middle">1013</text>
+                    </g>
                     
                     <!-- Bottom Status Tag (Flight Mode / HUD Annunciator in Aviation Green) -->
                     <g transform="translate(64, 168)">
@@ -3312,7 +3314,7 @@
                 <button class="gi-mode-btn active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
                 <button class="gi-mode-btn" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
                 <button class="gi-mode-btn" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
-                <button class="gi-btn-close" onclick="toggleAvionicsStack()" title="Close Avionics Stack">&times;</button>
+                <button class="gi-btn-close" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
             </div>
         </div>
 
@@ -3446,26 +3448,15 @@
         <!-- Bottom Avionics Status Pill - Orderly 4-Segment Strip -->
         <div class="gi-bottom-status-pill" id="gi-bot-pill">
             <div class="gi-status-col">
-                <span class="gi-stat-lbl">OAT</span>
-                <span class="gi-stat-val" id="gi-stat-oat">22&deg;C</span>
-            </div>
-            <div class="gi-stat-divider"></div>
-            <div class="gi-status-col">
-                <span class="gi-stat-lbl">PACK</span>
-                <span class="gi-stat-val" id="gi-stat-pack">6S LiPo</span>
-            </div>
-            <div class="gi-stat-divider"></div>
-            <div class="gi-status-col">
-                <span class="gi-stat-lbl">REM</span>
+                <span class="gi-stat-lbl">REM CAPACITY</span>
                 <span class="gi-stat-val" id="gi-stat-rem">6000 mAh</span>
             </div>
             <div class="gi-stat-divider"></div>
             <div class="gi-status-col">
-                <span class="gi-stat-lbl">EST</span>
+                <span class="gi-stat-lbl">EST ENDURANCE</span>
                 <span class="gi-stat-val" id="gi-stat-est">-- MIN</span>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- Live Weather Widget -->
@@ -4761,12 +4752,7 @@
         }
         const lxnavMfdEl = document.getElementById('lxnav-mfd-widget');
         if (lxnavMfdEl && lxnavMfdEl.querySelector('.lxnav-header')) {
-            const avStack = document.getElementById('avionics-stack');
-            if (avStack) {
-                makeDraggable(avStack, avStack.querySelector('.lxnav-header') || avStack.querySelector('.gi-top-bar') || avStack);
-            } else if (lxnavMfdEl) {
-                makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
-            }
+            makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
         }
 
         // FMS CDU Navigation Panel Toggle
@@ -4990,6 +4976,7 @@
 
             if (temp !== undefined && temp !== null) document.getElementById('live-temp').innerText = temp.toFixed(1) + '°C';
             if (press !== undefined && press !== null) document.getElementById('live-press').innerText = press.toFixed(1) + ' hPa';
+            if (typeof updatePfdQnh === 'function') updatePfdQnh();
             if (elev !== undefined && elev !== null) document.getElementById('live-elev').innerText = Math.round(elev) + ' m';
 
             // Update SITL Terminal Command Box
@@ -5113,30 +5100,56 @@
             setLxnavPage(currentLxnavPage === 1 ? 2 : 1);
         }
 
-        // Unified Avionics Stack (PFD Horizon + GI 275 EIS)
-        const btnToggleAvionics = document.getElementById('btn-toggle-avionics');
-        const avionicsStack = document.getElementById('avionics-stack');
-        var avionicsStackVisible = localStorage.getItem('avionics_stack_visible') !== '0';
+        // LXNAV / PFD Horizon Widget Toggle
+        const btnToggleLxnav = document.getElementById('btn-toggle-lxnav');
+        var lxnavWidgetVisible = localStorage.getItem('lxnav_widget_visible') !== '0';
 
-        function toggleAvionicsStack() {
-            const stack = document.getElementById('avionics-stack');
-            const btn = document.getElementById('btn-toggle-avionics');
-            const isVisible = stack && (stack.style.display !== 'none' && window.getComputedStyle(stack).display !== 'none');
-            avionicsStackVisible = !isVisible;
-            if (stack) stack.style.display = avionicsStackVisible ? 'flex' : 'none';
-            if (btn) btn.classList.toggle('active', avionicsStackVisible);
-            localStorage.setItem('avionics_stack_visible', avionicsStackVisible ? '1' : '0');
+        function toggleLxnavWidget() {
+            const w = document.getElementById('lxnav-mfd-widget');
+            const btn = document.getElementById('btn-toggle-lxnav');
+            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
+            lxnavWidgetVisible = !isVisible;
+            if (w) w.style.display = lxnavWidgetVisible ? 'flex' : 'none';
+            if (btn) btn.classList.toggle('active', lxnavWidgetVisible);
+            localStorage.setItem('lxnav_widget_visible', lxnavWidgetVisible ? '1' : '0');
         }
-        window.toggleAvionicsStack = toggleAvionicsStack;
-        window.toggleLxnavWidget = toggleAvionicsStack;
-        window.toggleEisWidget = toggleAvionicsStack;
-
-        if (btnToggleAvionics) btnToggleAvionics.onclick = toggleAvionicsStack;
-
-        if (avionicsStack && !avionicsStackVisible) {
-            avionicsStack.style.display = 'none';
-            if (btnToggleAvionics) btnToggleAvionics.classList.remove('active');
+        window.toggleLxnavWidget = toggleLxnavWidget;
+        if (btnToggleLxnav) btnToggleLxnav.onclick = toggleLxnavWidget;
+        if (lxnavMfdEl && !lxnavWidgetVisible) {
+            lxnavMfdEl.style.display = 'none';
+            if (btnToggleLxnav) btnToggleLxnav.classList.remove('active');
         }
+
+        // QNH Barometric Unit & Display Management
+        var pfdQnhUnit = localStorage.getItem('pfd_qnh_unit') || 'hPa';
+        function togglePfdQnhUnit(e) {
+            if (e) e.stopPropagation();
+            pfdQnhUnit = (pfdQnhUnit === 'hPa') ? 'inHg' : 'hPa';
+            localStorage.setItem('pfd_qnh_unit', pfdQnhUnit);
+            updatePfdQnh();
+        }
+        window.togglePfdQnhUnit = togglePfdQnhUnit;
+
+        function updatePfdQnh() {
+            const qnhEl = document.getElementById('lxnav-pfd-qnh');
+            const qnhLbl = document.getElementById('lxnav-pfd-qnh-lbl');
+            if (!qnhEl) return;
+            let pressHpa = 1013.2;
+            if (typeof liveFetchedWeather !== 'undefined' && liveFetchedWeather && liveFetchedWeather.press) {
+                pressHpa = liveFetchedWeather.press;
+            } else if (typeof activeWeather !== 'undefined' && activeWeather && activeWeather.press) {
+                pressHpa = activeWeather.press;
+            }
+            if (pfdQnhUnit === 'hPa') {
+                qnhEl.textContent = Math.round(pressHpa);
+                if (qnhLbl) qnhLbl.textContent = 'QNH';
+            } else {
+                const inHg = pressHpa * 0.02952998;
+                qnhEl.textContent = inHg.toFixed(2);
+                if (qnhLbl) qnhLbl.textContent = 'BARO';
+            }
+        }
+        window.updatePfdQnh = updatePfdQnh;
 
         function refreshLxnavWaypoints() {}
 
@@ -5192,6 +5205,7 @@
                 if (spdEl) spdEl.textContent = Math.round(planeAirspeed * 3.6);
                 const altEl = document.getElementById('lxnav-pfd-alt');
                 if (altEl) altEl.textContent = Math.round(currentPlaneAltRel || 0);
+                updatePfdQnh();
 
                 // Update bottom flight mode / annunciator badge (Aviation Emerald Green)
                 const modeEl = document.getElementById('lxnav-pfd-mode-text');
@@ -6516,8 +6530,10 @@
                 toggleWaypoints();
             } else if (e.key === 'm' || e.key === 'M') {
                 toggleMessagesTab();
-            } else if (e.key === 'h' || e.key === 'H' || e.key === 'e' || e.key === 'E') {
-                toggleAvionicsStack();
+            } else if (e.key === 'h' || e.key === 'H') {
+                toggleLxnavWidget();
+            } else if (e.key === 'e' || e.key === 'E') {
+                toggleEisWidget();
             } else if (e.key === '[' || e.key === '{') {
                 prevLxnavPage();
             } else if (e.key === ']' || e.key === '}') {
@@ -7952,11 +7968,18 @@
         const eisBtnSingle = document.getElementById('eis-btn-single');
         const eisBtnTwin = document.getElementById('eis-btn-twin');
         const eisBtnCh = document.getElementById('eis-btn-ch');
+        var eisWidgetVisible = localStorage.getItem('eis_widget_visible') !== '0';
 
-        
-        
+        function toggleEisWidget() {
+            const isVisible = eisWidget && (eisWidget.style.display !== 'none' && window.getComputedStyle(eisWidget).display !== 'none');
+            eisWidgetVisible = !isVisible;
+            if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
+            if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
+            localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
+        }
+        window.toggleEisWidget = toggleEisWidget;
+        if (btnToggleEis) btnToggleEis.onclick = toggleEisWidget;
 
-        
 
         const capsuleBatt = document.getElementById('gi-capsule-batt');
         if (capsuleBatt) {
@@ -8692,8 +8715,6 @@
             }
 
             // Bottom Status Strip: OAT & Battery Endurance in Orderly Columns
-            const statOat = document.getElementById('gi-stat-oat');
-            const statPack = document.getElementById('gi-stat-pack');
             const statRem = document.getElementById('gi-stat-rem');
             const statEst = document.getElementById('gi-stat-est');
 
@@ -8704,8 +8725,6 @@
             }
             const remMahTotal = Math.max(0, Math.round(batteryCapacityMah - am32Telemetry.consumed_mah));
 
-            if (statOat) statOat.innerHTML = '22&deg;C';
-            if (statPack) statPack.textContent = '6S LiPo';
             if (statRem) statRem.textContent = `${remMahTotal} mAh`;
             if (statEst) statEst.textContent = minsRem;
         }
