@@ -229,10 +229,11 @@ class MissionHandler:
 heartbeat_received = False
 cached_home_position = None
 cached_statustext_messages = []
+cached_heartbeat = None
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position, cached_statustext_messages
+    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
@@ -355,6 +356,11 @@ async def mavlink_listener():
                 else:
                     data['mode'] = getattr(msg, 'flight_mode', 'MANUAL')
 
+                is_armed = bool(getattr(msg, 'base_mode', 0) & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+                data['armed'] = is_armed
+                data['base_mode'] = getattr(msg, 'base_mode', 0)
+                data['system_status'] = getattr(msg, 'system_status', 0)
+
                 if msg.type == mavutil.mavlink.MAV_TYPE_FIXED_WING or msg.type in [19, 20, 21, 22, 23, 24, 25]:
                     data['firmware'] = 'ArduPlane'
                 elif msg.type in [mavutil.mavlink.MAV_TYPE_QUADROTOR, mavutil.mavlink.MAV_TYPE_HEXAROTOR, mavutil.mavlink.MAV_TYPE_OCTOROTOR, mavutil.mavlink.MAV_TYPE_TRICOPTER, mavutil.mavlink.MAV_TYPE_HELICOPTER]:
@@ -365,6 +371,7 @@ async def mavlink_listener():
                     data['firmware'] = 'ArduSub'
                 else:
                     data['firmware'] = 'ArduPilot'
+                cached_heartbeat = data
             elif msg.get_type() == 'ATTITUDE':
                 data['roll'] = msg.roll
                 data['pitch'] = msg.pitch
@@ -491,6 +498,13 @@ async def mavlink_listener():
 async def ws_handler(websocket, path=None):
     clients.add(websocket)
     try:
+        # Deliver cached heartbeat (arm status, mode, firmware) to newly connected client immediately
+        if cached_heartbeat:
+            try:
+                await websocket.send(json.dumps(cached_heartbeat))
+            except Exception as e:
+                print(f"[Server] Error sending cached heartbeat: {e}")
+
         # Deliver cached home position to newly connected client immediately
         if cached_home_position:
             try:

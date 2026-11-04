@@ -789,6 +789,121 @@
             color: var(--text-primary);
         }
 
+        /* Compass Arm Badge */
+        .compass-arm-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.06);
+            color: #8e9297;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+        .compass-arm-badge.armed {
+            background: rgba(255, 59, 48, 0.22);
+            color: #ff453a;
+            border: 1px solid rgba(255, 59, 48, 0.85);
+            box-shadow: 0 0 8px rgba(255, 59, 48, 0.4);
+        }
+
+        /* Master Aviation Flight Annunciator Bar (Top Center) */
+        .flight-annunciator-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(12, 16, 22, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            padding: 5px 14px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 195;
+            font-family: 'B612', 'Inter', sans-serif;
+            user-select: none;
+            pointer-events: auto;
+        }
+
+        .annun-arm-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.06);
+            color: #8e9297;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .annun-arm-pill.armed {
+            background: rgba(255, 59, 48, 0.2);
+            color: #ff453a;
+            border: 1px solid rgba(255, 59, 48, 0.85);
+            box-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
+        }
+
+        .annun-arm-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #6e737c;
+            display: inline-block;
+        }
+
+        .annun-arm-pill.armed .annun-arm-dot {
+            background: #ff3b30;
+            box-shadow: 0 0 6px #ff3b30;
+            animation: arm-dot-pulse 1.2s infinite alternate ease-in-out;
+        }
+
+        @keyframes arm-dot-pulse {
+            from { opacity: 0.6; transform: scale(0.9); }
+            to { opacity: 1.0; transform: scale(1.15); }
+        }
+
+        .annun-divider {
+            width: 1px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .annun-mode-val {
+            font-family: 'B612 Mono', monospace;
+            font-size: 12px;
+            font-weight: 800;
+            color: #389bd8;
+            letter-spacing: 0.05em;
+        }
+
+        .annun-nav-val {
+            font-family: 'B612 Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ff9f0a;
+            letter-spacing: 0.04em;
+        }
+
+        .annun-nav-val.good-fix {
+            color: #30d158;
+        }
+
+        .annun-nav-val.dr-warning {
+            color: #ff9f0a;
+            font-weight: 800;
+            animation: dr-blink 1.0s infinite ease-in-out;
+        }
+
         .dr-toggle-badge.active {
             background: rgba(255, 159, 10, 0.25);
             color: #ff9f0a;
@@ -2005,6 +2120,18 @@
 </head>
 
 <body>
+    <!-- Master Aviation Flight Annunciator Bar (Top Center) -->
+    <div id="flight-annunciator-bar" class="flight-annunciator-bar" title="Master Autopilot & Navigation Annunciator">
+        <div id="annun-arm-status" class="annun-arm-pill" title="Autopilot Arm State">
+            <span class="annun-arm-dot"></span>
+            <span id="annun-arm-text">DISARMED</span>
+        </div>
+        <div class="annun-divider"></div>
+        <div id="annun-flight-mode" class="annun-mode-val" title="Autopilot Flight Mode">UNKNOWN</div>
+        <div class="annun-divider"></div>
+        <div id="annun-nav-status" class="annun-nav-val" title="Navigation Fix / Dead Reckoning Status">NO FIX</div>
+    </div>
+
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
         <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
@@ -2143,6 +2270,8 @@
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
                         style="color: var(--danger);">Offline</span></div>
+                <div class="data-row"><span class="data-label">Arm Status</span><span id="arm-status-sidebar" class="data-val"
+                        style="color: #8e9297; font-weight:700;">DISARMED</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
                         style="color: var(--text-secondary);">---</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
@@ -2435,6 +2564,7 @@
                     <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="var(--accent)" fill-opacity="0.3"></polygon>
                 </svg>
                 <span class="compass-title">NAV COMPASS</span>
+                <span id="compass-arm-badge" class="compass-arm-badge" title="Autopilot Armed State">DISARMED</span>
                 <span id="compass-dr-flag" class="compass-dr-flag" style="display:none;" title="Dead Reckoning Navigation Mode Active">DR</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -5165,6 +5295,11 @@
 
         let isDeadReckoning = false;
         let simulatedDR = false;
+        let isArmed = false;
+        let lastGpsFixType = 0;
+        let lastGpsSats = 0;
+        let lastGpsFixName = 'NO FIX';
+        let lastEkfPosAbs = true;
         let drStartTime = 0;
         const lastFixPosition = new THREE.Vector3();
 
@@ -5315,23 +5450,105 @@
         );
         drGroup.add(plumbLine);
 
-        // State Machine Controller for Dead Reckoning
+        // State Machine Controller for Dead Reckoning (Gated by Vehicle Arm State)
+        function evaluateDeadReckoning() {
+            if (simulatedDR) {
+                setDeadReckoningMode(true, 'SIMULATED DR');
+                return;
+            }
+
+            const gpsLost = (lastGpsFixType < 3 || lastGpsSats === 0 || lastEkfPosAbs === false);
+
+            if (!isArmed) {
+                // Aircraft is DISARMED (e.g. sitting on the bench indoors without GPS):
+                // Dead reckoning must stay OFF.
+                const fixDesc = (lastGpsFixType >= 3 && lastGpsSats > 0)
+                    ? `${lastGpsFixName} (${lastGpsSats}S)`
+                    : (lastGpsFixName || 'NO GPS');
+                setDeadReckoningMode(false, fixDesc);
+                return;
+            }
+
+            // Aircraft is ARMED:
+            if (gpsLost) {
+                const lossReason = (lastEkfPosAbs === false) ? 'EKF DR (POS DENIED)' : `GPS LOST (${lastGpsFixName})`;
+                setDeadReckoningMode(true, lossReason);
+            } else {
+                setDeadReckoningMode(false, `${lastGpsFixName} (${lastGpsSats}S)`);
+            }
+        }
+
+        function updateArmState(armed) {
+            const wasArmed = isArmed;
+            isArmed = !!armed;
+
+            if (wasArmed !== isArmed) {
+                const msgText = isArmed ? "AUTOPILOT ARMED - MOTORS LIVE" : "AUTOPILOT DISARMED - MOTORS SAFE";
+                const sev = isArmed ? 3 : 6;
+                addAutopilotMessage({ text: msgText, severity: sev });
+            }
+
+            // 1. Top Master Annunciator
+            const topArmPill = document.getElementById('annun-arm-status');
+            const topArmText = document.getElementById('annun-arm-text');
+            if (topArmPill) {
+                if (isArmed) {
+                    topArmPill.className = 'annun-arm-pill armed';
+                    if (topArmText) topArmText.innerText = 'ARMED';
+                } else {
+                    topArmPill.className = 'annun-arm-pill';
+                    if (topArmText) topArmText.innerText = 'DISARMED';
+                }
+            }
+
+            // 2. Compass Header Badge
+            const compassArmBadge = document.getElementById('compass-arm-badge');
+            if (compassArmBadge) {
+                if (isArmed) {
+                    compassArmBadge.className = 'compass-arm-badge armed';
+                    compassArmBadge.innerText = 'ARMED';
+                } else {
+                    compassArmBadge.className = 'compass-arm-badge';
+                    compassArmBadge.innerText = 'DISARMED';
+                }
+            }
+
+            // 3. Sidebar Data Card
+            const sidebarArm = document.getElementById('arm-status-sidebar');
+            if (sidebarArm) {
+                if (isArmed) {
+                    sidebarArm.innerText = 'ARMED';
+                    sidebarArm.style.color = '#ff453a';
+                } else {
+                    sidebarArm.innerText = 'DISARMED';
+                    sidebarArm.style.color = '#8e9297';
+                }
+            }
+
+            // Re-evaluate Dead Reckoning under the new arm state
+            evaluateDeadReckoning();
+        }
+
         function setDeadReckoningMode(enable, reason = '') {
+            const drFlag = document.getElementById('compass-dr-flag');
+            const drBtn = document.getElementById('btn-toggle-dr');
+            const navEl = document.getElementById('nav-fix-status');
+            const annunNav = document.getElementById('annun-nav-status');
+
             if (isDeadReckoning === enable) {
-                if (!enable) {
-                    const navEl = document.getElementById('nav-fix-status');
-                    if (navEl && reason) {
-                        navEl.innerText = reason;
-                        navEl.style.color = 'var(--success)';
+                if (reason) {
+                    if (navEl) navEl.innerText = reason;
+                    if (annunNav) {
+                        annunNav.innerText = reason;
+                        if (!enable) {
+                            annunNav.className = (lastGpsFixType >= 3 && lastGpsSats > 0) ? 'annun-nav-val good-fix' : 'annun-nav-val';
+                        }
                     }
                 }
                 return;
             }
 
             isDeadReckoning = enable;
-            const drFlag = document.getElementById('compass-dr-flag');
-            const drBtn = document.getElementById('btn-toggle-dr');
-            const navEl = document.getElementById('nav-fix-status');
 
             if (enable) {
                 drStartTime = performance.now();
@@ -5358,6 +5575,10 @@
                     navEl.innerText = reason || 'DEAD RECKONING';
                     navEl.style.color = '#ff9f0a';
                 }
+                if (annunNav) {
+                    annunNav.innerText = reason || 'DR ACTIVE';
+                    annunNav.className = 'annun-nav-val dr-warning';
+                }
                 updateArduPilotDrift();
             } else {
                 drGroup.visible = false;
@@ -5367,9 +5588,15 @@
                     drBtn.classList.remove('active');
                     drBtn.innerText = 'DR TEST';
                 }
+                const isGoodFix = lastGpsFixType >= 3 && lastGpsSats > 0;
+                const statusColor = isGoodFix ? 'var(--success)' : '#ff9f0a';
                 if (navEl) {
-                    navEl.innerText = reason || '3D FIX';
-                    navEl.style.color = 'var(--success)';
+                    navEl.innerText = reason || (isGoodFix ? '3D FIX' : 'NO FIX');
+                    navEl.style.color = statusColor;
+                }
+                if (annunNav) {
+                    annunNav.innerText = reason || (isGoodFix ? '3D FIX' : 'NO FIX');
+                    annunNav.className = isGoodFix ? 'annun-nav-val good-fix' : 'annun-nav-val';
                 }
             }
             updateFmsCduLive();
@@ -5719,7 +5946,7 @@
         function toggleDeadReckoningSim() {
             simulatedDR = !simulatedDR;
             sendSitlParam('SIM_GPS1_ENABLE', simulatedDR ? 0.0 : 1.0);
-            setDeadReckoningMode(simulatedDR, simulatedDR ? 'SIMULATED DR' : '3D FIX');
+            evaluateDeadReckoning();
         }
 
         const drToggleBtn = document.getElementById('btn-toggle-dr');
@@ -6492,6 +6719,9 @@
                     }
                 }
             } else if (data.type === 'HEARTBEAT') {
+                if (data.armed !== undefined) {
+                    updateArmState(data.armed);
+                }
                 // Safeguard against raw GCS heartbeat packets (Mode(0x000000c0) or Type 6)
                 if (data.mode && !data.mode.startsWith('Mode(') && data.mode !== 'UNKNOWN') {
                     const prevMode = document.getElementById('f_mode').innerText;
@@ -6499,6 +6729,10 @@
                         addAutopilotMessage({ text: `Flight Mode: ${data.mode}`, severity: 5 });
                     }
                     document.getElementById('f_mode').innerText = data.mode;
+                    const annunMode = document.getElementById('annun-flight-mode');
+                    if (annunMode) annunMode.innerText = data.mode;
+                    const lxnavMode = document.getElementById('lxnav-pfd-mode-text');
+                    if (lxnavMode) lxnavMode.innerText = data.mode;
                 }
                 if (data.firmware && !data.firmware.startsWith('Type ') && data.firmware !== '---') {
                     document.getElementById('firmware').innerText = data.firmware;
@@ -6729,11 +6963,11 @@
                 const sats = (data.satellites_visible !== undefined) ? data.satellites_visible : 0;
 
                 // Detect actual ArduPilot state: GPS is lost if fix_type < 3 or 0 satellites
-                if (data.fix_type < 3 || sats === 0) {
-                    setDeadReckoningMode(true, `GPS LOST (${fixName})`);
-                } else {
-                    setDeadReckoningMode(false, fixName);
-                }
+                lastGpsFixType = (data.fix_type !== undefined) ? data.fix_type : 0;
+                lastGpsSats = sats;
+                lastGpsFixName = fixName;
+
+                evaluateDeadReckoning();
             }
             else if (data.type === 'SIMSTATE') {
                 if (data.sim_lat && data.sim_lon && (Math.abs(data.sim_lat) > 0.01 || Math.abs(data.sim_lon) > 0.01)) {
@@ -6764,8 +6998,9 @@
                     statInnov.className = 'cell-val ' + (innov > 0.8 ? 'amber' : 'cyan');
                 }
 
-                if (data.pos_horiz_abs === false) {
-                    setDeadReckoningMode(true, 'EKF DEAD RECKONING');
+                if (data.pos_horiz_abs !== undefined) {
+                    lastEkfPosAbs = data.pos_horiz_abs;
+                    evaluateDeadReckoning();
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
