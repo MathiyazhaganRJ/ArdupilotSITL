@@ -473,7 +473,8 @@ async def mavlink_listener():
                 data['rpm'] = list(getattr(msg, 'rpm', [0, 0, 0, 0]))
                 data['voltage'] = [round(v / 100.0, 2) for v in getattr(msg, 'voltage', [0, 0, 0, 0])]
                 data['current'] = [round(c / 100.0, 2) for c in getattr(msg, 'current', [0, 0, 0, 0])]
-                data['temperature'] = [round(t / 100.0, 1) for t in getattr(msg, 'temperature', [0, 0, 0, 0])]
+                raw_temp = getattr(msg, 'temperature', [0, 0, 0, 0])
+                data['temperature'] = [round(t / 100.0, 1) if t > 500 else float(t) for t in raw_temp]
                 data['total_current'] = round(getattr(msg, 'total_current', 0) / 100.0, 2)
             elif msg.get_type() == 'ESC_STATUS':
                 data['type'] = 'ESC_STATUS'

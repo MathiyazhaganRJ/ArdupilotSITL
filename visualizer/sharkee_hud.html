@@ -2044,17 +2044,16 @@
         }
 
         /* Box 2 Slider Cell */
-        .gi-grid-cell-slider {
-            padding: 5px 9px 6px 9px !important;
-            justify-content: space-between !important;
+        #gi-cell-box2.has-slider .gi-cell-val {
+            font-size: 21px;
         }
-        .gi-cell-val-inline {
-            font-size: 15px;
-            font-weight: 700;
-            color: #38bdf8;
-            font-family: 'B612 Mono', monospace;
-            line-height: 1;
-            transition: color 0.15s ease;
+        #gi-cell-box2.has-slider .gi-cell-val-wrap {
+            padding: 0;
+            margin-top: -2px;
+        }
+        #gi-cell-box2.has-slider .gi-scale-track {
+            margin-top: 1px;
+            margin-bottom: 1px;
         }
 
         /* Horizontal Tape Scale Track for ESC Temperature */
@@ -3373,13 +3372,16 @@
                 </div>
             </div>
 
-            <!-- Box 2: ESC TEMP (Preserves the physical tape slider gauge) -->
-            <div class="gi-grid-cell gi-grid-cell-slider">
+            <!-- Box 2: Single (ESC TEMP with Tape Slider) / Twin (R AMPS) -->
+            <div class="gi-grid-cell has-slider" id="gi-cell-box2">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box2">ESC TEMP</span>
-                    <span class="gi-cell-val-inline" id="gi-val-box2">30 &deg;C</span>
+                    <span class="gi-cell-unit" id="gi-unit-box2">&deg;C</span>
                 </div>
-                <div class="gi-scale-track">
+                <div class="gi-cell-val-wrap" id="gi-val-wrap-box2">
+                    <span class="gi-cell-val" id="gi-val-box2">30</span>
+                </div>
+                <div class="gi-scale-track" id="gi-track-box2">
                     <div class="gi-track-line"></div>
                     <div class="gi-track-cap-l"></div>
                     <div class="gi-track-cap-r"></div>
@@ -4709,7 +4711,7 @@
         } else {
             btnToggleCompass.classList.add('active');
         }
-        if (localStorage.getItem('weather_visible') === '0') {
+        if (localStorage.getItem('weather_visible') === '0' || new URLSearchParams(window.location.search).get('noweather') === '1') {
             weatherWidget.style.display = 'none';
             btnToggleWeather.classList.remove('active');
         } else {
@@ -7411,7 +7413,13 @@
                     data.current.forEach((v, i) => { am32Telemetry.current[offset + i] = v; });
                 }
                 if (Array.isArray(data.temperature)) {
-                    data.temperature.forEach((v, i) => { am32Telemetry.temperature[offset + i] = v; });
+                    data.temperature.forEach((v, i) => {
+                        let t = v;
+                        if (typeof t === 'number' && t > 0 && t < 1.0) {
+                            t = Math.round(t * 100.0);
+                        }
+                        am32Telemetry.temperature[offset + i] = t;
+                    });
                 }
                 if (data.total_current !== undefined) am32Telemetry.total_current = data.total_current;
             } else if (data.type === 'BATTERY_STATUS') {
@@ -7951,10 +7959,11 @@
         // =========================================================
         var eisWidgetVisible = true;
         let eisIsFullscreen = localStorage.getItem('eis_fullscreen') !== '0'; // default true (fullscreen)
-        let eisEngineMode = localStorage.getItem('eis_engine_mode') || 'single'; // 'single' | 'twin'
-        let eisSingleChannel = parseInt(localStorage.getItem('eis_single_ch') || '1', 10);
-        let eisTwinLeftCh = parseInt(localStorage.getItem('eis_twin_left_ch') || '1', 10);
-        let eisTwinRightCh = parseInt(localStorage.getItem('eis_twin_right_ch') || '2', 10);
+        const eisUrlParams = new URLSearchParams(window.location.search);
+        let eisEngineMode = eisUrlParams.get('eis_mode') || localStorage.getItem('eis_engine_mode') || 'single'; // 'single' | 'twin'
+        let eisSingleChannel = parseInt(eisUrlParams.get('esc') || localStorage.getItem('eis_single_ch') || '1', 10);
+        let eisTwinLeftCh = parseInt(eisUrlParams.get('left') || localStorage.getItem('eis_twin_left_ch') || '1', 10);
+        let eisTwinRightCh = parseInt(eisUrlParams.get('right') || localStorage.getItem('eis_twin_right_ch') || '2', 10);
         let batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
 
         // AM32 ESC Telemetry State (Hardware buffers or Simulated)
@@ -8033,8 +8042,10 @@
             const ptrUp = document.getElementById('gi-ptr-box4-up');
             if (ptrUp) ptrUp.style.display = isTwin ? 'block' : 'none';
 
-            const ptrBox2 = document.getElementById('gi-ptr-box2');
-            if (ptrBox2 && ptrBox2.parentElement) ptrBox2.parentElement.style.display = isTwin ? 'none' : 'flex';
+            const trackBox2 = document.getElementById('gi-track-box2');
+            if (trackBox2) trackBox2.style.display = isTwin ? 'none' : 'flex';
+            const cellBox2 = document.getElementById('gi-cell-box2');
+            if (cellBox2) cellBox2.classList.toggle('has-slider', !isTwin);
 
             if (eisBtnCh) {
                 if (!isTwin) {
@@ -8457,8 +8468,10 @@
                     am32Telemetry.current[3] = Math.max(0.4, baseAmp + noiseAmp);
 
                     const targetTemp = 30.0 + t * 40.0;
-                    am32Telemetry.temperature[0] += (targetTemp - am32Telemetry.temperature[0]) * 0.03;
-                    am32Telemetry.temperature[1] += (targetTemp * 1.03 - am32Telemetry.temperature[1]) * 0.03;
+                    for (let i = 0; i < 8; i++) {
+                        const spread = (i % 2 === 1) ? 1.02 : 1.0;
+                        am32Telemetry.temperature[i] += (targetTemp * spread - am32Telemetry.temperature[i]) * 0.03;
+                    }
 
                     const totLoad = (eisEngineMode === 'twin') ? (am32Telemetry.current[0] + am32Telemetry.current[1]) : am32Telemetry.current[0];
                     am32Telemetry.total_current = totLoad;
@@ -8467,11 +8480,12 @@
 
                     am32Telemetry.consumed_mah += (totLoad * 1000 / 3600) * 0.05;
                 } else {
-                    am32Telemetry.rpm = [0, 0, 0, 0];
-                    am32Telemetry.current = [0.4, 0.4, 0.4, 0.4];
+                    am32Telemetry.rpm = [0, 0, 0, 0, 0, 0, 0, 0];
+                    am32Telemetry.current = [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
                     am32Telemetry.total_current = (eisEngineMode === 'twin') ? 0.8 : 0.4;
-                    am32Telemetry.temperature[0] += (30.0 - am32Telemetry.temperature[0]) * 0.02;
-                    am32Telemetry.temperature[1] += (30.0 - am32Telemetry.temperature[1]) * 0.02;
+                    for (let i = 0; i < 8; i++) {
+                        am32Telemetry.temperature[i] += (30.0 - am32Telemetry.temperature[i]) * 0.02;
+                    }
                     am32Telemetry.pack_voltage = 25.2;
                 }
                 am32Telemetry.battery_remaining_pct = Math.max(5, Math.round(100 - (am32Telemetry.consumed_mah / 6000.0) * 100));
@@ -8483,11 +8497,18 @@
             let activeTemp1 = 0, activeTemp2 = 0;
             let totAmp = 0, totWatt = 0, escTempMax = 0;
 
+            const modeledEscTemp = Math.round(30.0 + (throttleNorm * 32.0));
+            const resolveEscTemp = (raw) => {
+                let t = (typeof raw === 'number') ? raw : 0;
+                if (t > 0 && t < 1.0) t = Math.round(t * 100.0);
+                return (t >= 10.0) ? Math.round(t) : modeledEscTemp;
+            };
+
             if (eisEngineMode === 'single') {
                 const ch = Math.max(0, Math.min(7, eisSingleChannel - 1));
                 activeRpm1 = am32Telemetry.rpm[ch] || 0;
                 activeAmp1 = am32Telemetry.current[ch] || 0;
-                activeTemp1 = am32Telemetry.temperature[ch] || 30;
+                activeTemp1 = resolveEscTemp(am32Telemetry.temperature[ch]);
                 escTempMax = activeTemp1;
 
                 // If ESC doesn't report shunt current (reporting idle <0.8A) while the vehicle is drawing power,
@@ -8531,10 +8552,17 @@
                 const valBox2 = document.getElementById('gi-val-box2');
                 const ptrBox2 = document.getElementById('gi-ptr-box2');
                 if (valBox2) {
-                    valBox2.innerHTML = `${Math.round(escTempMax)} &deg;C`;
-                    if (escTempMax > 80) valBox2.style.color = '#ff3b30';
-                    else if (escTempMax > 65) valBox2.style.color = '#ffd60a';
-                    else valBox2.style.color = '#38bdf8';
+                    valBox2.textContent = Math.round(escTempMax);
+                    if (escTempMax > 80) {
+                        valBox2.style.color = '#ff3b30';
+                        valBox2.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (escTempMax > 65) {
+                        valBox2.style.color = '#ffd60a';
+                        valBox2.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else {
+                        valBox2.style.color = '#38bdf8';
+                        valBox2.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
+                    }
                 }
                 if (ptrBox2) {
                     // Normalize temperature from 20°C to 100°C across 5% - 95% track
@@ -8605,8 +8633,8 @@
                 activeRpm2 = am32Telemetry.rpm[rCh] || 0;
                 activeAmp1 = am32Telemetry.current[lCh] || 0;
                 activeAmp2 = am32Telemetry.current[rCh] || 0;
-                activeTemp1 = am32Telemetry.temperature[lCh] || 30;
-                activeTemp2 = am32Telemetry.temperature[rCh] || 30;
+                activeTemp1 = resolveEscTemp(am32Telemetry.temperature[lCh]);
+                activeTemp2 = resolveEscTemp(am32Telemetry.temperature[rCh]);
 
                 if (genuineBattAmps > 0.5 && (activeAmp1 <= 0.8 || activeAmp2 <= 0.8)) {
                     activeAmp1 = genuineBattAmps / 2.0;
@@ -8633,20 +8661,38 @@
                 const valBox1 = document.getElementById('gi-val-box1');
                 if (valBox1) {
                     valBox1.textContent = activeAmp1.toFixed(1);
-                    if (activeAmp1 > 22.0) valBox1.style.color = '#ff3b30';
-                    else if (activeAmp1 > 15.0) valBox1.style.color = '#ffd60a';
-                    else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) valBox1.style.color = '#00e676';
-                    else valBox1.style.color = '#ffffff';
+                    if (activeAmp1 > 22.0) {
+                        valBox1.style.color = '#ff3b30';
+                        valBox1.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (activeAmp1 > 15.0) {
+                        valBox1.style.color = '#ffd60a';
+                        valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
+                        valBox1.style.color = '#00e676';
+                        valBox1.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                    } else {
+                        valBox1.style.color = '#38bdf8';
+                        valBox1.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
+                    }
                 }
 
                 // Box 2: R AMPS
                 const valBox2 = document.getElementById('gi-val-box2');
                 if (valBox2) {
                     valBox2.textContent = activeAmp2.toFixed(1);
-                    if (activeAmp2 > 22.0) valBox2.style.color = '#ff3b30';
-                    else if (activeAmp2 > 15.0) valBox2.style.color = '#ffd60a';
-                    else if (activeAmp2 >= 5.0 && activeAmp2 <= 12.0) valBox2.style.color = '#00e676';
-                    else valBox2.style.color = '#ffffff';
+                    if (activeAmp2 > 22.0) {
+                        valBox2.style.color = '#ff3b30';
+                        valBox2.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (activeAmp2 > 15.0) {
+                        valBox2.style.color = '#ffd60a';
+                        valBox2.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else if (activeAmp2 >= 5.0 && activeAmp2 <= 12.0) {
+                        valBox2.style.color = '#00e676';
+                        valBox2.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                    } else {
+                        valBox2.style.color = '#38bdf8';
+                        valBox2.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
+                    }
                 }
 
                 // Box 3: L ESC TEMP
