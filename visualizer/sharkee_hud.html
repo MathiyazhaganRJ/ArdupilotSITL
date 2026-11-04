@@ -1816,7 +1816,7 @@
             bottom: 20px;
             left: 840px;
             width: 320px;
-            height: 356px;
+            height: 425px;
             box-sizing: border-box;
             background: #000000;
             border: 3px solid #1a212b;
@@ -2114,13 +2114,13 @@
 
 
 
-        /* Box 6: Batt Amps & Batt Volts Two-Row Display */
+        /* Box 6: Batt Volts & Batt Amps Balanced Display */
         .gi-electrical-box {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            gap: 5px;
+            justify-content: space-around;
             height: 100%;
+            padding: 2px 0;
         }
         .gi-elec-row {
             display: flex;
@@ -2128,7 +2128,7 @@
             align-items: baseline;
         }
         .gi-elec-label {
-            font-size: 9.5px;
+            font-size: 10px;
             font-weight: 700;
             color: #8a9bb2;
             letter-spacing: 0.8px;
@@ -2140,33 +2140,55 @@
             gap: 3px;
         }
         .gi-elec-val {
-            font-size: 16.5px;
+            font-size: 18px;
             font-weight: 700;
-            color: #ffffff;
+            color: #38bdf8;
             font-family: 'B612 Mono', monospace;
             line-height: 1;
             transition: color 0.15s ease;
         }
         .gi-elec-unit {
-            font-size: 9.5px;
+            font-size: 10px;
             font-weight: 700;
-            color: #55667a;
+            color: #64748b;
             font-family: 'B612 Mono', monospace;
         }
 
-        /* Bottom Avionics Status Pill */
+        /* Bottom Avionics Status Strip - Discrete Structured Multi-Column Layout */
         .gi-bottom-status-pill {
             background: #080c12;
             border: 1px solid #242d3a;
-            border-radius: 4px;
-            padding: 3px 8px;
-            text-align: center;
-            font-size: 9.5px;
+            border-radius: 5px;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
+            font-family: 'B612 Mono', monospace;
+        }
+        .gi-status-col {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+        .gi-stat-lbl {
+            font-size: 8px;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        .gi-stat-val {
+            font-size: 10px;
             font-weight: 700;
             color: #ffffff;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+            letter-spacing: 0.2px;
+        }
+        .gi-stat-divider {
+            width: 1px;
+            height: 12px;
+            background: #1e293b;
         }
     
         /* ========================================================= */
@@ -3394,30 +3416,52 @@
                 </div>
             </div>
 
-            <!-- Box 6: Batt Amps & Batt Volts -->
+            <!-- Box 6: Batt Volts & Batt Amps -->
             <div class="gi-grid-cell">
+                <div class="gi-cell-title-row">
+                    <span class="gi-cell-tag">BATTERY</span>
+                    <span class="gi-cell-unit">DC PACK</span>
+                </div>
                 <div class="gi-electrical-box">
                     <div class="gi-elec-row">
-                        <span class="gi-elec-label">BATT AMPS</span>
-                        <div class="gi-elec-val-group">
-                            <span class="gi-elec-val" id="gi-val-batt-amps">0.0</span>
-                            <span class="gi-elec-unit">A</span>
-                        </div>
-                    </div>
-                    <div class="gi-elec-row">
-                        <span class="gi-elec-label">BATT VOLTS</span>
+                        <span class="gi-elec-label">VOLTS</span>
                         <div class="gi-elec-val-group">
                             <span class="gi-elec-val" id="gi-val-batt-volts">25.2</span>
                             <span class="gi-elec-unit">V</span>
+                        </div>
+                    </div>
+                    <div class="gi-elec-row">
+                        <span class="gi-elec-label">AMPS</span>
+                        <div class="gi-elec-val-group">
+                            <span class="gi-elec-val" id="gi-val-batt-amps">0.0</span>
+                            <span class="gi-elec-unit">A</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Avionics Status Pill -->
+        <!-- Bottom Avionics Status Pill - Orderly 4-Segment Strip -->
         <div class="gi-bottom-status-pill" id="gi-bot-pill">
-            OAT 22 &deg;C &bull; 6S LiPo &bull; 6000 mAh CAP &bull; 6000 mAh REM &bull; -- MIN
+            <div class="gi-status-col">
+                <span class="gi-stat-lbl">OAT</span>
+                <span class="gi-stat-val" id="gi-stat-oat">22&deg;C</span>
+            </div>
+            <div class="gi-stat-divider"></div>
+            <div class="gi-status-col">
+                <span class="gi-stat-lbl">PACK</span>
+                <span class="gi-stat-val" id="gi-stat-pack">6S LiPo</span>
+            </div>
+            <div class="gi-stat-divider"></div>
+            <div class="gi-status-col">
+                <span class="gi-stat-lbl">REM</span>
+                <span class="gi-stat-val" id="gi-stat-rem">6000 mAh</span>
+            </div>
+            <div class="gi-stat-divider"></div>
+            <div class="gi-status-col">
+                <span class="gi-stat-lbl">EST</span>
+                <span class="gi-stat-val" id="gi-stat-est">-- MIN</span>
+            </div>
         </div>
     </div>
 
@@ -9025,17 +9069,23 @@
                 }
             }
 
-            // Bottom Status Pill: OAT & Battery Endurance with Capacity
-            const botPill = document.getElementById('gi-bot-pill');
-            if (botPill) {
-                let minsRem = '--';
-                if (totAmp > 0.8) {
-                    const remMah = Math.max(0, (pct / 100.0) * batteryCapacityMah);
-                    minsRem = Math.round((remMah / (totAmp * 1000.0)) * 60);
-                }
-                const remMahTotal = Math.max(0, Math.round(batteryCapacityMah - am32Telemetry.consumed_mah));
-                botPill.innerHTML = `OAT 22 &deg;C &bull; 6S LiPo &bull; ${batteryCapacityMah} mAh CAP &bull; ${remMahTotal} mAh REM &bull; ${minsRem} MIN`;
+            // Bottom Status Strip: OAT & Battery Endurance in Orderly Columns
+            const statOat = document.getElementById('gi-stat-oat');
+            const statPack = document.getElementById('gi-stat-pack');
+            const statRem = document.getElementById('gi-stat-rem');
+            const statEst = document.getElementById('gi-stat-est');
+
+            let minsRem = '-- MIN';
+            if (totAmp > 0.8) {
+                const remMah = Math.max(0, (pct / 100.0) * batteryCapacityMah);
+                minsRem = Math.round((remMah / (totAmp * 1000.0)) * 60) + ' MIN';
             }
+            const remMahTotal = Math.max(0, Math.round(batteryCapacityMah - am32Telemetry.consumed_mah));
+
+            if (statOat) statOat.innerHTML = '22&deg;C';
+            if (statPack) statPack.textContent = '6S LiPo';
+            if (statRem) statRem.textContent = `${remMahTotal} mAh`;
+            if (statEst) statEst.textContent = minsRem;
         }
 
         setInterval(updateEisInstrument, 60);
