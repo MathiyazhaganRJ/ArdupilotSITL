@@ -2037,6 +2037,102 @@
             transition: color 0.15s ease;
         }
 
+        /* Box 2 Slider Cell */
+        .gi-grid-cell-slider {
+            padding: 5px 9px 6px 9px !important;
+            justify-content: space-between !important;
+        }
+        .gi-cell-val-inline {
+            font-size: 15px;
+            font-weight: 700;
+            color: #38bdf8;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+
+        /* Horizontal Tape Scale Track for ESC Temperature */
+        .gi-scale-track {
+            position: relative;
+            width: 100%;
+            height: 14px;
+            display: flex;
+            align-items: center;
+        }
+        .gi-track-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.35);
+        }
+        .gi-track-cap-l {
+            position: absolute;
+            left: 0;
+            width: 2px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .gi-track-cap-r {
+            position: absolute;
+            right: 0;
+            width: 2px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .gi-track-green {
+            position: absolute;
+            height: 5px;
+            background: #00e676;
+            border-radius: 1px;
+        }
+        .gi-track-yellow {
+            position: absolute;
+            height: 5px;
+            background: #ffd60a;
+        }
+        .gi-track-red-tick {
+            position: absolute;
+            width: 2.5px;
+            height: 10px;
+            background: #ff3b30;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .gi-track-pointer-down {
+            position: absolute;
+            top: 0px;
+            width: 0;
+            height: 0;
+            border-left: 4.5px solid transparent;
+            border-right: 4.5px solid transparent;
+            border-top: 6px solid #ffffff;
+            transform: translateX(-50%);
+            transition: left 0.15s ease;
+            z-index: 5;
+            filter: drop-shadow(0 0 1px #ffffff);
+        }
+
+        /* Universal Clean Panel Close Button */
+        .panel-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .panel-close-btn:hover {
+            background: rgba(255, 59, 48, 0.25);
+            color: #ff3b30;
+        }
+
         /* Box 6: Batt Amps & Batt Volts Two-Row Display */
         .gi-electrical-box {
             display: flex;
@@ -2598,7 +2694,7 @@
                 <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
                 <h2>ArduPilot SITL</h2>
             </div>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 6px; align-items: center;">
                 <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="position: relative;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -2617,6 +2713,7 @@
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
+                <button id="btn-close-ui-panel" class="icon-btn" title="Close Control Panel" onclick="toggleUiPanel()" style="font-size: 17px; line-height: 1;">&times;</button>
             </div>
         </div>
 
@@ -2937,6 +3034,7 @@
             <div style="display:flex; gap:6px; align-items:center;">
                 <div id="btn-toggle-dr" class="compass-badge dr-toggle-badge" title="Toggle Dead Reckoning Simulation (Hotkey 'D')">DR TEST</div>
                 <div id="compass-mode-btn" class="compass-badge" title="Click to toggle Heading-Up / North-Up">HDG UP</div>
+                <button class="panel-close-btn" onclick="toggleCompassWidget()" title="Close Compass" style="padding: 0 2px; font-size: 16px;">&times;</button>
             </div>
         </div>
 
@@ -3080,6 +3178,7 @@
                 <button class="lxnav-knob-btn" onclick="prevLxnavPage()" title="Previous Page (Knob CCW)">◀</button>
                 <div class="lxnav-page-badge" id="lxnav-page-badge" onclick="togglePrimaryDuo()" title="Click to toggle Horizon / Vario">PAGE 1</div>
                 <button class="lxnav-knob-btn" onclick="nextLxnavPage()" title="Next Page (Knob CW)">▶</button>
+                <button class="panel-close-btn" onclick="toggleLxnavWidget()" title="Close PFD HUD" style="margin-left: 2px;">&times;</button>
             </div>
         </div>
 
@@ -3264,14 +3363,20 @@
                 </div>
             </div>
 
-            <!-- Box 2: ESC TEMP (ESC Temperature) -->
-            <div class="gi-grid-cell">
+            <!-- Box 2: ESC TEMP (Preserves the physical tape slider gauge) -->
+            <div class="gi-grid-cell gi-grid-cell-slider">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box2">ESC TEMP</span>
-                    <span class="gi-cell-unit" id="gi-unit-box2">&deg;C</span>
+                    <span class="gi-cell-val-inline" id="gi-val-box2">30 &deg;C</span>
                 </div>
-                <div class="gi-cell-val-wrap">
-                    <span class="gi-cell-val" id="gi-val-box2">30</span>
+                <div class="gi-scale-track">
+                    <div class="gi-track-line"></div>
+                    <div class="gi-track-cap-l"></div>
+                    <div class="gi-track-cap-r"></div>
+                    <div class="gi-track-green" style="left: 15%; width: 55%;"></div>
+                    <div class="gi-track-yellow" style="left: 70%; width: 15%;"></div>
+                    <div class="gi-track-red-tick" style="left: 85%;"></div>
+                    <div class="gi-track-pointer-down" id="gi-ptr-box2" style="left: 20%;"></div>
                 </div>
             </div>
 
@@ -3733,13 +3838,16 @@
                     <div id="weather-coords-badge" style="font-size: 10px; color: var(--text-secondary); font-family: monospace;">GPS: 8.3113°N, 77.3077°E</div>
                 </div>
             </div>
-            <button id="btn-fetch-weather" class="btn-refresh" title="Fetch live weather from Open-Meteo for aircraft position">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                </svg>
-                Fetch
-            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <button id="btn-fetch-weather" class="btn-refresh" title="Fetch live weather from Open-Meteo for aircraft position">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Fetch
+                </button>
+                <button class="panel-close-btn" onclick="toggleWeatherWidget()" title="Close Weather Panel" style="padding: 2px 4px; font-size: 17px;">&times;</button>
+            </div>
         </div>
 
         <!-- Live Feed Status Tag -->
@@ -4000,14 +4108,16 @@
 
         const btnToggleUi = document.getElementById('btn-toggle-ui');
         const uiPanel = document.getElementById('ui-panel');
-        btnToggleUi.onclick = () => {
+        function toggleUiPanel() {
             const isHidden = uiPanel.style.display === 'none';
             uiPanel.style.display = isHidden ? 'block' : 'none';
-            btnToggleUi.classList.toggle('active', isHidden);
+            if (btnToggleUi) btnToggleUi.classList.toggle('active', isHidden);
             if (compassWidget && !compassWidget.dataset.userDragged) {
                 compassWidget.style.left = isHidden ? '315px' : '20px';
             }
-        };
+        }
+        window.toggleUiPanel = toggleUiPanel;
+        if (btnToggleUi) btnToggleUi.onclick = toggleUiPanel;
 
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
         const graphContainer = document.getElementById('terrain-graph-container');
@@ -4024,7 +4134,7 @@
                 btnToggleTrace.classList.toggle('active', trailLine.visible);
                 const eye = btnToggleTrace.querySelector('svg');
                 if (trailLine.visible) {
-                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
                 } else {
                     eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
                 }
@@ -4034,21 +4144,25 @@
         // Compass & Weather Toolbar Toggles
         const btnToggleCompass = document.getElementById('btn-toggle-compass');
         const compassWidget = document.getElementById('compass-widget');
-        btnToggleCompass.onclick = () => {
+        function toggleCompassWidget() {
             const isHidden = compassWidget.style.display === 'none';
             compassWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleCompass.classList.toggle('active', isHidden);
+            if (btnToggleCompass) btnToggleCompass.classList.toggle('active', isHidden);
             localStorage.setItem('compass_visible', isHidden ? '1' : '0');
-        };
+        }
+        window.toggleCompassWidget = toggleCompassWidget;
+        if (btnToggleCompass) btnToggleCompass.onclick = toggleCompassWidget;
 
         const btnToggleWeather = document.getElementById('btn-toggle-weather');
         const weatherWidget = document.getElementById('weather-widget');
-        btnToggleWeather.onclick = () => {
+        function toggleWeatherWidget() {
             const isHidden = weatherWidget.style.display === 'none';
             weatherWidget.style.display = isHidden ? 'block' : 'none';
-            btnToggleWeather.classList.toggle('active', isHidden);
+            if (btnToggleWeather) btnToggleWeather.classList.toggle('active', isHidden);
             localStorage.setItem('weather_visible', isHidden ? '1' : '0');
-        };
+        }
+        window.toggleWeatherWidget = toggleWeatherWidget;
+        if (btnToggleWeather) btnToggleWeather.onclick = toggleWeatherWidget;
 
         // Panel View Tab Navigation (Telemetry vs Airspace vs Messages)
         const tabTelemetry = document.getElementById('tab-telemetry');
@@ -4120,14 +4234,32 @@
             }
         }
 
-        if (tabTelemetry) tabTelemetry.onclick = () => switchPanelTab('telemetry');
+        if (tabTelemetry) tabTelemetry.onclick = () => {
+            const isTelemActive = tabTelemetry && tabTelemetry.classList.contains('active');
+            if (isTelemActive && viewTelemetry && viewTelemetry.style.display !== 'none') {
+                toggleUiPanel(); // Clicking already active telemetry tab closes/toggles panel
+            } else {
+                if (uiPanel.style.display === 'none') toggleUiPanel();
+                switchPanelTab('telemetry');
+            }
+        };
         if (tabAirspace) tabAirspace.onclick = () => {
             const isAirActive = tabAirspace && tabAirspace.classList.contains('active');
-            switchPanelTab(isAirActive ? 'telemetry' : 'airspace');
+            if (isAirActive && viewAirspace && viewAirspace.style.display !== 'none') {
+                toggleUiPanel(); // Clicking already active airspace tab closes/toggles panel
+            } else {
+                if (uiPanel.style.display === 'none') toggleUiPanel();
+                switchPanelTab('airspace');
+            }
         };
         if (tabMessages) tabMessages.onclick = () => {
             const isMsgActive = tabMessages && tabMessages.classList.contains('active');
-            switchPanelTab(isMsgActive ? 'telemetry' : 'messages');
+            if (isMsgActive && viewMessages && viewMessages.style.display !== 'none') {
+                toggleUiPanel(); // Clicking already active messages tab closes/toggles panel
+            } else {
+                if (uiPanel.style.display === 'none') toggleUiPanel();
+                switchPanelTab('messages');
+            }
         };
         if (btnOfflineMapHdr) {
             btnOfflineMapHdr.onclick = () => {
@@ -4919,7 +5051,7 @@
             handle.style.cursor = 'grab';
 
             handle.onmousedown = (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.classList.contains('compass-badge')) return;
+                if (e.target.closest('button, input, select, textarea, .compass-badge, .icon-btn, .gi-btn-close, .sixpack-btn-close, .panel-close-btn, .lxnav-knob-btn, .btn-refresh, [onclick]')) return;
                 e.preventDefault();
                 handle.style.cursor = 'grabbing';
                 p3 = e.clientX;
@@ -8131,6 +8263,7 @@
             if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
             localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
         }
+        window.toggleEisWidget = toggleEisWidget;
 
         if (btnToggleEis) btnToggleEis.onclick = toggleEisWidget;
 
@@ -8175,6 +8308,9 @@
 
             const ptrUp = document.getElementById('gi-ptr-box4-up');
             if (ptrUp) ptrUp.style.display = isTwin ? 'block' : 'none';
+
+            const ptrBox2 = document.getElementById('gi-ptr-box2');
+            if (ptrBox2 && ptrBox2.parentElement) ptrBox2.parentElement.style.display = isTwin ? 'none' : 'flex';
 
             if (eisBtnCh) {
                 if (!isTwin) {
@@ -8296,6 +8432,7 @@
             if (btnToggleSixPack) btnToggleSixPack.classList.toggle('active', sixPackVisible);
             localStorage.setItem('sixpack_visible', sixPackVisible ? '1' : '0');
         }
+        window.toggleSixPackPanel = toggleSixPackPanel;
 
         if (btnToggleSixPack) btnToggleSixPack.onclick = toggleSixPackPanel;
 
@@ -8649,48 +8786,77 @@
                 const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
                 setGiArchPointer(ptrRpm, rpmNorm);
 
-                // Box 1: AMPS (Green: 5 - 12A)
+                // Box 1: AMPS (Vibrant Green / Dynamic Cyan-Amber-Red)
                 const valBox1 = document.getElementById('gi-val-box1');
                 if (valBox1) {
                     valBox1.textContent = activeAmp1.toFixed(1);
-                    if (activeAmp1 > 22.0) valBox1.style.color = '#ff3b30';
-                    else if (activeAmp1 > 15.0) valBox1.style.color = '#ffd60a';
-                    else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) valBox1.style.color = '#00e676';
-                    else valBox1.style.color = '#ffffff';
+                    if (activeAmp1 > 22.0) {
+                        valBox1.style.color = '#ff3b30'; // Redline
+                        valBox1.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (activeAmp1 > 15.0) {
+                        valBox1.style.color = '#ffd60a'; // Caution
+                        valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
+                        valBox1.style.color = '#00e676'; // Cruise Green Operating Zone
+                        valBox1.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                    } else {
+                        valBox1.style.color = '#38bdf8'; // Normal idle / light draw cyan
+                        valBox1.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
+                    }
                 }
 
-                // Box 2: ESC TEMP
+                // Box 2: ESC TEMP (Digital Readout + Physical Tape Slider Gauge)
                 const valBox2 = document.getElementById('gi-val-box2');
+                const ptrBox2 = document.getElementById('gi-ptr-box2');
                 if (valBox2) {
-                    valBox2.textContent = Math.round(escTempMax);
+                    valBox2.innerHTML = `${Math.round(escTempMax)} &deg;C`;
                     if (escTempMax > 80) valBox2.style.color = '#ff3b30';
                     else if (escTempMax > 65) valBox2.style.color = '#ffd60a';
-                    else valBox2.style.color = '#ffffff';
+                    else valBox2.style.color = '#38bdf8';
+                }
+                if (ptrBox2) {
+                    // Normalize temperature from 20°C to 100°C across 5% - 95% track
+                    const tNorm = Math.max(0, Math.min(1, (escTempMax - 20) / 80.0));
+                    ptrBox2.style.left = `${Math.max(5, Math.min(95, tNorm * 90 + 5)).toFixed(1)}%`;
                 }
 
-                // Box 3: POWER (WATTS)
+                // Box 3: POWER (Electric Warm Orange / Gold)
                 const valBox3 = document.getElementById('gi-val-box3');
                 if (valBox3) {
                     valBox3.textContent = Math.round(totWatt);
-                    if (totWatt > 1000) valBox3.style.color = '#ff3b30';
-                    else if (totWatt > 700) valBox3.style.color = '#ffd60a';
-                    else valBox3.style.color = '#ffffff';
+                    if (totWatt > 1000) {
+                        valBox3.style.color = '#ff3b30';
+                        valBox3.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (totWatt > 700) {
+                        valBox3.style.color = '#ffd60a';
+                        valBox3.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else {
+                        valBox3.style.color = '#ff9f0a'; // Warm Electric Gold
+                        valBox3.style.textShadow = '0 0 10px rgba(255,159,10,0.4)';
+                    }
                 }
 
-                // Box 4: mAH Used (Consumption vs Capacity)
+                // Box 4: mAH Used (High-Visibility Electric Cyan)
                 const valBox4 = document.getElementById('gi-val-box4');
                 const unitBox4 = document.getElementById('gi-unit-box4');
                 const consumedMah = Math.round(am32Telemetry.consumed_mah);
                 if (valBox4) {
                     valBox4.textContent = consumedMah.toLocaleString();
                     const usedRatio = consumedMah / batteryCapacityMah;
-                    if (usedRatio > 0.90) valBox4.style.color = '#ff3b30';
-                    else if (usedRatio > 0.75) valBox4.style.color = '#ffd60a';
-                    else valBox4.style.color = '#ffffff';
+                    if (usedRatio > 0.90) {
+                        valBox4.style.color = '#ff3b30';
+                        valBox4.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    } else if (usedRatio > 0.75) {
+                        valBox4.style.color = '#ffd60a';
+                        valBox4.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
+                    } else {
+                        valBox4.style.color = '#22d3ee'; // Electric Cyan
+                        valBox4.style.textShadow = '0 0 10px rgba(34,211,238,0.35)';
+                    }
                 }
                 if (unitBox4) unitBox4.textContent = `/ ${batteryCapacityMah}`;
 
-                // Box 5: mAH / KM (Cruise Energy Efficiency)
+                // Box 5: mAH / KM (Cruise Energy Efficiency - Aerospace Lime Green)
                 let mahPerKmVal = '---';
                 if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
                     const gndSpdKmH = planeGroundspeed * 3.6;
@@ -8702,8 +8868,13 @@
                 const valBox5 = document.getElementById('gi-val-box5');
                 if (valBox5) {
                     valBox5.textContent = mahPerKmVal;
-                    if (mahPerKmVal !== '---') valBox5.style.color = '#00e5ff';
-                    else valBox5.style.color = '#55667a';
+                    if (mahPerKmVal !== '---') {
+                        valBox5.style.color = '#a3e635'; // Vibrant Aerospace Lime Green
+                        valBox5.style.textShadow = '0 0 10px rgba(163,230,53,0.4)';
+                    } else {
+                        valBox5.style.color = '#64748b'; // Muted dashes
+                        valBox5.style.textShadow = 'none';
+                    }
                 }
             } else {
                 const lCh = Math.max(0, Math.min(7, eisTwinLeftCh - 1));
@@ -8795,22 +8966,39 @@
             const pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
             const valRem = document.getElementById('gi-num-batt');
             const valSubBatt = document.getElementById('gi-sub-batt');
-            if (valRem) valRem.textContent = `${pct}%`;
+            if (valRem) {
+                valRem.textContent = `${pct}%`;
+                if (pct <= 15) valRem.style.color = '#ff3b30';
+                else if (pct <= 30) valRem.style.color = '#ffd60a';
+                else valRem.style.color = '#00e676';
+            }
             if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
+
+            const valPwrTop = document.getElementById('gi-num-pwr');
+            if (valPwrTop) valPwrTop.style.color = '#38bdf8';
 
             // Box 6: Batt Amps & Batt Volts
             const valBattAmps = document.getElementById('gi-val-batt-amps');
             const valBattVolts = document.getElementById('gi-val-batt-volts');
             if (valBattAmps) {
                 valBattAmps.textContent = totAmp.toFixed(1);
-                if (totAmp > 25.0) valBattAmps.style.color = '#ffd60a';
-                else valBattAmps.style.color = '#ffffff';
+                if (totAmp > 25.0) {
+                    valBattAmps.style.color = '#ffd60a';
+                } else if (totAmp >= 5.0 && totAmp <= 12.0) {
+                    valBattAmps.style.color = '#00e676'; // Cruise Green
+                } else {
+                    valBattAmps.style.color = '#38bdf8'; // Clean cyan
+                }
             }
             if (valBattVolts) {
                 valBattVolts.textContent = packVolt.toFixed(1);
-                if (packVolt > 0 && packVolt < 21.0) valBattVolts.style.color = '#ff3b30';
-                else if (packVolt > 0 && packVolt < 21.6) valBattVolts.style.color = '#ffd60a';
-                else valBattVolts.style.color = '#ffffff';
+                if (packVolt > 0 && packVolt < 21.0) {
+                    valBattVolts.style.color = '#ff3b30'; // Critical pack alert
+                } else if (packVolt > 0 && packVolt < 21.6) {
+                    valBattVolts.style.color = '#ffd60a'; // Caution
+                } else {
+                    valBattVolts.style.color = '#38bdf8'; // Voltage Cyan
+                }
             }
 
             // Bottom Status Pill: OAT & Battery Endurance with Capacity
@@ -8832,6 +9020,8 @@
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'e' || e.key === 'E') {
                 toggleEisWidget();
+            } else if (e.key === 'c' || e.key === 'C') {
+                toggleCompassWidget();
             }
         });
     </script>
