@@ -8215,7 +8215,6 @@
 
             renderer.render(scene, camera);
         }
-        animate();
 
         // Immediate startup initialization of cached mission waypoints and LXNAV displays
         if (Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
@@ -8246,7 +8245,7 @@
         // =========================================================
         // FULL RECTANGULAR GARMIN EIS ENGINE & POWER CONTROLLER
         // =========================================================
-        let eisWidgetVisible = true;
+        var eisWidgetVisible = true;
         let eisIsFullscreen = localStorage.getItem('eis_fullscreen') !== '0'; // default true (fullscreen)
         let eisEngineMode = localStorage.getItem('eis_engine_mode') || 'single'; // 'single' | 'twin'
         let eisSingleChannel = parseInt(localStorage.getItem('eis_single_ch') || '1', 10);
@@ -8437,7 +8436,7 @@
         // =========================================================
         // CLASSIC SIX-PACK COCKPIT PANEL LOGIC & 60FPS TELEMETRY
         // =========================================================
-        let sixPackVisible = localStorage.getItem('sixpack_visible') !== '0'; // default true
+        var sixPackVisible = localStorage.getItem('sixpack_visible') !== '0'; // default true
         let sixPackUnits = localStorage.getItem('sixpack_units') || 'imperial'; // 'imperial' (kts/ft) | 'metric' (m/s, m)
         let sixPackPitchOffset = 0.0;
         let sixPackBaroSetting = 29.92; // inHg
@@ -8545,7 +8544,9 @@
 
         // 60FPS Live Telemetry Update for Classic Six-Pack Cockpit
         function updateSixPackHUD() {
-            if (!sixPackVisible || !sixPackPanel) return;
+            if (typeof sixPackVisible === 'undefined' || !sixPackVisible) return;
+            const sixPackPanel = document.getElementById('sixpack-panel');
+            if (!sixPackPanel) return;
 
             // 1. Airspeed Indicator (0 - 200 knots or m/s)
             const speedKts = (typeof planeAirspeed === 'number' && planeAirspeed >= 0) ? (planeAirspeed * 1.94384) : 0;
@@ -8698,7 +8699,9 @@
 
                 // Live AM32 Engine Indication System Render Loop
         function updateEisInstrument() {
-            if (!eisWidgetVisible || !eisWidget) return;
+            if (typeof eisWidgetVisible === 'undefined' || !eisWidgetVisible) return;
+            const eisWidget = document.getElementById('eis-widget');
+            if (!eisWidget) return;
 
             const now = performance.now();
 
@@ -9045,6 +9048,9 @@
                 toggleCompassWidget();
             }
         });
+
+        // Start animation loop after all avionics instruments and handlers are loaded
+        animate();
     </script>
 </body>
 
