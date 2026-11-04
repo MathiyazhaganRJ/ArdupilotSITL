@@ -2120,6 +2120,15 @@
 
 
         /* Box 6: Batt Volts & Batt Amps Balanced Display */
+        .gi-clickable-badge {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+        .gi-clickable-badge:hover {
+            color: #38bdf8 !important;
+            opacity: 1 !important;
+        }
         .gi-electrical-box {
             display: flex;
             flex-direction: column;
@@ -3425,25 +3434,25 @@
                 </div>
             </div>
 
-            <!-- Box 6: Batt Volts & Batt Amps -->
+            <!-- Box 6: Batt Volts & Average Cell Voltage -->
             <div class="gi-grid-cell">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag">BATTERY</span>
-                    <span class="gi-cell-unit">DC PACK</span>
+                    <span class="gi-cell-unit gi-clickable-badge" id="gi-batt-pack-unit" title="Click to cycle battery cell count (Auto / 3S / 4S / 6S)">3S PACK</span>
                 </div>
                 <div class="gi-electrical-box">
                     <div class="gi-elec-row">
                         <span class="gi-elec-label">VOLTS</span>
                         <div class="gi-elec-val-group">
-                            <span class="gi-elec-val" id="gi-val-batt-volts">25.2</span>
+                            <span class="gi-elec-val" id="gi-val-batt-volts">12.3</span>
                             <span class="gi-elec-unit">V</span>
                         </div>
                     </div>
                     <div class="gi-elec-row">
-                        <span class="gi-elec-label">AMPS</span>
+                        <span class="gi-elec-label" id="gi-lbl-batt-cell">CELL</span>
                         <div class="gi-elec-val-group">
-                            <span class="gi-elec-val" id="gi-val-batt-amps">0.0</span>
-                            <span class="gi-elec-unit">A</span>
+                            <span class="gi-elec-val" id="gi-val-batt-cell">4.10</span>
+                            <span class="gi-elec-unit">V</span>
                         </div>
                     </div>
                 </div>
@@ -7295,6 +7304,8 @@
                 if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
                     batteryCapacityMah = Math.round(data.param_value);
                     localStorage.setItem('eis_battery_cap', batteryCapacityMah);
+                } else if ((data.param_id === 'BATT_SER_CELLS' || data.param_id === 'BATT_CELLS') && data.param_value > 0) {
+                    am32Telemetry.cell_count = Math.round(data.param_value);
                 }
             } else if (data.type === 'STATUSTEXT') {
                 addAutopilotMessage(data);
@@ -7965,6 +7976,46 @@
         let eisTwinLeftCh = parseInt(eisUrlParams.get('left') || localStorage.getItem('eis_twin_left_ch') || '1', 10);
         let eisTwinRightCh = parseInt(eisUrlParams.get('right') || localStorage.getItem('eis_twin_right_ch') || '2', 10);
         let batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
+        const urlCells = parseInt(eisUrlParams.get('cells') || '0', 10);
+        let manualCellCount = (urlCells > 0) ? urlCells : parseInt(localStorage.getItem('eis_battery_cells') || '0', 10);
+
+        function getBatteryCellCount(packVolt) {
+            if (manualCellCount > 0) return manualCellCount;
+            if (am32Telemetry.cell_count > 0) return am32Telemetry.cell_count;
+            if (Array.isArray(am32Telemetry.cell_voltages)) {
+                const subCells = am32Telemetry.cell_voltages.filter(v => v >= 2.5 && v <= 4.5);
+                if (subCells.length > 1) return subCells.length;
+            }
+            if (typeof packVolt === 'number' && packVolt > 3.0) {
+                const candidates = [1, 2, 3, 4, 6, 8, 12];
+                let bestN = 3;
+                let bestDist = 999.0;
+                for (const n of candidates) {
+                    const cv = packVolt / n;
+                    if (cv >= 3.10 && cv <= 4.28) {
+                        const dist = Math.abs(cv - 3.85);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestN = n;
+                        }
+                    }
+                }
+                return bestN;
+            }
+            return 3;
+        }
+
+        function cycleBatteryCellCount() {
+            const counts = [0, 3, 4, 6, 8];
+            const idx = counts.indexOf(manualCellCount);
+            manualCellCount = counts[(idx + 1) % counts.length];
+            if (manualCellCount === 0) {
+                localStorage.removeItem('eis_battery_cells');
+            } else {
+                localStorage.setItem('eis_battery_cells', manualCellCount);
+            }
+            updateEisInstrument();
+        }
 
         // AM32 ESC Telemetry State (Hardware buffers or Simulated)
         const am32Telemetry = {
@@ -7979,7 +8030,8 @@
             pack_voltage: 25.2,
             consumed_mah: 0,
             battery_remaining_pct: 100,
-            throttle_pct: 0
+            throttle_pct: 0,
+            cell_count: 0
         };
 
         const eisWidget = document.getElementById('eis-widget');
@@ -8745,28 +8797,66 @@
             const valPwrTop = document.getElementById('gi-num-pwr');
             if (valPwrTop) valPwrTop.style.color = '#38bdf8';
 
-            // Box 6: Batt Amps & Batt Volts
-            const valBattAmps = document.getElementById('gi-val-batt-amps');
-            const valBattVolts = document.getElementById('gi-val-batt-volts');
-            if (valBattAmps) {
-                valBattAmps.textContent = totAmp.toFixed(1);
-                if (totAmp > 25.0) {
-                    valBattAmps.style.color = '#ffd60a';
-                } else if (totAmp >= 5.0 && totAmp <= 12.0) {
-                    valBattAmps.style.color = '#00e676'; // Cruise Green
-                } else {
-                    valBattAmps.style.color = '#38bdf8'; // Clean cyan
+            // Box 6: Batt Volts & Average Cell Voltage (voltage / cell count)
+            const cellCount = getBatteryCellCount(packVolt);
+            let avgCellVolt = 0.0;
+            if (Array.isArray(am32Telemetry.cell_voltages)) {
+                const subCells = am32Telemetry.cell_voltages.filter(v => v >= 2.5 && v <= 4.5);
+                if (subCells.length > 1) {
+                    avgCellVolt = subCells.reduce((a, b) => a + b, 0) / subCells.length;
                 }
             }
+            if (avgCellVolt <= 0.0 && packVolt > 0 && cellCount > 0) {
+                avgCellVolt = packVolt / cellCount;
+            }
+
+            const valBattVolts = document.getElementById('gi-val-batt-volts');
+            const valBattCell = document.getElementById('gi-val-batt-cell');
+            const lblBattUnit = document.getElementById('gi-batt-pack-unit');
+
+            if (lblBattUnit) {
+                const isAuto = (manualCellCount === 0);
+                lblBattUnit.textContent = `${cellCount}S PACK${isAuto ? '' : '*'}`;
+                if (!lblBattUnit.onclick) {
+                    lblBattUnit.onclick = cycleBatteryCellCount;
+                }
+            }
+
             if (valBattVolts) {
                 valBattVolts.textContent = packVolt.toFixed(1);
-                if (packVolt > 0 && packVolt < 21.0) {
-                    valBattVolts.style.color = '#ff3b30'; // Critical pack alert
-                } else if (packVolt > 0 && packVolt < 21.6) {
-                    valBattVolts.style.color = '#ffd60a'; // Caution
+            }
+
+            if (valBattCell) {
+                valBattCell.textContent = avgCellVolt.toFixed(2);
+            }
+
+            // Universal per-cell health color coding (accurate across 1S to 12S packs)
+            let voltColor = '#38bdf8';
+            let voltShadow = 'none';
+
+            if (avgCellVolt > 0) {
+                if (avgCellVolt < 3.50) {
+                    voltColor = '#ff3b30'; // Critical red alert (< 3.50V per cell)
+                    voltShadow = '0 0 10px rgba(255,59,48,0.5)';
+                } else if (avgCellVolt < 3.70) {
+                    voltColor = '#ffd60a'; // Caution amber (3.50V - 3.70V per cell)
+                    voltShadow = '0 0 10px rgba(255,214,10,0.5)';
+                } else if (avgCellVolt >= 3.80) {
+                    voltColor = '#00e676'; // Healthy cruise / full green (>= 3.80V per cell)
+                    voltShadow = '0 0 10px rgba(0,230,118,0.4)';
                 } else {
-                    valBattVolts.style.color = '#38bdf8'; // Voltage Cyan
+                    voltColor = '#38bdf8'; // Nominal cyan (3.70V - 3.80V per cell)
+                    voltShadow = '0 0 8px rgba(56,189,248,0.3)';
                 }
+            }
+
+            if (valBattVolts) {
+                valBattVolts.style.color = voltColor;
+                valBattVolts.style.textShadow = voltShadow;
+            }
+            if (valBattCell) {
+                valBattCell.style.color = voltColor;
+                valBattCell.style.textShadow = voltShadow;
             }
 
             // Bottom Status Strip: OAT & Battery Endurance in Orderly Columns

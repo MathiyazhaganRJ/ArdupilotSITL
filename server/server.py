@@ -356,11 +356,15 @@ async def mavlink_listener():
                     )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
-                    # Request Battery Capacity parameter
+                    # Request Battery Capacity and Cell Count parameters
                     try:
                         connection.mav.param_request_read_send(
                             connection.target_system, connection.target_component,
                             b'BATT_CAPACITY', -1
+                        )
+                        connection.mav.param_request_read_send(
+                            connection.target_system, connection.target_component,
+                            b'BATT_SER_CELLS', -1
                         )
                     except Exception:
                         pass
