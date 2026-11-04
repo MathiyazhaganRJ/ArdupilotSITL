@@ -714,7 +714,7 @@
             position: absolute;
             bottom: 20px;
             left: 340px;
-            width: 232px;
+            width: 244px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
@@ -732,27 +732,32 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .compass-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             color: var(--text-secondary);
+            white-space: nowrap;
         }
 
         .compass-badge {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 700;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
             background: rgba(10, 132, 255, 0.15);
             color: var(--accent);
             cursor: pointer;
             letter-spacing: 0.04em;
             transition: background 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .compass-badge:hover {
@@ -789,119 +794,127 @@
             color: var(--text-primary);
         }
 
-        /* Compass Arm Badge */
-        .compass-arm-badge {
-            font-size: 9px;
-            font-weight: 800;
-            padding: 1px 6px;
-            border-radius: 3px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            transition: all 0.25s ease;
-            background: rgba(255, 255, 255, 0.06);
-            color: #8e9297;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-        }
-        .compass-arm-badge.armed {
-            background: rgba(255, 59, 48, 0.22);
-            color: #ff453a;
-            border: 1px solid rgba(255, 59, 48, 0.85);
-            box-shadow: 0 0 8px rgba(255, 59, 48, 0.4);
-        }
-
-        /* Master Aviation Flight Annunciator Bar (Top Center) */
-        .flight-annunciator-bar {
+        /* ========================================================
+           AEROSPACE PRIMARY FLIGHT ANNUNCIATOR (FMA) RIBBON
+           Authentic Glass Cockpit Status Display (Garmin / Collins FMA)
+           ======================================================== */
+        .flight-annunciator-ribbon {
             position: absolute;
-            top: 20px;
+            top: 16px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(12, 16, 22, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 8px;
-            padding: 5px 14px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            align-items: stretch;
+            background: linear-gradient(180deg, rgba(14, 18, 25, 0.94) 0%, rgba(8, 11, 16, 0.96) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 5px;
+            padding: 3px 6px;
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             z-index: 195;
-            font-family: 'B612', 'Inter', sans-serif;
             user-select: none;
             pointer-events: auto;
+            font-family: 'B612', 'Inter', -apple-system, sans-serif;
         }
 
-        .annun-arm-pill {
-            display: inline-flex;
+        .fma-cell {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 6px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            transition: all 0.25s ease;
-            background: rgba(255, 255, 255, 0.06);
-            color: #8e9297;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            justify-content: center;
+            padding: 2px 14px 3px;
+            min-width: 82px;
         }
 
-        .annun-arm-pill.armed {
-            background: rgba(255, 59, 48, 0.2);
-            color: #ff453a;
-            border: 1px solid rgba(255, 59, 48, 0.85);
-            box-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
+        .fma-label {
+            font-size: 7.5px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #6a7485;
+            margin-bottom: 2px;
+            line-height: 1;
         }
 
-        .annun-arm-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #6e737c;
-            display: inline-block;
-        }
-
-        .annun-arm-pill.armed .annun-arm-dot {
-            background: #ff3b30;
-            box-shadow: 0 0 6px #ff3b30;
-            animation: arm-dot-pulse 1.2s infinite alternate ease-in-out;
-        }
-
-        @keyframes arm-dot-pulse {
-            from { opacity: 0.6; transform: scale(0.9); }
-            to { opacity: 1.0; transform: scale(1.15); }
-        }
-
-        .annun-divider {
-            width: 1px;
-            height: 16px;
-            background: rgba(255, 255, 255, 0.16);
-        }
-
-        .annun-mode-val {
+        .fma-val {
             font-family: 'B612 Mono', monospace;
             font-size: 12px;
             font-weight: 800;
-            color: #389bd8;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            line-height: 1.15;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+            transition: all 0.25s ease;
         }
 
-        .annun-nav-val {
-            font-family: 'B612 Mono', monospace;
-            font-size: 11px;
-            font-weight: 700;
+        /* Master Arm State Styling (Single Authorized Position) */
+        .fma-arm-disarmed {
+            color: #9aa2af;
+        }
+
+        .fma-arm-led {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #5a6270;
+            display: inline-block;
+            transition: all 0.25s ease;
+        }
+
+        .fma-val.fma-arm-armed {
+            color: #ff453a;
+            background: rgba(255, 59, 48, 0.18);
+            border: 1px solid rgba(255, 59, 48, 0.7);
+            border-radius: 3px;
+            padding: 1px 6px;
+            box-shadow: 0 0 10px rgba(255, 59, 48, 0.35);
+        }
+
+        .fma-val.fma-arm-armed .fma-arm-led {
+            background: #ff3b30;
+            box-shadow: 0 0 8px #ff3b30;
+            animation: fma-led-pulse 1.2s infinite alternate ease-in-out;
+        }
+
+        @keyframes fma-led-pulse {
+            from { opacity: 0.55; transform: scale(0.9); }
+            to { opacity: 1.0; transform: scale(1.15); }
+        }
+
+        /* Flight Mode Styling */
+        .fma-mode-text {
+            color: #00d2ff;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+        }
+
+        /* Navigation Fix Styling */
+        .fma-nav-standby {
             color: #ff9f0a;
-            letter-spacing: 0.04em;
         }
 
-        .annun-nav-val.good-fix {
+        .fma-nav-good {
             color: #30d158;
+            text-shadow: 0 0 8px rgba(48, 209, 88, 0.3);
         }
 
-        .annun-nav-val.dr-warning {
+        .fma-nav-dr {
             color: #ff9f0a;
-            font-weight: 800;
-            animation: dr-blink 1.0s infinite ease-in-out;
+            animation: fma-dr-flash 1.0s infinite ease-in-out;
+        }
+
+        @keyframes fma-dr-flash {
+            0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255, 159, 10, 0.6); }
+            50% { opacity: 0.4; text-shadow: none; }
+        }
+
+        .fma-divider {
+            width: 1px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.04) 100%);
+            margin: 2px 0;
         }
 
         .dr-toggle-badge.active {
@@ -2120,16 +2133,32 @@
 </head>
 
 <body>
-    <!-- Master Aviation Flight Annunciator Bar (Top Center) -->
-    <div id="flight-annunciator-bar" class="flight-annunciator-bar" title="Master Autopilot & Navigation Annunciator">
-        <div id="annun-arm-status" class="annun-arm-pill" title="Autopilot Arm State">
-            <span class="annun-arm-dot"></span>
-            <span id="annun-arm-text">DISARMED</span>
+    <!-- Aerospace Primary Flight Annunciator (FMA) Ribbon -->
+    <div id="flight-annunciator-bar" class="flight-annunciator-ribbon" title="Primary Flight Annunciator (FMA)">
+        <!-- Cell 1: Master Propulsion Arm Status (Single Authoritative Position) -->
+        <div class="fma-cell fma-cell-arm">
+            <span class="fma-label">PROP STATUS</span>
+            <div id="annun-arm-status" class="fma-val fma-arm-disarmed" title="Motor Arming State">
+                <span class="fma-arm-led"></span>
+                <span id="annun-arm-text">DISARMED</span>
+            </div>
         </div>
-        <div class="annun-divider"></div>
-        <div id="annun-flight-mode" class="annun-mode-val" title="Autopilot Flight Mode">UNKNOWN</div>
-        <div class="annun-divider"></div>
-        <div id="annun-nav-status" class="annun-nav-val" title="Navigation Fix / Dead Reckoning Status">NO FIX</div>
+
+        <div class="fma-divider"></div>
+
+        <!-- Cell 2: Flight Mode -->
+        <div class="fma-cell fma-cell-mode">
+            <span class="fma-label">FLIGHT MODE</span>
+            <span id="annun-flight-mode" class="fma-val fma-mode-text" title="Active Autopilot Mode">UNKNOWN</span>
+        </div>
+
+        <div class="fma-divider"></div>
+
+        <!-- Cell 3: Navigation / GNSS Fix -->
+        <div class="fma-cell fma-cell-nav">
+            <span class="fma-label">NAVIGATION</span>
+            <span id="annun-nav-status" class="fma-val fma-nav-standby" title="Navigation Fix / Dead Reckoning">NO GPS</span>
+        </div>
     </div>
 
     <!-- Floating Toolbar -->
@@ -2270,8 +2299,6 @@
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
                         style="color: var(--danger);">Offline</span></div>
-                <div class="data-row"><span class="data-label">Arm Status</span><span id="arm-status-sidebar" class="data-val"
-                        style="color: #8e9297; font-weight:700;">DISARMED</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
                         style="color: var(--text-secondary);">---</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
@@ -2564,7 +2591,6 @@
                     <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="var(--accent)" fill-opacity="0.3"></polygon>
                 </svg>
                 <span class="compass-title">NAV COMPASS</span>
-                <span id="compass-arm-badge" class="compass-arm-badge" title="Autopilot Armed State">DISARMED</span>
                 <span id="compass-dr-flag" class="compass-dr-flag" style="display:none;" title="Dead Reckoning Navigation Mode Active">DR</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -5488,40 +5514,16 @@
                 addAutopilotMessage({ text: msgText, severity: sev });
             }
 
-            // 1. Top Master Annunciator
-            const topArmPill = document.getElementById('annun-arm-status');
+            // Master FMA Annunciator (Single Authorized Position)
+            const topArmVal = document.getElementById('annun-arm-status');
             const topArmText = document.getElementById('annun-arm-text');
-            if (topArmPill) {
+            if (topArmVal) {
                 if (isArmed) {
-                    topArmPill.className = 'annun-arm-pill armed';
+                    topArmVal.className = 'fma-val fma-arm-armed';
                     if (topArmText) topArmText.innerText = 'ARMED';
                 } else {
-                    topArmPill.className = 'annun-arm-pill';
+                    topArmVal.className = 'fma-val fma-arm-disarmed';
                     if (topArmText) topArmText.innerText = 'DISARMED';
-                }
-            }
-
-            // 2. Compass Header Badge
-            const compassArmBadge = document.getElementById('compass-arm-badge');
-            if (compassArmBadge) {
-                if (isArmed) {
-                    compassArmBadge.className = 'compass-arm-badge armed';
-                    compassArmBadge.innerText = 'ARMED';
-                } else {
-                    compassArmBadge.className = 'compass-arm-badge';
-                    compassArmBadge.innerText = 'DISARMED';
-                }
-            }
-
-            // 3. Sidebar Data Card
-            const sidebarArm = document.getElementById('arm-status-sidebar');
-            if (sidebarArm) {
-                if (isArmed) {
-                    sidebarArm.innerText = 'ARMED';
-                    sidebarArm.style.color = '#ff453a';
-                } else {
-                    sidebarArm.innerText = 'DISARMED';
-                    sidebarArm.style.color = '#8e9297';
                 }
             }
 
@@ -5541,7 +5543,7 @@
                     if (annunNav) {
                         annunNav.innerText = reason;
                         if (!enable) {
-                            annunNav.className = (lastGpsFixType >= 3 && lastGpsSats > 0) ? 'annun-nav-val good-fix' : 'annun-nav-val';
+                            annunNav.className = (lastGpsFixType >= 3 && lastGpsSats > 0) ? 'fma-val fma-nav-good' : 'fma-val fma-nav-standby';
                         }
                     }
                 }
@@ -5577,7 +5579,7 @@
                 }
                 if (annunNav) {
                     annunNav.innerText = reason || 'DR ACTIVE';
-                    annunNav.className = 'annun-nav-val dr-warning';
+                    annunNav.className = 'fma-val fma-nav-dr';
                 }
                 updateArduPilotDrift();
             } else {
@@ -5596,7 +5598,7 @@
                 }
                 if (annunNav) {
                     annunNav.innerText = reason || (isGoodFix ? '3D FIX' : 'NO FIX');
-                    annunNav.className = isGoodFix ? 'annun-nav-val good-fix' : 'annun-nav-val';
+                    annunNav.className = isGoodFix ? 'fma-val fma-nav-good' : 'fma-val fma-nav-standby';
                 }
             }
             updateFmsCduLive();
