@@ -2397,54 +2397,87 @@
             align-items: center;
         }
 
-        /* 6 Korry Warning / Annunciator Lamps */
-        .sp-annun-grid {
+        /* Master Autopilot Annunciators: Arm Status & Flight Mode */
+        .sp-ap-status-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: rgba(12, 15, 20, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 6px 8px;
+            box-sizing: border-box;
         }
 
-        .sp-annun-lamp {
-            background: #11141a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            padding: 3px 0;
+        .sp-ap-card {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .sp-ap-sub {
             font-size: 8px;
             font-weight: 800;
+            color: #8b9bb0;
             letter-spacing: 0.8px;
-            text-align: center;
-            color: #475569;
             text-transform: uppercase;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .sp-ap-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 26px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            font-family: 'B612 Mono', monospace;
+            text-transform: uppercase;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #11141a;
+            color: #8b9bb0;
             transition: all 0.15s ease;
         }
 
-        .sp-annun-lamp.lamp-red {
-            color: #ff453a;
-            border-color: #ff453a;
-            background: rgba(255, 69, 58, 0.2);
-            box-shadow: 0 0 8px rgba(255, 69, 58, 0.5);
+        .sp-ap-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
         }
 
-        .sp-annun-lamp.lamp-amber {
+        /* Arm States */
+        .sp-ap-badge.arm-disarmed {
             color: #ffd60a;
-            border-color: #ffd60a;
-            background: rgba(255, 214, 10, 0.2);
-            box-shadow: 0 0 8px rgba(255, 214, 10, 0.5);
+            border-color: rgba(255, 214, 10, 0.35);
+            background: rgba(255, 214, 10, 0.12);
+            box-shadow: 0 0 8px rgba(255, 214, 10, 0.2);
+        }
+        .sp-ap-badge.arm-disarmed .sp-ap-dot {
+            background: #ffd60a;
+            box-shadow: 0 0 6px #ffd60a;
         }
 
-        .sp-annun-lamp.lamp-green {
+        .sp-ap-badge.arm-armed {
             color: #30d158;
-            border-color: #30d158;
-            background: rgba(48, 209, 88, 0.2);
-            box-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
+            border-color: rgba(48, 209, 88, 0.5);
+            background: rgba(48, 209, 88, 0.18);
+            box-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
+        }
+        .sp-ap-badge.arm-armed .sp-ap-dot {
+            background: #30d158;
+            box-shadow: 0 0 8px #30d158;
         }
 
-        .sp-annun-lamp.lamp-cyan {
+        /* Flight Mode Badge */
+        .sp-ap-badge.badge-mode {
             color: #00e5ff;
-            border-color: #00e5ff;
-            background: rgba(0, 229, 255, 0.2);
-            box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+            border-color: rgba(0, 229, 255, 0.4);
+            background: rgba(0, 229, 255, 0.12);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
         }
 
         /* Bottom Status Banner */
@@ -3719,14 +3752,21 @@
                     </div>
                 </div>
 
-                <!-- 6 Annunciator Warning Lamps (Korry style) -->
-                <div class="sp-annun-grid">
-                    <div class="sp-annun-lamp" id="sp-lamp-stall">STALL</div>
-                    <div class="sp-annun-lamp lamp-amber" id="sp-lamp-gnd">GND</div>
-                    <div class="sp-annun-lamp" id="sp-lamp-hdg">HDG</div>
-                    <div class="sp-annun-lamp" id="sp-lamp-alt">ALT</div>
-                    <div class="sp-annun-lamp" id="sp-lamp-rpm">RPM</div>
-                    <div class="sp-annun-lamp lamp-amber" id="sp-lamp-pause">PAUSE</div>
+                <!-- Master Autopilot Status: Arm State & Flight Mode -->
+                <div class="sp-ap-status-row">
+                    <div class="sp-ap-card" id="sp-card-arm">
+                        <span class="sp-ap-sub">ARM STATUS</span>
+                        <div class="sp-ap-badge arm-disarmed" id="sp-badge-arm">
+                            <span class="sp-ap-dot" id="sp-dot-arm"></span>
+                            <span id="sp-txt-arm">DISARMED</span>
+                        </div>
+                    </div>
+                    <div class="sp-ap-card" id="sp-card-mode">
+                        <span class="sp-ap-sub">FLIGHT MODE</span>
+                        <div class="sp-ap-badge badge-mode" id="sp-badge-mode">
+                            <span id="sp-txt-mode">MANUAL</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Bottom Status Strip (Groundspeed & AGL) -->
@@ -6250,6 +6290,18 @@
                 }
             }
 
+            const spBadgeArm = document.getElementById('sp-badge-arm');
+            const spTxtArm = document.getElementById('sp-txt-arm');
+            if (spBadgeArm && spTxtArm) {
+                if (isArmed) {
+                    spBadgeArm.className = 'sp-ap-badge arm-armed';
+                    spTxtArm.textContent = 'ARMED';
+                } else {
+                    spBadgeArm.className = 'sp-ap-badge arm-disarmed';
+                    spTxtArm.textContent = 'DISARMED';
+                }
+            }
+
             // Re-evaluate Dead Reckoning under the new arm state
             evaluateDeadReckoning();
         }
@@ -7468,6 +7520,8 @@
                     if (annunMode) annunMode.innerText = data.mode;
                     const lxnavMode = document.getElementById('lxnav-pfd-mode-text');
                     if (lxnavMode) lxnavMode.innerText = data.mode;
+                    const spMode = document.getElementById('sp-txt-mode');
+                    if (spMode) spMode.innerText = data.mode;
                 }
                 if (data.firmware && !data.firmware.startsWith('Type ') && data.firmware !== '---') {
                     document.getElementById('firmware').innerText = data.firmware;
@@ -8488,23 +8542,26 @@
             }
             if (valFlaps) valFlaps.innerHTML = `${flapDeg}&deg;`;
 
-            // Annunciator Warning Lamps
-            const lampStall = document.getElementById('sp-lamp-stall');
-            const lampGnd = document.getElementById('sp-lamp-gnd');
-            const lampHdg = document.getElementById('sp-lamp-hdg');
-            const lampAlt = document.getElementById('sp-lamp-alt');
-            const lampRpm = document.getElementById('sp-lamp-rpm');
-            const lampPause = document.getElementById('sp-lamp-pause');
+            // Master Autopilot Annunciators: Arm State & Flight Mode
+            const badgeArm = document.getElementById('sp-badge-arm');
+            const txtArm = document.getElementById('sp-txt-arm');
+            const armed = (typeof isArmed !== 'undefined') ? isArmed : false;
+            if (badgeArm && txtArm) {
+                if (armed) {
+                    badgeArm.className = 'sp-ap-badge arm-armed';
+                    txtArm.textContent = 'ARMED';
+                } else {
+                    badgeArm.className = 'sp-ap-badge arm-disarmed';
+                    txtArm.textContent = 'DISARMED';
+                }
+            }
 
-            const isAglLow = (typeof currentAGL === 'number') ? (currentAGL < 2.0) : (altM < 2.0);
-            const isStalling = (typeof isArmed !== 'undefined' && isArmed && !isAglLow && speedMs < 9.0 && speedMs > 0.5);
-
-            if (lampStall) lampStall.className = isStalling ? 'sp-annun-lamp lamp-red' : 'sp-annun-lamp';
-            if (lampGnd) lampGnd.className = isAglLow ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
-            if (lampHdg) lampHdg.className = (typeof flightMode !== 'undefined' && ['CRUISE', 'AUTO', 'LOITER'].includes(flightMode)) ? 'sp-annun-lamp lamp-cyan' : 'sp-annun-lamp';
-            if (lampAlt) lampAlt.className = (typeof isArmed !== 'undefined' && isArmed && altM > 5.0) ? 'sp-annun-lamp lamp-green' : 'sp-annun-lamp';
-            if (lampRpm) lampRpm.className = (rpm > 3200) ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
-            if (lampPause) lampPause.className = (typeof isArmed !== 'undefined' && !isArmed) ? 'sp-annun-lamp lamp-amber' : 'sp-annun-lamp';
+            const txtMode = document.getElementById('sp-txt-mode');
+            const modeEl = document.getElementById('f_mode');
+            const curMode = (modeEl && modeEl.innerText && modeEl.innerText !== 'UNKNOWN') ? modeEl.innerText : 'MANUAL';
+            if (txtMode) {
+                txtMode.textContent = curMode;
+            }
 
             // Bottom Banner: GS & AGL
             const bannerStatus = document.getElementById('sp-banner-status');
