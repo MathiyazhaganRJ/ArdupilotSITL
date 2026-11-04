@@ -6,6 +6,8 @@ import json
 import time
 import os
 import sys
+import threading
+import webbrowser
 
 PORT = 8088
 VISUALIZER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'visualizer'))
@@ -24,7 +26,13 @@ class HudServerHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
-        if parsed.path == '/api/opensky':
+        # Direct root and default index requests to the primary Sharkee HUD visualizer
+        if parsed.path in ('/', '/index.html'):
+            self.send_response(302)
+            self.send_header('Location', '/sharkee_hud.html')
+            self.end_headers()
+            return
+        elif parsed.path == '/api/opensky':
             self.handle_opensky(parsed.query)
         else:
             super().do_GET()
@@ -85,12 +93,52 @@ class HudServerHandler(http.server.SimpleHTTPRequestHandler):
             return
         super().log_message(format, *args)
 
+def open_browser(url):
+    import platform
+    import subprocess
+    import shutil
+    time.sleep(0.6)
+    is_wsl = 'microsoft' in platform.uname().release.lower() or os.path.exists('/proc/sys/fs/binfmt_misc/WSLInterop')
+    if is_wsl:
+        if shutil.which("cmd.exe"):
+            try:
+                subprocess.Popen(["cmd.exe", "/c", "start", "", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+            except Exception:
+                pass
+        if shutil.which("powershell.exe"):
+            try:
+                subprocess.Popen(["powershell.exe", "-NoProfile", "-Command", f"Start-Process '{url}'"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+            except Exception:
+                pass
+    try:
+        webbrowser.open(url)
+    except Exception:
+        pass
+
 def run():
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), HudServerHandler) as httpd:
-        print(f"[HUD Server] Serving visualizer on http://localhost:{PORT}")
-        print(f"[HUD Server] OpenSky ADS-B proxy endpoint active at /api/opensky")
-        httpd.serve_forever()
+    target_url = f"http://localhost:{PORT}/sharkee_hud.html"
+    print("\n" + "=" * 65)
+    print(f"[HUD Server] Serving visualizer on: {target_url}")
+    print(f"[HUD Server] OpenSky ADS-B proxy endpoint active at /api/opensky")
+    print(f"[HUD Server] Launching browser automatically...")
+    print(f"[Notice] For full live ArduPilot MAVLink SITL telemetry, run:")
+    print(f"         python server.py")
+    print("=" * 65 + "\n")
+
+    threading.Thread(target=open_browser, args=(target_url,), daemon=True).start()
+
+    try:
+        with http.server.ThreadingHTTPServer(("", PORT), HudServerHandler) as httpd:
+            httpd.serve_forever()
+    except OSError as e:
+        if getattr(e, 'errno', None) in (10048, 98):
+            print(f"\n[!] ERROR: Port {PORT} is already in use by another process.")
+            print(f"    To free port {PORT}, run in PowerShell:")
+            print(f"    Get-Process python | Stop-Process -Force\n")
+        else:
+            raise
 
 if __name__ == '__main__':
     run()

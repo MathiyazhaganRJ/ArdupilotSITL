@@ -627,6 +627,14 @@ precache_state = {
     "status": "Idle"
 }
 
+# OpenSky In-Memory Cache (10-second TTL to adhere to OpenSky rate limits)
+opensky_cache = {
+    'timestamp': 0,
+    'last_lat': None,
+    'last_lon': None,
+    'data': []
+}
+
 def fetch_tile(z, x, y, provider='esri', lyrs='s'):
     try:
         if provider == 'esri':
@@ -896,6 +904,63 @@ def start_http_server():
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps(resp).encode('utf-8'))
+                return
+
+            # 4. Redirect root and index to sharkee_hud.html
+            if self.path in ('/', '/index.html'):
+                self.send_response(302)
+                self.send_header('Location', '/sharkee_hud.html')
+                self.end_headers()
+                return
+
+            # 5. OpenSky ADS-B Radar proxy
+            elif self.path.startswith('/api/opensky'):
+                parsed = urllib.parse.urlparse(self.path)
+                params = urllib.parse.parse_qs(parsed.query)
+                try:
+                    lat = float(params.get('lat', [8.3113])[0])
+                    lon = float(params.get('lon', [77.3077])[0])
+                except (ValueError, TypeError):
+                    lat, lon = 8.3113, 77.3077
+
+                now = time.time()
+                cache_valid = (
+                    (now - opensky_cache['timestamp'] < 10.0) and
+                    opensky_cache['last_lat'] is not None and
+                    abs(opensky_cache['last_lat'] - lat) < 0.1 and
+                    abs(opensky_cache['last_lon'] - lon) < 0.1
+                )
+
+                if cache_valid:
+                    payload = {'status': 'ok', 'source': 'cache', 'states': opensky_cache['data']}
+                else:
+                    lamin = lat - 0.45
+                    lamax = lat + 0.45
+                    lomin = lon - 0.45
+                    lomax = lon + 0.45
+                    url = f"https://opensky-network.org/api/states/all?lamin={lamin:.4f}&lomin={lomin:.4f}&lamax={lamax:.4f}&lomax={lomax:.4f}"
+                    req = urllib.request.Request(url, headers={'User-Agent': 'KarshakAvionics-HUD/1.0'})
+                    try:
+                        with urllib.request.urlopen(req, timeout=4.5) as resp_os:
+                            raw = json.loads(resp_os.read().decode('utf-8'))
+                            states = raw.get('states') or []
+                            opensky_cache['timestamp'] = now
+                            opensky_cache['last_lat'] = lat
+                            opensky_cache['last_lon'] = lon
+                            opensky_cache['data'] = states
+                            payload = {'status': 'ok', 'source': 'live', 'states': states}
+                    except Exception as e:
+                        payload = {'status': 'error', 'message': str(e), 'states': opensky_cache['data']}
+
+                body = json.dumps(payload).encode('utf-8')
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+                self.send_header('Access-Control-Allow-Headers', '*')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
                 return
 
             return super().do_GET()
