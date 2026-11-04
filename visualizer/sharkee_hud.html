@@ -84,7 +84,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 310px;
+            width: 315px;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
             overflow-x: hidden;
@@ -94,7 +94,7 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 16px;
+            padding: 13px;
             box-shadow: var(--shadow);
             z-index: 10;
             transition: all 0.3s ease;
@@ -466,7 +466,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 9px;
+        }
+        .panel-brand-title {
+            font-weight: 700;
+            font-size: 13.5px;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            color: var(--text-primary);
         }
 
         h3 {
@@ -799,56 +806,72 @@
            Authentic Glass Cockpit Status Display (Garmin / Collins FMA)
            ======================================================== */
         .flight-annunciator-ribbon {
-            position: absolute;
-            top: 16px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
             display: flex;
             align-items: stretch;
-            background: linear-gradient(180deg, rgba(14, 18, 25, 0.94) 0%, rgba(8, 11, 16, 0.96) 100%);
+            background: linear-gradient(180deg, rgba(14, 18, 25, 0.95) 0%, rgba(8, 11, 16, 0.98) 100%);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-top: 1px solid rgba(255, 255, 255, 0.28);
-            border-radius: 5px;
-            padding: 3px 6px;
+            border-radius: 6px;
+            padding: 3px 2px;
+            margin-bottom: 10px;
             backdrop-filter: blur(14px) saturate(180%);
             -webkit-backdrop-filter: blur(14px) saturate(180%);
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            z-index: 195;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             user-select: none;
             pointer-events: auto;
             font-family: 'B612', 'Inter', -apple-system, sans-serif;
         }
 
+        body:not(.dark-mode) .flight-annunciator-ribbon {
+            background: linear-gradient(180deg, #1e2634 0%, #131a26 100%);
+            border-color: rgba(0, 0, 0, 0.2);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body:not(.dark-mode) .fma-label {
+            color: #8fa0b5;
+        }
+
         .fma-cell {
+            flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2px 14px 3px;
-            min-width: 82px;
+            padding: 2px 3px 3px;
         }
 
         .fma-label {
-            font-size: 7.5px;
+            font-size: 7px;
             font-weight: 700;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: #6a7485;
+            color: #7a869a;
             margin-bottom: 2px;
             line-height: 1;
+            white-space: nowrap;
         }
 
         .fma-val {
             font-family: 'B612 Mono', monospace;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
             line-height: 1.15;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             text-transform: uppercase;
             transition: all 0.25s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         /* Master Arm State Styling (Single Authorized Position) */
@@ -2581,34 +2604,6 @@
 </head>
 
 <body>
-    <!-- Aerospace Primary Flight Annunciator (FMA) Ribbon -->
-    <div id="flight-annunciator-bar" class="flight-annunciator-ribbon" title="Primary Flight Annunciator (FMA)">
-        <!-- Cell 1: Master Propulsion Arm Status (Single Authoritative Position) -->
-        <div class="fma-cell fma-cell-arm">
-            <span class="fma-label">PROP STATUS</span>
-            <div id="annun-arm-status" class="fma-val fma-arm-disarmed" title="Motor Arming State">
-                <span class="fma-arm-led"></span>
-                <span id="annun-arm-text">DISARMED</span>
-            </div>
-        </div>
-
-        <div class="fma-divider"></div>
-
-        <!-- Cell 2: Flight Mode -->
-        <div class="fma-cell fma-cell-mode">
-            <span class="fma-label">FLIGHT MODE</span>
-            <span id="annun-flight-mode" class="fma-val fma-mode-text" title="Active Autopilot Mode">UNKNOWN</span>
-        </div>
-
-        <div class="fma-divider"></div>
-
-        <!-- Cell 3: Navigation / GNSS Fix -->
-        <div class="fma-cell fma-cell-nav">
-            <span class="fma-label">NAVIGATION</span>
-            <span id="annun-nav-status" class="fma-val fma-nav-standby" title="Navigation Fix / Dead Reckoning">NO GPS</span>
-        </div>
-    </div>
-
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
         <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
@@ -2701,30 +2696,57 @@
 
     <div id="ui-panel">
         <div class="header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
-                <h2>ArduPilot SITL</h2>
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
+                <span class="panel-brand-title">ArduPilot SITL</span>
             </div>
-            <div style="display: flex; gap: 6px; align-items: center;">
-                <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="position: relative;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="width: 26px; height: 26px; font-size: 12px; position: relative;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span id="hdr-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
                 </button>
-                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Map & Airspace Presets">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Map & Airspace Presets" style="width: 26px; height: 26px; font-size: 12px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
                         <line x1="8" y1="2" x2="8" y2="18"></line>
                         <line x1="16" y1="6" x2="16" y2="22"></line>
                     </svg>
                 </button>
-                <button id="theme-toggle" class="icon-btn" title="Toggle Theme">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button id="theme-toggle" class="icon-btn" title="Toggle Theme" style="width: 26px; height: 26px; font-size: 12px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
-                
+            </div>
+        </div>
+
+        <!-- Integrated Primary Flight Annunciator (FMA) Tab -->
+        <div id="flight-annunciator-bar" class="flight-annunciator-ribbon" title="Primary Flight Annunciator (FMA)">
+            <!-- Cell 1: Master Propulsion Arm Status -->
+            <div class="fma-cell fma-cell-arm">
+                <span class="fma-label">PROP STATUS</span>
+                <div id="annun-arm-status" class="fma-val fma-arm-disarmed" title="Motor Arming State">
+                    <span class="fma-arm-led"></span>
+                    <span id="annun-arm-text">DISARMED</span>
+                </div>
+            </div>
+
+            <div class="fma-divider"></div>
+
+            <!-- Cell 2: Flight Mode -->
+            <div class="fma-cell fma-cell-mode">
+                <span class="fma-label">FLIGHT MODE</span>
+                <span id="annun-flight-mode" class="fma-val fma-mode-text" title="Active Autopilot Mode">UNKNOWN</span>
+            </div>
+
+            <div class="fma-divider"></div>
+
+            <!-- Cell 3: Navigation / GNSS Fix -->
+            <div class="fma-cell fma-cell-nav">
+                <span class="fma-label">NAVIGATION</span>
+                <span id="annun-nav-status" class="fma-val fma-nav-standby" title="Navigation Fix / Dead Reckoning">NO GPS</span>
             </div>
         </div>
 
