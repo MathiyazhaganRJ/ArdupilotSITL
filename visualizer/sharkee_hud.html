@@ -802,59 +802,79 @@
         }
 
         /* ========================================================
-           AEROSPACE PRIMARY FLIGHT ANNUNCIATOR (FMA) RIBBON
-           Integrated Status Deck for Sidebar Control Panel
+           MASTER PROPULSION ARM STATUS BANNER
+           Streamlined Status Deck for Sidebar Control Panel
            ======================================================== */
-        .flight-annunciator-ribbon {
+        .flight-arm-banner {
             position: relative;
             width: 100%;
             box-sizing: border-box;
             display: flex;
-            align-items: stretch;
+            align-items: center;
+            justify-content: space-between;
             background: var(--btn-bg);
             border: 1px solid var(--border-color);
             border-radius: 9px;
-            padding: 4px 6px;
-            margin-bottom: 10px;
+            padding: 5px 11px;
+            margin-bottom: 9px;
             user-select: none;
             pointer-events: auto;
             font-family: 'B612', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
+            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
-        .fma-cell {
-            flex: 1;
-            min-width: 0;
+        .arm-banner-left {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 2px 4px;
+            gap: 7px;
         }
 
-        .fma-label {
-            font-size: 7.5px;
+        .arm-banner-label {
+            font-size: 8.5px;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--text-secondary);
-            margin-bottom: 2px;
             line-height: 1;
-            white-space: nowrap;
+            transition: color 0.2s ease;
         }
 
-        .fma-divider {
-            width: 1px;
-            background: var(--border-color);
-            margin: 3px 2px;
-            align-self: stretch;
+        .flight-arm-banner.armed {
+            background: rgba(255, 59, 48, 0.12);
+            border-color: rgba(255, 59, 48, 0.45);
+        }
+
+        body.dark-mode .flight-arm-banner.armed {
+            background: rgba(255, 69, 58, 0.18);
+            border-color: rgba(255, 69, 58, 0.55);
+        }
+
+        .flight-arm-banner.armed .arm-banner-label {
+            color: var(--danger);
+        }
+
+        .fma-arm-led {
+            width: 6.5px;
+            height: 6.5px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            opacity: 0.7;
+            display: inline-block;
+            transition: all 0.25s ease;
+        }
+
+        .flight-arm-banner.armed .fma-arm-led {
+            background: var(--danger);
+            opacity: 1;
+            box-shadow: 0 0 6px var(--danger);
+            animation: fma-led-pulse 1.2s infinite alternate ease-in-out;
         }
 
         .fma-val {
             font-family: 'B612', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 10.5px;
+            font-size: 11px;
             font-weight: 800;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             line-height: 1.15;
             display: inline-flex;
             align-items: center;
@@ -862,64 +882,19 @@
             text-transform: uppercase;
             transition: all 0.2s ease;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
         }
 
-        /* Master Arm State Styling */
         .fma-arm-disarmed {
             color: var(--text-secondary);
-        }
-
-        .fma-arm-led {
-            width: 5.5px;
-            height: 5.5px;
-            border-radius: 50%;
-            background: var(--text-secondary);
-            opacity: 0.7;
-            display: inline-block;
-            transition: all 0.2s ease;
         }
 
         .fma-val.fma-arm-armed {
             color: var(--danger);
         }
 
-        .fma-val.fma-arm-armed .fma-arm-led {
-            background: var(--danger);
-            box-shadow: 0 0 6px var(--danger);
-            opacity: 1;
-            animation: fma-led-pulse 1.2s infinite alternate ease-in-out;
-        }
-
         @keyframes fma-led-pulse {
             from { opacity: 0.6; transform: scale(0.9); }
             to { opacity: 1.0; transform: scale(1.15); }
-        }
-
-        /* Flight Mode Styling */
-        .fma-mode-text {
-            color: var(--accent);
-        }
-
-        /* Navigation Fix Styling */
-        .fma-nav-standby {
-            color: var(--accent-yellow);
-        }
-
-        .fma-nav-good {
-            color: var(--success);
-        }
-
-        .fma-nav-dr {
-            color: var(--accent-yellow);
-            animation: fma-dr-flash 1.0s infinite ease-in-out;
-        }
-
-        @keyframes fma-dr-flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.45; }
         }
 
         .dr-toggle-badge.active {
@@ -2704,31 +2679,14 @@
             </div>
         </div>
 
-        <!-- Integrated Primary Flight Annunciator (FMA) Tab -->
-        <div id="flight-annunciator-bar" class="flight-annunciator-ribbon" title="Primary Flight Annunciator (FMA)">
-            <!-- Cell 1: Master Propulsion Arm Status -->
-            <div class="fma-cell fma-cell-arm">
-                <span class="fma-label">PROP STATUS</span>
-                <div id="annun-arm-status" class="fma-val fma-arm-disarmed" title="Motor Arming State">
-                    <span class="fma-arm-led"></span>
-                    <span id="annun-arm-text">DISARMED</span>
-                </div>
+        <!-- Master Propulsion Arm Status Banner -->
+        <div id="flight-annunciator-bar" class="flight-arm-banner disarmed" title="Motor Propulsion Arm State">
+            <div class="arm-banner-left">
+                <span class="fma-arm-led"></span>
+                <span class="arm-banner-label">PROP STATUS</span>
             </div>
-
-            <div class="fma-divider"></div>
-
-            <!-- Cell 2: Flight Mode -->
-            <div class="fma-cell fma-cell-mode">
-                <span class="fma-label">FLIGHT MODE</span>
-                <span id="annun-flight-mode" class="fma-val fma-mode-text" title="Active Autopilot Mode">UNKNOWN</span>
-            </div>
-
-            <div class="fma-divider"></div>
-
-            <!-- Cell 3: Navigation / GNSS Fix -->
-            <div class="fma-cell fma-cell-nav">
-                <span class="fma-label">NAVIGATION</span>
-                <span id="annun-nav-status" class="fma-val fma-nav-standby" title="Navigation Fix / Dead Reckoning">NO GPS</span>
+            <div id="annun-arm-status" class="fma-val fma-arm-disarmed">
+                <span id="annun-arm-text">DISARMED</span>
             </div>
         </div>
 
@@ -6095,9 +6053,14 @@
                 addAutopilotMessage({ text: msgText, severity: sev });
             }
 
-            // Master FMA Annunciator (Single Authorized Position)
+            // Master Arm Status Banner
+            const topArmBar = document.getElementById('flight-annunciator-bar');
             const topArmVal = document.getElementById('annun-arm-status');
             const topArmText = document.getElementById('annun-arm-text');
+            if (topArmBar) {
+                topArmBar.classList.toggle('armed', isArmed);
+                topArmBar.classList.toggle('disarmed', !isArmed);
+            }
             if (topArmVal) {
                 if (isArmed) {
                     topArmVal.className = 'fma-val fma-arm-armed';
