@@ -13,6 +13,7 @@ ArdupilotSITL/
 ├── server/
 │   └── server.py                # MAVLink → WebSocket bridge (Python)
 ├── docs/                        # Documentation and guides
+│   ├── GIT_WORKFLOW_GUIDE.md    # Multi-OS Git branch & sync guide
 │   ├── JSBSIM_GUIDE.md
 │   └── ardupilot_build_cheatsheet.md
 ├── .gitignore
