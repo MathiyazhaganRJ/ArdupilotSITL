@@ -50,6 +50,7 @@ class MissionHandler:
     def __init__(self, mav_conn):
         self.conn = mav_conn
         self.waypoints = []
+        self._pending_waypoints = []
         self.current_seq = 0
         self.is_fetching = False
         self.expected_count = 0
@@ -57,6 +58,10 @@ class MissionHandler:
         self.last_req_time = 0
         self.retries = 0
         self.max_retries = 5
+        self.target_system = 1
+        self.target_component = 1
+        self._just_finished_fetch_time = 0
+        self._last_out_of_sync_fetch = 0
         self.cache_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'waypoints_cache.json'))
         try:
             if os.path.exists(self.cache_file):
@@ -72,18 +77,22 @@ class MissionHandler:
         if not self.conn:
             return False
         now = time.time()
-        if self.is_fetching and (now - self.last_req_time < 3.0) and not force:
+        if self.is_fetching and (now - self.last_req_time < 2.0) and not force:
             print("[Mission] Fetch already in progress, ignoring duplicate request")
             return False
-        target_sys = getattr(self.conn, 'target_system', 1) or 1
-        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        target_sys = getattr(self, 'target_system', None) or getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self, 'target_component', None) or getattr(self.conn, 'target_component', 1) or 1
         self.is_fetching = True
         self.expected_count = 0
         self.next_req_seq = 0
         self.retries = 0
         self.last_req_time = now
+        self._pending_waypoints = []
         try:
-            self.conn.mav.mission_request_list_send(target_sys, target_comp)
+            try:
+                self.conn.mav.mission_request_list_send(target_sys, target_comp, 0)
+            except TypeError:
+                self.conn.mav.mission_request_list_send(target_sys, target_comp)
             print(f"[Mission] Requested mission list from Sys {target_sys}:{target_comp}")
             return True
         except Exception as e:
@@ -92,20 +101,26 @@ class MissionHandler:
             return False
 
     def request_item(self, seq):
-        target_sys = getattr(self.conn, 'target_system', 1) or 1
-        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        target_sys = getattr(self, 'target_system', None) or getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self, 'target_component', None) or getattr(self.conn, 'target_component', 1) or 1
         self.last_req_time = time.time()
         try:
-            if hasattr(self.conn.mav, 'mission_request_int_send'):
-                self.conn.mav.mission_request_int_send(target_sys, target_comp, seq)
+            if hasattr(self.conn.mav, 'mission_request_int_send') and (self.retries % 2 == 0):
+                try:
+                    self.conn.mav.mission_request_int_send(target_sys, target_comp, seq, 0)
+                except TypeError:
+                    self.conn.mav.mission_request_int_send(target_sys, target_comp, seq)
             else:
-                self.conn.mav.mission_request_send(target_sys, target_comp, seq)
+                try:
+                    self.conn.mav.mission_request_send(target_sys, target_comp, seq, 0)
+                except TypeError:
+                    self.conn.mav.mission_request_send(target_sys, target_comp, seq)
         except Exception as e:
             print(f"[Mission] Error requesting item {seq}: {e}")
 
     def set_current(self, seq):
-        target_sys = getattr(self.conn, 'target_system', 1) or 1
-        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        target_sys = getattr(self, 'target_system', None) or getattr(self.conn, 'target_system', 1) or 1
+        target_comp = getattr(self, 'target_component', None) or getattr(self.conn, 'target_component', 1) or 1
         try:
             self.conn.mav.mission_set_current_send(target_sys, target_comp, int(seq))
             print(f"[Mission] Sent MISSION_SET_CURRENT seq {seq}")
@@ -114,20 +129,35 @@ class MissionHandler:
 
     def handle_msg(self, msg):
         mtype = msg.get_type()
-        target_sys = getattr(self.conn, 'target_system', 1) or 1
-        target_comp = getattr(self.conn, 'target_component', 1) or 1
+        src_sys = getattr(msg, 'get_srcSystem', lambda: 1)()
+        src_comp = getattr(msg, 'get_srcComponent', lambda: 1)()
+        if src_sys:
+            self.target_system = src_sys
+        if src_comp:
+            self.target_component = src_comp
+        target_sys = getattr(self, 'target_system', 1) or 1
+        target_comp = getattr(self, 'target_component', 1) or 1
 
         if mtype == 'MISSION_COUNT':
             count = msg.count
             print(f"[Mission] Vehicle reported {count} mission items")
             self.expected_count = count
-            self.waypoints = [None] * count
+            self._pending_waypoints = [None] * count
             self.next_req_seq = 0
             self.retries = 0
+            self.is_fetching = True
+            self.last_req_time = time.time()
             if count > 0:
                 self.request_item(0)
             else:
                 self.is_fetching = False
+                self.waypoints = []
+                self._just_finished_fetch_time = time.time()
+                try:
+                    with open(self.cache_file, 'w', encoding='utf-8') as cf:
+                        json.dump([], cf, indent=2)
+                except Exception as e:
+                    print(f"[Mission] Error writing empty waypoint cache: {e}")
                 return {
                     "type": "MISSION_WAYPOINTS",
                     "waypoints": [],
@@ -157,39 +187,59 @@ class MissionHandler:
                 "autocontinue": getattr(msg, 'autocontinue', 1)
             }
 
-            if 0 <= seq < len(self.waypoints):
+            if hasattr(self, '_pending_waypoints') and 0 <= seq < len(self._pending_waypoints):
+                self._pending_waypoints[seq] = item
+            elif 0 <= seq < len(self.waypoints):
                 self.waypoints[seq] = item
 
-            if self.is_fetching:
-                if seq == self.next_req_seq:
-                    self.next_req_seq += 1
+            if self.is_fetching and hasattr(self, '_pending_waypoints') and self._pending_waypoints:
+                missing = [i for i, w in enumerate(self._pending_waypoints) if w is None]
+                if not missing:
+                    self.is_fetching = False
+                    self._just_finished_fetch_time = time.time()
+                    try:
+                        self.conn.mav.mission_ack_send(
+                            target_sys, target_comp,
+                            mavutil.mavlink.MAV_MISSION_ACCEPTED
+                        )
+                    except Exception: pass
+                    valid_wps = [w for w in self._pending_waypoints if w is not None]
+                    self.waypoints = valid_wps
+                    print(f"[Mission] Successfully downloaded {len(valid_wps)} waypoints")
+                    try:
+                        with open(self.cache_file, 'w', encoding='utf-8') as cf:
+                            json.dump(valid_wps, cf, indent=2)
+                    except Exception as e:
+                        print(f"[Mission] Error writing waypoint cache: {e}")
+                    return {
+                        "type": "MISSION_WAYPOINTS",
+                        "waypoints": valid_wps,
+                        "count": len(valid_wps),
+                        "current_seq": self.current_seq
+                    }
+                else:
+                    self.next_req_seq = missing[0]
                     self.retries = 0
-                    if self.next_req_seq < self.expected_count:
-                        self.request_item(self.next_req_seq)
-                    else:
-                        self.is_fetching = False
-                        try:
-                            self.conn.mav.mission_ack_send(
-                                target_sys, target_comp,
-                                mavutil.mavlink.MAV_MISSION_ACCEPTED
-                            )
-                        except Exception: pass
-                        valid_wps = [w for w in self.waypoints if w is not None]
-                        print(f"[Mission] Successfully downloaded {len(valid_wps)} waypoints")
-                        try:
-                            with open(self.cache_file, 'w', encoding='utf-8') as cf:
-                                json.dump(valid_wps, cf, indent=2)
-                        except Exception as e:
-                            print(f"[Mission] Error writing waypoint cache: {e}")
-                        return {
-                            "type": "MISSION_WAYPOINTS",
-                            "waypoints": valid_wps,
-                            "count": len(valid_wps),
-                            "current_seq": self.current_seq
-                        }
+                    self.request_item(self.next_req_seq)
+
+        elif mtype == 'MISSION_ACK':
+            ack_type = getattr(msg, 'type', 0)
+            now = time.time()
+            if ack_type == mavutil.mavlink.MAV_MISSION_ACCEPTED:
+                # If vehicle accepted a mission from another GCS/MAVProxy and not our own download completion
+                if now - getattr(self, '_just_finished_fetch_time', 0) > 3.0:
+                    print(f"[Mission] Vehicle accepted new mission (MISSION_ACK). Triggering automatic download...")
+                    self.start_fetch(force=True)
 
         elif mtype == 'MISSION_CURRENT':
             self.current_seq = msg.seq
+            # If vehicle current seq is beyond cached waypoints, waypoints are out-of-date
+            if self.waypoints and msg.seq >= len(self.waypoints):
+                now = time.time()
+                if now - getattr(self, '_last_out_of_sync_fetch', 0) > 5.0:
+                    self._last_out_of_sync_fetch = now
+                    print(f"[Mission] Vehicle current seq {msg.seq} exceeds cached count {len(self.waypoints)}. Re-fetching mission...")
+                    self.start_fetch(force=True)
             return {
                 "type": "MISSION_CURRENT",
                 "seq": msg.seq
@@ -216,15 +266,69 @@ class MissionHandler:
         return None
 
     def check_timeout(self):
-        if self.is_fetching and self.expected_count > 0:
-            if time.time() - self.last_req_time > 1.2:
+        if not self.is_fetching:
+            return None
+        now = time.time()
+        # Case 1: Waiting for MISSION_COUNT from vehicle
+        if self.expected_count == 0:
+            if now - self.last_req_time > 1.5:
                 if self.retries < self.max_retries:
                     self.retries += 1
+                    self.last_req_time = now
+                    target_sys = getattr(self, 'target_system', None) or getattr(self.conn, 'target_system', 1) or 1
+                    target_comp = getattr(self, 'target_component', None) or getattr(self.conn, 'target_component', 1) or 1
+                    print(f"[Mission] Retry #{self.retries} requesting mission list from Sys {target_sys}:{target_comp}")
+                    try:
+                        try:
+                            self.conn.mav.mission_request_list_send(target_sys, target_comp, 0)
+                        except TypeError:
+                            self.conn.mav.mission_request_list_send(target_sys, target_comp)
+                    except Exception as e:
+                        print(f"[Mission] Error resending mission request list: {e}")
+                else:
+                    print(f"[Mission] Timeout waiting for MISSION_COUNT after {self.max_retries} retries")
+                    self.is_fetching = False
+            return None
+
+        # Case 2: Waiting for individual mission items
+        if now - self.last_req_time > 1.2:
+            if hasattr(self, '_pending_waypoints') and self._pending_waypoints:
+                missing = [i for i, w in enumerate(self._pending_waypoints) if w is None]
+                if not missing:
+                    self.is_fetching = False
+                    self._just_finished_fetch_time = time.time()
+                    valid_wps = [w for w in self._pending_waypoints if w is not None]
+                    self.waypoints = valid_wps
+                    try:
+                        with open(self.cache_file, 'w', encoding='utf-8') as cf:
+                            json.dump(valid_wps, cf, indent=2)
+                    except Exception: pass
+                    return {
+                        "type": "MISSION_WAYPOINTS",
+                        "waypoints": valid_wps,
+                        "count": len(valid_wps),
+                        "current_seq": self.current_seq
+                    }
+                if self.retries < self.max_retries:
+                    self.retries += 1
+                    self.next_req_seq = missing[0]
                     print(f"[Mission] Retry #{self.retries} requesting seq {self.next_req_seq}")
                     self.request_item(self.next_req_seq)
                 else:
-                    print(f"[Mission] Timeout downloading mission items after {self.max_retries} retries")
+                    print(f"[Mission] Timeout downloading mission items after {self.max_retries} retries (have {len(self._pending_waypoints) - len(missing)}/{self.expected_count})")
                     self.is_fetching = False
+                    valid_wps = [w for w in self._pending_waypoints if w is not None]
+                    if valid_wps:
+                        self.waypoints = valid_wps
+                        return {
+                            "type": "MISSION_WAYPOINTS",
+                            "waypoints": valid_wps,
+                            "count": len(valid_wps),
+                            "current_seq": self.current_seq
+                        }
+            else:
+                self.is_fetching = False
+        return None
 
 heartbeat_received = False
 cached_home_position = None
@@ -242,11 +346,19 @@ async def mavlink_listener():
                   'ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
-                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
+                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'MISSION_ACK', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
                   'STATUSTEXT', 'PARAM_VALUE'],
             blocking=False
         )
-        mission_handler.check_timeout()
+        timeout_res = mission_handler.check_timeout()
+        if timeout_res and clients:
+            t_str = json.dumps(timeout_res)
+            for client in list(clients):
+                try:
+                    await client.send(t_str)
+                except websockets.exceptions.ConnectionClosed:
+                    clients.discard(client)
+
         if msg:
             mission_res = mission_handler.handle_msg(msg)
             if mission_res and clients:
@@ -265,6 +377,11 @@ async def mavlink_listener():
                 if hasattr(msg, 'get_srcComponent') and msg.get_srcComponent() not in [mavutil.mavlink.MAV_COMP_ID_AUTOPILOT1, 1]:
                     await asyncio.sleep(0.005)
                     continue
+
+                connection.target_system = msg.get_srcSystem()
+                connection.target_component = msg.get_srcComponent()
+                mission_handler.target_system = msg.get_srcSystem()
+                mission_handler.target_component = msg.get_srcComponent()
 
                 if not heartbeat_received:
                     heartbeat_received = True
@@ -466,6 +583,11 @@ async def mavlink_listener():
                 })
                 if len(cached_statustext_messages) > 100:
                     cached_statustext_messages.pop(0)
+                # Auto-detect mission update events reported via STATUSTEXT
+                lower_txt = clean_text.lower()
+                if "flight plan received" in lower_txt or ("loaded " in lower_txt and "waypoint" in lower_txt) or "mission reset" in lower_txt:
+                    print(f"[Mission] Detected vehicle mission status event: '{clean_text}'. Syncing...")
+                    mission_handler.start_fetch(force=True)
             elif msg.get_type() in ('ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12'):
                 data['type'] = 'ESC_TELEMETRY'
                 offset = 0
@@ -568,6 +690,9 @@ async def ws_handler(websocket, path=None):
                     }))
                 except Exception as e:
                     print(f"[Mission] Error sending cached waypoints: {e}")
+        # Proactively trigger live vehicle sync on client connect
+        if heartbeat_received and not mission_handler.is_fetching:
+            mission_handler.start_fetch(force=False)
 
         async for message in websocket:
             try:
@@ -589,8 +714,9 @@ async def ws_handler(websocket, path=None):
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
                 elif action == "fetch_waypoints":
                     force = bool(cmd.get("force", False))
+                    # 1. Immediately send cached waypoints so the frontend has instantaneous display
                     valid_wps = [w for w in mission_handler.waypoints if w is not None] if mission_handler.waypoints else []
-                    if valid_wps and not force:
+                    if valid_wps:
                         try:
                             await websocket.send(json.dumps({
                                 "type": "MISSION_WAYPOINTS",
@@ -600,9 +726,9 @@ async def ws_handler(websocket, path=None):
                             }))
                         except Exception:
                             pass
-                    else:
-                        ok = mission_handler.start_fetch(force=force)
-                        print(f"[Mission] Client requested waypoint fetch (initiated: {ok})")
+                    # 2. ALWAYS initiate a live fetch from the vehicle so newly uploaded/modified waypoints are updated
+                    ok = mission_handler.start_fetch(force=True)
+                    print(f"[Mission] Client requested waypoint fetch (initiated live vehicle sync: {ok})")
                 elif action == "set_current_waypoint":
                     seq = int(cmd.get("seq", 0))
                     mission_handler.set_current(seq)

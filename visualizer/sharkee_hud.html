@@ -2617,6 +2617,13 @@
                         style="color: var(--accent); font-family: 'B612 Mono', monospace;">1013 hPa</span></div>
                 <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
                         style="color: var(--accent-yellow); font-weight:700;">NO GPS</span></div>
+                <div class="data-row" id="row-mission-sync" style="cursor: pointer;" onclick="forceSyncWaypoints()" title="Click to refresh waypoints from flight controller">
+                    <span class="data-label">Mission WPT</span>
+                    <span id="mission-wpt-status" class="data-val" style="color: var(--accent); font-family: 'B612 Mono', monospace; display: inline-flex; align-items: center; gap: 4px;">
+                        <span id="mission-wpt-count-text">0 WP</span>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    </span>
+                </div>
             </div>
 
             <div class="section-title">Vehicle Config</div>
@@ -3575,6 +3582,12 @@
                 }
             }
         } catch(e) {}
+        setTimeout(() => {
+            const countEl = document.getElementById('mission-wpt-count-text');
+            if (countEl && Array.isArray(missionWaypoints)) {
+                countEl.innerText = `${missionWaypoints.length} WP`;
+            }
+        }, 100);
         var currentMissionSeq = 0;
         var waypointsVisible = false;
         var currentLxnavPage = 1;
@@ -4069,23 +4082,37 @@
                 btnToggleWaypoints.classList.toggle('active', waypointsVisible);
             }
             if (waypointsVisible) {
-                const hasWaypoints = Array.isArray(missionWaypoints) && missionWaypoints.length > 0;
-                if (!hasWaypoints) {
-                    // Fetch only if waypoints are not loaded yet
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ action: 'fetch_waypoints' }));
-                    } else if (!vehicleConnected && typeof loadDefaultWaypoints === 'function') {
-                        loadDefaultWaypoints();
-                    }
-                } else if (waypointGroup.children.length === 0 && typeof renderWaypoints3D === 'function') {
-                    // Render only if not already built in 3D scene
+                if (typeof renderWaypoints3D === 'function') {
                     renderWaypoints3D();
+                }
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true }));
+                } else if (!vehicleConnected && (!missionWaypoints || missionWaypoints.length === 0) && typeof loadDefaultWaypoints === 'function') {
+                    loadDefaultWaypoints();
                 }
             }
         }
         if (btnToggleWaypoints) {
             btnToggleWaypoints.onclick = toggleWaypoints;
+            btnToggleWaypoints.ondblclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                forceSyncWaypoints();
+            };
         }
+
+        function forceSyncWaypoints() {
+            const el = document.getElementById('mission-wpt-count-text');
+            if (el) el.innerText = 'Syncing...';
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                addAutopilotMessage({ text: "Requesting live waypoint sync from flight controller...", severity: 6 });
+                ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true }));
+            } else {
+                addAutopilotMessage({ text: "Cannot sync waypoints: Telemetry offline", severity: 4 });
+                if (el) el.innerText = `${(missionWaypoints || []).length} WP`;
+            }
+        }
+        window.forceSyncWaypoints = forceSyncWaypoints;
 
         // 3D Map Visibility Toggle
         const chkToggleMapVis = document.getElementById('chk-toggle-map-vis');
@@ -7132,7 +7159,7 @@
             document.getElementById('status').innerText = "Waiting for Vehicle...";
             document.getElementById('status').style.color = "var(--text-secondary)";
             // Proactively request waypoints on websocket connect
-            try { ws.send(JSON.stringify({ action: 'fetch_waypoints' })); } catch(e){}
+            try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
         };
         ws.onclose = () => {
             document.getElementById('status').innerText = "Offline";
@@ -7149,7 +7176,7 @@
                 document.getElementById('status').style.color = "var(--success)";
                 vehicleConnected = true;
                 // Proactively request waypoints when vehicle connection is confirmed
-                try { ws.send(JSON.stringify({ action: 'fetch_waypoints' })); } catch(e){}
+                try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
                 addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
             }
             const data = JSON.parse(event.data);
@@ -7493,17 +7520,24 @@
                 if (pusherEl) pusherEl.innerText = Math.round(currentRpm);
             }
             else if (data.type === 'MISSION_WAYPOINTS') {
-                if (Array.isArray(data.waypoints) && data.waypoints.length > 0) {
-                    addAutopilotMessage({ text: `Mission: Loaded ${data.waypoints.length} waypoints from flight controller`, severity: 6 });
+                if (Array.isArray(data.waypoints)) {
                     missionWaypoints = data.waypoints;
                     try {
                         localStorage.setItem('sharkee_mission_waypoints', JSON.stringify(missionWaypoints));
                     } catch(e) {}
-                    const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
-                    if (homeWp) {
-                        initEkfHome(homeWp.lat, homeWp.lon);
-                    } else if (!ekfHomeInitialized && currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
-                        initEkfHome(currentPlaneLat, currentPlaneLon);
+                    const countEl = document.getElementById('mission-wpt-count-text');
+                    if (countEl) countEl.innerText = `${missionWaypoints.length} WP`;
+                    if (missionWaypoints.length > 0) {
+                        addAutopilotMessage({ text: `Mission: Loaded ${missionWaypoints.length} waypoints from flight controller`, severity: 6 });
+                        const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
+                        if (homeWp) {
+                            setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
+                            initEkfHome(homeWp.lat, homeWp.lon);
+                        } else if (!ekfHomeInitialized && currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
+                            initEkfHome(currentPlaneLat, currentPlaneLon);
+                        }
+                    } else {
+                        addAutopilotMessage({ text: "Mission: 0 waypoints received from flight controller (Empty)", severity: 5 });
                     }
                     if (data.current_seq !== undefined) currentMissionSeq = data.current_seq;
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
