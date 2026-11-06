@@ -876,7 +876,7 @@
         /* LXNAV Circular Glass Cockpit MFD Widget (Classic Frosted White with Aviation B612) */
         #lxnav-mfd-widget {
             position: absolute;
-            top: 70px;
+            bottom: 585px;
             right: 58px;
             width: 244px;
             min-width: 244px;
@@ -1700,7 +1700,7 @@
         /* ========================================================= */
         #eis-widget {
             position: absolute;
-            top: 350px;
+            bottom: 150px;
             right: 20px;
             width: 320px;
             min-width: 320px;
@@ -2460,6 +2460,16 @@
             letter-spacing: 0.5px;
         }
 
+        @media (max-height: 890px) {
+            #lxnav-mfd-widget {
+                bottom: auto;
+                top: 65px;
+            }
+            #eis-widget {
+                bottom: auto;
+                top: 345px;
+            }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
