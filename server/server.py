@@ -871,6 +871,8 @@ async def ws_handler(websocket, path=None):
 
 tile_cache_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'tile_cache'))
 os.makedirs(tile_cache_dir, exist_ok=True)
+dem_cache_dir = os.path.abspath(os.path.join(tile_cache_dir, 'dem'))
+os.makedirs(dem_cache_dir, exist_ok=True)
 
 precache_state = {
     "is_downloading": False,
@@ -901,6 +903,17 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
             mt = abs(x + y) % 4
             url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
             
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                return resp.read()
+    except Exception:
+        return None
+    return None
+
+def fetch_dem_tile(z, x, y):
+    try:
+        url = f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
         with urllib.request.urlopen(req, timeout=5) as resp:
             if resp.status == 200:
@@ -971,6 +984,21 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
             except Exception:
                 pass
 
+        # Also pre-cache DEM elevation tile for 3D terrain
+        try:
+            dem_z = min(z, 15)
+            zoom_diff = z - dem_z
+            dem_x = x >> zoom_diff
+            dem_y = y >> zoom_diff
+            dem_file = os.path.join(dem_cache_dir, f"{dem_z}_{dem_x}_{dem_y}.png")
+            if not os.path.exists(dem_file) or os.path.getsize(dem_file) <= 100:
+                dem_bytes = fetch_dem_tile(dem_z, dem_x, dem_y)
+                if dem_bytes and len(dem_bytes) > 100:
+                    with open(dem_file, 'wb') as df:
+                        df.write(dem_bytes)
+        except Exception:
+            pass
+
         data = fetch_tile(z, x, y, provider=provider)
         if data and len(data) > 100:
             try:
@@ -1000,6 +1028,7 @@ def start_http_server():
                 self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
                 self.send_header('Pragma', 'no-cache')
                 self.send_header('Expires', '0')
+            self.send_header('Access-Control-Allow-Origin', '*')
             super().end_headers()
 
         def do_GET(self):
@@ -1063,6 +1092,55 @@ def start_http_server():
                 self.send_error(404, "Tile not found")
                 return
 
+            # 1b. DEM Elevation Tile proxy and disk caching: /dem/<z>/<x>/<y>.png
+            elif self.path.startswith('/dem/'):
+                self._is_tile = True
+                try:
+                    clean_path = self.path.split('?')[0]
+                    parts = clean_path.split('/')
+                    if len(parts) >= 5:
+                        z = int(parts[2])
+                        x = int(parts[3])
+                        y = int(parts[4].split('.')[0])
+
+                        # Terrarium DEM tiles natively exist up to zoom 15
+                        dem_z = min(z, 15)
+                        zoom_diff = z - dem_z
+                        dem_x = x >> zoom_diff
+                        dem_y = y >> zoom_diff
+
+                        dem_filename = f"{dem_z}_{dem_x}_{dem_y}.png"
+                        dem_file = os.path.join(dem_cache_dir, dem_filename)
+
+                        if os.path.exists(dem_file) and os.path.getsize(dem_file) > 100:
+                            with open(dem_file, 'rb') as f:
+                                data = f.read()
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'image/png')
+                            self.send_header('Content-Length', str(len(data)))
+                            self.send_header('Cache-Control', 'public, max-age=31536000')
+                            self.end_headers()
+                            self.wfile.write(data)
+                            return
+                        else:
+                            data = fetch_dem_tile(dem_z, dem_x, dem_y)
+                            if data and len(data) > 100:
+                                try:
+                                    with open(dem_file, 'wb') as f:
+                                        f.write(data)
+                                except Exception: pass
+                                self.send_response(200)
+                                self.send_header('Content-Type', 'image/png')
+                                self.send_header('Content-Length', str(len(data)))
+                                self.send_header('Cache-Control', 'public, max-age=31536000')
+                                self.end_headers()
+                                self.wfile.write(data)
+                                return
+                except Exception:
+                    pass
+                self.send_error(404, "DEM Tile not found")
+                return
+
             # 2. Clear cache endpoint: /api/clear_cache?preset=...
             elif self.path.startswith('/api/clear_cache'):
                 try:
@@ -1084,7 +1162,7 @@ def start_http_server():
                     else:
                         for root, dirs, files in os.walk(tile_cache_dir):
                             for f in files:
-                                if f.endswith('.jpg'):
+                                if f.endswith('.jpg') or f.endswith('.png'):
                                     try:
                                         os.remove(os.path.join(root, f))
                                         cleared_count += 1
