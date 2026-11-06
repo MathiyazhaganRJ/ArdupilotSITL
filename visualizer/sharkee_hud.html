@@ -98,6 +98,7 @@
             box-shadow: var(--shadow);
             z-index: 10;
             transition: all 0.3s ease;
+            font-family: 'B612', sans-serif;
         }
 
         #ui-panel::-webkit-scrollbar {
@@ -126,9 +127,10 @@
             border-radius: 6px;
             background: transparent;
             color: var(--text-secondary);
+            font-family: 'B612', sans-serif;
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.6px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -470,18 +472,20 @@
             margin-bottom: 12px;
         }
         .panel-brand-title {
+            font-family: 'B612', sans-serif;
             font-weight: 700;
-            font-size: 13.5px;
-            letter-spacing: -0.02em;
+            font-size: 13px;
+            letter-spacing: 0.3px;
             white-space: nowrap;
             color: var(--text-primary);
         }
 
         h3 {
             margin: 0;
-            font-weight: 600;
-            font-size: 18px;
-            letter-spacing: -0.02em;
+            font-family: 'B612', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.3px;
         }
 
         .icon-btn {
@@ -508,6 +512,7 @@
             border-radius: 12px;
             padding: 10px 12px;
             margin-bottom: 10px;
+            font-family: 'B612', sans-serif;
         }
 
         .data-row {
@@ -516,7 +521,7 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 8px;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .data-row:last-child {
@@ -525,25 +530,32 @@
 
         .data-label {
             color: var(--text-secondary);
-            font-weight: 500;
+            font-family: 'B612', sans-serif;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
             white-space: nowrap;
             flex-shrink: 0;
         }
 
         .data-val {
-            font-weight: 600;
+            font-family: 'B612 Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
             font-variant-numeric: tabular-nums;
             text-align: right;
             white-space: nowrap;
         }
 
         .section-title {
-            font-weight: 600;
+            font-family: 'B612', sans-serif;
+            font-weight: 700;
             font-size: 11px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 12px 0 6px 0;
+            letter-spacing: 0.8px;
+            margin: 14px 0 6px 0;
         }
 
         select {
@@ -551,10 +563,10 @@
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px;
-            font-family: inherit;
+            padding: 5px 8px;
+            font-family: 'B612', sans-serif;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             outline: none;
             width: 100px;
         }
@@ -562,6 +574,8 @@
         option {
             background-color: var(--option-bg);
             color: var(--option-text);
+            font-family: 'B612', sans-serif;
+            font-weight: 600;
         }
 
         .map-row {
@@ -569,8 +583,16 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 500;
+            font-family: 'B612', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .map-row select {
+            font-family: 'B612 Mono', monospace;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
 
         .motor-bar-container {
@@ -588,9 +610,11 @@
         }
 
         .pwm-label {
+            font-family: 'B612 Mono', monospace;
             font-size: 9px;
             color: var(--text-secondary);
             font-weight: 700;
+            letter-spacing: -0.2px;
         }
 
         .motor-bar-bg {
@@ -612,9 +636,10 @@
         }
 
         .motor-label {
-            font-size: 11px;
+            font-family: 'B612 Mono', monospace;
+            font-size: 10.5px;
             color: var(--text-secondary);
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .btn-group {
@@ -632,9 +657,11 @@
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 13px;
+            font-family: 'B612', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
             transition: all 0.2s;
             background: transparent;
             color: var(--text-secondary);
@@ -2619,24 +2646,22 @@
                 <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
                         style="color: var(--danger);">Offline</span></div>
                 <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
-                        style="color: var(--accent-yellow); font-family: 'B612 Mono', monospace; font-weight: 700;">SITL</span></div>
+                        style="color: var(--accent); font-weight: 700;">SITL</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                        style="color: var(--text-primary); font-family: 'B612 Mono', monospace;">---</span></div>
+                        style="color: var(--text-primary); font-weight: 700;">---</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
                         style="color: var(--accent);">UNKNOWN</span></div>
                 <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
                 </div>
-                <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0
-                        m/s</span></div>
-                <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0
-                        m/s</span></div>
+                <div class="data-row"><span class="data-label">Airspeed</span><span id="a_spd" class="data-val">0.0 m/s</span></div>
+                <div class="data-row"><span class="data-label">Ground Spd</span><span id="g_spd" class="data-val">0.0 m/s</span></div>
                 <div class="data-row" style="cursor: pointer;" onclick="togglePfdQnhUnit(event)" title="Click to toggle hPa / inHg"><span class="data-label">QNH</span><span id="telemetry-qnh" class="data-val"
-                        style="color: var(--accent); font-family: 'B612 Mono', monospace;">1013 hPa</span></div>
+                        style="color: var(--accent);">1013 hPa</span></div>
                 <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
-                        style="color: var(--accent-yellow); font-weight:700;">NO GPS</span></div>
+                        style="color: var(--accent-yellow); font-weight: 700;">NO GPS</span></div>
                 <div class="data-row" id="row-mission-sync" style="cursor: pointer;" onclick="forceSyncWaypoints()" title="Click to refresh waypoints from flight controller">
                     <span class="data-label">Mission WPT</span>
-                    <span id="mission-wpt-status" class="data-val" style="color: var(--accent); font-family: 'B612 Mono', monospace; display: inline-flex; align-items: center; gap: 4px;">
+                    <span id="mission-wpt-status" class="data-val" style="color: var(--accent); display: inline-flex; align-items: center; gap: 4px;">
                         <span id="mission-wpt-count-text">0 WP</span>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     </span>
@@ -2662,12 +2687,12 @@
                 <div class="map-row" style="margin: 0;">
                     <span>Model Scale</span>
                     <input type="number" id="scale_input" value="1.0" step="0.1"
-                        style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: inherit; outline: none; text-align: center;">
+                        style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: 'B612 Mono', monospace; font-weight: 700; outline: none; text-align: center;">
                 </div>
             </div>
 
             <div class="data-card">
-                <h3 style="margin: 0 0 10px 0; font-size: 14px;">Motor Mapping</h3>
+                <h3 style="margin: 0 0 10px 0; font-family: 'B612', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary);">Motor Mapping</h3>
                 <div id="map-vtol">
                     <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
                     <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
@@ -2693,7 +2718,7 @@
             <div class="section-title">Motors</div>
             <div class="motor-bar-container" id="motor-bars"></div>
 
-            <div style="margin-top: 24px; text-align: center; font-size: 11px; color: var(--text-secondary); opacity: 0.6; font-weight: 600; letter-spacing: 1px;">
+            <div style="margin-top: 24px; text-align: center; font-size: 10px; color: var(--text-secondary); opacity: 0.6; font-family: 'B612', sans-serif; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;">
                 Designed by RJ
             </div>
 
@@ -7179,9 +7204,9 @@
             if (!fcEl || !hardwareName) return;
             fcEl.innerText = hardwareName;
             if (hardwareName.toUpperCase() === 'SITL') {
-                fcEl.style.color = 'var(--accent-yellow)';
+                fcEl.style.color = 'var(--accent)';
             } else {
-                fcEl.style.color = '#00e676';
+                fcEl.style.color = 'var(--success)';
             }
         }
 
