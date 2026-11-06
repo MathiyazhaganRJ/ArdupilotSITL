@@ -876,14 +876,14 @@
         /* LXNAV Circular Glass Cockpit MFD Widget (Classic Frosted White with Aviation B612) */
         #lxnav-mfd-widget {
             position: absolute;
-            top: 64px;
-            right: 20px;
-            width: 320px;
-            min-width: 320px;
-            max-width: 320px;
-            height: 265px;
-            min-height: 265px;
-            max-height: 265px;
+            top: 70px;
+            right: 58px;
+            width: 244px;
+            min-width: 244px;
+            max-width: 244px;
+            height: 270px;
+            min-height: 270px;
+            max-height: 270px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
@@ -1064,6 +1064,7 @@
             padding: 16px;
             box-shadow: var(--shadow);
             z-index: 150;
+            display: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
         }
 
@@ -1699,7 +1700,7 @@
         /* ========================================================= */
         #eis-widget {
             position: absolute;
-            top: 340px;
+            top: 350px;
             right: 20px;
             width: 320px;
             min-width: 320px;
@@ -2518,7 +2519,7 @@
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
+        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
@@ -3556,7 +3557,7 @@
 
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
-        style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: min(480px, calc(100vw - 720px)); height: 95px; background: rgba(10, 14, 20, 0.85); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: none;">
+        style="position: absolute; bottom: 20px; right: 20px; width: min(470px, calc(100vw - 360px)); height: 120px; background: rgba(10, 14, 20, 0.85); border-radius: 12px; border: 1px solid var(--border-color); padding: 9px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: none;">
         <div
             style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
             <span>Terrain & Flight Profile</span>
@@ -4613,11 +4614,12 @@
         } else {
             btnToggleCompass.classList.add('active');
         }
-        if (localStorage.getItem('weather_visible') === '0' || new URLSearchParams(window.location.search).get('noweather') === '1') {
-            weatherWidget.style.display = 'none';
-            btnToggleWeather.classList.remove('active');
+        if (localStorage.getItem('weather_visible') === '1' && new URLSearchParams(window.location.search).get('noweather') !== '1') {
+            if (weatherWidget) weatherWidget.style.display = 'block';
+            if (btnToggleWeather) btnToggleWeather.classList.add('active');
         } else {
-            btnToggleWeather.classList.add('active');
+            if (weatherWidget) weatherWidget.style.display = 'none';
+            if (btnToggleWeather) btnToggleWeather.classList.remove('active');
         }
 
         // Draggable Floating Panels
@@ -7068,8 +7070,8 @@
             const ctx = canvas.getContext('2d');
 
             // Bulletproof High-DPI Canvas Scaling
-            const cssWidth = canvas.clientWidth || 450;
-            const cssHeight = canvas.clientHeight || 65;
+            const cssWidth = canvas.clientWidth || 445;
+            const cssHeight = canvas.clientHeight || 75;
             const dpr = window.devicePixelRatio || 1;
 
             if (canvas.width !== cssWidth * dpr) {
