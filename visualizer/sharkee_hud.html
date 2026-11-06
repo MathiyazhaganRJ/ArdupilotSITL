@@ -114,19 +114,19 @@
             background: var(--btn-bg);
             border-radius: 9px;
             padding: 3px;
-            gap: 4px;
-            margin-bottom: 12px;
+            gap: 3px;
+            margin-bottom: 10px;
             border: 1px solid var(--border-color);
         }
 
         .panel-nav-tab {
             flex: 1;
-            padding: 6px 4px;
+            padding: 7px 4px;
             border: none;
-            border-radius: 7px;
+            border-radius: 6px;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 10.5px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.05em;
             cursor: pointer;
@@ -135,6 +135,7 @@
             justify-content: center;
             gap: 5px;
             transition: all 0.15s ease;
+            white-space: nowrap;
         }
 
         .panel-nav-tab:hover {
@@ -505,8 +506,8 @@
         .data-card {
             background: var(--btn-bg);
             border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
         }
 
         .data-row {
@@ -538,11 +539,11 @@
 
         .section-title {
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin: 20px 0 10px 0;
+            margin: 12px 0 6px 0;
         }
 
         select {
@@ -720,7 +721,7 @@
         #compass-widget {
             position: absolute;
             bottom: 20px;
-            left: 340px;
+            left: 345px;
             width: 244px;
             box-sizing: border-box;
             background: var(--panel-bg);
@@ -875,14 +876,14 @@
         /* LXNAV Circular Glass Cockpit MFD Widget (Classic Frosted White with Aviation B612) */
         #lxnav-mfd-widget {
             position: absolute;
-            top: 70px;
-            right: 58px;
-            width: 244px;
-            min-width: 244px;
-            max-width: 244px;
-            height: 270px;
-            min-height: 270px;
-            max-height: 270px;
+            top: 64px;
+            right: 20px;
+            width: 320px;
+            min-width: 320px;
+            max-width: 320px;
+            height: 265px;
+            min-height: 265px;
+            max-height: 265px;
             box-sizing: border-box;
             background: var(--panel-bg);
             backdrop-filter: blur(20px) saturate(180%);
@@ -1698,7 +1699,7 @@
         /* ========================================================= */
         #eis-widget {
             position: absolute;
-            top: 350px;
+            top: 340px;
             right: 20px;
             width: 320px;
             min-width: 320px;
@@ -2586,15 +2587,16 @@
         <div class="panel-nav-tabs">
             <button id="tab-telemetry" class="panel-nav-tab active">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                TELEMETRY
+                <span>TELEMETRY</span>
             </button>
             <button id="tab-airspace" class="panel-nav-tab">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                AIRSPACE
+                <span>AIRSPACE</span>
             </button>
-            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages & System Log (Hotkey 'M')" style="flex: 0 0 36px; padding: 6px 0; position: relative;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <span id="tab-msg-count" class="tab-badge" style="display:none; position: absolute; top: -3px; right: -3px; margin-left: 0;">0</span>
+            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages & System Log (Hotkey 'M')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span>MESSAGES</span>
+                <span id="tab-msg-count" class="tab-badge" style="display:none; margin-left: 2px;">0</span>
             </button>
         </div>
 
@@ -3554,7 +3556,7 @@
 
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
-        style="position: absolute; bottom: 20px; right: 20px; width: min(450px, calc(100vw - 845px)); height: 110px; background: rgba(0,0,0,0.7); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; backdrop-filter: blur(4px); z-index: 90; pointer-events: none;">
+        style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: min(480px, calc(100vw - 720px)); height: 95px; background: rgba(10, 14, 20, 0.85); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: none;">
         <div
             style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 5px; display: flex; justify-content: space-between; text-transform: uppercase;">
             <span>Terrain & Flight Profile</span>
@@ -3648,7 +3650,7 @@
                 btnToggleMessages.classList.add('active');
             }
             if (comp && !comp.dataset.userDragged) {
-                comp.style.left = shouldOpen ? '315px' : '20px';
+                comp.style.left = shouldOpen ? '345px' : '20px';
             }
         }
         window.toggleUiPanel = toggleUiPanel;
@@ -3828,7 +3830,7 @@
                 if (btnToggleUi) btnToggleUi.classList.add('active');
                 if (btnToggleMessages) btnToggleMessages.classList.add('active');
                 if (comp && !comp.dataset.userDragged) {
-                    comp.style.left = '315px';
+                    comp.style.left = '345px';
                 }
                 switchPanelTab('messages');
             }
@@ -7066,8 +7068,8 @@
             const ctx = canvas.getContext('2d');
 
             // Bulletproof High-DPI Canvas Scaling
-            const cssWidth = 430;
-            const cssHeight = 70;
+            const cssWidth = canvas.clientWidth || 450;
+            const cssHeight = canvas.clientHeight || 65;
             const dpr = window.devicePixelRatio || 1;
 
             if (canvas.width !== cssWidth * dpr) {
