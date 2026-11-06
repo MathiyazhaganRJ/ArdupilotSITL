@@ -97,8 +97,41 @@
             padding: 13px;
             box-shadow: var(--shadow);
             z-index: 10;
-            transition: all 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
             font-family: 'B612', sans-serif;
+        }
+
+        #ui-panel.collapsed {
+            transform: translateX(-345px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #btn-expand-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        #btn-expand-panel:hover {
+            background: var(--btn-hover);
+            color: var(--accent);
+            transform: scale(1.05);
         }
 
         #ui-panel::-webkit-scrollbar {
@@ -2596,6 +2629,12 @@
         </button>
     </div>
 
+    <button id="btn-expand-panel" title="Expand Telemetry & Navigation Panel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </button>
+
     <div id="ui-panel">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
@@ -2619,6 +2658,11 @@
                 <button id="theme-toggle" class="icon-btn" title="Toggle Theme" style="width: 26px; height: 26px; font-size: 12px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <button id="btn-collapse-panel" class="icon-btn" title="Minimize Sidebar Panel (Full 3D Map View)" style="width: 26px; height: 26px; font-size: 12px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                 </button>
             </div>
@@ -2759,9 +2803,10 @@
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RELIEF SCALE</span>
                         <select id="sel-terrain-scale" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
                             <option value="1.0">1.0x (True 1:1)</option>
-                            <option value="1.25">1.25x (Enhanced)</option>
-                            <option value="1.5" selected>1.5x (Corv-GCS)</option>
-                            <option value="2.0">2.0x (Mountain)</option>
+                            <option value="1.5">1.5x (Subtle Relief)</option>
+                            <option value="2.0" selected>2.0x (Corv-GCS Mountain Relief)</option>
+                            <option value="2.5">2.5x (Tactical High Relief)</option>
+                            <option value="3.0">3.0x (Extreme Mountain Relief)</option>
                         </select>
                     </div>
                     <div>
@@ -2865,10 +2910,11 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
-                            <option value="auto" selected>Auto Optimal (60 FPS 3D)</option>
-                            <option value="14">Zoom 14 - Regional Vista (2.4m/px)</option>
-                            <option value="15">Zoom 15 - High-Def 3D (1.2m/px)</option>
-                            <option value="16">Zoom 16 - Tactical Detail (0.6m/px)</option>
+                            <option value="auto" selected>Auto Optimal (Corv-GCS 60 FPS)</option>
+                            <option value="17">Zoom 17 - Ultra-Crisp Imagery (1.1m/px)</option>
+                            <option value="16">Zoom 16 - Tactical High-Res (2.3m/px)</option>
+                            <option value="15">Zoom 15 - High-Def 3D (4.7m/px)</option>
+                            <option value="14">Zoom 14 - Regional Vista (9.5m/px)</option>
                         </select>
                     </div>
                 </div>
@@ -4145,6 +4191,23 @@
             };
         }
 
+        // Sidebar Panel Minimize / Expand Handlers (Full 3D Panoramic View)
+        const btnCollapsePanel = document.getElementById('btn-collapse-panel');
+        const btnExpandPanel = document.getElementById('btn-expand-panel');
+        const uiPanel = document.getElementById('ui-panel');
+        if (btnCollapsePanel && uiPanel) {
+            btnCollapsePanel.onclick = () => {
+                uiPanel.classList.add('collapsed');
+                if (btnExpandPanel) btnExpandPanel.style.display = 'flex';
+            };
+        }
+        if (btnExpandPanel && uiPanel) {
+            btnExpandPanel.onclick = () => {
+                uiPanel.classList.remove('collapsed');
+                btnExpandPanel.style.display = 'none';
+            };
+        }
+
         // Dedicated Waypoints Visibility Toggle (Toolbar Button & Hotkey 'W')
         function toggleWaypoints() {
             waypointsVisible = !waypointsVisible;
@@ -4206,7 +4269,7 @@
 
         // 3D Topographic DEM Elevation Controls (Corv-GCS Engine)
         let terrain3DEnabled = true;
-        let terrainExaggeration = 1.5;
+        let terrainExaggeration = 2.0;
         let terrainWireframeMode = false;
 
         const chkToggleTerrain3D = document.getElementById('chk-toggle-terrain-3d');
@@ -4236,10 +4299,10 @@
         }
 
         if (selTerrainScale) {
-            selTerrainScale.value = "1.5";
-            terrainExaggeration = 1.5;
+            selTerrainScale.value = "2.0";
+            terrainExaggeration = 2.0;
             selTerrainScale.onchange = (e) => {
-                terrainExaggeration = parseFloat(e.target.value) || 1.5;
+                terrainExaggeration = parseFloat(e.target.value) || 2.0;
                 if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
             };
         }
@@ -5471,9 +5534,9 @@
 
             if (isMapVis) {
                 // Atmospheric aeronautical sky and horizon haze matching Corv-GCS
-                const skyHex = isDark ? 0x0a1422 : 0x76a9cb;
+                const skyHex = isDark ? 0x0a1422 : 0x78abce;
                 scene.background = new THREE.Color(skyHex);
-                scene.fog = new THREE.Fog(skyHex, 2000, 16000);
+                scene.fog = new THREE.FogExp2(skyHex, 0.000045);
             } else {
                 const bgHex = isDark ? 0x000000 : 0xf5f5f7;
                 scene.background = new THREE.Color(bgHex);
@@ -5500,12 +5563,13 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+        // Realistic Sun-Directional Scene Lighting (Matching Corv-GCS Hillshading Engine)
+        const ambient = new THREE.AmbientLight(0xffffff, 0.35);
         scene.add(ambient);
-        const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x2e3b2e, 0.35);
+        const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x223322, 0.25);
         scene.add(hemiLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-        dirLight.position.set(600, 1200, 700);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.25);
+        dirLight.position.set(12000, 18000, 9000);
         scene.add(dirLight);
 
         // --- Home Location Marker ---
@@ -6678,14 +6742,18 @@
             const zoomSelect = document.getElementById('map-cache-zoom')?.value;
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
-                if (!isNaN(parsed) && parsed >= 14 && parsed <= 16) {
+                if (!isNaN(parsed) && parsed >= 14 && parsed <= 18) {
                     return parsed;
                 }
             }
-            // High-Performance Macro-Chunk Terrain Grid (Corv-GCS):
-            // <= 3.0 km -> Zoom 15 (~1.2 km/tile, 7x7 grid = 8.5 km span, 49 meshes, locked 60 FPS)
-            // > 3.0 km  -> Zoom 14 (~2.4 km/tile, 7x7 grid = 17.0 km span, 49 meshes, locked 60 FPS)
-            if (radiusKm <= 3.0) return 15;
+            // High-Performance Macro-Chunk Terrain Grid matching Corv-GCS:
+            // <= 3.0 km -> Zoom 17 (~300m/tile, 1.1m/px resolution, 7x7 grid = 2.1km crisp focus, locked 60 FPS)
+            // <= 7.0 km -> Zoom 16 (~600m/tile, 2.3m/px resolution, 7x7 grid = 4.2km tactical span, locked 60 FPS)
+            // <= 14.0 km -> Zoom 15 (~1.2km/tile, 4.7m/px resolution, 7x7 grid = 8.5km span)
+            // > 14.0 km  -> Zoom 14 (~2.4km/tile, 9.5m/px regional vista)
+            if (radiusKm <= 3.0) return 17;
+            if (radiusKm <= 7.0) return 16;
+            if (radiusKm <= 14.0) return 15;
             return 14;
         }
 
@@ -6774,18 +6842,18 @@
             airspaceRingGroup.visible = isAirspaceActive && mapVisChecked;
         }
 
-        // Camera Auto-Framing for selected airspace radius
+        // Camera Auto-Framing for selected airspace radius (Corv-GCS 3D Perspective)
         function frameAirspaceCamera(radiusKm) {
             if (typeof controls === 'undefined' || !controls || typeof camera === 'undefined') return;
             const radM = radiusKm * 1000;
-            const camAlt = Math.max(220, radM * 1.5);
-            const camDist = radM * 1.1;
+            const camAlt = Math.max(160, radM * 0.42);
+            const camDist = Math.max(300, radM * 0.72);
             const targetX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
             const targetZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
 
-            controls.target.set(targetX, 0, targetZ);
+            controls.target.set(targetX, 40, targetZ);
             camera.position.set(targetX, camAlt, targetZ + camDist);
-            camera.lookAt(targetX, 0, targetZ);
+            camera.lookAt(targetX, 40, targetZ);
             controls.update();
         }
 
@@ -6905,19 +6973,57 @@
                                 return;
                             }
                             texture.anisotropy = 16;
+                            texture.generateMipmaps = true;
+                            texture.minFilter = THREE.LinearMipmapLinearFilter;
+                            texture.magFilter = THREE.LinearFilter;
                             texture.encoding = THREE.sRGBEncoding;
                             const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
-                            const mat = new THREE.MeshStandardMaterial({
+
+                            // Corv-GCS High-Fidelity Directional Hillshading Material
+                            const mat = new THREE.MeshLambertMaterial({
                                 map: texture,
-                                side: THREE.DoubleSide,
-                                roughness: 0.85,
-                                metalness: 0.05,
-                                fog: true,
+                                side: THREE.FrontSide,
                                 wireframe: terrainWireframeMode
                             });
                             if (terrainWireframeMode) {
                                 mat.color = new THREE.Color(0x00e676);
                             }
+
+                            // Inject Corv-GCS sunlight equation: diffuseColor.rgb *= (0.45 + 1.05 * max(0.0, dot(vWorldNormal, uSunDir)))
+                            mat.onBeforeCompile = (shader) => {
+                                shader.uniforms.uSunDir = { value: new THREE.Vector3(0.53, 0.79, 0.40).normalize() };
+                                shader.uniforms.uSunlightOn = { value: 1.0 };
+                                shader.uniforms.uTerrainContrast = { value: 1.05 };
+                                shader.uniforms.uTerrainAmbient = { value: 0.45 };
+
+                                shader.vertexShader = shader.vertexShader.replace(
+                                    '#include <common>',
+                                    `#include <common>
+                                    varying vec3 vTerrainWorldNormal;`
+                                ).replace(
+                                    '#include <beginnormal_vertex>',
+                                    `#include <beginnormal_vertex>
+                                    vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                                );
+
+                                shader.fragmentShader = shader.fragmentShader.replace(
+                                    '#include <common>',
+                                    `#include <common>
+                                    uniform vec3 uSunDir;
+                                    uniform float uSunlightOn;
+                                    uniform float uTerrainContrast;
+                                    uniform float uTerrainAmbient;
+                                    varying vec3 vTerrainWorldNormal;`
+                                ).replace(
+                                    '#include <color_fragment>',
+                                    `#include <color_fragment>
+                                    if (uSunlightOn > 0.5) {
+                                        float sunDot = max(0.0, dot(normalize(vTerrainWorldNormal), normalize(uSunDir)));
+                                        diffuseColor.rgb *= (uTerrainAmbient + uTerrainContrast * sunDot);
+                                    }`
+                                );
+                            };
+
                             const mesh = new THREE.Mesh(geo, mat);
                             mesh.renderOrder = -1;
                             mesh.rotation.x = -Math.PI / 2;
@@ -6968,7 +7074,7 @@
         // ==========================================
         // 3D TOPOGRAPHIC DEM ELEVATION ENGINE (CORV-GCS)
         // ==========================================
-        const TILE_SEGS = 32; // 32x32 segments per tile (1024 faces for smooth ridges)
+        const TILE_SEGS = 40; // 40x40 segments per tile (1600 faces for smooth ridges and sharp cliffs)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
         let homeElevationMSL = null;
 
@@ -6976,6 +7082,33 @@
         demCanvas.width = 256;
         demCanvas.height = 256;
         const demCtx = demCanvas.getContext('2d', { willReadFrequently: true });
+
+        // Bilinear DEM elevation sampler: converts Terrarium RGB to floating elevation with C1 continuity
+        function sampleTerrariumBilinear(raw, u, v) {
+            const fx = Math.max(0, Math.min(255, u * 255));
+            const fy = Math.max(0, Math.min(255, v * 255));
+            const x0 = Math.floor(fx);
+            const y0 = Math.floor(fy);
+            const x1 = Math.min(255, x0 + 1);
+            const y1 = Math.min(255, y0 + 1);
+            const wx = fx - x0;
+            const wy = fy - y0;
+
+            const idx00 = (y0 * 256 + x0) * 4;
+            const idx10 = (y0 * 256 + x1) * 4;
+            const idx01 = (y1 * 256 + x0) * 4;
+            const idx11 = (y1 * 256 + x1) * 4;
+
+            const e00 = (raw[idx00] * 256.0 + raw[idx00 + 1] + (raw[idx00 + 2] / 256.0)) - 32768.0;
+            const e10 = (raw[idx10] * 256.0 + raw[idx10 + 1] + (raw[idx10 + 2] / 256.0)) - 32768.0;
+            const e01 = (raw[idx01] * 256.0 + raw[idx01 + 1] + (raw[idx01 + 2] / 256.0)) - 32768.0;
+            const e11 = (raw[idx11] * 256.0 + raw[idx11 + 1] + (raw[idx11 + 2] / 256.0)) - 32768.0;
+
+            return (1.0 - wx) * (1.0 - wy) * e00 +
+                   wx * (1.0 - wy) * e10 +
+                   (1.0 - wx) * wy * e01 +
+                   wx * wy * e11;
+        }
 
         function initHomeElevation(lat, lon) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
@@ -6987,10 +7120,7 @@
             function sampleAndApply(raw) {
                 const fracX = lon2tileFloat(lon, demZ) - demX;
                 const fracY = lat2tileFloat(lat, demZ) - demY;
-                const px = Math.min(255, Math.max(0, Math.floor(fracX * 255)));
-                const py = Math.min(255, Math.max(0, Math.floor(fracY * 255)));
-                const pIdx = (py * 256 + px) * 4;
-                homeElevationMSL = (raw[pIdx] * 256.0 + raw[pIdx + 1] + (raw[pIdx + 2] / 256.0)) - 32768.0;
+                homeElevationMSL = sampleTerrariumBilinear(raw, fracX, fracY);
                 updateAllTileElevations();
             }
 
@@ -7062,13 +7192,7 @@
                     const vIdx = iy * nx + ix;
                     const u = (subX + (ix / TILE_SEGS)) / subSpan;
                     const v = (subY + (iy / TILE_SEGS)) / subSpan;
-                    const px = Math.min(255, Math.max(0, Math.floor(u * 255)));
-                    const py = Math.min(255, Math.max(0, Math.floor(v * 255)));
-                    const pIdx = (py * 256 + px) * 4;
-                    const r = raw[pIdx];
-                    const g = raw[pIdx + 1];
-                    const b = raw[pIdx + 2];
-                    const elevMSL = (r * 256.0 + g + (b / 256.0)) - 32768.0;
+                    const elevMSL = sampleTerrariumBilinear(raw, u, v);
                     const relElev = (elevMSL - refHomeMSL) * terrainExaggeration;
                     pos.setZ(vIdx, relElev);
                 }
@@ -7122,13 +7246,7 @@
             const subY = ty & subMask;
             const u = (subX + fracX) / subSpan;
             const v = (subY + fracY) / subSpan;
-            const px = Math.min(255, Math.max(0, Math.floor(u * 255)));
-            const py = Math.min(255, Math.max(0, Math.floor(v * 255)));
-            const pIdx = (py * 256 + px) * 4;
-            const r = raw[pIdx];
-            const g = raw[pIdx + 1];
-            const b = raw[pIdx + 2];
-            const elevMSL = (r * 256.0 + g + (b / 256.0)) - 32768.0;
+            const elevMSL = sampleTerrariumBilinear(raw, u, v);
             return (elevMSL - homeElevationMSL) * terrainExaggeration;
         }
 
