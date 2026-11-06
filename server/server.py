@@ -16,8 +16,8 @@ import sys
 from pymavlink import mavutil
 
 def parse_mavlink_target():
-    target = os.environ.get('MAVLINK_URL', 'udpin:127.0.0.1:14551')
-    baud = 115200
+    target = os.environ.get('MAVLINK_URL')
+    baud = 57600
     for i, arg in enumerate(sys.argv):
         if arg in ('--connect', '--mavlink', '-c') and i + 1 < len(sys.argv):
             target = sys.argv[i + 1]
@@ -25,6 +25,22 @@ def parse_mavlink_target():
         elif arg.startswith(('--connect=', '--mavlink=')):
             target = arg.split('=', 1)[1]
             break
+    
+    if not target:
+        # Check if a telemetry radio module (MicroAir, CP210x, FTDI, SiK) is plugged into a serial port
+        try:
+            import serial.tools.list_ports
+            for p in serial.tools.list_ports.comports():
+                desc = (p.description or '').lower()
+                hwid = (p.hwid or '').lower()
+                if any(k in desc or k in hwid for k in ('cp210', 'ftdi', 'sik', 'telemetry', 'radio', 'uart bridge', 'micro air', 'holybro')):
+                    print(f"[MAVLink] Auto-detected telemetry radio on {p.device}: {p.description}")
+                    return p.device, 57600
+        except Exception:
+            pass
+        target = 'udpin:127.0.0.1:14551'
+        baud = 115200
+
     if ':' in target and not target.startswith(('udp', 'tcp')):
         parts = target.split(':')
         target = parts[0]
