@@ -15,6 +15,17 @@ import concurrent.futures
 import sys
 from pymavlink import mavutil
 
+# Ensure current directory is in sys.path for sibling module imports without triggering circular import
+_server_dir = os.path.dirname(os.path.abspath(__file__))
+if _server_dir not in sys.path:
+    sys.path.insert(0, _server_dir)
+
+try:
+    from board_types import resolve_board_name, format_fc_board_name
+except ImportError:
+    def resolve_board_name(*args, **kwargs): return "SITL"
+    def format_fc_board_name(name): return name
+
 def parse_mavlink_target():
     target = os.environ.get('MAVLINK_URL', 'udpin:127.0.0.1:14551')
     baud = 115200
@@ -32,6 +43,8 @@ def parse_mavlink_target():
             baud = int(parts[1])
         except ValueError:
             pass
+    if target.lower().startswith('com'):
+        target = target.upper()
     return target, baud
 
 MAVLINK_DEVICE, MAVLINK_BAUD = parse_mavlink_target()
@@ -46,16 +59,6 @@ else:
 clients = set()
 heartbeat_received = False
 is_network_sitl = MAVLINK_DEVICE.startswith(('udp', 'tcp')) and any(h in MAVLINK_DEVICE for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
-
-try:
-    from server.board_types import resolve_board_name, format_fc_board_name
-except ImportError:
-    try:
-        from board_types import resolve_board_name, format_fc_board_name
-    except ImportError:
-        def resolve_board_name(*args, **kwargs): return "SITL" if is_network_sitl else "Hardware FC"
-        def format_fc_board_name(name): return name
-
 detected_fc_hardware = "SITL" if is_network_sitl else "Hardware FC"
 detected_firmware = "ArduPlane"
 capabilities_requested = False
