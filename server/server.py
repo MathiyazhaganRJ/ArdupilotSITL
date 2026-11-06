@@ -45,6 +45,10 @@ else:
 
 clients = set()
 heartbeat_received = False
+is_network_sitl = MAVLINK_DEVICE.startswith(('udp', 'tcp')) and any(h in MAVLINK_DEVICE for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
+detected_fc_hardware = "SITL" if is_network_sitl else "Hardware FC"
+detected_firmware = "ArduPlane"
+capabilities_requested = False
 
 class MissionHandler:
     def __init__(self, mav_conn):
@@ -337,12 +341,12 @@ cached_heartbeat = None
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat
+    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat, detected_firmware, detected_fc_hardware
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
         msg = connection.recv_match(
-            type=['HEARTBEAT', 'ATTITUDE', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
+            type=['HEARTBEAT', 'ATTITUDE', 'AUTOPILOT_VERSION', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
                   'ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
                   'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
                   'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
@@ -385,7 +389,22 @@ async def mavlink_listener():
 
                 if not heartbeat_received:
                     heartbeat_received = True
-                    print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to SITL.")
+                    print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to {detected_fc_hardware}.")
+                    # Request Autopilot Version & Capabilities (Msg 148)
+                    try:
+                        connection.mav.command_long_send(
+                            connection.target_system, connection.target_component,
+                            mavutil.mavlink.MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 0,
+                            1, 0, 0, 0, 0, 0, 0
+                        )
+                        connection.mav.command_long_send(
+                            connection.target_system, connection.target_component,
+                            mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
+                            mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
+                            0, 0, 0, 0, 0, 0
+                        )
+                    except Exception as e:
+                        pass
                     # Request data streams
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
@@ -504,7 +523,7 @@ async def mavlink_listener():
                 data['system_status'] = getattr(msg, 'system_status', 0)
 
                 if msg.type == mavutil.mavlink.MAV_TYPE_FIXED_WING or msg.type in [19, 20, 21, 22, 23, 24, 25]:
-                    data['firmware'] = 'ArduPlane'
+                    data['firmware'] = detected_firmware if detected_firmware else 'ArduPlane'
                 elif msg.type in [mavutil.mavlink.MAV_TYPE_QUADROTOR, mavutil.mavlink.MAV_TYPE_HEXAROTOR, mavutil.mavlink.MAV_TYPE_OCTOROTOR, mavutil.mavlink.MAV_TYPE_TRICOPTER, mavutil.mavlink.MAV_TYPE_HELICOPTER]:
                     data['firmware'] = 'ArduCopter'
                 elif msg.type in [mavutil.mavlink.MAV_TYPE_GROUND_ROVER, mavutil.mavlink.MAV_TYPE_SURFACE_BOAT]:
@@ -513,6 +532,7 @@ async def mavlink_listener():
                     data['firmware'] = 'ArduSub'
                 else:
                     data['firmware'] = 'ArduPilot'
+                data['fc_hardware'] = detected_fc_hardware
                 cached_heartbeat = data
             elif msg.get_type() == 'ATTITUDE':
                 data['roll'] = msg.roll
@@ -566,11 +586,54 @@ async def mavlink_listener():
                     "home_lon": data['home_lon'],
                     "home_alt": data['home_alt']
                 }
+            elif msg.get_type() == 'AUTOPILOT_VERSION':
+                sw_ver = getattr(msg, 'flight_sw_version', 0)
+                if sw_ver:
+                    maj = (sw_ver >> 24) & 0xFF
+                    min_v = (sw_ver >> 16) & 0xFF
+                    pat = (sw_ver >> 8) & 0xFF
+                    t_suffix = {0: '-dev', 64: '-alpha', 128: '-beta', 192: '-rc'}.get(sw_ver & 0xFF, '')
+                    detected_firmware = f"ArduPlane V{maj}.{min_v}.{pat}{t_suffix}"
+                    print(f"[FC Info] Autopilot Version detected: {detected_firmware}")
+                vendor_id = getattr(msg, 'vendor_id', 0)
+                product_id = getattr(msg, 'product_id', 0)
+                board_ver = getattr(msg, 'board_version', 0)
+                if vendor_id == 0 and product_id == 0 and board_ver == 0 and is_network_sitl:
+                    detected_fc_hardware = "SITL"
+                data['type'] = 'FC_INFO'
+                data['fc_hardware'] = detected_fc_hardware
+                data['firmware'] = detected_firmware
+
+
+                if cached_heartbeat:
+                    cached_heartbeat['fc_hardware'] = detected_fc_hardware
+                    cached_heartbeat['firmware'] = detected_firmware
+
             elif msg.get_type() == 'STATUSTEXT':
                 raw_text = getattr(msg, 'text', '')
                 if isinstance(raw_text, bytes):
                     raw_text = raw_text.decode('utf-8', errors='ignore')
                 clean_text = str(raw_text).strip('\x00').strip()
+
+                # Detect firmware version banner, e.g. 'ArduPlane V4.6.3 (3fc7011a)'
+                m_fw = re.match(r'^(Ardu[A-Za-z]+)\s+V?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9]+)?)', clean_text, re.IGNORECASE)
+                if m_fw:
+                    detected_firmware = f"{m_fw.group(1)} V{m_fw.group(2)}"
+                    print(f"[FC Info] Firmware Banner detected: {detected_firmware}")
+                    if cached_heartbeat:
+                        cached_heartbeat['firmware'] = detected_firmware
+
+                # Detect FC hardware board name, e.g. 'SpeedyBeeF405WING 003C0028...' or 'SITL 00000000'
+                m_board = re.match(r'^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}', clean_text)
+                if m_board:
+                    b_name = m_board.group(1)
+                    if b_name.upper() == 'SITL':
+                        detected_fc_hardware = 'SITL'
+                    elif not b_name.lower().startswith(('imu', 'rcout', 'ekf', 'baro', 'gps')):
+                        detected_fc_hardware = b_name
+                    print(f"[FC Info] Hardware Board detected: {detected_fc_hardware}")
+                    if cached_heartbeat:
+                        cached_heartbeat['fc_hardware'] = detected_fc_hardware
                 data['type'] = 'STATUSTEXT'
                 data['severity'] = int(getattr(msg, 'severity', 6))
                 data['text'] = clean_text
@@ -653,6 +716,16 @@ async def mavlink_listener():
 async def ws_handler(websocket, path=None):
     clients.add(websocket)
     try:
+        # Deliver cached FC info (hardware and firmware version) to newly connected client
+        try:
+            await websocket.send(json.dumps({
+                "type": "FC_INFO",
+                "fc_hardware": detected_fc_hardware,
+                "firmware": detected_firmware
+            }))
+        except Exception:
+            pass
+
         # Deliver cached heartbeat (arm status, mode, firmware) to newly connected client immediately
         if cached_heartbeat:
             try:

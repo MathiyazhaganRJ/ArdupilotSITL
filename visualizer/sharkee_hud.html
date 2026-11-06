@@ -2618,8 +2618,10 @@
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
                         style="color: var(--danger);">Offline</span></div>
+                <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
+                        style="color: var(--accent-yellow); font-family: 'B612 Mono', monospace; font-weight: 700;">SITL</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                        style="color: var(--text-secondary);">---</span></div>
+                        style="color: var(--text-primary); font-family: 'B612 Mono', monospace;">---</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
                         style="color: var(--accent);">UNKNOWN</span></div>
                 <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
@@ -7171,6 +7173,25 @@
             ctx.stroke();
         }
 
+
+        function updateFcHardwareUI(hardwareName) {
+            const fcEl = document.getElementById('fc-hardware');
+            if (!fcEl || !hardwareName) return;
+            fcEl.innerText = hardwareName;
+            if (hardwareName.toUpperCase() === 'SITL') {
+                fcEl.style.color = 'var(--accent-yellow)';
+            } else {
+                fcEl.style.color = '#00e676';
+            }
+        }
+
+        function updateFirmwareUI(firmwareStr) {
+            const fwEl = document.getElementById('firmware');
+            if (!fwEl || !firmwareStr || firmwareStr.startsWith('Type ') || firmwareStr === '---') return;
+            fwEl.innerText = firmwareStr;
+            fwEl.style.color = 'var(--text-primary)';
+        }
+
         ws.onopen = () => {
             document.getElementById('status').innerText = "Waiting for Vehicle...";
             document.getElementById('status').style.color = "var(--text-secondary)";
@@ -7205,13 +7226,38 @@
                 }
             } else if (data.type === 'STATUSTEXT') {
                 addAutopilotMessage(data);
+                if (data.text) {
+                    const mFw = data.text.match(/^(Ardu[A-Za-z]+)\s+V?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9]+)?)/i);
+                    if (mFw) updateFirmwareUI(`${mFw[1]} V${mFw[2]}`);
+                    const mBoard = data.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
+                    if (mBoard) {
+                        const bName = mBoard[1];
+                        if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
+                        else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf')) updateFcHardwareUI(bName);
+                    }
+                }
             } else if (data.type === 'STATUSTEXT_HISTORY') {
                 if (Array.isArray(data.messages)) {
                     for (const m of data.messages) {
                         addAutopilotMessage(m, true);
+                        if (m.text) {
+                            const mFw = m.text.match(/^(Ardu[A-Za-z]+)\s+V?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9]+)?)/i);
+                            if (mFw) updateFirmwareUI(`${mFw[1]} V${mFw[2]}`);
+                            const mBoard = m.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
+                            if (mBoard) {
+                                const bName = mBoard[1];
+                                if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
+                                else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf')) updateFcHardwareUI(bName);
+                            }
+                        }
                     }
                 }
+            } else if (data.type === 'FC_INFO') {
+                if (data.fc_hardware) updateFcHardwareUI(data.fc_hardware);
+                if (data.firmware) updateFirmwareUI(data.firmware);
             } else if (data.type === 'HEARTBEAT') {
+                if (data.fc_hardware) updateFcHardwareUI(data.fc_hardware);
+                if (data.firmware) updateFirmwareUI(data.firmware);
                 if (data.armed !== undefined) {
                     updateArmState(data.armed);
                 }
