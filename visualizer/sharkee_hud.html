@@ -2758,9 +2758,9 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RELIEF SCALE</span>
                         <select id="sel-terrain-scale" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                            <option value="1.0" selected>1.0x (True 1:1)</option>
+                            <option value="1.0">1.0x (True 1:1)</option>
                             <option value="1.25">1.25x (Enhanced)</option>
-                            <option value="1.5">1.5x (Corv-GCS)</option>
+                            <option value="1.5" selected>1.5x (Corv-GCS)</option>
                             <option value="2.0">2.0x (Mountain)</option>
                         </select>
                     </div>
@@ -2865,11 +2865,10 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
-                            <option value="auto" selected>Auto Optimal</option>
-                            <option value="18">Zoom 18 (0.5m/px)</option>
-                            <option value="17">Zoom 17 (1.0m/px)</option>
-                            <option value="16">Zoom 16 (2.0m/px)</option>
-                            <option value="17,18">Zoom 17 + 18 (Dual)</option>
+                            <option value="auto" selected>Auto Optimal (60 FPS 3D)</option>
+                            <option value="14">Zoom 14 - Regional Vista (2.4m/px)</option>
+                            <option value="15">Zoom 15 - High-Def 3D (1.2m/px)</option>
+                            <option value="16">Zoom 16 - Tactical Detail (0.6m/px)</option>
                         </select>
                     </div>
                 </div>
@@ -4206,14 +4205,28 @@
         }
 
         // 3D Topographic DEM Elevation Controls (Corv-GCS Engine)
+        let terrain3DEnabled = true;
+        let terrainExaggeration = 1.5;
+        let terrainWireframeMode = false;
+
         const chkToggleTerrain3D = document.getElementById('chk-toggle-terrain-3d');
         const terrain3DStatus = document.getElementById('terrain-3d-status');
         const selTerrainScale = document.getElementById('sel-terrain-scale');
         const selTerrainStyle = document.getElementById('sel-terrain-style');
 
+        // Restore 3D preference from localStorage (defaults to true)
+        const savedTerrain3D = localStorage.getItem('pilot_terrain_3d');
+        terrain3DEnabled = (savedTerrain3D !== 'false');
+        if (chkToggleTerrain3D) chkToggleTerrain3D.checked = terrain3DEnabled;
+        if (terrain3DStatus) {
+            terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
+            terrain3DStatus.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
+        }
+
         if (chkToggleTerrain3D) {
             chkToggleTerrain3D.onchange = (e) => {
                 terrain3DEnabled = e.target.checked;
+                localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
                 if (terrain3DStatus) {
                     terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
                     terrain3DStatus.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
@@ -4223,8 +4236,10 @@
         }
 
         if (selTerrainScale) {
+            selTerrainScale.value = "1.5";
+            terrainExaggeration = 1.5;
             selTerrainScale.onchange = (e) => {
-                terrainExaggeration = parseFloat(e.target.value) || 1.0;
+                terrainExaggeration = parseFloat(e.target.value) || 1.5;
                 if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
             };
         }
@@ -4333,24 +4348,42 @@
             lat: 8.3105,
             lon: 77.3137,
             radius: 3.0,
-            zoom: '18'
+            zoom: 'auto'
         };
 
         function getSavedPresets() {
+            let list = [];
             try {
                 const raw = localStorage.getItem('pilot_flight_presets');
-                if (raw) return JSON.parse(raw);
+                if (raw) list = JSON.parse(raw);
             } catch (e) {}
-            return [
-                {
+            if (!Array.isArray(list)) list = [];
+
+            // Ensure built-in Corv 3D Mountain presets are always accessible
+            const hasPeak = list.some(p => p.id === 'corv_peaks');
+            const hasValley = list.some(p => p.id === 'corv_valley');
+
+            if (!hasPeak) {
+                list.unshift({
+                    id: 'corv_peaks',
+                    name: 'Corv Western Ghats Peak (3D Mountains)',
+                    lat: 8.43919,
+                    lon: 77.43659,
+                    radius: 5.0,
+                    zoom: 'auto'
+                });
+            }
+            if (!hasValley) {
+                list.push({
                     id: 'corv_valley',
-                    name: 'Corv Valley (3D Mountains)',
+                    name: 'Corv Valley Survey (8.3041, 77.3076)',
                     lat: 8.30413,
                     lon: 77.30760,
                     radius: 3.0,
-                    zoom: '17'
-                }
-            ];
+                    zoom: 'auto'
+                });
+            }
+            return list;
         }
 
         function getActivePresetName() {
@@ -4582,29 +4615,10 @@
 
         function updateMapEstimate() {
             const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
-            const zoomMode = document.getElementById('map-cache-zoom').value;
-            let tileCount = 0;
-            const diamKm = rad * 2.0;
-            if (zoomMode === 'auto') {
-                const z = (rad <= 1.2 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)));
-                const tSize = (z === 18 ? 150 : (z === 17 ? 300 : (z === 16 ? 600 : 1200)));
-                const side = Math.ceil((diamKm * 1000) / tSize) + 1;
-                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
-            } else if (zoomMode === '18') {
-                const side = Math.ceil((diamKm * 1000) / 150) + 1;
-                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
-            } else if (zoomMode === '17') {
-                const side = Math.ceil((diamKm * 1000) / 300) + 1;
-                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
-            } else if (zoomMode === '16') {
-                const side = Math.ceil((diamKm * 1000) / 600) + 1;
-                tileCount = Math.ceil(Math.PI * Math.pow(side / 2, 2));
-            } else { // 17, 18
-                const s18 = Math.ceil((diamKm * 1000) / 150) + 1;
-                const s17 = Math.ceil((diamKm * 1000) / 300) + 1;
-                tileCount = Math.ceil(Math.PI * Math.pow(s18 / 2, 2)) + Math.ceil(Math.PI * Math.pow(s17 / 2, 2));
-            }
-            const estMb = (tileCount * 0.016).toFixed(1);
+            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 15 : 14);
+            const span = (rad > 8.0 && z === 14) ? 4 : 3;
+            const tileCount = Math.pow(2 * span + 1, 2); // 49 or 81 tiles
+            const estMb = (tileCount * 0.025).toFixed(1);
             document.getElementById('map-cache-est-text').innerText = `~${tileCount} tiles (~${estMb} MB)`;
         }
 
@@ -6655,6 +6669,7 @@
         let currentMapMode = null;
         let lastMapUpdateLat = 0, lastMapUpdateLon = 0;
         let pendingTileRefresh = false;
+        let mapGeneration = 0;
 
         function lon2tileFloat(lon, zoom) { return (lon + 180) / 360 * Math.pow(2, zoom); }
         function lat2tileFloat(lat, zoom) { return (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom); }
@@ -6662,25 +6677,16 @@
         function getOptimalZoom(radiusKm) {
             const zoomSelect = document.getElementById('map-cache-zoom')?.value;
             if (zoomSelect && zoomSelect !== 'auto') {
-                if (zoomSelect === '17,18') {
-                    return (radiusKm <= 2.0) ? 18 : 17;
-                }
                 const parsed = parseInt(zoomSelect);
-                if (!isNaN(parsed) && parsed >= 14 && parsed <= 19) {
-                    if (radiusKm >= 4.0 && parsed > 17) return 17;
-                    if (radiusKm >= 8.0 && parsed > 16) return 16;
+                if (!isNaN(parsed) && parsed >= 14 && parsed <= 16) {
                     return parsed;
                 }
             }
-            // Auto Optimal Resolution ensures ~150-350 tiles max with full coverage:
-            // <= 1.2 km  -> Zoom 18 (Ultra-Res ~0.5m/px, tileSize ~151m, span 8, ~180 tiles)
-            // <= 3.5 km  -> Zoom 17 (High-Res  ~1.0m/px, tileSize ~302m, span 8-11, ~190-340 tiles)
-            // <= 7.0 km  -> Zoom 16 (Wide-Area ~2.0m/px, tileSize ~605m, span 8-10, ~190-280 tiles)
-            // > 7.0 km   -> Zoom 15 (Regional  ~4.0m/px, tileSize ~1210m, span 10, ~280 tiles)
-            if (radiusKm <= 1.2) return 18;
-            if (radiusKm <= 3.5) return 17;
-            if (radiusKm <= 7.0) return 16;
-            return 15;
+            // High-Performance Macro-Chunk Terrain Grid (Corv-GCS):
+            // <= 3.0 km -> Zoom 15 (~1.2 km/tile, 7x7 grid = 8.5 km span, 49 meshes, locked 60 FPS)
+            // > 3.0 km  -> Zoom 14 (~2.4 km/tile, 7x7 grid = 17.0 km span, 49 meshes, locked 60 FPS)
+            if (radiusKm <= 3.0) return 15;
+            return 14;
         }
 
         // Render Ground-Level Tactical Airspace Range Rings & Perimeter
@@ -6802,8 +6808,11 @@
             const modeChanged = (currentMapMode !== null && currentMapMode !== mapMode);
 
             const needsFullRebuild = (homeLat === null || recenter || zoomChanged || radiusChanged || providerChanged || modeChanged);
+            let thisGen = mapGeneration;
 
             if (needsFullRebuild) {
+                mapGeneration++;
+                thisGen = mapGeneration;
                 currentMapZoom = activeZoom;
                 currentMapRadius = radiusKm;
                 currentMapProvider = provider;
@@ -6836,12 +6845,22 @@
                     mapGroup.remove(child);
                 }
                 mapTiles.clear();
+                if (typeof initHomeElevation === 'function') initHomeElevation(lat, lon);
             } else {
                 // Throttle incremental checks during flight (~50m threshold)
                 const dLat = Math.abs(lat - lastMapUpdateLat);
                 const dLon = Math.abs(lon - lastMapUpdateLon);
                 if (dLat < 0.0005 && dLon < 0.0005) {
                     return;
+                }
+                // If aircraft has flown far (> 4km) from home airfield origin, trigger a clean recenter
+                if (homeLat !== null && homeLon !== null) {
+                    const dHomeLat = Math.abs(lat - homeLat);
+                    const dHomeLon = Math.abs(lon - homeLon);
+                    if (dHomeLat > 0.04 || dHomeLon > 0.04) {
+                        updateMap(lat, lon, true);
+                        return;
+                    }
                 }
             }
 
@@ -6851,17 +6870,13 @@
             const currentTileX = Math.floor(lon2tileFloat(lon, activeZoom));
             const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
 
-            // Dynamic grid span: FULL radius plus buffer to ensure 100% boundary coverage
-            const radMeters = radiusKm * 1000;
-            const span = Math.ceil(radMeters / tileSize) + 1;
-            const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
+            // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
+            // Locks meshes to a fixed 7x7 grid (49 tiles) or 9x9 (81 tiles for wide areas)
+            // Instantaneous loading and locked 60 FPS
+            const gridSpan = (radiusKm > 8.0 && activeZoom === 14) ? 4 : 3;
 
-            for (let dx = -span; dx <= span; dx++) {
-                for (let dy = -span; dy <= span; dy++) {
-                    // Check distance from center to tile center
-                    const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
-                    if (distSq > maxDistSq) continue;
-
+            for (let dx = -gridSpan; dx <= gridSpan; dx++) {
+                for (let dy = -gridSpan; dy <= gridSpan; dy++) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
                     const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
@@ -6885,14 +6900,18 @@
                         }
 
                         function attachTile(texture) {
+                            if (thisGen !== mapGeneration) {
+                                texture.dispose();
+                                return;
+                            }
                             texture.anisotropy = 16;
                             texture.encoding = THREE.sRGBEncoding;
                             const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
                             const mat = new THREE.MeshStandardMaterial({
                                 map: texture,
                                 side: THREE.DoubleSide,
-                                roughness: 0.88,
-                                metalness: 0.04,
+                                roughness: 0.85,
+                                metalness: 0.05,
                                 fog: true,
                                 wireframe: terrainWireframeMode
                             });
@@ -6949,17 +6968,49 @@
         // ==========================================
         // 3D TOPOGRAPHIC DEM ELEVATION ENGINE (CORV-GCS)
         // ==========================================
-        const TILE_SEGS = 24; // 24x24 segments per tile (576 faces)
+        const TILE_SEGS = 32; // 32x32 segments per tile (1024 faces for smooth ridges)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
         let homeElevationMSL = null;
-        let terrainExaggeration = 1.0;
-        let terrain3DEnabled = true;
-        let terrainWireframeMode = false;
 
         const demCanvas = document.createElement('canvas');
         demCanvas.width = 256;
         demCanvas.height = 256;
         const demCtx = demCanvas.getContext('2d', { willReadFrequently: true });
+
+        function initHomeElevation(lat, lon) {
+            if (!lat || !lon || Math.abs(lat) < 0.001) return;
+            const demZ = 14;
+            const demX = Math.floor(lon2tileFloat(lon, demZ));
+            const demY = Math.floor(lat2tileFloat(lat, demZ));
+            const demKey = `${demZ}_${demX}_${demY}`;
+
+            function sampleAndApply(raw) {
+                const fracX = lon2tileFloat(lon, demZ) - demX;
+                const fracY = lat2tileFloat(lat, demZ) - demY;
+                const px = Math.min(255, Math.max(0, Math.floor(fracX * 255)));
+                const py = Math.min(255, Math.max(0, Math.floor(fracY * 255)));
+                const pIdx = (py * 256 + px) * 4;
+                homeElevationMSL = (raw[pIdx] * 256.0 + raw[pIdx + 1] + (raw[pIdx + 2] / 256.0)) - 32768.0;
+                updateAllTileElevations();
+            }
+
+            const cached = demCache.get(demKey);
+            if (cached) {
+                sampleAndApply(cached);
+                return;
+            }
+
+            const demUrl = `/dem/${demZ}/${demX}/${demY}.png`;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                demCtx.drawImage(img, 0, 0);
+                const data = demCtx.getImageData(0, 0, 256, 256).data;
+                demCache.set(demKey, data);
+                sampleAndApply(data);
+            };
+            img.src = demUrl;
+        }
 
         function applyDemElevationToMesh(mesh, z, tx, ty) {
             if (!mesh || !mesh.geometry) return;
@@ -6982,31 +7033,6 @@
                 demCtx.drawImage(img, 0, 0);
                 const imgData = demCtx.getImageData(0, 0, 256, 256).data;
                 demCache.set(demKey, imgData);
-
-                // If home airfield elevation MSL has not been determined yet, sample it
-                if (homeElevationMSL === null && homeTileXFloat !== null && homeTileYFloat !== null) {
-                    const htx = Math.floor(homeTileXFloat);
-                    const hty = Math.floor(homeTileYFloat);
-                    const hDemX = htx >> zoomDiff;
-                    const hDemY = hty >> zoomDiff;
-                    if (demX === hDemX && demY === hDemY) {
-                        const subSpan = 1 << zoomDiff;
-                        const subMask = subSpan - 1;
-                        const hSubX = htx & subMask;
-                        const hSubY = hty & subMask;
-                        const fracX = homeTileXFloat - htx;
-                        const fracY = homeTileYFloat - hty;
-                        const u = (hSubX + fracX) / subSpan;
-                        const v = (hSubY + fracY) / subSpan;
-                        const px = Math.min(255, Math.max(0, Math.floor(u * 255)));
-                        const py = Math.min(255, Math.max(0, Math.floor(v * 255)));
-                        const pIdx = (py * 256 + px) * 4;
-                        homeElevationMSL = (imgData[pIdx] * 256.0 + imgData[pIdx + 1] + (imgData[pIdx + 2] / 256.0)) - 32768.0;
-                        updateAllTileElevations();
-                        return;
-                    }
-                }
-
                 displaceMeshVertices(mesh, imgData, zoomDiff, tx, ty);
             };
             img.src = demUrl;
@@ -8018,8 +8044,8 @@
             }
             lastRenderTime = now;
 
-            // Continuous dynamic map streaming during flight (checks every 2 seconds)
-            if (now - lastPeriodicMapUpdate > 2000 && currentPlaneLat && currentPlaneLon) {
+            // Continuous dynamic map streaming during flight (checks every 2 seconds when following vehicle)
+            if (now - lastPeriodicMapUpdate > 2000 && currentPlaneLat && currentPlaneLon && cameraMode === 'follow') {
                 lastPeriodicMapUpdate = now;
                 updateMap(currentPlaneLat, currentPlaneLon, false);
             }
@@ -9221,6 +9247,7 @@
             } else if (e.key === 't' || e.key === 'T') {
                 // Toggle 3D Topographic DEM Elevation
                 terrain3DEnabled = !terrain3DEnabled;
+                localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
                 const chk = document.getElementById('chk-toggle-terrain-3d');
                 if (chk) chk.checked = terrain3DEnabled;
                 const status = document.getElementById('terrain-3d-status');
