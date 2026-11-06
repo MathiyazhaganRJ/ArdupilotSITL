@@ -21,10 +21,11 @@ if _server_dir not in sys.path:
     sys.path.insert(0, _server_dir)
 
 try:
-    from board_types import resolve_board_name, format_fc_board_name
+    from board_types import resolve_board_name, format_fc_board_name, resolve_board_from_text
 except ImportError:
     def resolve_board_name(*args, **kwargs): return "SITL"
     def format_fc_board_name(name): return name
+    def resolve_board_from_text(text): return None
 
 def parse_mavlink_target():
     target = os.environ.get('MAVLINK_URL', 'udpin:127.0.0.1:14551')
@@ -54,13 +55,36 @@ if MAVLINK_DEVICE.startswith(('udp', 'tcp')):
     connection = mavutil.mavlink_connection(MAVLINK_DEVICE)
 else:
     print(f"[MAVLink] Connecting to serial port {MAVLINK_DEVICE} at {MAVLINK_BAUD} baud...")
-    connection = mavutil.mavlink_connection(MAVLINK_DEVICE, baud=MAVLINK_BAUD)
+    while True:
+        try:
+            connection = mavutil.mavlink_connection(MAVLINK_DEVICE, baud=MAVLINK_BAUD)
+            print(f"[MAVLink] Successfully opened serial port {MAVLINK_DEVICE}.")
+            break
+        except PermissionError:
+            print(f"[MAVLink] WARNING: Serial port {MAVLINK_DEVICE} is currently locked by another process (e.g. Mission Planner or another terminal). Waiting for port to become free...")
+            time.sleep(2)
+        except Exception as e:
+            print(f"[MAVLink] Waiting for serial port {MAVLINK_DEVICE} ({e}). Retrying in 2 seconds...")
+            time.sleep(2)
 
 clients = set()
 heartbeat_received = False
 is_network_sitl = MAVLINK_DEVICE.startswith(('udp', 'tcp')) and any(h in MAVLINK_DEVICE for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
 detected_fc_hardware = "SITL" if is_network_sitl else "Hardware FC"
 detected_firmware = "ArduPlane"
+
+if not is_network_sitl:
+    try:
+        import serial.tools.list_ports
+        for p in serial.tools.list_ports.comports():
+            if p.device.upper() == MAVLINK_DEVICE.upper():
+                found_name = resolve_board_from_text(p.description) or resolve_board_from_text(p.product) or resolve_board_from_text(p.manufacturer)
+                if found_name:
+                    detected_fc_hardware = found_name
+                    print(f"[FC Info] Identified FC from USB descriptor: {detected_fc_hardware}")
+                break
+    except Exception:
+        pass
 capabilities_requested = False
 last_version_req_time = 0
 
@@ -522,7 +546,7 @@ async def mavlink_listener():
                     )
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA3, 5, 1)
 
-                    # Request Battery Capacity and Cell Count parameters
+                    # Request Battery Capacity and Cell Count parameters, and Board Type
                     try:
                         connection.mav.param_request_read_send(
                             connection.target_system, connection.target_component,
@@ -531,6 +555,10 @@ async def mavlink_listener():
                         connection.mav.param_request_read_send(
                             connection.target_system, connection.target_component,
                             b'BATT_SER_CELLS', -1
+                        )
+                        connection.mav.param_request_read_send(
+                            connection.target_system, connection.target_component,
+                            b'BRD_TYPE', -1
                         )
                     except Exception:
                         pass
@@ -669,14 +697,10 @@ async def mavlink_listener():
                         cached_heartbeat['firmware'] = detected_firmware
 
                 # Detect FC hardware board name, e.g. 'SpeedyBeeF405WING 003C0028...' or 'SITL 00000000'
-                m_board = re.match(r'^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}', clean_text)
-                if m_board:
-                    b_name = m_board.group(1)
-                    if b_name.upper() == 'SITL':
-                        detected_fc_hardware = 'SITL'
-                    elif not b_name.lower().startswith(('imu', 'rcout', 'ekf', 'baro', 'gps')):
-                        detected_fc_hardware = format_fc_board_name(b_name)
-                    print(f"[FC Info] Hardware Board detected from boot banner: {detected_fc_hardware}")
+                txt_board = resolve_board_from_text(clean_text)
+                if txt_board and txt_board not in ('Hardware FC', 'Unknown FC'):
+                    detected_fc_hardware = txt_board
+                    print(f"[FC Info] Hardware Board detected from text: {detected_fc_hardware}")
                     if cached_heartbeat:
                         cached_heartbeat['fc_hardware'] = detected_fc_hardware
                     if clients:
@@ -687,9 +711,31 @@ async def mavlink_listener():
                         })
                         for c in list(clients):
                             try:
-                                await c.send(fc_json)
+                                asyncio.create_task(c.send(fc_json))
                             except Exception:
                                 pass
+                else:
+                    m_board = re.match(r'^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}', clean_text)
+                    if m_board:
+                        b_name = m_board.group(1)
+                        if b_name.upper() == 'SITL':
+                            detected_fc_hardware = 'SITL'
+                        elif not b_name.lower().startswith(('imu', 'rcout', 'ekf', 'baro', 'gps')):
+                            detected_fc_hardware = format_fc_board_name(b_name)
+                        print(f"[FC Info] Hardware Board detected from boot banner: {detected_fc_hardware}")
+                        if cached_heartbeat:
+                            cached_heartbeat['fc_hardware'] = detected_fc_hardware
+                        if clients:
+                            fc_json = json.dumps({
+                                "type": "FC_INFO",
+                                "fc_hardware": detected_fc_hardware,
+                                "firmware": detected_firmware
+                            })
+                            for c in list(clients):
+                                try:
+                                    asyncio.create_task(c.send(fc_json))
+                                except Exception:
+                                    pass
                 data['type'] = 'STATUSTEXT'
                 data['severity'] = int(getattr(msg, 'severity', 6))
                 data['text'] = clean_text
@@ -746,8 +792,30 @@ async def mavlink_listener():
                 param_id = getattr(msg, 'param_id', '')
                 if isinstance(param_id, bytes):
                     param_id = param_id.decode('utf-8', errors='ignore').strip('\x00')
-                data['param_id'] = str(param_id)
-                data['param_value'] = float(getattr(msg, 'param_value', 0.0))
+                param_id_str = str(param_id).strip()
+                param_val = float(getattr(msg, 'param_value', 0.0))
+                data['param_id'] = param_id_str
+                data['param_value'] = param_val
+
+                if param_id_str.upper() == 'BRD_TYPE':
+                    board_id = int(param_val)
+                    resolved = resolve_board_name(board_id, is_network_sitl=is_network_sitl)
+                    if resolved and resolved not in ('Hardware FC', 'Unknown FC'):
+                        detected_fc_hardware = resolved
+                        print(f"[FC Info] Resolved FC from BRD_TYPE={board_id}: {detected_fc_hardware}")
+                        if cached_heartbeat:
+                            cached_heartbeat['fc_hardware'] = detected_fc_hardware
+                        if clients:
+                            fc_json = json.dumps({
+                                "type": "FC_INFO",
+                                "fc_hardware": detected_fc_hardware,
+                                "firmware": detected_firmware
+                            })
+                            for c in list(clients):
+                                try:
+                                    asyncio.create_task(c.send(fc_json))
+                                except Exception:
+                                    pass
             elif msg.get_type() == 'ESTIMATOR_STATUS':
                 flags = getattr(msg, 'flags', 0)
                 data['flags'] = flags

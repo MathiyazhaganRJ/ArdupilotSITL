@@ -588,11 +588,54 @@ def format_fc_board_name(raw_name):
         return f"Kakute {part.strip()}"
     return name.replace('_', ' ').strip()
 
+
+USB_VID_PID_MAP = {
+    (0x26AC, 0x0011): "Cube Black",
+    (0x26AC, 0x0012): "Cube Orange",
+    (0x26AC, 0x0016): "Cube Black+",
+    (0x26AC, 0x0032): "Cube Orange+",
+    (0x26AC, 0x0034): "Cube Yellow",
+    (0x3162, 0x004B): "Matek F405-Wing",
+    (0x3162, 0x004C): "Matek F765-Wing",
+    (0x3162, 0x004D): "Matek H743-Wing",
+}
+
+
+def resolve_board_from_text(raw_text):
+    if not raw_text:
+        return None
+    s = str(raw_text).strip()
+    if s.upper() == 'SITL':
+        return 'SITL'
+    # Check for known hardware vendor/board names
+    patterns = [
+        (r'\b(SpeedyBee\s*F[0-9]{3}[A-Za-z0-9_\-]*)\b', 'SpeedyBee'),
+        (r'\b(Matek\s*[A-Za-z0-9_\-]+)\b', 'Matek'),
+        (r'\b(Cube\s*[A-Za-z0-9_\-+]+)\b', 'Cube'),
+        (r'\b(Pixhawk\s*[0-9A-Za-z_\-]+)\b', 'Pixhawk'),
+        (r'\b(Kakute\s*[A-Za-z0-9_\-]+)\b', 'Kakute'),
+        (r'\b(Holybro\s*[A-Za-z0-9_\-]+)\b', 'Holybro'),
+        (r'\b(CUAV\s*[A-Za-z0-9_\-]+)\b', 'CUAV'),
+        (r'\b(Omnibus\s*[A-Za-z0-9_\-]+)\b', 'Omnibus'),
+    ]
+    for pattern, brand in patterns:
+        m = re.search(pattern, s, re.IGNORECASE)
+        if m:
+            return format_fc_board_name(m.group(1))
+    return None
+
+
 def resolve_board_name(board_version, vendor_id=0, product_id=0, is_network_sitl=False):
     if is_network_sitl and vendor_id == 0 and product_id == 0 and board_version == 0:
         return 'SITL'
+    # Check direct USB VID:PID
+    if (vendor_id, product_id) in USB_VID_PID_MAP:
+        return USB_VID_PID_MAP[(vendor_id, product_id)]
     if not board_version:
         return 'SITL' if is_network_sitl else 'Hardware FC'
+    # Direct match on integer board ID (e.g. from BRD_TYPE or AP_BOARD_ID)
+    if board_version in BOARD_ID_MAP:
+        return format_fc_board_name(BOARD_ID_MAP[board_version])
     # Check upper 16 bits (standard ChibiOS board ID format: board_id << 16)
     bid_high = (board_version >> 16) & 0xFFFF
     if bid_high in BOARD_ID_MAP:

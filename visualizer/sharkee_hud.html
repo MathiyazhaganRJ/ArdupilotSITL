@@ -2688,11 +2688,11 @@
         <div id="panel-view-telemetry">
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
-                        style="color: var(--danger);">Offline</span></div>
+                        style="color: var(--danger); font-family: 'B612 Mono', monospace; font-weight: 700;">Offline</span></div>
                 <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
-                        style="color: var(--accent); font-weight: 700;">SITL</span></div>
+                        style="color: #00e5ff; font-family: 'B612 Mono', monospace; font-weight: 700;">SITL</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                        style="color: var(--text-primary); font-weight: 700;">---</span></div>
+                        style="color: #f0f6fc; font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
                         style="color: var(--accent);">UNKNOWN</span></div>
                 <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
@@ -2767,8 +2767,9 @@
             </div>
 
             <div class="btn-group">
-                <button id="btn-follow" class="mode-btn btn-active">Follow</button>
-                <button id="btn-free" class="mode-btn">Free</button>
+                <button id="btn-corv-chase" class="mode-btn btn-active" title="Corv-GCS 3D Chase Camera">3P Chase</button>
+                <button id="btn-follow" class="mode-btn" title="Orbit Vehicle">Orbit</button>
+                <button id="btn-free" class="mode-btn" title="Free Camera">Free</button>
             </div>
         </div>
 
@@ -2832,9 +2833,9 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">IMAGERY PROVIDER</span>
                         <select id="sel-map-provider" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                            <option value="esri" selected>ESRI World Imagery (Aviation High-Res)</option>
+                            <option value="google" selected>Google Satellite (Photographic)</option>
                             <option value="google_hybrid">Google Hybrid (Satellite + Roads)</option>
-                            <option value="google">Google Satellite (Photographic)</option>
+                            <option value="esri">ESRI World Imagery (Aviation High-Res)</option>
                         </select>
                     </div>
                     <div>
@@ -2860,6 +2861,14 @@
                 <select id="map-cache-preset" style="width: 100%; box-sizing: border-box; padding: 6px 8px; font-size: 11px; font-weight: 600; margin-bottom: 0px;">
                     <!-- Populated dynamically -->
                 </select>
+                <div style="display: flex; gap: 6px; margin-top: 6px;">
+                    <button id="btn-quick-corv" class="btn-refresh" style="flex: 1; font-size: 10.5px; padding: 5px 6px; font-weight: 700; color: #00e5ff; border-color: rgba(0, 229, 255, 0.4); justify-content: center; background: rgba(0, 229, 255, 0.08);">
+                        Corv 3D Peaks
+                    </button>
+                    <button id="btn-quick-home" class="btn-refresh" style="flex: 1; font-size: 10.5px; padding: 5px 6px; font-weight: 700; color: var(--text-secondary); border-color: var(--border-color); justify-content: center;">
+                        Home Airfield
+                    </button>
+                </div>
                 <div id="map-cache-name-row" style="display: none; gap: 6px; align-items: center; margin-top: 8px;">
                     <input type="text" id="map-cache-name" placeholder="New Airfield Name (e.g. South Strip)" style="flex: 1; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 5px 8px; font-size: 11px;">
                     <button id="btn-save-preset" class="btn-refresh" style="font-size: 11px; padding: 5px 8px; font-weight: 700; color: var(--accent); border-color: var(--accent); white-space: nowrap;">
@@ -4276,9 +4285,9 @@
         const selTerrainScale = document.getElementById('sel-terrain-scale');
         const selTerrainStyle = document.getElementById('sel-terrain-style');
 
-        // Restore 3D preference from localStorage (defaults to true)
-        const savedTerrain3D = localStorage.getItem('pilot_terrain_3d');
-        terrain3DEnabled = (savedTerrain3D !== 'false');
+        // Restore 3D preference (always active by default for photorealistic topography)
+        terrain3DEnabled = true;
+        localStorage.setItem('pilot_terrain_3d', 'true');
         if (chkToggleTerrain3D) chkToggleTerrain3D.checked = terrain3DEnabled;
         if (terrain3DStatus) {
             terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
@@ -4336,7 +4345,12 @@
         const selMapProvider = document.getElementById('sel-map-provider');
         const selMapMode = document.getElementById('sel-map-mode');
         if (selMapProvider) {
-            selMapProvider.value = localStorage.getItem('pilot_map_provider') || 'esri';
+            let storedProvider = localStorage.getItem('pilot_map_provider');
+            if (!storedProvider || storedProvider === 'esri') {
+                storedProvider = 'google';
+                try { localStorage.setItem('pilot_map_provider', 'google'); } catch(e){}
+            }
+            selMapProvider.value = storedProvider;
             selMapProvider.onchange = (e) => {
                 const newProvider = e.target.value;
                 localStorage.setItem('pilot_map_provider', newProvider);
@@ -4529,6 +4543,29 @@
             }
         }
 
+        // Quick Preset Shortcut Buttons (Corv 3D Peaks & Home Airfield)
+        const btnQuickCorv = document.getElementById('btn-quick-corv');
+        if (btnQuickCorv) {
+            btnQuickCorv.onclick = () => {
+                const select = document.getElementById('map-cache-preset');
+                if (select) {
+                    select.value = 'corv_peaks';
+                    select.dispatchEvent(new Event('change'));
+                }
+                if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
+            };
+        }
+        const btnQuickHome = document.getElementById('btn-quick-home');
+        if (btnQuickHome) {
+            btnQuickHome.onclick = () => {
+                const select = document.getElementById('map-cache-preset');
+                if (select) {
+                    select.value = 'default';
+                    select.dispatchEvent(new Event('change'));
+                }
+            };
+        }
+
         const mapPresetEl = document.getElementById('map-cache-preset');
         if (mapPresetEl) {
             mapPresetEl.onchange = (e) => {
@@ -4570,6 +4607,17 @@
                         updateMapEstimate();
                         refreshCacheStatus();
                         if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
+
+                        if (preset.id === 'corv_peaks') {
+                            // Position aircraft soaring at cruise altitude above mountain ridge in Corv 3P Chase view
+                            if (typeof vtolGroup !== 'undefined') {
+                                vtolGroup.position.set(0, 240, 0);
+                                vtolGroup.rotation.set(0, Math.PI * 0.75, 0);
+                            }
+                            if (typeof setCameraMode === 'function') {
+                                setCameraMode('corv_chase');
+                            }
+                        }
                     }
                 }
             };
@@ -5535,7 +5583,7 @@
                 // Atmospheric aeronautical sky and horizon haze matching Corv-GCS
                 const skyHex = isDark ? 0x0a1422 : 0x78abce;
                 scene.background = new THREE.Color(skyHex);
-                scene.fog = new THREE.FogExp2(skyHex, 0.000045);
+                scene.fog = new THREE.Fog(skyHex, 14000, 36000);
             } else {
                 const bgHex = isDark ? 0x000000 : 0xf5f5f7;
                 scene.background = new THREE.Color(bgHex);
@@ -5582,6 +5630,33 @@
         const vtolGroup = new THREE.Group();
         vtolGroup.rotation.order = 'YXZ';
         scene.add(vtolGroup);
+
+        // ==========================================
+        // CORV-GCS GROUND ALTITUDE LEAD LASER LINE & TARGET RING
+        // ==========================================
+        const groundLeadGeo = new THREE.BufferGeometry();
+        const groundLeadCoords = new Float32Array([0, 0, 0, 0, -10, 0]);
+        groundLeadGeo.setAttribute('position', new THREE.BufferAttribute(groundLeadCoords, 3));
+        const groundLeadMat = new THREE.LineBasicMaterial({
+            color: 0xff3b30,
+            linewidth: 2,
+            transparent: true,
+            opacity: 0.95
+        });
+        const groundLeadLine = new THREE.Line(groundLeadGeo, groundLeadMat);
+        groundLeadLine.frustumCulled = false;
+        scene.add(groundLeadLine);
+
+        const groundRingGeo = new THREE.RingGeometry(1.2, 2.0, 32);
+        groundRingGeo.rotateX(-Math.PI / 2);
+        const groundRingMat = new THREE.MeshBasicMaterial({
+            color: 0xff3b30,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.85
+        });
+        const groundContactRing = new THREE.Mesh(groundRingGeo, groundRingMat);
+        scene.add(groundContactRing);
 
         const matBody = new THREE.MeshPhongMaterial({ color: 0x0071e3 });
         // matCarbon moved below CONFIG so it can use CONFIG.vtolBoomColor
@@ -6663,18 +6738,36 @@
             uiFills.push(fill); uiPwms.push(pwmVal);
         }
 
-        let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
-        document.getElementById('btn-follow').onclick = () => {
-            cameraMode = 'follow';
-            document.getElementById('btn-follow').classList.add('btn-active');
-            document.getElementById('btn-free').classList.remove('btn-active');
+        let cameraMode = 'corv_chase', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
+        const btnCorvChase = document.getElementById('btn-corv-chase');
+        const btnFollow = document.getElementById('btn-follow');
+        const btnFree = document.getElementById('btn-free');
+
+        function setCameraMode(mode) {
+            cameraMode = mode;
+            if (btnCorvChase) btnCorvChase.classList.toggle('btn-active', mode === 'corv_chase');
+            if (btnFollow) btnFollow.classList.toggle('btn-active', mode === 'follow');
+            if (btnFree) btnFree.classList.toggle('btn-active', mode === 'free');
+
             if (typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
                 controls.target.copy(vtolGroup.position);
-                camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 3.0, vtolGroup.position.z + 6.0);
+                if (mode === 'corv_chase') {
+                    const yaw = vtolGroup.rotation.y || 0;
+                    camera.position.set(
+                        vtolGroup.position.x - Math.sin(yaw) * 55.0,
+                        vtolGroup.position.y + 24.0,
+                        vtolGroup.position.z - Math.cos(yaw) * 55.0
+                    );
+                } else if (mode === 'follow') {
+                    camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 16.0, vtolGroup.position.z + 32.0);
+                }
                 controls.update();
             }
-        };
-        document.getElementById('btn-free').onclick = () => { cameraMode = 'free'; document.getElementById('btn-free').classList.add('btn-active'); document.getElementById('btn-follow').classList.remove('btn-active'); };
+        }
+
+        if (btnCorvChase) btnCorvChase.onclick = () => setCameraMode('corv_chase');
+        if (btnFollow) btnFollow.onclick = () => setCameraMode('follow');
+        if (btnFree) btnFree.onclick = () => setCameraMode('free');
 
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
@@ -6688,6 +6781,11 @@
         // Unified Geodetic EKF Origin Lock - Anchors map, waypoints, and vehicle to exact same coordinate
         function initEkfHome(hLat, hLon) {
             if (typeof hLat !== 'number' || typeof hLon !== 'number' || Math.abs(hLat) < 0.001) return;
+
+            const presetVal = document.getElementById('map-cache-preset')?.value || 'default';
+            if (presetVal !== 'default' && presetVal !== 'telemetry') {
+                return; // User has selected a custom airfield or mountain peak preset
+            }
 
             if (ekfHomeInitialized && homeLat !== null && homeLon !== null) {
                 const d = (typeof calcGeodeticDistance === 'function') ? calcGeodeticDistance(homeLat, homeLon, hLat, hLon) : 0;
@@ -6721,10 +6819,13 @@
         // ==========================================
         const mapGroup = new THREE.Group();
         scene.add(mapGroup);
+        const horizonGroup = new THREE.Group();
+        scene.add(horizonGroup);
         const airspaceRingGroup = new THREE.Group();
         airspaceRingGroup.visible = false; // Only visible while AIRSPACE & MAP tab is active
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
+        const horizonTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
         let currentMapZoom = null;
         let currentMapRadius = null;
@@ -6862,7 +6963,7 @@
             const modeEl = document.getElementById('sel-map-mode');
             const providerEl = document.getElementById('sel-map-provider');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
-            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'google');
             const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
             const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
@@ -6912,6 +7013,21 @@
                     mapGroup.remove(child);
                 }
                 mapTiles.clear();
+
+                if (typeof horizonGroup !== 'undefined') {
+                    horizonGroup.position.set(0, 0, 0);
+                    while (horizonGroup.children.length > 0) {
+                        const child = horizonGroup.children[0];
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }
+                        horizonGroup.remove(child);
+                    }
+                    horizonTiles.clear();
+                }
+
                 if (typeof initHomeElevation === 'function') initHomeElevation(lat, lon);
             } else {
                 // Throttle incremental checks during flight (~50m threshold)
@@ -6938,9 +7054,8 @@
             const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
 
             // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
-            // Locks meshes to a fixed 7x7 grid (49 tiles) or 9x9 (81 tiles for wide areas)
-            // Instantaneous loading and locked 60 FPS
-            const gridSpan = (radiusKm > 8.0 && activeZoom === 14) ? 4 : 3;
+            // 9x9 grid (81 tiles) provides continuous 5.5km to 11km high-fidelity coverage
+            const gridSpan = 4;
 
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
                 for (let dy = -gridSpan; dy <= gridSpan; dy++) {
@@ -7068,6 +7183,134 @@
                     }
                 }
             }
+
+            // ==========================================
+            // PANORAMIC HORIZON VISTA GRID (35 KM EXTENT)
+            // Multi-scale seamless terrain with exact GPU bounding mask
+            // ==========================================
+            const horizonZoom = 13;
+            const horizonTileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, horizonZoom);
+            const homeHorizonXFloat = lon2tileFloat(lon, horizonZoom);
+            const homeHorizonYFloat = lat2tileFloat(lat, horizonZoom);
+            const currentHorizonX = Math.floor(homeHorizonXFloat);
+            const currentHorizonY = Math.floor(homeHorizonYFloat);
+            const horizonSpan = 4; // 9x9 tiles = ~43.5 km across, ~22 km radius
+
+            // Calculate inner high-resolution grid bounding rectangle in world meters
+            const innerMinX = ((currentTileX - gridSpan) - homeTileXFloat) * tileSize;
+            const innerMaxX = ((currentTileX + gridSpan + 1) - homeTileXFloat) * tileSize;
+            const innerMinZ = ((currentTileY - gridSpan) - homeTileYFloat) * tileSize;
+            const innerMaxZ = ((currentTileY + gridSpan + 1) - homeTileYFloat) * tileSize;
+            const uInnerBoundsVec = new THREE.Vector4(innerMinX + 15.0, innerMaxX - 15.0, innerMinZ + 15.0, innerMaxZ - 15.0);
+
+            for (let hdx = -horizonSpan; hdx <= horizonSpan; hdx++) {
+                for (let hdy = -horizonSpan; hdy <= horizonSpan; hdy++) {
+                    const htx = currentHorizonX + hdx;
+                    const hty = currentHorizonY + hdy;
+                    const hKey = `${horizonZoom}_${htx}_${hty}_${provider}_${activePreset}`;
+
+                    if (!horizonTiles.has(hKey)) {
+                        horizonTiles.set(hKey, true);
+
+                        const hMeshX = ((htx + 0.5) - homeHorizonXFloat) * horizonTileSize;
+                        const hMeshZ = ((hty + 0.5) - homeHorizonYFloat) * horizonTileSize;
+                        const hMinX = hMeshX - horizonTileSize * 0.5;
+                        const hMaxX = hMeshX + horizonTileSize * 0.5;
+                        const hMinZ = hMeshZ - horizonTileSize * 0.5;
+                        const hMaxZ = hMeshZ + horizonTileSize * 0.5;
+
+                        // If tile is completely inside inner high-res mesh, skip creation entirely
+                        if (hMinX >= innerMinX && hMaxX <= innerMaxX && hMinZ >= innerMinZ && hMaxZ <= innerMaxZ) {
+                            continue;
+                        }
+
+                        const hmt = Math.abs(htx + hty) % 4;
+                        const hLocalUrl = `/tiles/${horizonZoom}/${htx}/${hty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                        let hRemoteUrl;
+                        if (provider === 'esri') {
+                            hRemoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${horizonZoom}/${hty}/${htx}`;
+                        } else if (provider === 'google_hybrid') {
+                            hRemoteUrl = `https://mt${hmt}.google.com/vt/lyrs=y&x=${htx}&y=${hty}&z=${horizonZoom}`;
+                        } else {
+                            hRemoteUrl = `https://mt${hmt}.google.com/vt/lyrs=s&x=${htx}&y=${hty}&z=${horizonZoom}`;
+                        }
+
+                        const hGeo = new THREE.PlaneGeometry(horizonTileSize, horizonTileSize, 32, 32);
+                        const hMat = new THREE.MeshLambertMaterial({
+                            color: new THREE.Color(0x2e5c2b),
+                            side: THREE.FrontSide,
+                            polygonOffset: true,
+                            polygonOffsetFactor: 2.0,
+                            polygonOffsetUnits: 2.0
+                        });
+
+                        // Corv-GCS Directional Sun Hillshading Shader with GPU-disarded inner mask
+                        hMat.onBeforeCompile = (shader) => {
+                            shader.uniforms.uSunDir = { value: new THREE.Vector3(0.55, 0.75, -0.35).normalize() };
+                            shader.uniforms.uSunlightOn = { value: 1.0 };
+                            shader.uniforms.uTerrainContrast = { value: 1.15 };
+                            shader.uniforms.uTerrainAmbient = { value: 0.45 };
+                            shader.uniforms.uInnerBounds = { value: uInnerBoundsVec };
+
+                            shader.vertexShader = shader.vertexShader.replace(
+                                '#include <common>',
+                                `#include <common>\nvarying vec3 vTerrainWorldNormal;\nvarying vec3 vTerrainWorldPos;`
+                            ).replace(
+                                '#include <beginnormal_vertex>',
+                                `#include <beginnormal_vertex>\nvTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                            ).replace(
+                                '#include <begin_vertex>',
+                                `#include <begin_vertex>\nvTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+                            );
+
+                            shader.fragmentShader = shader.fragmentShader.replace(
+                                '#include <common>',
+                                `#include <common>\nuniform vec3 uSunDir;\nuniform float uSunlightOn;\nuniform float uTerrainContrast;\nuniform float uTerrainAmbient;\nuniform vec4 uInnerBounds;\nvarying vec3 vTerrainWorldNormal;\nvarying vec3 vTerrainWorldPos;`
+                            ).replace(
+                                '#include <color_fragment>',
+                                `#include <color_fragment>\nif (vTerrainWorldPos.x >= uInnerBounds.x && vTerrainWorldPos.x <= uInnerBounds.y && vTerrainWorldPos.z >= uInnerBounds.z && vTerrainWorldPos.z <= uInnerBounds.w) {\n    discard;\n}\nif (uSunlightOn > 0.5) {\n    float sunDot = max(0.0, dot(normalize(vTerrainWorldNormal), normalize(uSunDir)));\n    diffuseColor.rgb *= (uTerrainAmbient + uTerrainContrast * sunDot);\n}`
+                            );
+                        };
+
+                        const hMesh = new THREE.Mesh(hGeo, hMat);
+                        hMesh.renderOrder = -2;
+                        hMesh.rotation.x = -Math.PI / 2;
+                        hMesh.position.x = hMeshX;
+                        hMesh.position.z = hMeshZ;
+                        hMesh.position.y = 0.0;
+                        hMesh.userData = { tx: htx, ty: hty, zoom: horizonZoom, displaced: false };
+                        horizonGroup.add(hMesh);
+
+                        // Apply 3D DEM elevation displacement to horizon tile
+                        applyDemElevationToMesh(hMesh, horizonZoom, htx, hty);
+
+                        // Asynchronously load satellite texture
+                        const hLoader = new THREE.TextureLoader();
+                        hLoader.setCrossOrigin('anonymous');
+                        function attachHorizonTex(tex) {
+                            if (thisGen !== mapGeneration) { tex.dispose(); return; }
+                            tex.anisotropy = 4;
+                            tex.generateMipmaps = true;
+                            tex.minFilter = THREE.LinearMipmapLinearFilter;
+                            tex.magFilter = THREE.LinearFilter;
+                            tex.encoding = THREE.sRGBEncoding;
+                            hMat.color.setHex(0xffffff);
+                            hMat.map = tex;
+                            hMat.needsUpdate = true;
+                        }
+
+                        if (mapMode === 'direct') {
+                            hLoader.load(hRemoteUrl, attachHorizonTex, undefined, () => {});
+                        } else {
+                            hLoader.load(hLocalUrl, attachHorizonTex, undefined, () => {
+                                if (mapMode !== 'offline') {
+                                    hLoader.load(hRemoteUrl, attachHorizonTex, undefined, () => {});
+                                }
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         // ==========================================
@@ -7082,8 +7325,16 @@
         demCanvas.height = 256;
         const demCtx = demCanvas.getContext('2d', { willReadFrequently: true });
 
+        function decodeTerrariumElev(raw, idx) {
+            if (!raw || idx + 3 >= raw.length || raw[idx + 3] < 64) return 0.0;
+            const h = (raw[idx] * 256.0 + raw[idx + 1] + (raw[idx + 2] / 256.0)) - 32768.0;
+            if (h < -500.0 || h > 9000.0) return 0.0;
+            return h;
+        }
+
         // Bilinear DEM elevation sampler: converts Terrarium RGB to floating elevation with C1 continuity
         function sampleTerrariumBilinear(raw, u, v) {
+            if (!raw) return 0.0;
             const fx = Math.max(0, Math.min(255, u * 255));
             const fy = Math.max(0, Math.min(255, v * 255));
             const x0 = Math.floor(fx);
@@ -7098,10 +7349,10 @@
             const idx01 = (y1 * 256 + x0) * 4;
             const idx11 = (y1 * 256 + x1) * 4;
 
-            const e00 = (raw[idx00] * 256.0 + raw[idx00 + 1] + (raw[idx00 + 2] / 256.0)) - 32768.0;
-            const e10 = (raw[idx10] * 256.0 + raw[idx10 + 1] + (raw[idx10 + 2] / 256.0)) - 32768.0;
-            const e01 = (raw[idx01] * 256.0 + raw[idx01 + 1] + (raw[idx01 + 2] / 256.0)) - 32768.0;
-            const e11 = (raw[idx11] * 256.0 + raw[idx11 + 1] + (raw[idx11 + 2] / 256.0)) - 32768.0;
+            const e00 = decodeTerrariumElev(raw, idx00);
+            const e10 = decodeTerrariumElev(raw, idx10);
+            const e01 = decodeTerrariumElev(raw, idx01);
+            const e11 = decodeTerrariumElev(raw, idx11);
 
             return (1.0 - wx) * (1.0 - wy) * e00 +
                    wx * (1.0 - wy) * e10 +
@@ -7133,8 +7384,12 @@
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => {
-                demCtx.drawImage(img, 0, 0);
-                const data = demCtx.getImageData(0, 0, 256, 256).data;
+                const cvs = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(256, 256) : document.createElement('canvas');
+                cvs.width = 256;
+                cvs.height = 256;
+                const ctx = cvs.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0, 0, 256, 256).data;
                 demCache.set(demKey, data);
                 sampleAndApply(data);
             };
@@ -7159,8 +7414,12 @@
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => {
-                demCtx.drawImage(img, 0, 0);
-                const imgData = demCtx.getImageData(0, 0, 256, 256).data;
+                const cvs = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(256, 256) : document.createElement('canvas');
+                cvs.width = 256;
+                cvs.height = 256;
+                const ctx = cvs.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0);
+                const imgData = ctx.getImageData(0, 0, 256, 256).data;
                 demCache.set(demKey, imgData);
                 displaceMeshVertices(mesh, imgData, zoomDiff, tx, ty);
             };
@@ -7182,15 +7441,17 @@
             const subMask = subSpan - 1;
             const subX = tx & subMask;
             const subY = ty & subMask;
-            const nx = TILE_SEGS + 1;
-            const ny = TILE_SEGS + 1;
+            const segsX = (mesh.geometry.parameters && mesh.geometry.parameters.widthSegments) ? mesh.geometry.parameters.widthSegments : TILE_SEGS;
+            const segsY = (mesh.geometry.parameters && mesh.geometry.parameters.heightSegments) ? mesh.geometry.parameters.heightSegments : TILE_SEGS;
+            const nx = segsX + 1;
+            const ny = segsY + 1;
             const refHomeMSL = (homeElevationMSL !== null) ? homeElevationMSL : 0;
 
             for (let iy = 0; iy < ny; iy++) {
                 for (let ix = 0; ix < nx; ix++) {
                     const vIdx = iy * nx + ix;
-                    const u = (subX + (ix / TILE_SEGS)) / subSpan;
-                    const v = (subY + (iy / TILE_SEGS)) / subSpan;
+                    const u = (subX + (ix / segsX)) / subSpan;
+                    const v = (subY + (iy / segsY)) / subSpan;
                     const elevMSL = sampleTerrariumBilinear(raw, u, v);
                     const relElev = (elevMSL - refHomeMSL) * terrainExaggeration;
                     pos.setZ(vIdx, relElev);
@@ -7216,6 +7477,22 @@
                     }
                 }
             });
+            if (typeof horizonGroup !== 'undefined') {
+                horizonGroup.children.forEach(mesh => {
+                    if (mesh.userData && mesh.userData.tx !== undefined) {
+                        const z = mesh.userData.zoom;
+                        const demZ = Math.min(z, 15);
+                        const zoomDiff = z - demZ;
+                        const demX = mesh.userData.tx >> zoomDiff;
+                        const demY = mesh.userData.ty >> zoomDiff;
+                        const key = `${demZ}_${demX}_${demY}`;
+                        const raw = demCache.get(key);
+                        if (raw) {
+                            displaceMeshVertices(mesh, raw, zoomDiff, mesh.userData.tx, mesh.userData.ty);
+                        }
+                    }
+                });
+            }
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
@@ -7236,8 +7513,24 @@
             const demX = tx >> zoomDiff;
             const demY = ty >> zoomDiff;
             const key = `${demZ}_${demX}_${demY}`;
-            const raw = demCache.get(key);
-            if (!raw) return 0;
+            let raw = demCache.get(key);
+            if (!raw) {
+                // Check if zoom 13 horizon DEM tile is in cache
+                const diff13 = z - 13;
+                if (diff13 > 0) {
+                    const x13 = tx >> diff13;
+                    const y13 = ty >> diff13;
+                    raw = demCache.get(`13_${x13}_${y13}`);
+                    if (raw) {
+                        const span13 = 1 << diff13;
+                        const u = ((tx & (span13 - 1)) + fracX) / span13;
+                        const v = ((ty & (span13 - 1)) + fracY) / span13;
+                        const elevMSL = sampleTerrariumBilinear(raw, u, v);
+                        return (elevMSL - homeElevationMSL) * terrainExaggeration;
+                    }
+                }
+                return 0;
+            }
 
             const subSpan = 1 << zoomDiff;
             const subMask = subSpan - 1;
@@ -7262,6 +7555,19 @@
                     mesh.material.needsUpdate = true;
                 }
             });
+            if (typeof horizonGroup !== 'undefined') {
+                horizonGroup.children.forEach(mesh => {
+                    if (mesh.material) {
+                        mesh.material.wireframe = enabled;
+                        if (enabled) {
+                            mesh.material.color = new THREE.Color(0x00e676);
+                        } else {
+                            mesh.material.color = new THREE.Color(0xffffff);
+                        }
+                        mesh.material.needsUpdate = true;
+                    }
+                });
+            }
         }
 
         // Initialize 3D Satellite Map immediately with default airfield coordinates (so terrain is visible with or without SITL!)
@@ -7689,10 +7995,12 @@
             const formatted = formatFcBoardName(hardwareName);
             currentFcHardwareName = formatted;
             fcEl.innerText = formatted;
+            fcEl.style.fontFamily = "'B612 Mono', monospace";
+            fcEl.style.fontWeight = "700";
             if (formatted.toUpperCase() === 'SITL') {
-                fcEl.style.color = 'var(--accent)';
+                fcEl.style.color = '#00e5ff'; // Aviation Cyan for SITL
             } else {
-                fcEl.style.color = 'var(--success)';
+                fcEl.style.color = '#30d158'; // Crisp Aviation Emerald Green for real hardware
             }
         }
 
@@ -7700,7 +8008,9 @@
             const fwEl = document.getElementById('firmware');
             if (!fwEl || !firmwareStr || firmwareStr.startsWith('Type ') || firmwareStr === '---') return;
             fwEl.innerText = firmwareStr;
-            fwEl.style.color = 'var(--text-primary)';
+            fwEl.style.color = '#f0f6fc'; // High-contrast Aviation White
+            fwEl.style.fontFamily = "'B612 Mono', monospace";
+            fwEl.style.fontWeight = "700";
         }
 
         ws.onopen = () => {
@@ -7943,10 +8253,10 @@
                     trailPositions[2] = currentTrackPos.z;
                     trailColors[0] = normalTrackColor.r; trailColors[1] = normalTrackColor.g; trailColors[2] = normalTrackColor.b;
                     
-                    // Directly focus and follow the airplane in close chase view upon SITL connection
+                    // Directly focus and follow the airplane in Corv-GCS 3P chase view upon SITL connection
                     if (typeof controls !== 'undefined' && typeof camera !== 'undefined') {
                         controls.target.copy(rawTargetPos);
-                        camera.position.set(rawTargetPos.x, rawTargetPos.y + 3.0, rawTargetPos.z + 6.0);
+                        camera.position.set(rawTargetPos.x, rawTargetPos.y + 24.0, rawTargetPos.z + 55.0);
                         camera.lookAt(rawTargetPos);
                         controls.update();
                     }
@@ -8162,7 +8472,9 @@
             lastRenderTime = now;
 
             // Continuous dynamic map streaming during flight (checks every 2 seconds when following vehicle)
-            if (now - lastPeriodicMapUpdate > 2000 && currentPlaneLat && currentPlaneLon && cameraMode === 'follow') {
+            const presetVal = document.getElementById('map-cache-preset')?.value || 'default';
+            const isPresetLocked = (presetVal !== 'default' && presetVal !== 'telemetry');
+            if (!isPresetLocked && now - lastPeriodicMapUpdate > 2000 && currentPlaneLat && currentPlaneLon && (cameraMode === 'follow' || cameraMode === 'corv_chase')) {
                 lastPeriodicMapUpdate = now;
                 updateMap(currentPlaneLat, currentPlaneLon, false);
             }
@@ -8183,13 +8495,41 @@
             let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
             vtolGroup.setRotationFromQuaternion(qFinal);
 
-            // Dynamic Floor: Automatically lower the map if the plane flies into a valley, 
-            // ensuring the plane physically never sinks underneath the map imagery.
-            if (vtolGroup.position.y < mapGroup.position.y) {
-                mapGroup.position.y = vtolGroup.position.y;
+            // Dynamic Floor: Ensure map meshes stay anchored at true datum origin (y = 0.0)
+            mapGroup.position.y = 0.0;
+            if (typeof horizonGroup !== 'undefined') horizonGroup.position.y = 0.0;
+
+            // Update Corv-GCS Ground Altitude Lead Laser Line & Target Ring
+            if (typeof groundLeadLine !== 'undefined' && typeof vtolGroup !== 'undefined') {
+                const px = vtolGroup.position.x;
+                const py = vtolGroup.position.y;
+                const pz = vtolGroup.position.z;
+                const gElev = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(px, pz) : 0;
+
+                const leadAttr = groundLeadLine.geometry.attributes.position;
+                leadAttr.setXYZ(0, px, py, pz);
+                leadAttr.setXYZ(1, px, gElev, pz);
+                leadAttr.needsUpdate = true;
+
+                if (typeof groundContactRing !== 'undefined') {
+                    groundContactRing.position.set(px, gElev + 0.15, pz);
+                }
             }
 
-            if (cameraMode === 'follow') {
+            if (cameraMode === 'corv_chase') {
+                // Cinematic Corv-GCS Third-Person Chase Camera: 55m behind, 24m above, looking forward across terrain
+                const yaw = vtolGroup.rotation.y || 0;
+                const chaseDist = 55.0;
+                const chaseHeight = 24.0;
+                const desiredX = vtolGroup.position.x - Math.sin(yaw) * chaseDist;
+                const desiredZ = vtolGroup.position.z - Math.cos(yaw) * chaseDist;
+                const desiredY = vtolGroup.position.y + chaseHeight;
+
+                camera.position.x += (desiredX - camera.position.x) * 0.08;
+                camera.position.y += (desiredY - camera.position.y) * 0.08;
+                camera.position.z += (desiredZ - camera.position.z) * 0.08;
+                controls.target.lerp(vtolGroup.position, 0.1);
+            } else if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
                 camera.position.copy(controls.target).add(offset);
