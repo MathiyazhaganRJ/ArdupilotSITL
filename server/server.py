@@ -46,9 +46,20 @@ else:
 clients = set()
 heartbeat_received = False
 is_network_sitl = MAVLINK_DEVICE.startswith(('udp', 'tcp')) and any(h in MAVLINK_DEVICE for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
+
+try:
+    from server.board_types import resolve_board_name, format_fc_board_name
+except ImportError:
+    try:
+        from board_types import resolve_board_name, format_fc_board_name
+    except ImportError:
+        def resolve_board_name(*args, **kwargs): return "SITL" if is_network_sitl else "Hardware FC"
+        def format_fc_board_name(name): return name
+
 detected_fc_hardware = "SITL" if is_network_sitl else "Hardware FC"
 detected_firmware = "ArduPlane"
 capabilities_requested = False
+last_version_req_time = 0
 
 class MissionHandler:
     def __init__(self, mav_conn):
@@ -341,7 +352,7 @@ cached_heartbeat = None
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat, detected_firmware, detected_fc_hardware
+    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat, detected_firmware, detected_fc_hardware, last_version_req_time
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
@@ -389,6 +400,7 @@ async def mavlink_listener():
 
                 if not heartbeat_received:
                     heartbeat_received = True
+                    last_version_req_time = time.time()
                     print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to {detected_fc_hardware}.")
                     # Request Autopilot Version & Capabilities (Msg 148)
                     try:
@@ -405,6 +417,21 @@ async def mavlink_listener():
                         )
                     except Exception as e:
                         pass
+                else:
+                    # Periodically re-query Autopilot Version if hardware identity is not yet fully resolved
+                    if not is_network_sitl and detected_fc_hardware in ('Hardware FC', 'Unknown FC'):
+                        now_t = time.time()
+                        if now_t - last_version_req_time > 3.0:
+                            last_version_req_time = now_t
+                            try:
+                                connection.mav.command_long_send(
+                                    connection.target_system, connection.target_component,
+                                    mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
+                                    mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
+                                    0, 0, 0, 0, 0, 0
+                                )
+                            except Exception:
+                                pass
                     # Request data streams
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
@@ -598,16 +625,31 @@ async def mavlink_listener():
                 vendor_id = getattr(msg, 'vendor_id', 0)
                 product_id = getattr(msg, 'product_id', 0)
                 board_ver = getattr(msg, 'board_version', 0)
-                if vendor_id == 0 and product_id == 0 and board_ver == 0 and is_network_sitl:
+                resolved = resolve_board_name(board_ver, vendor_id, product_id, is_network_sitl)
+                if resolved and resolved != 'Hardware FC':
+                    detected_fc_hardware = resolved
+                    print(f"[FC Info] Autopilot Hardware resolved: {detected_fc_hardware} (board_version={board_ver})")
+                elif vendor_id == 0 and product_id == 0 and board_ver == 0 and is_network_sitl:
                     detected_fc_hardware = "SITL"
                 data['type'] = 'FC_INFO'
                 data['fc_hardware'] = detected_fc_hardware
                 data['firmware'] = detected_firmware
 
-
                 if cached_heartbeat:
                     cached_heartbeat['fc_hardware'] = detected_fc_hardware
                     cached_heartbeat['firmware'] = detected_firmware
+
+                if clients:
+                    fc_json = json.dumps({
+                        "type": "FC_INFO",
+                        "fc_hardware": detected_fc_hardware,
+                        "firmware": detected_firmware
+                    })
+                    for c in list(clients):
+                        try:
+                            await c.send(fc_json)
+                        except Exception:
+                            pass
 
             elif msg.get_type() == 'STATUSTEXT':
                 raw_text = getattr(msg, 'text', '')
@@ -630,10 +672,21 @@ async def mavlink_listener():
                     if b_name.upper() == 'SITL':
                         detected_fc_hardware = 'SITL'
                     elif not b_name.lower().startswith(('imu', 'rcout', 'ekf', 'baro', 'gps')):
-                        detected_fc_hardware = b_name
-                    print(f"[FC Info] Hardware Board detected: {detected_fc_hardware}")
+                        detected_fc_hardware = format_fc_board_name(b_name)
+                    print(f"[FC Info] Hardware Board detected from boot banner: {detected_fc_hardware}")
                     if cached_heartbeat:
                         cached_heartbeat['fc_hardware'] = detected_fc_hardware
+                    if clients:
+                        fc_json = json.dumps({
+                            "type": "FC_INFO",
+                            "fc_hardware": detected_fc_hardware,
+                            "firmware": detected_firmware
+                        })
+                        for c in list(clients):
+                            try:
+                                await c.send(fc_json)
+                            except Exception:
+                                pass
                 data['type'] = 'STATUSTEXT'
                 data['severity'] = int(getattr(msg, 'severity', 6))
                 data['text'] = clean_text
