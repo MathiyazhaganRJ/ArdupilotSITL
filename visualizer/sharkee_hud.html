@@ -8237,7 +8237,7 @@
         // ==========================================
         // 3D TOPOGRAPHIC DEM ELEVATION ENGINE (CORV-GCS)
         // ==========================================
-        const TILE_SEGS = 48; // 48x48 segments per tile (2304 quads / 4608 faces for razor-sharp mountain ridgelines)
+        const TILE_SEGS = 40; // 40x40 segments per tile (1600 quads for buttery smooth 60 FPS performance)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
         let homeElevationMSL = null;
 
@@ -8348,9 +8348,19 @@
         }
 
         // ==========================================
-        // SEAMLESS EDGE SKIRTS & BOUNDARY STITCHING
-        // Eliminates inter-tile gaps, seam lines, and lighting creases
         // ==========================================
+        // SEAMLESS EXTERIOR PERIMETER SKIRTS & FAST EDGE SNAPPING
+        // Internal tiles have zero skirts (permanently eliminates trenches/creases)
+        // Outer boundaries drop subtle 35m skirt to eliminate horizon sky leaks
+        // ==========================================
+        let skirtUpdateTimer = null;
+        function scheduleSkirtUpdate() {
+            if (skirtUpdateTimer) clearTimeout(skirtUpdateTimer);
+            skirtUpdateTimer = setTimeout(() => {
+                updateAllTileSkirts();
+            }, 250);
+        }
+
         function updateAllTileSkirts() {
             if (!terrain3DEnabled) {
                 mapGroup.children.forEach(mesh => {
@@ -8363,9 +8373,16 @@
                 return;
             }
 
+            const tileMap = new Map();
+            mapGroup.children.forEach(m => {
+                if (m.userData && m.userData.tx !== undefined && m.userData.displaced) {
+                    tileMap.set(m.userData.tx + '_' + m.userData.ty, m);
+                }
+            });
+
             const segs = TILE_SEGS;
             const nx = segs + 1;
-            const skirtDepth = 450;
+            const skirtDepth = 35; // Subtle 35m outer rim; prevents sky leaks, never towers into sky
 
             mapGroup.children.forEach(mesh => {
                 if (!mesh.userData || mesh.userData.tx === undefined || !mesh.userData.displaced) {
@@ -8377,16 +8394,33 @@
                     return;
                 }
 
-                // Drop skirts around all 4 edges: North, East, South, West
+                const tx = mesh.userData.tx;
+                const ty = mesh.userData.ty;
+
+                // CRITICAL: Skirts are ONLY created on true EXTERIOR boundaries facing empty space!
+                // Internal adjacent tiles NEVER get skirts, eliminating internal trenches/creases entirely.
                 const boundaryEdgeIndices = [];
-                // North edge (iy = 0)
-                for (let ix = 0; ix < segs; ix++) boundaryEdgeIndices.push(0 * nx + ix, 0 * nx + (ix + 1));
-                // East edge (ix = segs)
-                for (let iy = 0; iy < segs; iy++) boundaryEdgeIndices.push(iy * nx + segs, (iy + 1) * nx + segs);
-                // South edge (iy = segs)
-                for (let ix = segs; ix > 0; ix--) boundaryEdgeIndices.push(segs * nx + ix, segs * nx + (ix - 1));
-                // West edge (ix = 0)
-                for (let iy = segs; iy > 0; iy--) boundaryEdgeIndices.push(iy * nx + 0, (iy - 1) * nx + 0);
+                if (!tileMap.has(tx + '_' + (ty - 1))) {
+                    for (let ix = 0; ix < segs; ix++) boundaryEdgeIndices.push(0 * nx + ix, 0 * nx + (ix + 1));
+                }
+                if (!tileMap.has((tx + 1) + '_' + ty)) {
+                    for (let iy = 0; iy < segs; iy++) boundaryEdgeIndices.push(iy * nx + segs, (iy + 1) * nx + segs);
+                }
+                if (!tileMap.has(tx + '_' + (ty + 1))) {
+                    for (let ix = segs; ix > 0; ix--) boundaryEdgeIndices.push(segs * nx + ix, segs * nx + (ix - 1));
+                }
+                if (!tileMap.has((tx - 1) + '_' + ty)) {
+                    for (let iy = segs; iy > 0; iy--) boundaryEdgeIndices.push(iy * nx + 0, (iy - 1) * nx + 0);
+                }
+
+                if (boundaryEdgeIndices.length === 0) {
+                    if (mesh.userData.skirtMesh) {
+                        mesh.remove(mesh.userData.skirtMesh);
+                        if (mesh.userData.skirtMesh.geometry) mesh.userData.skirtMesh.geometry.dispose();
+                        delete mesh.userData.skirtMesh;
+                    }
+                    return;
+                }
 
                 const pos = mesh.geometry.attributes.position;
                 const segmentCount = boundaryEdgeIndices.length / 2;
@@ -8430,9 +8464,8 @@
                 const skirtGeo = new THREE.BufferGeometry();
                 skirtGeo.setAttribute('position', new THREE.BufferAttribute(skirtPos, 3));
                 skirtGeo.setIndex(skirtIndices);
-                skirtGeo.computeVertexNormals();
 
-                const skirtMat = new THREE.MeshBasicMaterial({ color: 0x141f17, side: THREE.DoubleSide, depthWrite: true });
+                const skirtMat = new THREE.MeshBasicMaterial({ color: 0x1a261c, depthWrite: true });
                 const skirtMesh = new THREE.Mesh(skirtGeo, skirtMat);
                 skirtMesh.renderOrder = -2;
                 mesh.add(skirtMesh);
@@ -8448,215 +8481,56 @@
             const segs = (meshA.geometry.parameters && meshA.geometry.parameters.widthSegments) ? meshA.geometry.parameters.widthSegments : TILE_SEGS;
             const nx = segs + 1;
             const posA = meshA.geometry.attributes.position;
-            const normA = meshA.geometry.attributes.normal;
 
-            mapGroup.children.forEach(meshB => {
-                if (!meshB.userData || !meshB.userData.displaced || meshB === meshA) return;
+            for (let i = 0; i < mapGroup.children.length; i++) {
+                const meshB = mapGroup.children[i];
+                if (!meshB.userData || !meshB.userData.displaced || meshB === meshA) continue;
                 const bx = meshB.userData.tx;
                 const by = meshB.userData.ty;
-                const posB = meshB.geometry.attributes.position;
-                const normB = meshB.geometry.attributes.normal;
 
-                // East neighbor
                 if (bx === tx + 1 && by === ty) {
+                    const posB = meshB.geometry.attributes.position;
                     for (let iy = 0; iy < nx; iy++) {
                         const idxA = iy * nx + segs;
                         const idxB = iy * nx + 0;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const avgNx = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const avgNy = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const avgNz = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                            normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                            normB.setXYZ(idxB, avgNx/len, avgNy/len, avgNz/len);
-                        }
                     }
                     posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                }
-                // West neighbor
-                else if (bx === tx - 1 && by === ty) {
+                } else if (bx === tx - 1 && by === ty) {
+                    const posB = meshB.geometry.attributes.position;
                     for (let iy = 0; iy < nx; iy++) {
                         const idxA = iy * nx + 0;
                         const idxB = iy * nx + segs;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const avgNx = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const avgNy = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const avgNz = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                            normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                            normB.setXYZ(idxB, avgNx/len, avgNy/len, avgNz/len);
-                        }
                     }
                     posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                }
-                // South neighbor
-                else if (bx === tx && by === ty + 1) {
+                } else if (bx === tx && by === ty + 1) {
+                    const posB = meshB.geometry.attributes.position;
                     for (let ix = 0; ix < nx; ix++) {
                         const idxA = segs * nx + ix;
                         const idxB = 0 * nx + ix;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const avgNx = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const avgNy = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const avgNz = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                            normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                            normB.setXYZ(idxB, avgNx/len, avgNy/len, avgNz/len);
-                        }
                     }
                     posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                }
-                // North neighbor
-                else if (bx === tx && by === ty - 1) {
+                } else if (bx === tx && by === ty - 1) {
+                    const posB = meshB.geometry.attributes.position;
                     for (let ix = 0; ix < nx; ix++) {
                         const idxA = 0 * nx + ix;
                         const idxB = segs * nx + ix;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const avgNx = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const avgNy = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const avgNz = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                            normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                            normB.setXYZ(idxB, avgNx/len, avgNy/len, avgNz/len);
-                        }
                     }
                     posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
                 }
-            });
+            }
             posA.needsUpdate = true;
-            if (normA) normA.needsUpdate = true;
-        }
-
-        let stitchDebounceTimer = null;
-        function scheduleStitch() {
-            if (stitchDebounceTimer) clearTimeout(stitchDebounceTimer);
-            stitchDebounceTimer = setTimeout(() => {
-                stitchAllTileEdges();
-            }, 120);
-        }
-
-        function stitchAllTileEdges() {
-            if (!terrain3DEnabled) return;
-            const tileMap = new Map();
-            mapGroup.children.forEach(m => {
-                if (m.userData && m.userData.tx !== undefined && m.userData.displaced) {
-                    tileMap.set(m.userData.tx + '_' + m.userData.ty, m);
-                }
-            });
-
-            const segs = TILE_SEGS;
-            const nx = segs + 1;
-
-            tileMap.forEach((meshA) => {
-                meshA.geometry.computeVertexNormals();
-            });
-
-            tileMap.forEach((meshA) => {
-                const tx = meshA.userData.tx;
-                const ty = meshA.userData.ty;
-                const posA = meshA.geometry.attributes.position;
-                const normA = meshA.geometry.attributes.normal;
-
-                // East neighbor
-                const meshB = tileMap.get((tx + 1) + '_' + ty);
-                if (meshB && meshB.geometry && meshB.geometry.attributes.position) {
-                    const posB = meshB.geometry.attributes.position;
-                    const normB = meshB.geometry.attributes.normal;
-                    for (let iy = 0; iy < nx; iy++) {
-                        const idxA = iy * nx + segs;
-                        const idxB = iy * nx + 0;
-                        const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
-                        posA.setZ(idxA, avgZ);
-                        posB.setZ(idxB, avgZ);
-
-                        const avgNx = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                        const avgNy = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                        const avgNz = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                        const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                        normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                        normB.setXYZ(idxB, avgNx/len, avgNy/len, avgNz/len);
-                    }
-                    posB.needsUpdate = true;
-                    normB.needsUpdate = true;
-                }
-
-                // South neighbor
-                const meshC = tileMap.get(tx + '_' + (ty + 1));
-                if (meshC && meshC.geometry && meshC.geometry.attributes.position) {
-                    const posC = meshC.geometry.attributes.position;
-                    const normC = meshC.geometry.attributes.normal;
-                    for (let ix = 0; ix < nx; ix++) {
-                        const idxA = segs * nx + ix;
-                        const idxC = 0 * nx + ix;
-                        const avgZ = (posA.getZ(idxA) + posC.getZ(idxC)) * 0.5;
-                        posA.setZ(idxA, avgZ);
-                        posC.setZ(idxC, avgZ);
-
-                        const avgNx = (normA.getX(idxA) + normC.getX(idxC)) * 0.5;
-                        const avgNy = (normA.getY(idxA) + normC.getY(idxC)) * 0.5;
-                        const avgNz = (normA.getZ(idxA) + normC.getZ(idxC)) * 0.5;
-                        const len = Math.hypot(avgNx, avgNy, avgNz) || 1.0;
-                        normA.setXYZ(idxA, avgNx/len, avgNy/len, avgNz/len);
-                        normC.setXYZ(idxC, avgNx/len, avgNy/len, avgNz/len);
-                    }
-                    posC.needsUpdate = true;
-                    normC.needsUpdate = true;
-                }
-
-                // 4-Corner Junction Harmonization
-                const meshD = tileMap.get((tx + 1) + '_' + ty);
-                if (meshB && meshC && meshD && meshD.geometry && meshD.geometry.attributes.position) {
-                    const posD = meshD.geometry.attributes.position;
-                    const normD = meshD.geometry.attributes.normal;
-                    const idxCornerA = segs * nx + segs;
-                    const idxCornerB = segs * nx + 0;
-                    const idxCornerC = 0 * nx + segs;
-                    const idxCornerD = 0 * nx + 0;
-
-                    const avgCornerZ = (posA.getZ(idxCornerA) + posB.getZ(idxCornerB) + posC.getZ(idxCornerC) + posD.getZ(idxCornerD)) * 0.25;
-                    posA.setZ(idxCornerA, avgCornerZ);
-                    posB.setZ(idxCornerB, avgCornerZ);
-                    posC.setZ(idxCornerC, avgCornerZ);
-                    posD.setZ(idxCornerD, avgCornerZ);
-
-                    const cNx = (normA.getX(idxCornerA) + normB.getX(idxCornerB) + normC.getX(idxCornerC) + normD.getX(idxCornerD)) * 0.25;
-                    const cNy = (normA.getY(idxCornerA) + normB.getY(idxCornerB) + normC.getY(idxCornerC) + normD.getY(idxCornerD)) * 0.25;
-                    const cNz = (normA.getZ(idxCornerA) + normB.getZ(idxCornerB) + normC.getZ(idxCornerC) + normD.getZ(idxCornerD)) * 0.25;
-                    const cLen = Math.hypot(cNx, cNy, cNz) || 1.0;
-
-                    normA.setXYZ(idxCornerA, cNx/cLen, cNy/cLen, cNz/cLen);
-                    normB.setXYZ(idxCornerB, cNx/cLen, cNy/cLen, cNz/cLen);
-                    normC.setXYZ(idxCornerC, cNx/cLen, cNy/cLen, cNz/cLen);
-                    normD.setXYZ(idxCornerD, cNx/cLen, cNy/cLen, cNz/cLen);
-
-                    posD.needsUpdate = true;
-                    if (normD) normD.needsUpdate = true;
-                }
-
-                posA.needsUpdate = true;
-                normA.needsUpdate = true;
-            });
-
-            updateAllTileSkirts();
         }
 
         function displaceMeshVertices(mesh, raw, zoomDiff, tx, ty) {
@@ -8694,8 +8568,7 @@
             mesh.geometry.computeVertexNormals();
             mesh.userData.displaced = true;
             stitchAdjacentNeighbors(mesh);
-            updateAllTileSkirts();
-            scheduleStitch();
+            scheduleSkirtUpdate();
         }
 
         function updateAllTileElevations() {
@@ -8713,7 +8586,7 @@
                     }
                 }
             });
-            stitchAllTileEdges();
+            updateAllTileSkirts();
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
@@ -9695,10 +9568,8 @@
             }
             lastRenderTime = now;
 
-            // Continuous dynamic map streaming during flight (checks every 2 seconds when following vehicle)
-            const presetVal = document.getElementById('map-cache-preset')?.value || 'default';
-            const isPresetLocked = (presetVal !== 'default' && presetVal !== 'telemetry');
-            if (!isPresetLocked && now - lastPeriodicMapUpdate > 2000 && currentPlaneLat && currentPlaneLon && (cameraMode === 'follow' || cameraMode === 'corv_chase')) {
+            // Continuous dynamic map streaming during flight (streams tiles around vehicle wherever it flies)
+            if (now - lastPeriodicMapUpdate > 1500 && currentPlaneLat && currentPlaneLon && (cameraMode === 'follow' || cameraMode === 'corv_chase')) {
                 lastPeriodicMapUpdate = now;
                 updateMap(currentPlaneLat, currentPlaneLon, false);
             }
@@ -10966,127 +10837,52 @@
 
         function setCorvMode(enable) {
             corvModeActive = (enable !== undefined) ? !!enable : !corvModeActive;
-            document.body.classList.toggle('corv-mode-active', corvModeActive);
 
-            const overlay = document.getElementById('corv-hud-overlay');
             const btnToolbar = document.getElementById('btn-toggle-corv-mode');
             if (btnToolbar) btnToolbar.classList.toggle('active', corvModeActive);
 
+            const overlay = document.getElementById('corv-hud-overlay');
+            if (overlay) overlay.style.display = 'none'; // Unnecessary full-screen overlay removed
+
+            // Always preserve all visualizer cockpit widgets
             const uiPanel = document.getElementById('ui-panel');
             const lxnav = document.getElementById('lxnav-mfd-widget');
             const eis = document.getElementById('eis-widget');
             const compass = document.getElementById('compass-widget');
             const graph = document.getElementById('terrain-graph-container');
             const toolbar = document.querySelector('.floating-toolbar');
-            const expandBtn = document.getElementById('btn-expand-panel');
 
-            if (corvModeActive) {
-                // Save current visibility state of desktop avionics widgets
-                corvSavedWidgetStates.uiPanel = uiPanel ? (uiPanel.style.display !== 'none') : true;
-                corvSavedWidgetStates.lxnav = lxnav ? (lxnav.style.display !== 'none') : true;
-                corvSavedWidgetStates.eis = eis ? (eis.style.display !== 'none') : true;
-                corvSavedWidgetStates.compass = compass ? (compass.style.display !== 'none') : true;
-                corvSavedWidgetStates.graph = graph ? (graph.style.display !== 'none') : true;
-                corvSavedWidgetStates.toolbar = toolbar ? (toolbar.style.display !== 'none') : true;
-                corvSavedWidgetStates.expandBtn = expandBtn ? (expandBtn.style.display !== 'none') : false;
+            if (uiPanel && uiPanel.style.display === 'none') uiPanel.style.display = '';
+            if (lxnav && lxnav.style.display === 'none') lxnav.style.display = '';
+            if (eis && eis.style.display === 'none') eis.style.display = '';
+            if (compass && compass.style.display === 'none') compass.style.display = '';
+            if (graph && graph.style.display === 'none') graph.style.display = '';
+            if (toolbar && toolbar.style.display === 'none') toolbar.style.display = '';
 
-                if (uiPanel) uiPanel.style.display = 'none';
-                if (lxnav) lxnav.style.display = 'none';
-                if (eis) eis.style.display = 'none';
-                if (compass) compass.style.display = 'none';
-                if (graph) graph.style.display = 'none';
-                if (toolbar) toolbar.style.display = 'none';
-                if (expandBtn) expandBtn.style.display = 'none';
+            // Toggle 3D Topographic DEM Elevation seamlessly inside our visualizer
+            terrain3DEnabled = corvModeActive;
+            localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
+            const chk = document.getElementById('chk-toggle-terrain-3d');
+            if (chk) chk.checked = terrain3DEnabled;
+            const status = document.getElementById('terrain-3d-status');
+            if (status) {
+                status.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
+                status.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
+            }
 
-                if (overlay) overlay.style.display = 'block';
-
-                // Activate Corv-GCS 3P Chase Camera and 3D Topographic DEM
-                if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
-
-                if (!terrain3DEnabled) {
-                    terrain3DEnabled = true;
-                    localStorage.setItem('pilot_terrain_3d', 'true');
-                    const chk = document.getElementById('chk-toggle-terrain-3d');
-                    if (chk) chk.checked = true;
-                    const status = document.getElementById('terrain-3d-status');
-                    if (status) {
-                        status.innerText = '3D ACTIVE';
-                        status.style.color = 'var(--success)';
-                    }
-                }
-                if (typeof horizonGroup !== 'undefined') {
-                    horizonGroup.visible = true;
-                }
-                // Photorealistic aeronautical daylight sky and atmospheric haze matching Corv-GCS
+            if (terrain3DEnabled) {
                 const skyColor = new THREE.Color(0x609ecc);
                 scene.background = skyColor;
                 scene.fog = new THREE.Fog(skyColor, 12000, 32000);
-
-                // If aircraft is disarmed or sitting at ground (y < 30) while at peaks, lift preview
-                if (typeof vtolGroup !== 'undefined' && vtolGroup && vtolGroup.position.y < 30) {
-                    const presetVal = document.getElementById('map-cache-preset')?.value;
-                    if (presetVal === 'corv_peaks') {
-                        vtolGroup.position.set(0, 240, 0);
-                        if (typeof targetPos !== 'undefined') targetPos.set(0, 240, 0);
-                    }
-                }
-
-                const activeLat = currentPlaneLat || homeLat || DEFAULT_PRESET.lat;
-                const activeLon = currentPlaneLon || homeLon || DEFAULT_PRESET.lon;
-                if (typeof updateMap === 'function') updateMap(activeLat, activeLon, true);
-
-                renderCorvMiniMap();
             } else {
-                if (overlay) overlay.style.display = 'none';
-
-                // Restore previous visibility state of all avionics widgets
-                if (uiPanel && corvSavedWidgetStates.uiPanel) uiPanel.style.display = '';
-                if (lxnav && corvSavedWidgetStates.lxnav) lxnav.style.display = '';
-                if (eis && corvSavedWidgetStates.eis) eis.style.display = '';
-                if (compass && corvSavedWidgetStates.compass) compass.style.display = '';
-                if (graph && corvSavedWidgetStates.graph) graph.style.display = '';
-                if (toolbar && corvSavedWidgetStates.toolbar) toolbar.style.display = '';
-                if (expandBtn && corvSavedWidgetStates.expandBtn) expandBtn.style.display = '';
-
-                // Restore standard follow camera and flat terrain mode
-                if (typeof setCameraMode === 'function') setCameraMode('follow');
-                const currentPreset = document.getElementById('map-cache-preset')?.value;
-                if (currentPreset === 'corv_peaks' && typeof applyAirfieldPreset === 'function') {
-                    applyAirfieldPreset('default');
-                }
-                if (typeof vtolGroup !== 'undefined' && vtolGroup) {
-                    if (!currentPlaneAltMSL || currentPlaneAltMSL < 10) {
-                        vtolGroup.position.set(0, 0, 0);
-                        if (typeof targetPos !== 'undefined') targetPos.set(0, 0, 0);
-                    }
-                }
-
-                terrain3DEnabled = false;
-                localStorage.setItem('pilot_terrain_3d', 'false');
-                const chk = document.getElementById('chk-toggle-terrain-3d');
-                if (chk) chk.checked = false;
-                const status = document.getElementById('terrain-3d-status');
-                if (status) {
-                    status.innerText = 'FLAT MESH';
-                    status.style.color = 'var(--text-secondary)';
-                }
-                if (typeof horizonGroup !== 'undefined') {
-                    horizonGroup.visible = false;
-                }
-                if (typeof updateAllTileSkirts === 'function') updateAllTileSkirts();
-                mapGroup.children.forEach(m => {
-                    if (m.geometry && m.geometry.attributes && m.geometry.attributes.position) {
-                        const p = m.geometry.attributes.position;
-                        for (let k = 0; k < p.count; k++) p.setZ(k, 0);
-                        p.needsUpdate = true;
-                        m.geometry.computeVertexNormals();
-                        m.userData.displaced = false;
-                    }
-                });
                 if (typeof updateSceneTheme === 'function') updateSceneTheme();
-                const activeLat = homeLat || DEFAULT_PRESET.lat;
-                const activeLon = homeLon || DEFAULT_PRESET.lon;
-                if (typeof updateMap === 'function') updateMap(activeLat, activeLon, true);
+            }
+
+            updateAllTileElevations();
+            scheduleSkirtUpdate();
+
+            if (typeof showTacticalAlert === 'function') {
+                showTacticalAlert(terrain3DEnabled ? "3D TOPOGRAPHY: ACTIVE" : "3D TOPOGRAPHY: FLAT MESH", 1600);
             }
         }
 
