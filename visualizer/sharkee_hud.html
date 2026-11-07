@@ -5429,19 +5429,30 @@
             };
         }
 
-        // Preview Area on 3D Map Button
-        const btnPreviewMap = document.getElementById('btn-preview-map');
-        if (btnPreviewMap) {
-            btnPreviewMap.onclick = () => {
+        let mapRebuildDebounceTimer = null;
+        function debouncedMapRebuild(recenter = true, delayMs = 120) {
+            updateMapEstimate();
+            if (mapRebuildDebounceTimer) {
+                clearTimeout(mapRebuildDebounceTimer);
+            }
+            mapRebuildDebounceTimer = setTimeout(() => {
                 const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
                 const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
-                const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+                const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
                 if (typeof updateMap === 'function') {
-                    updateMap(lat, lon, true);
+                    updateMap(lat, lon, recenter);
                 }
                 if (typeof frameAirspaceCamera === 'function') {
                     frameAirspaceCamera(rad);
                 }
+            }, delayMs);
+        }
+
+        // Preview Area on 3D Map Button
+        const btnPreviewMap = document.getElementById('btn-preview-map');
+        if (btnPreviewMap) {
+            btnPreviewMap.onclick = () => {
+                debouncedMapRebuild(true, 0);
             };
         }
 
@@ -5477,21 +5488,11 @@
         }
 
         document.getElementById('map-cache-radius').onchange = () => {
-            updateMapEstimate();
-            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
-            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
-            if (typeof updateMap === 'function') {
-                updateMap(lat, lon, true);
-            }
+            debouncedMapRebuild(true, 120);
         };
 
         document.getElementById('map-cache-zoom').onchange = () => {
-            updateMapEstimate();
-            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
-            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
-            if (typeof updateMap === 'function') {
-                updateMap(lat, lon, true);
-            }
+            debouncedMapRebuild(true, 120);
         };
 
         let cachePollInterval = null;
@@ -7791,6 +7792,13 @@
             const targetX = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.x : 0;
             const targetZ = (typeof rawTargetPos !== 'undefined' && rawTargetPos) ? rawTargetPos.z : 0;
 
+            // Dynamically ensure camera far clipping plane accommodates large operational radii (up to 300km)
+            const neededFar = Math.max(100000, radM * 5.0);
+            if (camera.far < neededFar) {
+                camera.far = neededFar;
+                camera.updateProjectionMatrix();
+            }
+
             controls.target.set(targetX, 40, targetZ);
             camera.position.set(targetX, camAlt, targetZ + camDist);
             camera.lookAt(targetX, 40, targetZ);
@@ -7808,6 +7816,15 @@
 
             const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             renderAirspaceBoundary(radiusKm);
+
+            // Dynamically ensure camera far plane covers the selected operational radius
+            if (typeof camera !== 'undefined' && camera) {
+                const neededFar = Math.max(100000, radiusKm * 1000 * 5.0);
+                if (camera.far < neededFar) {
+                    camera.far = neededFar;
+                    camera.updateProjectionMatrix();
+                }
+            }
 
             const activeZoom = getOptimalZoom(radiusKm);
             const zoomChanged = (currentMapZoom !== activeZoom);
@@ -7922,17 +7939,26 @@
 
                             const mt = Math.abs(tx + ty) % 4;
                             const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
-                            let remoteUrl;
-                            if (provider === 'esri') {
-                                remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${activeZoom}/${ty}/${tx}`;
-                            } else if (provider === 'google_hybrid') {
-                                remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${activeZoom}`;
-                            } else {
-                                remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${activeZoom}`;
-                            }
 
-                            function attachFlatTile(texture) {
-                                if (thisGen !== mapGeneration) {
+                            // Immediate flat mesh creation with neutral dark tactical slate base
+                            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                            const mat = new THREE.MeshBasicMaterial({
+                                color: 0x141f17,
+                                side: THREE.FrontSide,
+                                depthWrite: false,
+                                fog: false
+                            });
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.renderOrder = -1;
+                            mesh.rotation.x = -Math.PI / 2;
+                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                            mesh.position.y = -2.0;
+                            mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
+                            mapGroup.add(mesh);
+
+                            function applyFlatTexture(texture) {
+                                if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
                                     texture.dispose();
                                     return;
                                 }
@@ -7941,53 +7967,31 @@
                                 texture.minFilter = THREE.LinearMipmapLinearFilter;
                                 texture.magFilter = THREE.LinearFilter;
                                 texture.encoding = THREE.sRGBEncoding;
-
-                                const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                                const mat = new THREE.MeshBasicMaterial({
-                                    map: texture,
-                                    side: THREE.FrontSide,
-                                    depthWrite: false,
-                                    fog: false
-                                });
-                                const mesh = new THREE.Mesh(geo, mat);
-                                mesh.renderOrder = -1;
-                                mesh.rotation.x = -Math.PI / 2;
-                                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                                mesh.position.y = -2.0;
-                                mesh.userData = { tx, ty, zoom: activeZoom, displaced: false };
-                                mapGroup.add(mesh);
+                                mat.map = texture;
+                                mat.color.setHex(0xffffff);
+                                mat.needsUpdate = true;
                             }
 
                             const loader = new THREE.TextureLoader();
                             loader.setCrossOrigin('anonymous');
 
-                            if (mapMode === 'direct') {
-                                loader.load(
-                                    remoteUrl,
-                                    (texture) => attachFlatTile(texture),
-                                    undefined,
-                                    () => { mapTiles.delete(key); }
-                                );
-                            } else {
-                                loader.load(
-                                    localUrl,
-                                    (texture) => attachFlatTile(texture),
-                                    undefined,
-                                    () => {
-                                        if (mapMode !== 'offline') {
-                                            loader.load(
-                                                remoteUrl,
-                                                (texture) => attachFlatTile(texture),
-                                                undefined,
-                                                () => { mapTiles.delete(key); }
-                                            );
-                                        } else {
-                                            mapTiles.delete(key);
-                                        }
+                            loader.load(
+                                localUrl,
+                                (texture) => applyFlatTexture(texture),
+                                undefined,
+                                () => {
+                                    if (mapMode !== 'offline') {
+                                        const altProvider = (provider === 'esri') ? 'google' : 'esri';
+                                        const fallbackUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${altProvider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                                        loader.load(
+                                            fallbackUrl,
+                                            (texture) => applyFlatTexture(texture),
+                                            undefined,
+                                            () => { /* mesh remains visible with dark base */ }
+                                        );
                                     }
-                                );
-                            }
+                                }
+                            );
                         }
                     }
                 }
@@ -8045,22 +8049,99 @@
                         mapTiles.set(key, true);
 
                         const mt = Math.abs(tx + ty) % 4;
-
-                        // Local tile cache proxy URL
                         const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
 
-                        // Remote fallback URL based on provider
-                        let remoteUrl;
-                        if (provider === 'esri') {
-                            remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${activeZoom}/${ty}/${tx}`;
-                        } else if (provider === 'google_hybrid') {
-                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${activeZoom}`;
-                        } else {
-                            remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${activeZoom}`;
-                        }
+                        // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
+                        const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
+                        const mat = new THREE.MeshLambertMaterial({
+                            color: terrainWireframeMode ? 0x00e676 : 0x1f2e24,
+                            side: THREE.FrontSide,
+                            wireframe: terrainWireframeMode
+                        });
 
-                        function attachTile(texture) {
-                            if (thisGen !== mapGeneration) {
+                        // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
+                        mat.onBeforeCompile = (shader) => {
+                            mat.userData.shader = shader;
+                            const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
+
+                            shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
+                            shader.uniforms.uSunlightOn = { value: 1.0 };
+                            shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
+                            shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
+                            shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
+                            shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
+                            shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
+
+                            shader.vertexShader = shader.vertexShader.replace(
+                                '#include <common>',
+                                `#include <common>
+                                varying vec3 vTerrainWorldNormal;
+                                varying vec3 vTerrainWorldPos;`
+                            ).replace(
+                                '#include <beginnormal_vertex>',
+                                `#include <beginnormal_vertex>
+                                vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                            ).replace(
+                                '#include <begin_vertex>',
+                                `#include <begin_vertex>
+                                vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+                            );
+
+                            shader.fragmentShader = shader.fragmentShader.replace(
+                                '#include <common>',
+                                `#include <common>
+                                uniform vec3 uSunDir;
+                                uniform float uSunlightOn;
+                                uniform vec3 uSunColor;
+                                uniform vec3 uShadowColor;
+                                uniform float uShadowThreshold;
+                                uniform float uShadowExponent;
+                                uniform float uSunBoost;
+                                varying vec3 vTerrainWorldNormal;
+                                varying vec3 vTerrainWorldPos;`
+                            ).replace(
+                                '#include <lights_fragment_end>',
+                                `#include <lights_fragment_end>
+                                if (uSunlightOn > 0.5) {
+                                    vec3 n = normalize(vTerrainWorldNormal);
+                                    vec3 l = normalize(uSunDir);
+                                    float NdotL = dot(n, l);
+
+                                    // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
+                                    float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
+                                    shadow = pow(shadow, uShadowExponent);
+
+                                    vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
+                                    vec3 shadowed = diffuseColor.rgb * uShadowColor;
+
+                                    vec3 terrainLit = mix(shadowed, sunlit, shadow);
+
+                                    // Atmospheric Ridge Rim Highlighting
+                                    vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
+                                    float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
+                                    terrainLit += uSunColor * rim * 0.18;
+
+                                    reflectedLight.directDiffuse = vec3(0.0);
+                                    reflectedLight.indirectDiffuse = terrainLit;
+                                }`
+                            );
+                        };
+
+                        const mesh = new THREE.Mesh(geo, mat);
+                        mesh.renderOrder = -1;
+                        mesh.rotation.x = -Math.PI / 2;
+                        mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                        mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                        mesh.position.y = -0.2;
+                        mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
+                        mapGroup.add(mesh);
+
+                        // 2. Apply 3D DEM elevation displacement IMMEDIATELY!
+                        applyDemElevationToMesh(mesh, activeZoom, tx, ty);
+
+                        // 3. Asynchronously load high-resolution satellite imagery texture
+                        function applyTextureToMesh(texture) {
+                            if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
                                 texture.dispose();
                                 return;
                             }
@@ -8069,128 +8150,33 @@
                             texture.minFilter = THREE.LinearMipmapLinearFilter;
                             texture.magFilter = THREE.LinearFilter;
                             texture.encoding = THREE.sRGBEncoding;
-                            const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
-
-                            // Corv-GCS High-Fidelity Directional Hillshading Material
-                            const mat = new THREE.MeshLambertMaterial({
-                                map: texture,
-                                side: THREE.FrontSide,
-                                wireframe: terrainWireframeMode
-                            });
-                            if (terrainWireframeMode) {
-                                mat.color = new THREE.Color(0x00e676);
+                            mat.map = texture;
+                            if (!terrainWireframeMode) {
+                                mat.color.setHex(0xffffff);
                             }
-
-                            // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
-                            mat.onBeforeCompile = (shader) => {
-                                mat.userData.shader = shader;
-                                const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
-
-                                shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
-                                shader.uniforms.uSunlightOn = { value: 1.0 };
-                                shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
-                                shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
-                                shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
-                                shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
-                                shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
-
-                                shader.vertexShader = shader.vertexShader.replace(
-                                    '#include <common>',
-                                    `#include <common>
-                                    varying vec3 vTerrainWorldNormal;
-                                    varying vec3 vTerrainWorldPos;`
-                                ).replace(
-                                    '#include <beginnormal_vertex>',
-                                    `#include <beginnormal_vertex>
-                                    vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
-                                ).replace(
-                                    '#include <begin_vertex>',
-                                    `#include <begin_vertex>
-                                    vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
-                                );
-
-                                shader.fragmentShader = shader.fragmentShader.replace(
-                                    '#include <common>',
-                                    `#include <common>
-                                    uniform vec3 uSunDir;
-                                    uniform float uSunlightOn;
-                                    uniform vec3 uSunColor;
-                                    uniform vec3 uShadowColor;
-                                    uniform float uShadowThreshold;
-                                    uniform float uShadowExponent;
-                                    uniform float uSunBoost;
-                                    varying vec3 vTerrainWorldNormal;
-                                    varying vec3 vTerrainWorldPos;`
-                                ).replace(
-                                    '#include <lights_fragment_end>',
-                                    `#include <lights_fragment_end>
-                                    if (uSunlightOn > 0.5) {
-                                        vec3 n = normalize(vTerrainWorldNormal);
-                                        vec3 l = normalize(uSunDir);
-                                        float NdotL = dot(n, l);
-
-                                        // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
-                                        float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
-                                        shadow = pow(shadow, uShadowExponent);
-
-                                        vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
-                                        vec3 shadowed = diffuseColor.rgb * uShadowColor;
-
-                                        vec3 terrainLit = mix(shadowed, sunlit, shadow);
-
-                                        // Atmospheric Ridge Rim Highlighting
-                                        vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
-                                        float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
-                                        terrainLit += uSunColor * rim * 0.18;
-
-                                        reflectedLight.directDiffuse = vec3(0.0);
-                                        reflectedLight.indirectDiffuse = terrainLit;
-                                    }`
-                                );
-                            };
-
-                            const mesh = new THREE.Mesh(geo, mat);
-                            mesh.renderOrder = -1;
-                            mesh.rotation.x = -Math.PI / 2;
-                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                            mesh.position.y = -0.2;
-                            mesh.userData = { tx, ty, zoom: activeZoom, displaced: false };
-                            mapGroup.add(mesh);
-
-                            // Apply 3D DEM elevation displacement
-                            applyDemElevationToMesh(mesh, activeZoom, tx, ty);
+                            mat.needsUpdate = true;
                         }
 
                         const loader = new THREE.TextureLoader();
                         loader.setCrossOrigin('anonymous');
 
-                        if (mapMode === 'direct') {
-                            loader.load(
-                                remoteUrl,
-                                (texture) => attachTile(texture),
-                                undefined,
-                                () => { mapTiles.delete(key); }
-                            );
-                        } else {
-                            loader.load(
-                                localUrl,
-                                (texture) => attachTile(texture),
-                                undefined,
-                                () => {
-                                    if (mapMode !== 'offline') {
-                                        loader.load(
-                                            remoteUrl,
-                                            (texture) => attachTile(texture),
-                                            undefined,
-                                            () => { mapTiles.delete(key); }
-                                        );
-                                    } else {
-                                        mapTiles.delete(key);
-                                    }
+                        loader.load(
+                            localUrl,
+                            (texture) => applyTextureToMesh(texture),
+                            undefined,
+                            () => {
+                                if (mapMode !== 'offline') {
+                                    const fallbackProvider = (provider === 'esri') ? 'google' : 'esri';
+                                    const fallbackUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${fallbackProvider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                                    loader.load(
+                                        fallbackUrl,
+                                        (texture) => applyTextureToMesh(texture),
+                                        undefined,
+                                        () => { /* Even if satellite imagery fails, 3D terrain mesh remains intact and visible */ }
+                                    );
                                 }
-                            );
-                        }
+                            }
+                        );
                     }
                 }
             }

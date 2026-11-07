@@ -1008,7 +1008,7 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
             url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
             
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
                 return resp.read()
     except Exception:
@@ -1019,7 +1019,7 @@ def fetch_dem_tile(z, x, y):
     try:
         url = f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=8) as resp:
             if resp.status == 200:
                 return resp.read()
     except Exception:
@@ -1178,6 +1178,25 @@ def start_http_server():
                                 target_file = cand
                                 break
 
+                        if not target_file:
+                            try:
+                                for sub in os.listdir(tile_cache_dir):
+                                    sub_dir = os.path.join(tile_cache_dir, sub)
+                                    if os.path.isdir(sub_dir) and sub != 'dem':
+                                        for cf in [
+                                            os.path.join(sub_dir, tile_filename),
+                                            os.path.join(sub_dir, f"{z}_{x}_{y}.jpg"),
+                                            os.path.join(sub_dir, f"{z}_{x}_{y}_esri.jpg"),
+                                            os.path.join(sub_dir, f"{z}_{x}_{y}_google.jpg")
+                                        ]:
+                                            if os.path.exists(cf) and os.path.getsize(cf) > 100:
+                                                target_file = cf
+                                                break
+                                        if target_file:
+                                            break
+                            except Exception:
+                                pass
+
                         if target_file:
                             with open(target_file, 'rb') as f:
                                 data = f.read()
@@ -1190,7 +1209,10 @@ def start_http_server():
                             return
                         elif mode != 'offline':
                             data = fetch_tile(int(z), int(x), int(y), provider=provider, lyrs=lyrs)
-                            if data:
+                            if not data or len(data) < 500:
+                                alt_provider = 'google' if provider == 'esri' else 'esri'
+                                data = fetch_tile(int(z), int(x), int(y), provider=alt_provider, lyrs=lyrs)
+                            if data and len(data) > 100:
                                 try:
                                     with open(preset_tile_file, 'wb') as f:
                                         f.write(data)
