@@ -3567,8 +3567,8 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RELIEF SCALE</span>
                         <select id="sel-terrain-scale" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                            <option value="1.0">1.0x (True 1:1 Physical Scale)</option>
-                            <option value="1.15" selected>1.15x (Corv-GCS Natural Realism)</option>
+                            <option value="1.0" selected>1.0x (True 1:1 Physical Scale)</option>
+                            <option value="1.15">1.15x (Corv-GCS Natural Realism)</option>
                             <option value="1.5">1.5x (Subtle Mountain Accent)</option>
                             <option value="2.0">2.0x (High Relief Exaggerated)</option>
                         </select>
@@ -3679,6 +3679,10 @@
                             <option value="20">20.0 km (40 km box - 1,600 sq km)</option>
                             <option value="25">25.0 km (50 km box - 2,500 sq km)</option>
                             <option value="30">30.0 km (60 km box - 3,600 sq km)</option>
+                            <option value="50">50.0 km (100 km box - 10,000 sq km)</option>
+                            <option value="100">100.0 km (200 km box - 40,000 sq km)</option>
+                            <option value="200">200.0 km (400 km box - 160,000 sq km)</option>
+                            <option value="300">300.0 km (600 km box - 360,000 sq km)</option>
                         </select>
                     </div>
                     <div>
@@ -5047,7 +5051,7 @@
         // 3D Topographic DEM Elevation Controls (Corv-GCS Engine)
         let terrain3DEnabled = false;
         window.terrain3DEnabled = terrain3DEnabled;
-        let terrainExaggeration = 1.15;
+        let terrainExaggeration = 1.0; // Default 1.0x True 1:1 Physical Scale
         let terrainWireframeMode = false;
 
         const chkToggleTerrain3D = document.getElementById('chk-toggle-terrain-3d');
@@ -5078,10 +5082,12 @@
         }
 
         if (selTerrainScale) {
-            selTerrainScale.value = "1.15";
-            terrainExaggeration = 1.15;
+            const savedScale = localStorage.getItem('pilot_terrain_scale') || "1.0";
+            selTerrainScale.value = savedScale;
+            terrainExaggeration = parseFloat(savedScale) || 1.0;
             selTerrainScale.onchange = (e) => {
-                terrainExaggeration = parseFloat(e.target.value) || 1.15;
+                terrainExaggeration = parseFloat(e.target.value) || 1.0;
+                localStorage.setItem('pilot_terrain_scale', e.target.value);
                 if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
             };
         }
@@ -5459,13 +5465,7 @@
         function updateMapEstimate() {
             const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             const lat = parseFloat(document.getElementById('map-cache-lat')?.value || 8.3105);
-            const zoomMode = document.getElementById('map-cache-zoom')?.value || '17';
-            let z = 17;
-            if (zoomMode === 'auto') {
-                z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 1.5 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)));
-            } else if (!isNaN(parseInt(zoomMode))) {
-                z = parseInt(zoomMode);
-            }
+            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 1.5 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 14)));
             const tileSizeMeters = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z);
             const span = Math.ceil((rad * 1000) / tileSizeMeters);
             const diameterTiles = 2 * span + 1;
@@ -5473,7 +5473,7 @@
             const sqKm = Math.round(Math.pow(rad * 2, 2));
             const estMb = (tileCount * 0.028).toFixed(1);
             const estEl = document.getElementById('map-cache-est-text');
-            if (estEl) estEl.innerText = `~${tileCount} tiles (~${estMb} MB, ${sqKm} sq km) [Zoom ${z}]`;
+            if (estEl) estEl.innerText = `~${tileCount} tiles (~${estMb} MB, ${sqKm.toLocaleString()} sq km) [Zoom ${z}]`;
         }
 
         document.getElementById('map-cache-radius').onchange = () => {
@@ -7677,7 +7677,7 @@
             let targetZoom = 17;
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
-                if (!isNaN(parsed) && parsed >= 14 && parsed <= 19) {
+                if (!isNaN(parsed) && parsed >= 10 && parsed <= 19) {
                     targetZoom = parsed;
                 }
             } else {
@@ -7685,8 +7685,11 @@
             }
 
             // WebGL Memory & Performance Guard: Cap zoom levels for large operational radiuses
-            // Guarantees solid 60 FPS and prevents out-of-memory browser tab crashes for massive 3,600 sq km areas
-            if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
+            // Guarantees solid 60 FPS and prevents out-of-memory browser tab crashes for massive 50-300 km areas
+            if (radiusKm >= 200.0 && targetZoom > 11) targetZoom = 11;
+            else if (radiusKm >= 80.0 && targetZoom > 12) targetZoom = 12;
+            else if (radiusKm >= 40.0 && targetZoom > 13) targetZoom = 13;
+            else if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
             else if (radiusKm >= 10.0 && targetZoom > 15) targetZoom = 15;
             else if (radiusKm >= 5.0 && targetZoom > 16) targetZoom = 16;
             else if (radiusKm > 2.5 && targetZoom > 18) targetZoom = 18;
@@ -7736,7 +7739,7 @@
 
             // 3. Concentric range rings (Green)
             const maxKm = Math.floor(radiusKm);
-            const stepKm = (maxKm >= 20) ? 5 : ((maxKm >= 8) ? 2 : 1);
+            const stepKm = (maxKm >= 150) ? 50 : ((maxKm >= 60) ? 20 : ((maxKm >= 20) ? 5 : ((maxKm >= 8) ? 2 : 1)));
             for (let k = stepKm; k <= maxKm; k += stepKm) {
                 if (Math.abs(k - radiusKm) < 0.2) continue; // Skip if basically the outer ring
                 const innerRadM = k * 1000;
@@ -7990,7 +7993,7 @@
                 }
 
                 // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles
-                const MAX_SCENE_TILES = 1200;
+                const MAX_SCENE_TILES = 3000;
                 if (mapGroup.children.length > MAX_SCENE_TILES) {
                     const excess = mapGroup.children.length - MAX_SCENE_TILES;
                     const homeTx = Math.floor(homeTileXFloat);
@@ -8028,9 +8031,9 @@
             }
 
             // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
-            // Dynamically sized to user-selected airspace radius (up to 30km / 3,600 sq km)
+            // Dynamically sized to user-selected airspace radius (up to 300km / 360,000 sq km)
             const radMeters = radiusKm * 1000;
-            const gridSpan = Math.max(5, Math.min(22, Math.ceil(radMeters / tileSize) + 1));
+            const gridSpan = Math.max(5, Math.min(26, Math.ceil(radMeters / tileSize) + 1));
 
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
                 for (let dy = -gridSpan; dy <= gridSpan; dy++) {
@@ -8193,7 +8196,7 @@
             }
 
             // Persistent 3D Flight Map: Retain all past flown tiles and home airfield tiles
-            const MAX_SCENE_TILES_3D = 1200;
+            const MAX_SCENE_TILES_3D = 3000;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
                 const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
                 const homeTx = Math.floor(homeTileXFloat);
