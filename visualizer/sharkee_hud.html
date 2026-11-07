@@ -3115,7 +3115,7 @@
                 </nav>
             </div>
             <div class="corv-topbar-controls">
-                <button class="corv-icon-btn" id="corv-btn-peaks" title="Jump to Corv 3D Peaks">PEAKS 3D</button>
+                <button class="corv-icon-btn active" id="corv-btn-map-toggle" title="Toggle 2D Flat Satellite Map vs 3D Topographic Map (Hotkey 'T' or 'V')">2D MAP</button>
                 <button class="corv-icon-btn" id="corv-btn-home" title="Jump to Home Airfield">HOME</button>
                 <button class="corv-icon-btn" id="corv-btn-sun" title="Toggle Sun Hillshading">SUN</button>
                 <button class="corv-icon-btn active" id="corv-btn-chase" title="Toggle 3P Chase Camera">3P</button>
@@ -3282,12 +3282,12 @@
 
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
-        <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle Corv 3D Map & Tactical HUD (Hotkey 'V')" style="background: rgba(0, 229, 255, 0.18); border-color: rgba(0, 229, 255, 0.45); color: #00e5ff;">
+        <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle 2D Flat Satellite Map vs 3D Topography (Hotkey 'T' or 'V')" style="background: rgba(0, 229, 255, 0.18); border-color: rgba(0, 229, 255, 0.45); color: #00e5ff;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 2 19 22 19 12 2"></polygon>
                 <polygon points="12 9 7 19 17 19 12 9" fill="currentColor" fill-opacity="0.3"></polygon>
             </svg>
-            <span style="font-size: 8px; font-weight: 800; margin-left: 2px;">3D</span>
+            <span id="toolbar-map-label" style="font-size: 8px; font-weight: 800; margin-left: 2px;">3D</span>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -3523,11 +3523,29 @@
 
         <!-- Tab 2: Airspace Range, Presets & Latest Satellite Imagery -->
         <div id="panel-view-airspace" style="display: none;">
-            <!-- 3D Satellite Map Visibility Toggle Switch -->
+            <!-- Dedicated Map Mode Selector (2D Flat Satellite Map vs 3D Topography) -->
+            <div class="data-card" style="margin-bottom: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em;">
+                        MAP DISPLAY MODE
+                    </span>
+                    <span id="active-map-badge" style="font-size: 9.5px; font-weight: 700; color: #30d158;">3D TOPOGRAPHY</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button id="btn-set-mode-2d" class="btn-refresh" style="flex: 1; padding: 6px 8px; font-size: 11px; font-weight: 700; justify-content: center;">
+                        2D FLAT MAP
+                    </button>
+                    <button id="btn-set-mode-3d" class="btn-refresh" style="flex: 1; padding: 6px 8px; font-size: 11px; font-weight: 700; justify-content: center; border-color: #30d158; color: #30d158; background: rgba(48, 209, 88, 0.12);">
+                        3D TOPOGRAPHY
+                    </button>
+                </div>
+            </div>
+
+            <!-- Satellite Map Visibility Toggle Switch -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; margin-bottom: 10px; background: var(--btn-bg); border: 1px solid var(--border-color); border-radius: 8px;">
                 <span style="font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    3D Terrain Imagery
+                    Satellite Imagery Overlay
                 </span>
                 <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
                     <input type="checkbox" id="chk-toggle-map-vis" checked style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
@@ -3609,11 +3627,8 @@
                     <!-- Populated dynamically -->
                 </select>
                 <div style="display: flex; gap: 6px; margin-top: 6px;">
-                    <button id="btn-quick-corv" class="btn-refresh" style="flex: 1; font-size: 10.5px; padding: 5px 6px; font-weight: 700; color: #00e5ff; border-color: rgba(0, 229, 255, 0.4); justify-content: center; background: rgba(0, 229, 255, 0.08);">
-                        Corv 3D Peaks
-                    </button>
-                    <button id="btn-quick-home" class="btn-refresh" style="flex: 1; font-size: 10.5px; padding: 5px 6px; font-weight: 700; color: var(--text-secondary); border-color: var(--border-color); justify-content: center;">
-                        Home Airfield
+                    <button id="btn-quick-home" class="btn-refresh" style="flex: 1; font-size: 11px; padding: 5px 8px; font-weight: 700; color: var(--accent); border-color: var(--accent); justify-content: center;">
+                        Reset to Home Airfield
                     </button>
                 </div>
                 <div id="map-cache-name-row" style="display: none; gap: 6px; align-items: center; margin-top: 8px;">
@@ -4592,6 +4607,7 @@
         const btnToggleWaypoints = document.getElementById('btn-toggle-waypoints');
 
         function switchPanelTab(tabName) {
+            window.switchPanelTab = switchPanelTab;
             const isAirspace = tabName === 'airspace';
             const isMessages = tabName === 'messages';
             const isTelemetry = !isAirspace && !isMessages;
@@ -5043,13 +5059,13 @@
 
         if (chkToggleTerrain3D) {
             chkToggleTerrain3D.onchange = (e) => {
-                terrain3DEnabled = e.target.checked;
-                localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
-                if (terrain3DStatus) {
-                    terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
-                    terrain3DStatus.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
+                if (typeof setTerrain3DMode === 'function') {
+                    setTerrain3DMode(e.target.checked);
+                } else {
+                    terrain3DEnabled = e.target.checked;
+                    localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
+                    if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
                 }
-                if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
             };
         }
 
@@ -5177,31 +5193,8 @@
                 if (raw) list = JSON.parse(raw);
             } catch (e) {}
             if (!Array.isArray(list)) list = [];
-
-            // Ensure built-in Corv 3D Mountain presets are always accessible
-            const hasPeak = list.some(p => p.id === 'corv_peaks');
-            const hasValley = list.some(p => p.id === 'corv_valley');
-
-            if (!hasPeak) {
-                list.unshift({
-                    id: 'corv_peaks',
-                    name: 'Corv Western Ghats Peak (3D Mountains)',
-                    lat: 8.43919,
-                    lon: 77.43659,
-                    radius: 5.0,
-                    zoom: 'auto'
-                });
-            }
-            if (!hasValley) {
-                list.push({
-                    id: 'corv_valley',
-                    name: 'Corv Valley Survey (8.3041, 77.3076)',
-                    lat: 8.30413,
-                    lon: 77.30760,
-                    radius: 3.0,
-                    zoom: 'auto'
-                });
-            }
+            // Filter out unwanted preset entries so user airfield remains clean
+            list = list.filter(p => p.id !== 'corv_peaks' && p.id !== 'corv_valley');
             return list;
         }
 
@@ -5299,13 +5292,6 @@
             }
         }
 
-        const btnQuickCorv = document.getElementById('btn-quick-corv');
-        if (btnQuickCorv) {
-            btnQuickCorv.onclick = () => {
-                applyAirfieldPreset('corv_peaks');
-                if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
-            };
-        }
         const btnQuickHome = document.getElementById('btn-quick-home');
         if (btnQuickHome) {
             btnQuickHome.onclick = () => {
@@ -5360,21 +5346,7 @@
                         refreshCacheStatus();
                         if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
 
-                        if (preset.id === 'corv_peaks') {
-                            const prov = document.getElementById('sel-map-provider');
-                            if (prov) {
-                                prov.value = 'google';
-                                localStorage.setItem('pilot_map_provider', 'google');
-                            }
-                            // Position aircraft soaring at cruise altitude above mountain ridge in Corv 3P Chase view
-                            if (typeof vtolGroup !== 'undefined') {
-                                vtolGroup.position.set(0, 240, 0);
-                                vtolGroup.rotation.set(0, Math.PI * 0.75, 0);
-                            }
-                            if (typeof setCameraMode === 'function') {
-                                setCameraMode('corv_chase');
-                            }
-                        }
+
                     }
                 }
             };
@@ -7043,30 +7015,6 @@
                         }
                     }
                 }
-
-                // Prune distant flat tiles beyond radius to keep clean perimeter
-                const maxFlatSpan = span + 2;
-                const toCullFlat = [];
-                mapGroup.children.forEach(m => {
-                    if (m.userData && m.userData.tx !== undefined) {
-                        const dtx = Math.abs(m.userData.tx - currentTileX);
-                        const dty = Math.abs(m.userData.ty - currentTileY);
-                        if (dtx > maxFlatSpan || dty > maxFlatSpan) {
-                            toCullFlat.push(m);
-                        }
-                    }
-                });
-                toCullFlat.forEach(m => {
-                    const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
-                    mapTiles.delete(k);
-                    if (m.geometry) m.geometry.dispose();
-                    if (m.material) {
-                        if (m.material.map) m.material.map.dispose();
-                        m.material.dispose();
-                    }
-                    mapGroup.remove(m);
-                });
-
                 return;
             }
 
@@ -7666,8 +7614,10 @@
         // DYNAMIC SATELLITE MAP ENGINE & AIRSPACE HUD
         // ==========================================
         const mapGroup = new THREE.Group();
+        window.mapGroup = mapGroup;
         scene.add(mapGroup);
         const horizonGroup = new THREE.Group();
+        window.horizonGroup = horizonGroup;
         scene.add(horizonGroup);
 
         // Ground underlay removed to allow 100% full-radius 2D satellite map rendering
@@ -7998,6 +7948,29 @@
                         }
                     }
                 }
+
+                // Prune distant flat tiles beyond radius to keep clean perimeter
+                const maxFlatSpan = span + 2;
+                const toCullFlat = [];
+                mapGroup.children.forEach(m => {
+                    if (m.userData && m.userData.tx !== undefined) {
+                        const dtx = Math.abs(m.userData.tx - currentTileX);
+                        const dty = Math.abs(m.userData.ty - currentTileY);
+                        if (dtx > maxFlatSpan || dty > maxFlatSpan) {
+                            toCullFlat.push(m);
+                        }
+                    }
+                });
+                toCullFlat.forEach(m => {
+                    const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
+                    mapTiles.delete(k);
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) {
+                        if (m.material.map) m.material.map.dispose();
+                        m.material.dispose();
+                    }
+                    mapGroup.remove(m);
+                });
                 return;
             }
 
@@ -10989,33 +10962,40 @@
             expandBtn: false
         };
 
-        function setCorvMode(enable) {
-            corvModeActive = (enable !== undefined) ? !!enable : !corvModeActive;
+        function updateMapModeUI() {
+            // Update top bar toggle button
+            const btnMapToggle = document.getElementById('corv-btn-map-toggle');
+            if (btnMapToggle) {
+                btnMapToggle.innerText = terrain3DEnabled ? '2D MAP' : '3D MAP';
+                btnMapToggle.title = terrain3DEnabled ? "Switch to 2D Flat Satellite Map (Hotkey 'T')" : "Switch to 3D Topographic Map (Hotkey 'T')";
+                btnMapToggle.classList.toggle('active', terrain3DEnabled);
+            }
 
-            const btnToolbar = document.getElementById('btn-toggle-corv-mode');
-            if (btnToolbar) btnToolbar.classList.toggle('active', corvModeActive);
+            // Update floating toolbar button
+            const toolbarLabel = document.getElementById('toolbar-map-label');
+            const toolbarBtn = document.getElementById('btn-toggle-corv-mode');
+            if (toolbarLabel) toolbarLabel.innerText = terrain3DEnabled ? '3D' : '2D';
+            if (toolbarBtn) toolbarBtn.classList.toggle('active', terrain3DEnabled);
 
-            const overlay = document.getElementById('corv-hud-overlay');
-            if (overlay) overlay.style.display = 'none'; // Unnecessary full-screen overlay removed
+            // Update AIRSPACE panel buttons
+            const btn2D = document.getElementById('btn-set-mode-2d');
+            const btn3D = document.getElementById('btn-set-mode-3d');
+            if (btn2D && btn3D) {
+                btn2D.style.borderColor = !terrain3DEnabled ? 'var(--accent)' : 'var(--border-color)';
+                btn2D.style.color = !terrain3DEnabled ? 'var(--accent)' : 'var(--text-secondary)';
+                btn2D.style.background = !terrain3DEnabled ? 'rgba(0, 229, 255, 0.12)' : 'transparent';
 
-            // Always preserve all visualizer cockpit widgets
-            const uiPanel = document.getElementById('ui-panel');
-            const lxnav = document.getElementById('lxnav-mfd-widget');
-            const eis = document.getElementById('eis-widget');
-            const compass = document.getElementById('compass-widget');
-            const graph = document.getElementById('terrain-graph-container');
-            const toolbar = document.querySelector('.floating-toolbar');
+                btn3D.style.borderColor = terrain3DEnabled ? '#30d158' : 'var(--border-color)';
+                btn3D.style.color = terrain3DEnabled ? '#30d158' : 'var(--text-secondary)';
+                btn3D.style.background = terrain3DEnabled ? 'rgba(48, 209, 88, 0.12)' : 'transparent';
+            }
 
-            if (uiPanel && uiPanel.style.display === 'none') uiPanel.style.display = '';
-            if (lxnav && lxnav.style.display === 'none') lxnav.style.display = '';
-            if (eis && eis.style.display === 'none') eis.style.display = '';
-            if (compass && compass.style.display === 'none') compass.style.display = '';
-            if (graph && graph.style.display === 'none') graph.style.display = '';
-            if (toolbar && toolbar.style.display === 'none') toolbar.style.display = '';
-
-            // Toggle 3D Topographic DEM Elevation seamlessly inside our visualizer
-            terrain3DEnabled = corvModeActive;
-            localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
+            // Update badge & checkbox
+            const badge = document.getElementById('active-map-badge');
+            if (badge) {
+                badge.innerText = terrain3DEnabled ? '3D TOPOGRAPHY' : '2D FLAT MAP';
+                badge.style.color = terrain3DEnabled ? '#30d158' : 'var(--accent)';
+            }
             const chk = document.getElementById('chk-toggle-terrain-3d');
             if (chk) chk.checked = terrain3DEnabled;
             const status = document.getElementById('terrain-3d-status');
@@ -11023,7 +11003,16 @@
                 status.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
                 status.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
             }
+        }
 
+        function setTerrain3DMode(enable) {
+            terrain3DEnabled = (enable !== undefined) ? !!enable : !terrain3DEnabled;
+            corvModeActive = terrain3DEnabled;
+            localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
+
+            updateMapModeUI();
+
+            // Scene background: Atmospheric sky for 3D, dark tactical grid for 2D
             if (terrain3DEnabled) {
                 const skyColor = new THREE.Color(0x609ecc);
                 scene.background = skyColor;
@@ -11032,13 +11021,30 @@
                 if (typeof updateSceneTheme === 'function') updateSceneTheme();
             }
 
-            updateAllTileElevations();
-            scheduleSkirtUpdate();
+            // Cleanly rebuild map for the selected mode (2D flat full-radius vs 3D topography)
+            const targetLat = currentPlaneLat || (homeLat || DEFAULT_PRESET.lat);
+            const targetLon = currentPlaneLon || (homeLon || DEFAULT_PRESET.lon);
+            if (typeof updateMap === 'function') {
+                updateMap(targetLat, targetLon, true);
+            }
 
             if (typeof showTacticalAlert === 'function') {
-                showTacticalAlert(terrain3DEnabled ? "3D TOPOGRAPHY: ACTIVE" : "3D TOPOGRAPHY: FLAT MESH", 1600);
+                showTacticalAlert(terrain3DEnabled ? "MAP MODE: 3D TOPOGRAPHY" : "MAP MODE: 2D FLAT SATELLITE", 1600);
             }
         }
+
+        function setCorvMode(enable) {
+            setTerrain3DMode(enable);
+        }
+
+        function toggleTerrain3DMode() {
+            setTerrain3DMode(!terrain3DEnabled);
+        }
+        window.setTerrain3DMode = setTerrain3DMode;
+        window.toggleTerrain3DMode = toggleTerrain3DMode;
+        window.setCorvMode = setCorvMode;
+        window.switchPanelTab = switchPanelTab;
+        window.mapGroup = mapGroup;
 
         function getCorvMapTile(z, x, y) {
             const key = `${z}_${x}_${y}`;
@@ -11232,20 +11238,34 @@
         }
 
         function initCorvControls() {
+            // Synchronize all 2D/3D map mode UI badges and buttons
+            if (typeof updateMapModeUI === 'function') updateMapModeUI();
+
             const btnToolbarCorv = document.getElementById('btn-toggle-corv-mode');
-            if (btnToolbarCorv) btnToolbarCorv.onclick = () => setCorvMode();
+            if (btnToolbarCorv) btnToolbarCorv.onclick = () => toggleTerrain3DMode();
+
+            const btnMapToggle = document.getElementById('corv-btn-map-toggle');
+            if (btnMapToggle) btnMapToggle.onclick = () => toggleTerrain3DMode();
 
             const btnExit = document.getElementById('corv-btn-exit');
-            if (btnExit) btnExit.onclick = () => setCorvMode(false);
+            if (btnExit) btnExit.onclick = () => setTerrain3DMode(false);
 
-            const btnPeaks = document.getElementById('corv-btn-peaks');
-            if (btnPeaks) {
-                btnPeaks.onclick = () => applyAirfieldPreset('corv_peaks');
-            }
+            const btn2D = document.getElementById('btn-set-mode-2d');
+            if (btn2D) btn2D.onclick = () => setTerrain3DMode(false);
+
+            const btn3D = document.getElementById('btn-set-mode-3d');
+            if (btn3D) btn3D.onclick = () => setTerrain3DMode(true);
+
+            const chkTerrain = document.getElementById('chk-toggle-terrain-3d');
+            if (chkTerrain) chkTerrain.onchange = (e) => setTerrain3DMode(e.target.checked);
 
             const btnHome = document.getElementById('corv-btn-home');
             if (btnHome) {
                 btnHome.onclick = () => applyAirfieldPreset('default');
+            }
+            const btnQuickHome = document.getElementById('btn-quick-home');
+            if (btnQuickHome) {
+                btnQuickHome.onclick = () => applyAirfieldPreset('default');
             }
 
             const btnSun = document.getElementById('corv-btn-sun');
@@ -11325,8 +11345,8 @@
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'v' || e.key === 'V') {
-                // Toggle Corv 3D Map & Tactical HUD Mode
-                setCorvMode(!corvModeActive);
+                // Toggle 2D Flat Satellite Map vs 3D Topography
+                toggleTerrain3DMode();
             } else if (e.key === 'e' || e.key === 'E') {
                 toggleEisWidget();
             } else if (e.key === 'c' || e.key === 'C') {
@@ -11346,17 +11366,8 @@
                     corvChaseTargetDist = Math.min(1200.0, corvChaseTargetDist * 1.22);
                 }
             } else if (e.key === 't' || e.key === 'T') {
-                // Toggle 3D Topographic DEM Elevation
-                terrain3DEnabled = !terrain3DEnabled;
-                localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
-                const chk = document.getElementById('chk-toggle-terrain-3d');
-                if (chk) chk.checked = terrain3DEnabled;
-                const status = document.getElementById('terrain-3d-status');
-                if (status) {
-                    status.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
-                    status.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
-                }
-                if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
+                // Toggle 2D Flat Satellite Map vs 3D Topography
+                toggleTerrain3DMode();
             }
         });
 
