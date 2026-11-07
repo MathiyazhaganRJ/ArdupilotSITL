@@ -3098,7 +3098,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
-<body>
+<body class="dark-mode">
     <!-- ========================================== -->
     <!-- CORV-GCS FULLSCREEN TACTICAL HUD & 3D MAP  -->
     <!-- ========================================== -->
@@ -3681,8 +3681,8 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
-                            <option value="auto" selected>Auto Optimal (Corv-GCS 60 FPS)</option>
-                            <option value="17">Zoom 17 - Ultra-Crisp Imagery (1.1m/px)</option>
+                            <option value="17" selected>Zoom 17 - Ultra-Crisp Imagery (1.1m/px)</option>
+                            <option value="auto">Auto Optimal (Corv-GCS 60 FPS)</option>
                             <option value="16">Zoom 16 - Tactical High-Res (2.3m/px)</option>
                             <option value="15">Zoom 15 - High-Def 3D (4.7m/px)</option>
                             <option value="14">Zoom 14 - Regional Vista (9.5m/px)</option>
@@ -4504,7 +4504,8 @@
             applyTheme(!document.body.classList.contains('dark-mode'));
         };
 
-        if (new URLSearchParams(window.location.search).get('theme') === 'dark' || localStorage.getItem('app_theme') === 'dark') {
+        const savedAppTheme = localStorage.getItem('app_theme');
+        if (new URLSearchParams(window.location.search).get('theme') === 'dark' || savedAppTheme === 'dark' || !savedAppTheme) {
             applyTheme(true);
         }
 
@@ -5040,6 +5041,7 @@
 
         // 3D Topographic DEM Elevation Controls (Corv-GCS Engine)
         let terrain3DEnabled = false;
+        window.terrain3DEnabled = terrain3DEnabled;
         let terrainExaggeration = 1.15;
         let terrainWireframeMode = false;
 
@@ -5051,6 +5053,7 @@
         // Default to FLAT MESH for clean, instantaneous airfield startup
         const savedTerrain3D = localStorage.getItem('pilot_terrain_3d');
         terrain3DEnabled = (savedTerrain3D === 'true');
+        window.terrain3DEnabled = terrain3DEnabled;
         if (chkToggleTerrain3D) chkToggleTerrain3D.checked = terrain3DEnabled;
         if (terrain3DStatus) {
             terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
@@ -5183,7 +5186,7 @@
             lat: 8.3105,
             lon: 77.3137,
             radius: 3.0,
-            zoom: 'auto'
+            zoom: '17'
         };
 
         function getSavedPresets() {
@@ -6302,19 +6305,28 @@
         };
 
         const scene = new THREE.Scene();
+        window.scene = scene;
         let gridHelper;
 
         function updateSceneTheme() {
+            if (!window.scene) return;
             const isDark = document.body.classList.contains('dark-mode');
             const isMapVis = document.getElementById('chk-toggle-map-vis')?.checked ?? true;
+            const is3D = !!window.terrain3DEnabled;
 
-            if (terrain3DEnabled) {
-                // Corv-GCS Photorealistic Daylight Sky & Atmospheric Fog
-                const skyColor = new THREE.Color(0x609ecc);
-                scene.background = skyColor;
-                scene.fog = new THREE.Fog(skyColor, 12000, 32000);
+            if (is3D) {
+                // In dark mode, keep the background tactical deep black with matching fog
+                if (isDark) {
+                    const blackBg = new THREE.Color(0x000000);
+                    scene.background = blackBg;
+                    scene.fog = new THREE.Fog(blackBg, 16000, 42000);
+                } else {
+                    const skyColor = new THREE.Color(0x609ecc);
+                    scene.background = skyColor;
+                    scene.fog = new THREE.Fog(skyColor, 12000, 32000);
+                }
             } else if (isMapVis) {
-                const skyHex = isDark ? 0x0a1422 : 0x78abce;
+                const skyHex = isDark ? 0x000000 : 0x78abce;
                 scene.background = new THREE.Color(skyHex);
                 scene.fog = new THREE.Fog(skyHex, 14000, 36000);
             } else {
@@ -6323,7 +6335,7 @@
                 scene.fog = new THREE.Fog(bgHex, 1000, 10000);
             }
 
-            if (gridHelper) scene.remove(gridHelper);
+            if (typeof gridHelper !== 'undefined' && gridHelper) scene.remove(gridHelper);
             // Grid removed because the dynamic map now provides spatial reference
         }
         updateSceneTheme();
@@ -6379,6 +6391,7 @@
         });
         const groundLeadLine = new THREE.Line(groundLeadGeo, groundLeadMat);
         groundLeadLine.frustumCulled = false;
+        groundLeadLine.visible = false; // Disabled: removed model altitude ground line
         scene.add(groundLeadLine);
 
         const groundRingGeo = new THREE.RingGeometry(1.2, 2.0, 32);
@@ -6390,6 +6403,7 @@
             opacity: 0.85
         });
         const groundContactRing = new THREE.Mesh(groundRingGeo, groundRingMat);
+        groundContactRing.visible = false; // Disabled: removed ground contact ring
         scene.add(groundContactRing);
 
         const matBody = new THREE.MeshPhongMaterial({ color: 0x0071e3 });
@@ -8484,7 +8498,8 @@
                 skirtGeo.setAttribute('position', new THREE.BufferAttribute(skirtPos, 3));
                 skirtGeo.setIndex(skirtIndices);
 
-                const skirtMat = new THREE.MeshBasicMaterial({ color: 0x1a261c, depthWrite: true });
+                const isDark = document.body.classList.contains('dark-mode');
+                const skirtMat = new THREE.MeshBasicMaterial({ color: isDark ? 0x000000 : 0x1a261c, depthWrite: true });
                 const skirtMesh = new THREE.Mesh(skirtGeo, skirtMat);
                 skirtMesh.renderOrder = -2;
                 mesh.add(skirtMesh);
@@ -9725,22 +9740,9 @@
             mapGroup.position.y = 0.0;
             if (typeof horizonGroup !== 'undefined') horizonGroup.position.y = 0.0;
 
-            // Update Corv-GCS Ground Altitude Lead Laser Line & Target Ring
-            if (typeof groundLeadLine !== 'undefined' && typeof vtolGroup !== 'undefined') {
-                const px = vtolGroup.position.x;
-                const py = vtolGroup.position.y;
-                const pz = vtolGroup.position.z;
-                const gElev = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(px, pz) : 0;
-
-                const leadAttr = groundLeadLine.geometry.attributes.position;
-                leadAttr.setXYZ(0, px, py, pz);
-                leadAttr.setXYZ(1, px, gElev, pz);
-                leadAttr.needsUpdate = true;
-
-                if (typeof groundContactRing !== 'undefined') {
-                    groundContactRing.position.set(px, gElev + 0.15, pz);
-                }
-            }
+            // Model ground altitude line and ground contact ring disabled per user request
+            if (typeof groundLeadLine !== 'undefined') groundLeadLine.visible = false;
+            if (typeof groundContactRing !== 'undefined') groundContactRing.visible = false;
 
             if (cameraMode === 'corv_chase') {
                 // Smooth inertial zoom
@@ -11007,19 +11009,14 @@
 
         function setTerrain3DMode(enable) {
             terrain3DEnabled = (enable !== undefined) ? !!enable : !terrain3DEnabled;
+            window.terrain3DEnabled = terrain3DEnabled;
             corvModeActive = terrain3DEnabled;
             localStorage.setItem('pilot_terrain_3d', terrain3DEnabled ? 'true' : 'false');
 
             updateMapModeUI();
 
-            // Scene background: Atmospheric sky for 3D, dark tactical grid for 2D
-            if (terrain3DEnabled) {
-                const skyColor = new THREE.Color(0x609ecc);
-                scene.background = skyColor;
-                scene.fog = new THREE.Fog(skyColor, 12000, 32000);
-            } else {
-                if (typeof updateSceneTheme === 'function') updateSceneTheme();
-            }
+            // Scene background: respects dark mode (black background in 3D and 2D) vs daylight sky in light mode
+            if (typeof updateSceneTheme === 'function') updateSceneTheme();
 
             // Cleanly rebuild map for the selected mode (2D flat full-radius vs 3D topography)
             const targetLat = currentPlaneLat || (homeLat || DEFAULT_PRESET.lat);
