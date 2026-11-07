@@ -7963,28 +7963,34 @@
                     }
                 }
 
-                // Prune distant flat tiles beyond radius to keep clean perimeter
-                const maxFlatSpan = span + 2;
-                const toCullFlat = [];
-                mapGroup.children.forEach(m => {
-                    if (m.userData && m.userData.tx !== undefined) {
-                        const dtx = Math.abs(m.userData.tx - currentTileX);
-                        const dty = Math.abs(m.userData.ty - currentTileY);
-                        if (dtx > maxFlatSpan || dty > maxFlatSpan) {
-                            toCullFlat.push(m);
+                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles
+                const MAX_SCENE_TILES = 1200;
+                if (mapGroup.children.length > MAX_SCENE_TILES) {
+                    const excess = mapGroup.children.length - MAX_SCENE_TILES;
+                    const homeTx = Math.floor(homeTileXFloat);
+                    const homeTy = Math.floor(homeTileYFloat);
+                    const scored = [];
+                    mapGroup.children.forEach(m => {
+                        if (m.userData && m.userData.tx !== undefined) {
+                            const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
+                            const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
+                            if (distToHome <= span) return; // Protect home airfield
+                            scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
                         }
-                    }
-                });
-                toCullFlat.forEach(m => {
-                    const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
-                    mapTiles.delete(k);
-                    if (m.geometry) m.geometry.dispose();
-                    if (m.material) {
-                        if (m.material.map) m.material.map.dispose();
-                        m.material.dispose();
-                    }
-                    mapGroup.remove(m);
-                });
+                    });
+                    scored.sort((a, b) => b.score - a.score);
+                    const toRemove = scored.slice(0, excess);
+                    toRemove.forEach(({ mesh: m }) => {
+                        const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
+                        mapTiles.delete(k);
+                        if (m.geometry) m.geometry.dispose();
+                        if (m.material) {
+                            if (m.material.map) m.material.map.dispose();
+                            m.material.dispose();
+                        }
+                        mapGroup.remove(m);
+                    });
+                }
                 return;
             }
 
@@ -8159,32 +8165,38 @@
                 }
             }
 
-            // Prune distant tiles beyond active tactical envelope (culls orphaned islands, keeps solid seamless terrain)
-            const maxSpan3D = gridSpan + 2;
-            const toCull3D = [];
-            mapGroup.children.forEach(m => {
-                if (m.userData && m.userData.tx !== undefined) {
-                    const dtx = Math.abs(m.userData.tx - currentTileX);
-                    const dty = Math.abs(m.userData.ty - currentTileY);
-                    if (dtx > maxSpan3D || dty > maxSpan3D) {
-                        toCull3D.push(m);
+            // Persistent 3D Flight Map: Retain all past flown tiles and home airfield tiles
+            const MAX_SCENE_TILES_3D = 1200;
+            if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
+                const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
+                const homeTx = Math.floor(homeTileXFloat);
+                const homeTy = Math.floor(homeTileYFloat);
+                const scored = [];
+                mapGroup.children.forEach(m => {
+                    if (m.userData && m.userData.tx !== undefined) {
+                        const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
+                        const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
+                        if (distToHome <= (gridSpan + 2)) return; // Protect home airfield
+                        scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
                     }
-                }
-            });
-            toCull3D.forEach(m => {
-                const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
-                mapTiles.delete(k);
-                if (m.geometry) m.geometry.dispose();
-                if (m.material) {
-                    if (m.material.map) m.material.map.dispose();
-                    m.material.dispose();
-                }
-                if (m.userData.skirtMesh) {
-                    if (m.userData.skirtMesh.geometry) m.userData.skirtMesh.geometry.dispose();
-                    m.remove(m.userData.skirtMesh);
-                }
-                mapGroup.remove(m);
-            });
+                });
+                scored.sort((a, b) => b.score - a.score);
+                const toRemove = scored.slice(0, excess);
+                toRemove.forEach(({ mesh: m }) => {
+                    const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
+                    mapTiles.delete(k);
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) {
+                        if (m.material.map) m.material.map.dispose();
+                        m.material.dispose();
+                    }
+                    if (m.userData.skirtMesh) {
+                        if (m.userData.skirtMesh.geometry) m.userData.skirtMesh.geometry.dispose();
+                        m.remove(m.userData.skirtMesh);
+                    }
+                    mapGroup.remove(m);
+                });
+            }
 
             // In unified 3D mode, all terrain is rendered seamlessly in mapGroup (no horizon seams)
             if (typeof horizonGroup !== 'undefined') {
@@ -8934,6 +8946,16 @@
             const validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
             if (validWps.length === 0) return;
 
+            // Ensure terrain map tiles exist beneath mission waypoints (e.g. survey grid)
+            if (typeof updateMap === 'function' && validWps.length > 0 && !window._missionTilesLoaded) {
+                window._missionTilesLoaded = true;
+                let sumLat = 0, sumLon = 0;
+                validWps.forEach(w => { sumLat += w.lat; sumLon += w.lon; });
+                const avgLat = sumLat / validWps.length;
+                const avgLon = sumLon / validWps.length;
+                updateMap(avgLat, avgLon, false);
+            }
+
             const allPts = [];
 
             validWps.forEach((wp) => {
@@ -9649,6 +9671,7 @@
             else if (data.type === 'MISSION_WAYPOINTS') {
                 if (Array.isArray(data.waypoints)) {
                     missionWaypoints = data.waypoints;
+                    window._missionTilesLoaded = false;
                     try {
                         localStorage.setItem('sharkee_mission_waypoints', JSON.stringify(missionWaypoints));
                     } catch(e) {}
