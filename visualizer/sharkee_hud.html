@@ -7677,10 +7677,13 @@
             // <= 14.0 km -> Zoom 15 (~1.2km/tile, 4.7m/px resolution, 7x7 grid = 8.5km span)
             // > 14.0 km  -> Zoom 14 (~2.4km/tile, 9.5m/px regional vista)
             if (terrain3DEnabled) {
-                // In 3D Corv mode:
-                // Zoom 15 provides an expansive 11km continuous high-resolution mountain vista
-                // with 1:1 DEM alignment and zero texture blur
-                return (radiusKm <= 5.0) ? 15 : 14;
+                // High-Resolution 3D Corv Topographic Streaming:
+                // Stream Zoom 16 for crisp 2.38m/pixel satellite textures on ridges & valleys
+                // (2x sharper than zoom 15, matching the Corv-GCS tactical aerial imagery standard)
+                if (radiusKm <= 3.0) return 17; // 1.19m/px ultra-high resolution
+                if (radiusKm <= 6.0) return 16; // 2.38m/px tactical mountain resolution
+                if (radiusKm <= 12.0) return 15; // 4.77m/px regional
+                return 14;
             }
             if (radiusKm <= 3.0) return 17;
             if (radiusKm <= 7.0) return 16;
@@ -8030,21 +8033,32 @@
                                 mat.color = new THREE.Color(0x00e676);
                             }
 
-                            // Inject Corv-GCS sunlight equation: diffuseColor.rgb *= (0.45 + 1.05 * max(0.0, dot(vWorldNormal, uSunDir)))
+                            // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
                             mat.onBeforeCompile = (shader) => {
-                                shader.uniforms.uSunDir = { value: new THREE.Vector3(0.53, 0.79, 0.40).normalize() };
+                                mat.userData.shader = shader;
+                                const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
+
+                                shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
                                 shader.uniforms.uSunlightOn = { value: 1.0 };
-                                shader.uniforms.uTerrainContrast = { value: 1.05 };
-                                shader.uniforms.uTerrainAmbient = { value: 0.45 };
+                                shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
+                                shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
+                                shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
+                                shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
+                                shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
 
                                 shader.vertexShader = shader.vertexShader.replace(
                                     '#include <common>',
                                     `#include <common>
-                                    varying vec3 vTerrainWorldNormal;`
+                                    varying vec3 vTerrainWorldNormal;
+                                    varying vec3 vTerrainWorldPos;`
                                 ).replace(
                                     '#include <beginnormal_vertex>',
                                     `#include <beginnormal_vertex>
                                     vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                                ).replace(
+                                    '#include <begin_vertex>',
+                                    `#include <begin_vertex>
+                                    vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
                                 );
 
                                 shader.fragmentShader = shader.fragmentShader.replace(
@@ -8052,15 +8066,37 @@
                                     `#include <common>
                                     uniform vec3 uSunDir;
                                     uniform float uSunlightOn;
-                                    uniform float uTerrainContrast;
-                                    uniform float uTerrainAmbient;
-                                    varying vec3 vTerrainWorldNormal;`
+                                    uniform vec3 uSunColor;
+                                    uniform vec3 uShadowColor;
+                                    uniform float uShadowThreshold;
+                                    uniform float uShadowExponent;
+                                    uniform float uSunBoost;
+                                    varying vec3 vTerrainWorldNormal;
+                                    varying vec3 vTerrainWorldPos;`
                                 ).replace(
-                                    '#include <color_fragment>',
-                                    `#include <color_fragment>
+                                    '#include <lights_fragment_end>',
+                                    `#include <lights_fragment_end>
                                     if (uSunlightOn > 0.5) {
-                                        float sunDot = max(0.0, dot(normalize(vTerrainWorldNormal), normalize(uSunDir)));
-                                        diffuseColor.rgb *= (uTerrainAmbient + uTerrainContrast * sunDot);
+                                        vec3 n = normalize(vTerrainWorldNormal);
+                                        vec3 l = normalize(uSunDir);
+                                        float NdotL = dot(n, l);
+
+                                        // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
+                                        float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
+                                        shadow = pow(shadow, uShadowExponent);
+
+                                        vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
+                                        vec3 shadowed = diffuseColor.rgb * uShadowColor;
+
+                                        vec3 terrainLit = mix(shadowed, sunlit, shadow);
+
+                                        // Atmospheric Ridge Rim Highlighting
+                                        vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
+                                        float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
+                                        terrainLit += uSunColor * rim * 0.18;
+
+                                        reflectedLight.directDiffuse = vec3(0.0);
+                                        reflectedLight.indirectDiffuse = terrainLit;
                                     }`
                                 );
                             };
@@ -8118,9 +8154,90 @@
         }
 
         // ==========================================
+        // CORV-GCS HIGH-FIDELITY SUNLIGHT & HILLSHADING SYSTEM
+        // Low oblique sun angles produce dramatic, long cast shadows across ridges & valleys
+        // ==========================================
+        const corvSunSettings = {
+            modeIndex: 0,
+            modes: [
+                {
+                    name: 'GOLDEN HOUR',
+                    label: 'SUN: GOLDEN',
+                    desc: 'Golden Hour (Long Oblique Mountain Shadows)',
+                    sunDir: new THREE.Vector3(0.72, 0.28, -0.63).normalize(), // ~16.5° elevation
+                    sunColor: new THREE.Vector3(1.45, 1.25, 0.96),
+                    shadowColor: new THREE.Vector3(0.18, 0.22, 0.32),
+                    shadowThreshold: -0.03,
+                    shadowExponent: 1.3,
+                    sunBoost: 0.55
+                },
+                {
+                    name: 'OBLIQUE DAWN',
+                    label: 'SUN: DAWN',
+                    desc: 'Oblique Dawn (Extreme Low-Angle Ridge Shadows)',
+                    sunDir: new THREE.Vector3(0.86, 0.16, -0.48).normalize(), // ~9.2° elevation
+                    sunColor: new THREE.Vector3(1.58, 1.15, 0.80),
+                    shadowColor: new THREE.Vector3(0.14, 0.17, 0.26),
+                    shadowThreshold: 0.02,
+                    shadowExponent: 1.6,
+                    sunBoost: 0.65
+                },
+                {
+                    name: 'HIGH NOON',
+                    label: 'SUN: NOON',
+                    desc: 'High Noon (Balanced Daylight & Soft Relief)',
+                    sunDir: new THREE.Vector3(0.35, 0.88, 0.32).normalize(), // ~62° elevation
+                    sunColor: new THREE.Vector3(1.15, 1.15, 1.12),
+                    shadowColor: new THREE.Vector3(0.48, 0.52, 0.58),
+                    shadowThreshold: -0.15,
+                    shadowExponent: 1.0,
+                    sunBoost: 0.25
+                }
+            ]
+        };
+
+        function applySunlightSettings() {
+            const active = corvSunSettings.modes[corvSunSettings.modeIndex];
+
+            // Synchronize Three.js scene directional light for matching aircraft & marker shadows
+            if (typeof dirLight !== 'undefined' && dirLight) {
+                dirLight.position.set(active.sunDir.x * 25000, Math.max(8000, active.sunDir.y * 25000), active.sunDir.z * 25000);
+                dirLight.color.setRGB(active.sunColor.x * 0.85, active.sunColor.y * 0.85, active.sunColor.z * 0.85);
+            }
+
+            // Update all active terrain tile shader uniforms
+            mapGroup.children.forEach(mesh => {
+                if (mesh.material && mesh.material.userData && mesh.material.userData.shader) {
+                    const u = mesh.material.userData.shader.uniforms;
+                    if (u.uSunDir) u.uSunDir.value.copy(active.sunDir);
+                    if (u.uSunColor) u.uSunColor.value.copy(active.sunColor);
+                    if (u.uShadowColor) u.uShadowColor.value.copy(active.shadowColor);
+                    if (u.uShadowThreshold) u.uShadowThreshold.value = active.shadowThreshold;
+                    if (u.uShadowExponent) u.uShadowExponent.value = active.shadowExponent;
+                    if (u.uSunBoost) u.uSunBoost.value = active.sunBoost;
+                }
+            });
+
+            const btnSun = document.getElementById('corv-btn-sun');
+            if (btnSun) {
+                btnSun.innerText = active.label;
+                btnSun.title = `Corv Sunlight: ${active.desc} - Click to cycle`;
+            }
+        }
+
+        function toggleSunlight() {
+            corvSunSettings.modeIndex = (corvSunSettings.modeIndex + 1) % corvSunSettings.modes.length;
+            applySunlightSettings();
+            const active = corvSunSettings.modes[corvSunSettings.modeIndex];
+            if (typeof showTacticalAlert === 'function') {
+                showTacticalAlert(`SUNLIGHT: ${active.name}`, 1800);
+            }
+        }
+
+        // ==========================================
         // 3D TOPOGRAPHIC DEM ELEVATION ENGINE (CORV-GCS)
         // ==========================================
-        const TILE_SEGS = 40; // 40x40 segments per tile (1600 faces for smooth ridges and sharp cliffs)
+        const TILE_SEGS = 48; // 48x48 segments per tile (2304 quads / 4608 faces for razor-sharp mountain ridgelines)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
         let homeElevationMSL = null;
 
@@ -8214,7 +8331,7 @@
                 return;
             }
 
-            const demUrl = `/dem/${z}/${tx}/${ty}.png`;
+            const demUrl = `/dem/${demZ}/${demX}/${demY}.png`;
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => {
@@ -11186,6 +11303,7 @@
                 btnSun.onclick = () => {
                     if (typeof toggleSunlight === 'function') toggleSunlight();
                 };
+                if (typeof applySunlightSettings === 'function') applySunlightSettings();
             }
 
             const btnChase = document.getElementById('corv-btn-chase');
