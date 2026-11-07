@@ -3118,7 +3118,7 @@
                 <button class="corv-icon-btn active" id="corv-btn-map-toggle" title="Toggle 2D Flat Satellite Map vs 3D Topographic Map (Hotkey 'T' or 'V')">2D MAP</button>
                 <button class="corv-icon-btn" id="corv-btn-home" title="Jump to Home Airfield">HOME</button>
                 <button class="corv-icon-btn" id="corv-btn-sun" title="Toggle Sun Hillshading">SUN</button>
-                <button class="corv-icon-btn active" id="corv-btn-chase" title="Toggle 3P Chase Camera">3P</button>
+                <button class="corv-icon-btn" id="corv-btn-chase" title="Toggle 3P Chase Camera">3P</button>
                 <button class="corv-icon-btn" id="corv-btn-fullscreen" title="Toggle Fullscreen">FULL</button>
                 <button class="corv-icon-btn corv-exit-btn" id="corv-btn-exit" title="Exit 3D Corv Map (Hotkey 'V')">EXIT 3D</button>
                 <span class="corv-fps-badge" id="corv-live-fps">60 FPS</span>
@@ -3282,12 +3282,10 @@
 
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
-        <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle 2D Flat Satellite Map vs 3D Topography (Hotkey 'T' or 'V')" style="background: rgba(0, 229, 255, 0.18); border-color: rgba(0, 229, 255, 0.45); color: #00e5ff;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 2 19 22 19 12 2"></polygon>
-                <polygon points="12 9 7 19 17 19 12 9" fill="currentColor" fill-opacity="0.3"></polygon>
+        <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle 2D Flat Satellite Map vs 3D Topography (Hotkey 'T' or 'V')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m8 3 4 8 5-5 5 10H2L8 3z"></path>
             </svg>
-            <span id="toolbar-map-label" style="font-size: 8px; font-weight: 800; margin-left: 2px;">3D</span>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -3515,8 +3513,8 @@
             </div>
 
             <div class="btn-group">
-                <button id="btn-corv-chase" class="mode-btn btn-active" title="Corv-GCS 3D Chase Camera">3P Chase</button>
-                <button id="btn-follow" class="mode-btn" title="Orbit Vehicle">Orbit</button>
+                <button id="btn-corv-chase" class="mode-btn" title="Corv-GCS 3D Chase Camera">3P Chase</button>
+                <button id="btn-follow" class="mode-btn btn-active" title="Orbit Vehicle">Orbit</button>
                 <button id="btn-free" class="mode-btn" title="Free Camera">Free</button>
             </div>
         </div>
@@ -5090,15 +5088,11 @@
 
         // Helper to resolve currently active map coordinates for seamless provider/mode switching
         function getActiveMapCoords() {
-            // 1. If drone has received GPS telemetry, drone GPS is the active flight location!
-            if (typeof currentPlaneLat === 'number' && currentPlaneLat !== null && Math.abs(currentPlaneLat) > 0.001) {
-                return { lat: currentPlaneLat, lon: (typeof currentPlaneLon === 'number' && currentPlaneLon !== null) ? currentPlaneLon : 77.3137 };
-            }
-            // 2. If map is already centered on a location (homeLat, homeLon), preserve that location!
+            // 1. If map is already centered on a location (homeLat, homeLon), preserve that scene origin!
             if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
                 return { lat: homeLat, lon: (typeof homeLon === 'number' && homeLon !== null) ? homeLon : 77.3137 };
             }
-            // 3. Fallback to UI input coordinates or default
+            // 2. Fallback to UI input coordinates or default preset
             const latVal = parseFloat(document.getElementById('map-cache-lat')?.value);
             const lonVal = parseFloat(document.getElementById('map-cache-lon')?.value);
             return {
@@ -5682,6 +5676,14 @@
         let currentWindGust = 7.5;  // m/s
         let currentPlaneLat = null;
         let currentPlaneLon = null;
+        window.currentPlaneLat = null;
+        window.currentPlaneLon = null;
+        window.setCurrentPlanePosition = function(lat, lon) {
+            currentPlaneLat = lat;
+            currentPlaneLon = lon;
+            window.currentPlaneLat = lat;
+            window.currentPlaneLon = lon;
+        };
         let compassMode = 'hdg_up'; // 'hdg_up' or 'north_up'
         let liveFetchedWeather = null;
 
@@ -6354,7 +6356,7 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.enabled = false; // Disabled by default for corv_chase to eliminate camera fighting
+        controls.enabled = true; // Orbit camera mode active by default
 
         // Realistic Sun-Directional Scene Lighting (Matching Corv-GCS Hillshading Engine)
         const ambient = new THREE.AmbientLight(0xffffff, 0.35);
@@ -7486,7 +7488,7 @@
             uiFills.push(fill); uiPwms.push(pwmVal);
         }
 
-        let cameraMode = 'corv_chase', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
+        let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
         let corvChaseDist = 55.0;
         let corvChaseTargetDist = 55.0;
         let corvUserYawOffset = 0.0;
@@ -7501,6 +7503,8 @@
             if (btnCorvChase) btnCorvChase.classList.toggle('btn-active', mode === 'corv_chase');
             if (btnFollow) btnFollow.classList.toggle('btn-active', mode === 'follow');
             if (btnFree) btnFree.classList.toggle('btn-active', mode === 'free');
+            const corvBtnChase = document.getElementById('corv-btn-chase');
+            if (corvBtnChase) corvBtnChase.classList.toggle('active', mode === 'corv_chase');
 
             if (typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
                 if (mode === 'corv_chase') {
@@ -7641,6 +7645,11 @@
         const mapTiles = new Map();
         const horizonTiles = new Map();
         let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
+        let missionAnchorLat = null, missionAnchorLon = null, missionAnchorX = 0, missionAnchorZ = 0;
+        window.homeLat = null;
+        window.homeLon = null;
+        window.missionAnchorLat = null;
+        window.missionAnchorLon = null;
         let currentMapZoom = null;
         let currentMapRadius = null;
         let currentMapProvider = null;
@@ -7808,19 +7817,31 @@
                 currentMapRadius = radiusKm;
                 currentMapProvider = provider;
                 currentMapMode = mapMode;
-                homeLat = lat; 
-                homeLon = lon;
+
+                // Lock world origin strictly to homeLat/homeLon (EKF Origin)
+                if (recenter || homeLat === null) {
+                    homeLat = lat; 
+                    homeLon = lon;
+                    window.homeLat = homeLat;
+                    window.homeLon = homeLon;
+                    if (typeof setMissionAnchor === 'function') {
+                        setMissionAnchor(homeLat, homeLon, 0, 0);
+                    }
+                }
+
+                const refLat = (homeLat !== null) ? homeLat : lat;
+                const refLon = (homeLon !== null) ? homeLon : lon;
 
                 // Keep manual coordinate inputs in AIRSPACE & MAP panel in sync with active map origin
                 const latInput = document.getElementById('map-cache-lat');
                 const lonInput = document.getElementById('map-cache-lon');
-                if (latInput) latInput.value = Number(lat).toFixed(5);
-                if (lonInput) lonInput.value = Number(lon).toFixed(5);
+                if (latInput) latInput.value = Number(refLat).toFixed(5);
+                if (lonInput) lonInput.value = Number(refLon).toFixed(5);
 
                 // Earth circumference at equator = 40075016.686 meters
-                tileSize = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, activeZoom);
-                homeTileXFloat = lon2tileFloat(lon, activeZoom);
-                homeTileYFloat = lat2tileFloat(lat, activeZoom);
+                tileSize = 40075016.686 * Math.cos(refLat * Math.PI / 180) / Math.pow(2, activeZoom);
+                homeTileXFloat = lon2tileFloat(refLon, activeZoom);
+                homeTileYFloat = lat2tileFloat(refLat, activeZoom);
 
                 // Map origin is permanently locked to the world origin (0, 0, 0)
                 mapGroup.position.set(0, 0, 0);
@@ -7851,7 +7872,7 @@
                     horizonTiles.clear();
                 }
 
-                if (typeof initHomeElevation === 'function') initHomeElevation(lat, lon);
+                if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
             } else {
                 // Throttle incremental checks during flight (~50m threshold)
                 const dLat = Math.abs(lat - lastMapUpdateLat);
@@ -8834,17 +8855,14 @@
         waypointGroup.visible = true;
         scene.add(waypointGroup);
         // Permanent Geographic Earth Anchor - Synchronized directly to ArduPilot EKF Local NED Origin
-        let missionAnchorLat = null;
-        let missionAnchorLon = null;
-        let missionAnchorX = 0;
-        let missionAnchorZ = 0;
-
         function setMissionAnchor(lat, lon, x = 0, z = 0) {
             if (typeof lat !== 'number' || typeof lon !== 'number' || Math.abs(lat) < 0.001) return;
             missionAnchorLat = lat;
             missionAnchorLon = lon;
             missionAnchorX = 0;
             missionAnchorZ = 0;
+            window.missionAnchorLat = lat;
+            window.missionAnchorLon = lon;
         }
 
         // Convert Geodetic (Lat, Lon, Alt) into Three.js Hard-Anchored Local World Position
@@ -9397,6 +9415,8 @@
                 if (hasValidGps) {
                     currentPlaneLat = data.lat;
                     currentPlaneLon = data.lon;
+                    window.currentPlaneLat = data.lat;
+                    window.currentPlaneLon = data.lon;
                     updateArduPilotDrift();
                     const coordsBadge = document.getElementById('weather-coords-badge');
                     if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
@@ -9588,6 +9608,8 @@
                     if (!currentPlaneLat) {
                         currentPlaneLat = data.gps_lat;
                         currentPlaneLon = data.gps_lon;
+                        window.currentPlaneLat = data.gps_lat;
+                        window.currentPlaneLon = data.gps_lon;
                     }
 
                     if (!ekfHomeInitialized && hasNedPos) {
@@ -10996,11 +11018,12 @@
                 btnMapToggle.classList.toggle('active', terrain3DEnabled);
             }
 
-            // Update floating toolbar button
-            const toolbarLabel = document.getElementById('toolbar-map-label');
+            // Update floating toolbar button (pure mountain symbol)
             const toolbarBtn = document.getElementById('btn-toggle-corv-mode');
-            if (toolbarLabel) toolbarLabel.innerText = terrain3DEnabled ? '3D' : '2D';
-            if (toolbarBtn) toolbarBtn.classList.toggle('active', terrain3DEnabled);
+            if (toolbarBtn) {
+                toolbarBtn.classList.toggle('active', terrain3DEnabled);
+                toolbarBtn.title = terrain3DEnabled ? "Active: 3D Topographic Terrain (Hotkey 'T')" : "Active: 2D Flat Satellite Map (Hotkey 'T')";
+            }
 
             // Update AIRSPACE panel buttons
             const btn2D = document.getElementById('btn-set-mode-2d');
@@ -11041,11 +11064,19 @@
             // Scene background: respects dark mode (black background in 3D and 2D) vs daylight sky in light mode
             if (typeof updateSceneTheme === 'function') updateSceneTheme();
 
-            // Cleanly rebuild map for the selected mode (2D flat full-radius vs 3D topography)
-            const targetLat = currentPlaneLat || (homeLat || DEFAULT_PRESET.lat);
-            const targetLon = currentPlaneLon || (homeLon || DEFAULT_PRESET.lon);
+            window._missionTilesLoaded = false;
+
+            // Cleanly rebuild map for the selected mode with origin strictly locked to homeLat (EKF Origin)
+            const targetLat = (homeLat !== null) ? homeLat : DEFAULT_PRESET.lat;
+            const targetLon = (homeLon !== null) ? homeLon : DEFAULT_PRESET.lon;
             if (typeof updateMap === 'function') {
                 updateMap(targetLat, targetLon, true);
+            }
+            if (currentPlaneLat && currentPlaneLon && (Math.abs(currentPlaneLat - targetLat) > 0.001 || Math.abs(currentPlaneLon - targetLon) > 0.001)) {
+                updateMap(currentPlaneLat, currentPlaneLon, false);
+            }
+            if (typeof renderWaypoints3D === 'function') {
+                renderWaypoints3D();
             }
 
             if (typeof showTacticalAlert === 'function') {
@@ -11301,9 +11332,7 @@
                 btnChase.onclick = () => {
                     if (typeof setCameraMode === 'function') {
                         if (cameraMode === 'corv_chase') {
-                            corvChaseTargetDist = 55.0;
-                            corvUserYawOffset = 0.0;
-                            corvUserPitchOffset = 0.0;
+                            setCameraMode('follow');
                         } else {
                             setCameraMode('corv_chase');
                         }
@@ -11360,6 +11389,11 @@
             if (btnGuided) btnGuided.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'GUIDED' });
             const btnLand = document.getElementById('corv-btn-land');
             if (btnLand) btnLand.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'LAND' });
+
+            // Set Orbit camera mode as default
+            if (typeof setCameraMode === 'function') {
+                setCameraMode('follow');
+            }
         }
 
         window.addEventListener('keydown', (e) => {
