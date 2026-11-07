@@ -1301,14 +1301,14 @@ def start_http_server():
                     preset_folder = sanitize_preset_folder(preset)
                     target_dir = os.path.join(tile_cache_dir, preset_folder)
 
-                    preset_files = [f for f in os.listdir(target_dir) if f.endswith('.jpg')] if os.path.exists(target_dir) else []
+                    preset_files = [f for f in os.listdir(target_dir) if f.endswith('.jpg') or f.endswith('.png')] if os.path.exists(target_dir) else []
                     preset_mb = sum(os.path.getsize(os.path.join(target_dir, f)) for f in preset_files) / (1024 * 1024) if preset_files else 0.0
 
                     total_files_count = 0
                     total_bytes = 0
                     for root, dirs, files in os.walk(tile_cache_dir):
                         for f in files:
-                            if f.endswith('.jpg'):
+                            if f.endswith('.jpg') or f.endswith('.png'):
                                 total_files_count += 1
                                 try:
                                     total_bytes += os.path.getsize(os.path.join(root, f))
