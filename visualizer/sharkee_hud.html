@@ -5146,9 +5146,28 @@
             };
         }
 
+        let activeStreamingTiles = 0;
+        let totalStreamingTiles = 0;
+        function updateTileStreamingBadge() {
+            const badge = document.getElementById('map-net-badge');
+            if (!badge) return;
+            if (activeStreamingTiles > 0) {
+                const loaded = Math.max(0, totalStreamingTiles - activeStreamingTiles);
+                const pct = Math.round((loaded / Math.max(1, totalStreamingTiles)) * 100);
+                badge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: #ffaa00; display: inline-block; animation: pulseBadge 1s infinite;"></span> STREAMING ${pct}% (${loaded}/${totalStreamingTiles})`;
+                badge.style.color = '#ffaa00';
+            } else {
+                updateNetBadge();
+            }
+        }
+
         function updateNetBadge() {
             const badge = document.getElementById('map-net-badge');
             if (!badge) return;
+            if (activeStreamingTiles > 0) {
+                updateTileStreamingBadge();
+                return;
+            }
             if (navigator.onLine) {
                 badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block;"></span> ONLINE LIVE';
                 badge.style.color = 'var(--success)';
@@ -7843,6 +7862,9 @@
                 currentMapRadius = radiusKm;
                 currentMapProvider = provider;
                 currentMapMode = mapMode;
+                activeStreamingTiles = 0;
+                totalStreamingTiles = 0;
+                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
 
                 // Lock world origin strictly to homeLat/homeLon (EKF Origin)
                 if (recenter || homeLat === null) {
@@ -7926,78 +7948,100 @@
                 const span = Math.ceil(radMeters / tileSize) + 1;
                 const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
 
+                const flatOffsets = [];
                 for (let dx = -span; dx <= span; dx++) {
                     for (let dy = -span; dy <= span; dy++) {
                         const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
-                        if (distSq > maxDistSq) continue;
-
-                        const tx = currentTileX + dx;
-                        const ty = currentTileY + dy;
-                        const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
-
-                        if (!mapTiles.has(key)) {
-                            mapTiles.set(key, true);
-
-                            const mt = Math.abs(tx + ty) % 4;
-                            const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
-
-                            // Immediate flat mesh creation with neutral dark tactical slate base
-                            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                            const mat = new THREE.MeshBasicMaterial({
-                                color: 0x141f17,
-                                side: THREE.FrontSide,
-                                depthWrite: false,
-                                fog: false
-                            });
-                            const mesh = new THREE.Mesh(geo, mat);
-                            mesh.renderOrder = -1;
-                            mesh.rotation.x = -Math.PI / 2;
-                            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                            mesh.position.y = -2.0;
-                            mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
-                            mapGroup.add(mesh);
-
-                            function applyFlatTexture(texture) {
-                                if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
-                                    texture.dispose();
-                                    return;
-                                }
-                                const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
-                                texture.anisotropy = maxAniso;
-                                texture.generateMipmaps = true;
-                                texture.minFilter = THREE.LinearMipmapLinearFilter;
-                                texture.magFilter = THREE.LinearFilter;
-                                texture.encoding = THREE.sRGBEncoding;
-                                mat.map = texture;
-                                mat.color.setHex(0xffffff);
-                                mat.needsUpdate = true;
-                            }
-
-                            const loader = new THREE.TextureLoader();
-                            loader.setCrossOrigin('anonymous');
-
-                            loader.load(
-                                localUrl,
-                                (texture) => applyFlatTexture(texture),
-                                undefined,
-                                () => {
-                                    if (mapMode !== 'offline') {
-                                        // Single retry with exact same provider - never mix providers
-                                        setTimeout(() => {
-                                            if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
-                                                loader.load(
-                                                    localUrl,
-                                                    (texture) => applyFlatTexture(texture),
-                                                    undefined,
-                                                    () => { /* mesh remains visible with dark base */ }
-                                                );
-                                            }
-                                        }, 600);
-                                    }
-                                }
-                            );
+                        if (distSq <= maxDistSq) {
+                            flatOffsets.push({ dx, dy, distSq });
                         }
+                    }
+                }
+                // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
+                flatOffsets.sort((a, b) => a.distSq - b.distSq);
+
+                for (const { dx, dy } of flatOffsets) {
+                    const tx = currentTileX + dx;
+                    const ty = currentTileY + dy;
+                    const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
+
+                    if (!mapTiles.has(key)) {
+                        mapTiles.set(key, true);
+
+                        const mt = Math.abs(tx + ty) % 4;
+                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+
+                        // Immediate flat mesh creation with neutral dark tactical slate base
+                        const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                        const mat = new THREE.MeshBasicMaterial({
+                            color: 0x141f17,
+                            side: THREE.FrontSide,
+                            depthWrite: false,
+                            fog: false
+                        });
+                        const mesh = new THREE.Mesh(geo, mat);
+                        mesh.renderOrder = -1;
+                        mesh.rotation.x = -Math.PI / 2;
+                        mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                        mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                        mesh.position.y = -2.0;
+                        mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
+                        mapGroup.add(mesh);
+
+                        activeStreamingTiles++;
+                        totalStreamingTiles++;
+                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+
+                        function applyFlatTexture(texture) {
+                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                            if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
+                                texture.dispose();
+                                return;
+                            }
+                            const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                            texture.anisotropy = maxAniso;
+                            texture.generateMipmaps = true;
+                            texture.minFilter = THREE.LinearMipmapLinearFilter;
+                            texture.magFilter = THREE.LinearFilter;
+                            texture.encoding = THREE.sRGBEncoding;
+                            mat.map = texture;
+                            mat.color.setHex(0xffffff);
+                            mat.needsUpdate = true;
+                        }
+
+                        const loader = new THREE.TextureLoader();
+                        loader.setCrossOrigin('anonymous');
+
+                        loader.load(
+                            localUrl,
+                            (texture) => applyFlatTexture(texture),
+                            undefined,
+                            () => {
+                                if (mapMode !== 'offline') {
+                                    // Single retry with exact same provider - never mix providers
+                                    setTimeout(() => {
+                                        if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                            loader.load(
+                                                localUrl,
+                                                (texture) => applyFlatTexture(texture),
+                                                undefined,
+                                                () => {
+                                                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                                }
+                                            );
+                                        } else {
+                                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                        }
+                                    }, 600);
+                                } else {
+                                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                }
+                            }
+                        );
                     }
                 }
 
@@ -8044,149 +8088,171 @@
             const radMeters = radiusKm * 1000;
             const gridSpan = Math.max(5, Math.min(26, Math.ceil(radMeters / tileSize) + 1));
 
+            const terrainOffsets = [];
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
                 for (let dy = -gridSpan; dy <= gridSpan; dy++) {
-                    const tx = currentTileX + dx;
-                    const ty = currentTileY + dy;
-                    const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
+                    terrainOffsets.push({ dx, dy, distSq: dx * dx + dy * dy });
+                }
+            }
+            // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
+            terrainOffsets.sort((a, b) => a.distSq - b.distSq);
 
-                    if (!mapTiles.has(key)) {
-                        mapTiles.set(key, true);
+            for (const { dx, dy } of terrainOffsets) {
+                const tx = currentTileX + dx;
+                const ty = currentTileY + dy;
+                const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
 
-                        const mt = Math.abs(tx + ty) % 4;
-                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                if (!mapTiles.has(key)) {
+                    mapTiles.set(key, true);
 
-                        // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
-                        const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
-                        const mat = new THREE.MeshLambertMaterial({
-                            color: terrainWireframeMode ? 0x00e676 : 0x1f2e24,
-                            side: THREE.FrontSide,
-                            wireframe: terrainWireframeMode
-                        });
+                    const mt = Math.abs(tx + ty) % 4;
+                    const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
 
-                        // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
-                        mat.onBeforeCompile = (shader) => {
-                            mat.userData.shader = shader;
-                            const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
+                    // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
+                    const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
+                    const mat = new THREE.MeshLambertMaterial({
+                        color: terrainWireframeMode ? 0x00e676 : 0x1f2e24,
+                        side: THREE.FrontSide,
+                        wireframe: terrainWireframeMode
+                    });
 
-                            shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
-                            shader.uniforms.uSunlightOn = { value: 1.0 };
-                            shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
-                            shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
-                            shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
-                            shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
-                            shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
+                    // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
+                    mat.onBeforeCompile = (shader) => {
+                        mat.userData.shader = shader;
+                        const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
 
-                            shader.vertexShader = shader.vertexShader.replace(
-                                '#include <common>',
-                                `#include <common>
-                                varying vec3 vTerrainWorldNormal;
-                                varying vec3 vTerrainWorldPos;`
-                            ).replace(
-                                '#include <beginnormal_vertex>',
-                                `#include <beginnormal_vertex>
-                                vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
-                            ).replace(
-                                '#include <begin_vertex>',
-                                `#include <begin_vertex>
-                                vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
-                            );
+                        shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
+                        shader.uniforms.uSunlightOn = { value: 1.0 };
+                        shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
+                        shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
+                        shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
+                        shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
+                        shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
 
-                            shader.fragmentShader = shader.fragmentShader.replace(
-                                '#include <common>',
-                                `#include <common>
-                                uniform vec3 uSunDir;
-                                uniform float uSunlightOn;
-                                uniform vec3 uSunColor;
-                                uniform vec3 uShadowColor;
-                                uniform float uShadowThreshold;
-                                uniform float uShadowExponent;
-                                uniform float uSunBoost;
-                                varying vec3 vTerrainWorldNormal;
-                                varying vec3 vTerrainWorldPos;`
-                            ).replace(
-                                '#include <lights_fragment_end>',
-                                `#include <lights_fragment_end>
-                                if (uSunlightOn > 0.5) {
-                                    vec3 n = normalize(vTerrainWorldNormal);
-                                    vec3 l = normalize(uSunDir);
-                                    float NdotL = dot(n, l);
-
-                                    // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
-                                    float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
-                                    shadow = pow(shadow, uShadowExponent);
-
-                                    vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
-                                    vec3 shadowed = diffuseColor.rgb * uShadowColor;
-
-                                    vec3 terrainLit = mix(shadowed, sunlit, shadow);
-
-                                    // Atmospheric Ridge Rim Highlighting
-                                    vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
-                                    float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
-                                    terrainLit += uSunColor * rim * 0.18;
-
-                                    reflectedLight.directDiffuse = vec3(0.0);
-                                    reflectedLight.indirectDiffuse = terrainLit;
-                                }`
-                            );
-                        };
-
-                        const mesh = new THREE.Mesh(geo, mat);
-                        mesh.renderOrder = -1;
-                        mesh.rotation.x = -Math.PI / 2;
-                        mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                        mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                        mesh.position.y = -0.2;
-                        mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
-                        mapGroup.add(mesh);
-
-                        // 2. Apply 3D DEM elevation displacement IMMEDIATELY!
-                        applyDemElevationToMesh(mesh, activeZoom, tx, ty);
-
-                        // 3. Asynchronously load high-resolution satellite imagery texture
-                        function applyTextureToMesh(texture) {
-                            if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
-                                texture.dispose();
-                                return;
-                            }
-                            const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
-                            texture.anisotropy = maxAniso;
-                            texture.generateMipmaps = true;
-                            texture.minFilter = THREE.LinearMipmapLinearFilter;
-                            texture.magFilter = THREE.LinearFilter;
-                            texture.encoding = THREE.sRGBEncoding;
-                            mat.map = texture;
-                            if (!terrainWireframeMode) {
-                                mat.color.setHex(0xffffff);
-                            }
-                            mat.needsUpdate = true;
-                        }
-
-                        const loader = new THREE.TextureLoader();
-                        loader.setCrossOrigin('anonymous');
-
-                        loader.load(
-                            localUrl,
-                            (texture) => applyTextureToMesh(texture),
-                            undefined,
-                            () => {
-                                if (mapMode !== 'offline') {
-                                    // Single retry with exact same provider - never mix providers
-                                    setTimeout(() => {
-                                        if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
-                                            loader.load(
-                                                localUrl,
-                                                (texture) => applyTextureToMesh(texture),
-                                                undefined,
-                                                () => { /* Even if satellite imagery fails, 3D terrain mesh remains intact and visible */ }
-                                            );
-                                        }
-                                    }, 600);
-                                }
-                            }
+                        shader.vertexShader = shader.vertexShader.replace(
+                            '#include <common>',
+                            `#include <common>
+                            varying vec3 vTerrainWorldNormal;
+                            varying vec3 vTerrainWorldPos;`
+                        ).replace(
+                            '#include <beginnormal_vertex>',
+                            `#include <beginnormal_vertex>
+                            vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                        ).replace(
+                            '#include <begin_vertex>',
+                            `#include <begin_vertex>
+                            vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
                         );
+
+                        shader.fragmentShader = shader.fragmentShader.replace(
+                            '#include <common>',
+                            `#include <common>
+                            uniform vec3 uSunDir;
+                            uniform float uSunlightOn;
+                            uniform vec3 uSunColor;
+                            uniform vec3 uShadowColor;
+                            uniform float uShadowThreshold;
+                            uniform float uShadowExponent;
+                            uniform float uSunBoost;
+                            varying vec3 vTerrainWorldNormal;
+                            varying vec3 vTerrainWorldPos;`
+                        ).replace(
+                            '#include <lights_fragment_end>',
+                            `#include <lights_fragment_end>
+                            if (uSunlightOn > 0.5) {
+                                vec3 n = normalize(vTerrainWorldNormal);
+                                vec3 l = normalize(uSunDir);
+                                float NdotL = dot(n, l);
+
+                                // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
+                                float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
+                                shadow = pow(shadow, uShadowExponent);
+
+                                vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
+                                vec3 shadowed = diffuseColor.rgb * uShadowColor;
+
+                                vec3 terrainLit = mix(shadowed, sunlit, shadow);
+
+                                // Atmospheric Ridge Rim Highlighting
+                                vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
+                                float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
+                                terrainLit += uSunColor * rim * 0.18;
+
+                                reflectedLight.directDiffuse = vec3(0.0);
+                                reflectedLight.indirectDiffuse = terrainLit;
+                            }`
+                        );
+                    };
+
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.renderOrder = -1;
+                    mesh.rotation.x = -Math.PI / 2;
+                    mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                    mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                    mesh.position.y = -0.2;
+                    mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
+                    mapGroup.add(mesh);
+
+                    activeStreamingTiles++;
+                    totalStreamingTiles++;
+                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+
+                    // 2. Apply 3D DEM elevation displacement IMMEDIATELY!
+                    applyDemElevationToMesh(mesh, activeZoom, tx, ty);
+
+                    // 3. Asynchronously load high-resolution satellite imagery texture
+                    function applyTextureToMesh(texture) {
+                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                        if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
+                            texture.dispose();
+                            return;
+                        }
+                        const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                        texture.anisotropy = maxAniso;
+                        texture.generateMipmaps = true;
+                        texture.minFilter = THREE.LinearMipmapLinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        texture.encoding = THREE.sRGBEncoding;
+                        mat.map = texture;
+                        if (!terrainWireframeMode) {
+                            mat.color.setHex(0xffffff);
+                        }
+                        mat.needsUpdate = true;
                     }
+
+                    const loader = new THREE.TextureLoader();
+                    loader.setCrossOrigin('anonymous');
+
+                    loader.load(
+                        localUrl,
+                        (texture) => applyTextureToMesh(texture),
+                        undefined,
+                        () => {
+                            if (mapMode !== 'offline') {
+                                // Single retry with exact same provider - never mix providers
+                                setTimeout(() => {
+                                    if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                        loader.load(
+                                            localUrl,
+                                            (texture) => applyTextureToMesh(texture),
+                                            undefined,
+                                            () => {
+                                                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                            }
+                                        );
+                                    } else {
+                                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                    }
+                                }, 600);
+                            } else {
+                                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                            }
+                        }
+                    );
                 }
             }
 
