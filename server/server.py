@@ -930,6 +930,42 @@ async def ws_handler(websocket, path=None):
                     seq = int(cmd.get("seq", 0))
                     mission_handler.set_current(seq)
                     print(f"[Mission] Client requested set current waypoint seq {seq}")
+                elif action == "arm":
+                    arm_val = 1 if cmd.get("value", True) else 0
+                    target_sys = getattr(connection, 'target_system', 1) or 1
+                    target_comp = getattr(connection, 'target_component', 1) or 1
+                    connection.mav.command_long_send(
+                        target_sys,
+                        target_comp,
+                        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                        0,
+                        arm_val, 0, 0, 0, 0, 0, 0
+                    )
+                    print(f"[MAVLink] Sent ARM_DISARM ({arm_val}) to Sys {target_sys}:{target_comp}")
+                elif action == "set_mode":
+                    mode_name = str(cmd.get("mode", "GUIDED")).upper()
+                    try:
+                        mode_mapping = connection.mode_mapping()
+                        if mode_mapping and mode_name in mode_mapping:
+                            mode_id = mode_mapping[mode_name]
+                            connection.set_mode(mode_id)
+                            print(f"[MAVLink] Set flight mode to {mode_name} (ID: {mode_id})")
+                        else:
+                            print(f"[MAVLink] Unknown flight mode: {mode_name}")
+                    except Exception as me:
+                        print(f"[MAVLink] Could not set flight mode {mode_name}: {me}")
+                elif action == "takeoff":
+                    alt = float(cmd.get("alt", 30.0))
+                    target_sys = getattr(connection, 'target_system', 1) or 1
+                    target_comp = getattr(connection, 'target_component', 1) or 1
+                    connection.mav.command_long_send(
+                        target_sys,
+                        target_comp,
+                        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+                        0,
+                        0, 0, 0, 0, 0, 0, alt
+                    )
+                    print(f"[MAVLink] Sent NAV_TAKEOFF (alt={alt}m) to Sys {target_sys}:{target_comp}")
             except Exception as e:
                 print(f"[Server] Error processing client message: {e}")
     except websockets.exceptions.ConnectionClosed:

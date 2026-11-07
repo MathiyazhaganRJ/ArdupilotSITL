@@ -2532,6 +2532,566 @@
                 bottom: 12px !important;
             }
         }
+
+        /* ========================================================= */
+        /* CORV-GCS 3D MAP & TACTICAL HUD FULLSCREEN AESTHETICS      */
+        /* ========================================================= */
+        body.corv-mode-active #ui-panel,
+        body.corv-mode-active #lxnav-mfd-widget,
+        body.corv-mode-active #eis-widget,
+        body.corv-mode-active #compass-widget,
+        body.corv-mode-active #terrain-graph-container,
+        body.corv-mode-active #btn-expand-panel,
+        body.corv-mode-active .floating-toolbar,
+        body.corv-mode-active #weather-modal,
+        body.corv-mode-active #fms-modal,
+        body.corv-mode-active #messages-modal {
+            display: none !important;
+        }
+
+        #corv-hud-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 990;
+            font-family: 'B612', 'Share Tech Mono', sans-serif;
+            user-select: none;
+        }
+
+        #corv-topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 38px;
+            background: rgba(6, 12, 18, 0.88);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .corv-brand-wrap {
+            display: flex;
+            align-items: center;
+        }
+
+        .corv-brand-title {
+            font-family: 'B612', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            color: #00e5ff;
+            letter-spacing: 2px;
+            margin-right: 24px;
+            text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+        }
+
+        .corv-tabs {
+            display: flex;
+            gap: 4px;
+        }
+
+        .corv-tab-btn {
+            background: transparent;
+            border: none;
+            color: #8e9ca8;
+            font-family: 'B612', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 9px 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .corv-tab-btn:hover,
+        .corv-tab-btn.active {
+            color: #ffffff;
+            border-bottom-color: #00e5ff;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+        }
+
+        .corv-topbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .corv-icon-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            color: #d1d8e0;
+            font-family: 'B612 Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .corv-icon-btn:hover {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: #00e5ff;
+            color: #00e5ff;
+        }
+
+        .corv-icon-btn.active {
+            background: rgba(0, 229, 255, 0.25);
+            border-color: #00e5ff;
+            color: #00e5ff;
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+        }
+
+        .corv-exit-btn {
+            background: rgba(255, 59, 48, 0.2) !important;
+            border-color: rgba(255, 59, 48, 0.6) !important;
+            color: #ff3b30 !important;
+            font-weight: 800 !important;
+        }
+
+        .corv-exit-btn:hover {
+            background: rgba(255, 59, 48, 0.4) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 10px rgba(255, 59, 48, 0.5) !important;
+        }
+
+        .corv-fps-badge {
+            font-family: 'B612 Mono', monospace;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #8e9ca8;
+            margin-left: 6px;
+        }
+
+        #corv-hud-left {
+            position: absolute;
+            top: 55px;
+            left: 36px;
+            pointer-events: none;
+        }
+
+        .corv-metric-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .corv-metric-label {
+            font-family: 'B612', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.65);
+            text-transform: uppercase;
+            margin-bottom: -4px;
+        }
+
+        .corv-metric-primary {
+            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-size: 38px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+        }
+
+        .corv-metric-unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin-left: 2px;
+        }
+
+        .corv-metric-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 4px;
+        }
+
+        .corv-metric-subblock {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .corv-metric-label-sub {
+            font-family: 'B612', sans-serif;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            color: rgba(255, 255, 255, 0.55);
+            text-transform: uppercase;
+            margin-bottom: -2px;
+        }
+
+        .corv-metric-secondary {
+            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+        }
+
+        .corv-metric-unit-sm {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .corv-metric-gload {
+            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-size: 19px;
+            font-weight: 800;
+            color: #30d158;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 10px rgba(48, 209, 88, 0.5);
+        }
+
+        .corv-lq-widget {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 6px;
+        }
+
+        .corv-lq-meta {
+            display: flex;
+            flex-direction: column;
+            font-family: 'B612 Mono', monospace;
+            line-height: 1.1;
+        }
+
+        .corv-lq-tag {
+            font-size: 9px;
+            color: #ff3b30;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .corv-lq-pct {
+            font-size: 11px;
+            color: #ff3b30;
+            font-weight: 700;
+        }
+
+        .corv-batt-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(7, 14, 20, 0.8);
+            border: 1.5px solid #ffd60a;
+            border-radius: 4px;
+            padding: 4px 10px;
+            margin-top: 12px;
+            box-shadow: 0 0 12px rgba(255, 214, 10, 0.25);
+        }
+
+        .corv-batt-label {
+            font-family: 'B612 Mono', monospace;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #ffd60a;
+            letter-spacing: 0.5px;
+        }
+
+        #corv-hud-right {
+            position: absolute;
+            top: 55px;
+            right: 36px;
+            text-align: right;
+            pointer-events: none;
+        }
+
+        #corv-hud-throttle-widget {
+            position: absolute;
+            top: 52%;
+            right: 36px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .corv-rotor-label {
+            font-family: 'B612', sans-serif;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2px;
+        }
+
+        .corv-throttle-center-text {
+            font-family: 'B612 Mono', monospace;
+            font-size: 14px;
+            font-weight: 800;
+            fill: #ff9f0a;
+        }
+
+        #corv-hud-traffic-widget {
+            position: absolute;
+            bottom: 50px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        .corv-coords-card {
+            background: rgba(6, 12, 18, 0.85);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 4px;
+            padding: 5px 12px;
+            min-width: 175px;
+        }
+
+        .corv-coord-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            font-family: 'B612 Mono', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .corv-coord-key {
+            color: rgba(255, 255, 255, 0.55);
+            font-weight: 600;
+        }
+
+        .corv-coord-val {
+            color: #ffffff;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .corv-traffic-table-card {
+            background: rgba(6, 12, 18, 0.85);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 4px;
+            padding: 6px 10px;
+            min-width: 220px;
+        }
+
+        .corv-traffic-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'B612 Mono', monospace;
+            font-size: 10.5px;
+        }
+
+        .corv-traffic-tbl th {
+            color: rgba(255, 255, 255, 0.5);
+            text-align: left;
+            padding: 2px 6px;
+            font-size: 9.5px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .corv-traffic-tbl td {
+            color: #ffffff;
+            padding: 3px 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #corv-minimap-card {
+            position: absolute;
+            bottom: 48px;
+            left: 20px;
+            width: 240px;
+            height: 164px;
+            background: #060c12;
+            border: 1.5px solid rgba(0, 229, 255, 0.45);
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
+            overflow: hidden;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .corv-minimap-header {
+            height: 22px;
+            background: rgba(6, 12, 18, 0.95);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            font-family: 'B612 Mono', monospace;
+            font-size: 9px;
+            font-weight: 700;
+            color: #00e5ff;
+            letter-spacing: 1px;
+        }
+
+        .corv-minimap-ctrls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .corv-minimap-btn {
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            color: #ffffff;
+            font-size: 11px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+        }
+
+        .corv-minimap-btn:hover {
+            background: rgba(0, 229, 255, 0.25);
+            border-color: #00e5ff;
+            color: #00e5ff;
+        }
+
+        #corv-minimap-canvas {
+            width: 240px;
+            height: 142px;
+            display: block;
+        }
+
+        #corv-bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 36px;
+            background: rgba(6, 12, 18, 0.95);
+            backdrop-filter: blur(8px);
+            border-top: 1.5px solid rgba(255, 59, 48, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            pointer-events: auto;
+            z-index: 10;
+            font-family: 'B612 Mono', monospace;
+            font-size: 11px;
+        }
+
+        .corv-btm-stats {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: #ffffff;
+            font-size: 11px;
+        }
+
+        .corv-btm-stat-item {
+            display: flex;
+            align-items: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .corv-dot-green {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #30d158;
+            box-shadow: 0 0 6px #30d158;
+            margin-right: 5px;
+        }
+
+        .corv-btm-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .corv-mode-selector {
+            background: rgba(0, 113, 227, 0.25);
+            border: 1.5px solid #00e5ff;
+            border-radius: 3px;
+            color: #00e5ff;
+            font-weight: 800;
+            font-size: 11px;
+            padding: 4px 12px;
+            letter-spacing: 1px;
+        }
+
+        .corv-cmd-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            color: #ffffff;
+            font-family: 'B612', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .corv-cmd-btn:hover {
+            background: rgba(0, 229, 255, 0.2);
+            border-color: #00e5ff;
+            color: #00e5ff;
+        }
+
+        .corv-arm-btn {
+            background: rgba(255, 59, 48, 0.25);
+            border-color: #ff3b30;
+            color: #ff3b30;
+            font-weight: 800;
+        }
+
+        .corv-arm-btn:hover {
+            background: rgba(255, 59, 48, 0.45);
+            color: #ffffff;
+        }
+
+        .corv-btm-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+        }
+
+        .corv-btm-info-item {
+            display: flex;
+            align-items: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .corv-mini-set-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            margin-left: 4px;
+            cursor: pointer;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -2539,8 +3099,196 @@
 </head>
 
 <body>
+    <!-- ========================================== -->
+    <!-- CORV-GCS FULLSCREEN TACTICAL HUD & 3D MAP  -->
+    <!-- ========================================== -->
+    <div id="corv-hud-overlay" style="display: none;">
+        <!-- Top Tactical Navigation Bar -->
+        <header id="corv-topbar">
+            <div class="corv-brand-wrap">
+                <span class="corv-brand-title">CORV SYSTEMS</span>
+                <nav class="corv-tabs">
+                    <button class="corv-tab-btn active" id="corv-tab-flightdata">FLIGHT DATA</button>
+                    <button class="corv-tab-btn" id="corv-tab-flightplan">FLIGHT PLAN</button>
+                    <button class="corv-tab-btn" id="corv-tab-setup">SETUP</button>
+                    <button class="corv-tab-btn" id="corv-tab-sysconfig">SYS CONFIG</button>
+                </nav>
+            </div>
+            <div class="corv-topbar-controls">
+                <button class="corv-icon-btn" id="corv-btn-peaks" title="Jump to Corv 3D Peaks">PEAKS 3D</button>
+                <button class="corv-icon-btn" id="corv-btn-home" title="Jump to Home Airfield">HOME</button>
+                <button class="corv-icon-btn" id="corv-btn-sun" title="Toggle Sun Hillshading">SUN</button>
+                <button class="corv-icon-btn active" id="corv-btn-chase" title="Toggle 3P Chase Camera">3P</button>
+                <button class="corv-icon-btn" id="corv-btn-fullscreen" title="Toggle Fullscreen">FULL</button>
+                <button class="corv-icon-btn corv-exit-btn" id="corv-btn-exit" title="Exit 3D Corv Map (Hotkey 'V')">EXIT 3D</button>
+                <span class="corv-fps-badge" id="corv-live-fps">60 FPS</span>
+            </div>
+        </header>
+
+        <!-- Top-Left Flight Speed & LQ HUD -->
+        <div id="corv-hud-left">
+            <div class="corv-metric-block">
+                <div class="corv-metric-label">AIRSPEED</div>
+                <div class="corv-metric-primary"><span id="corv-val-airspeed">0.0</span> <span class="corv-metric-unit">m/s</span></div>
+            </div>
+            <div class="corv-metric-row">
+                <div class="corv-metric-subblock">
+                    <div class="corv-metric-label-sub">GROUND SPD</div>
+                    <div class="corv-metric-secondary"><span id="corv-val-groundspeed">0.0</span> <span class="corv-metric-unit-sm">m/s</span></div>
+                </div>
+                <!-- Corv Antenna LQ Graphic -->
+                <div class="corv-lq-widget">
+                    <svg class="corv-lq-bars" width="28" height="26" viewBox="0 0 28 26">
+                        <line x1="4" y1="22" x2="4" y2="18" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="10" y1="22" x2="10" y2="13" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="16" y1="22" x2="16" y2="8" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="22" y1="22" x2="22" y2="2" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="2" y1="22" x2="24" y2="2" stroke="#ff3b30" stroke-width="2"/>
+                    </svg>
+                    <div class="corv-lq-meta">
+                        <span class="corv-lq-tag">LINK</span>
+                        <span class="corv-lq-pct" id="corv-val-lq">LQ 100%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="corv-metric-row" style="margin-top: 6px;">
+                <div class="corv-metric-subblock">
+                    <div class="corv-metric-label-sub">G-LOAD</div>
+                    <div class="corv-metric-gload" id="corv-val-gload">1.0 G</div>
+                </div>
+            </div>
+            <!-- Low Battery Warning Banner -->
+            <div class="corv-batt-pill" id="corv-batt-alert">
+                <div class="corv-batt-icon">
+                    <svg width="22" height="13" viewBox="0 0 24 14" fill="none" stroke="#ffd60a" stroke-width="1.8">
+                        <rect x="1" y="1" width="18" height="12" rx="2"></rect>
+                        <line x1="21" y1="4" x2="21" y2="10" stroke-linecap="round"></line>
+                        <line x1="10" y1="4" x2="10" y2="10" stroke="#ffd60a" stroke-width="2"></line>
+                        <line x1="6" y1="7" x2="14" y2="7" stroke="#ffd60a" stroke-width="2"></line>
+                    </svg>
+                </div>
+                <div class="corv-batt-label" id="corv-val-batt-alert">BATT 12.4V (92%)</div>
+            </div>
+        </div>
+
+        <!-- Top-Right Flight Altitude HUD -->
+        <div id="corv-hud-right">
+            <div class="corv-metric-block" style="text-align: right;">
+                <div class="corv-metric-label">ALTITUDE</div>
+                <div class="corv-metric-primary"><span id="corv-val-alt-msl">0</span> <span class="corv-metric-unit">m MSL</span></div>
+            </div>
+            <div class="corv-metric-block" style="text-align: right; margin-top: 6px;">
+                <div class="corv-metric-label-sub">TERR ALT</div>
+                <div class="corv-metric-secondary"><span id="corv-val-alt-agl">0</span> <span class="corv-metric-unit-sm">m AGL</span></div>
+            </div>
+            <div class="corv-metric-block" style="text-align: right; margin-top: 6px;">
+                <div class="corv-metric-label-sub">LIDAR</div>
+                <div class="corv-metric-secondary"><span id="corv-val-lidar">0.00</span> <span class="corv-metric-unit-sm">m AGL</span></div>
+            </div>
+        </div>
+
+        <!-- Mid-Right Rotor Load / Throttle Arc Gauge -->
+        <div id="corv-hud-throttle-widget">
+            <div class="corv-rotor-label">ROTOR LOAD</div>
+            <svg class="corv-throttle-svg" width="110" height="110" viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="42" fill="none" stroke="rgba(255, 255, 255, 0.15)" stroke-width="5" stroke-dasharray="197 197" stroke-dashoffset="40" stroke-linecap="round"/>
+                <circle id="corv-throttle-meter-arc" cx="55" cy="55" r="42" fill="none" stroke="#ff9f0a" stroke-width="6" stroke-dasharray="197 197" stroke-dashoffset="140" stroke-linecap="round"/>
+                <text x="55" y="58" text-anchor="middle" dominant-baseline="middle" class="corv-throttle-center-text" id="corv-val-throttle">CH3</text>
+            </svg>
+        </div>
+
+        <!-- Bottom-Right Telemetry & Traffic Coordinates Box -->
+        <div id="corv-hud-traffic-widget">
+            <div class="corv-traffic-table-card">
+                <table class="corv-traffic-tbl">
+                    <thead>
+                        <tr>
+                            <th>CALLSIGN</th>
+                            <th>ALT (M)</th>
+                            <th>DIST (KM)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corv-traffic-rows">
+                        <tr><td>QTR38</td><td>18973</td><td>35.0</td></tr>
+                        <tr><td>ALK217</td><td>9754</td><td>57.3</td></tr>
+                        <tr><td>SHARK1</td><td id="corv-tbl-alt">240</td><td id="corv-tbl-dist">0.2</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="corv-coords-card">
+                <div class="corv-coord-row">
+                    <span class="corv-coord-key">LATITUDE</span>
+                    <span class="corv-coord-val" id="corv-coord-lat">8.43919</span>
+                </div>
+                <div class="corv-coord-row">
+                    <span class="corv-coord-key">LONGITUDE</span>
+                    <span class="corv-coord-val" id="corv-coord-lon">77.43659</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom-Left 2D Picture-in-Picture Mini-Map -->
+        <div id="corv-minimap-card">
+            <div class="corv-minimap-header">
+                <span class="corv-minimap-tag">2D TACTICAL RADAR</span>
+                <div class="corv-minimap-ctrls">
+                    <button class="corv-minimap-btn" id="corv-mm-out" title="Zoom Out">-</button>
+                    <button class="corv-minimap-btn" id="corv-mm-in" title="Zoom In">+</button>
+                </div>
+            </div>
+            <canvas id="corv-minimap-canvas" width="240" height="142"></canvas>
+        </div>
+
+        <!-- Bottom Tactical Action & Status Bar -->
+        <footer id="corv-bottom-bar">
+            <div class="corv-btm-stats">
+                <div class="corv-btm-stat-item">
+                    <span class="corv-dot-green"></span>
+                    <span id="corv-btm-udp">UDP 0.0 kbps</span>
+                </div>
+                <div class="corv-btm-stat-item">
+                    <span>100%</span>
+                </div>
+                <div class="corv-btm-stat-item" id="corv-btm-batt">
+                    12.2V  0%
+                </div>
+                <div class="corv-btm-stat-item" id="corv-btm-gps">
+                    No GPS 0 sat
+                </div>
+                <div class="corv-btm-stat-item" id="corv-btm-time">
+                    55:22
+                </div>
+            </div>
+
+            <div class="corv-btm-actions">
+                <div class="corv-mode-selector" id="corv-flight-mode-badge">
+                    GUIDED
+                </div>
+                <button class="corv-cmd-btn corv-arm-btn" id="corv-btn-arm">DISARM</button>
+                <button class="corv-cmd-btn" id="corv-btn-takeoff">TAKEOFF</button>
+                <button class="corv-cmd-btn" id="corv-btn-rtl">RTL</button>
+                <button class="corv-cmd-btn" id="corv-btn-auto">AUTO</button>
+                <button class="corv-cmd-btn" id="corv-btn-guided">GUIDED</button>
+                <button class="corv-cmd-btn" id="corv-btn-land">LAND</button>
+            </div>
+
+            <div class="corv-btm-info">
+                <div class="corv-btm-info-item">SPD <span id="corv-btm-spd-target">10</span> M/S <button class="corv-mini-set-btn">SET</button></div>
+                <div class="corv-btm-info-item">HOME <span id="corv-btm-dist-home">19.77KM</span></div>
+                <div class="corv-btm-info-item">WP <span id="corv-btm-wp-ratio">79/133</span></div>
+            </div>
+        </footer>
+    </div>
+
     <!-- Floating Toolbar -->
     <div class="floating-toolbar">
+        <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle Corv 3D Map & Tactical HUD (Hotkey 'V')" style="background: rgba(0, 229, 255, 0.18); border-color: rgba(0, 229, 255, 0.45); color: #00e5ff;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 19 22 19 12 2"></polygon>
+                <polygon points="12 9 7 19 17 19 12 9" fill="currentColor" fill-opacity="0.3"></polygon>
+            </svg>
+            <span style="font-size: 8px; font-weight: 800; margin-left: 2px;">3D</span>
+        </button>
         <button class="toolbar-btn active" id="btn-toggle-ui" title="Toggle Control Panel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -4544,25 +5292,29 @@
         }
 
         // Quick Preset Shortcut Buttons (Corv 3D Peaks & Home Airfield)
+        function applyAirfieldPreset(presetId) {
+            const select = document.getElementById('map-cache-preset');
+            if (select) {
+                select.value = presetId;
+                if (typeof select.onchange === 'function') {
+                    select.onchange({ target: select });
+                } else {
+                    select.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+
         const btnQuickCorv = document.getElementById('btn-quick-corv');
         if (btnQuickCorv) {
             btnQuickCorv.onclick = () => {
-                const select = document.getElementById('map-cache-preset');
-                if (select) {
-                    select.value = 'corv_peaks';
-                    select.dispatchEvent(new Event('change'));
-                }
+                applyAirfieldPreset('corv_peaks');
                 if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
             };
         }
         const btnQuickHome = document.getElementById('btn-quick-home');
         if (btnQuickHome) {
             btnQuickHome.onclick = () => {
-                const select = document.getElementById('map-cache-preset');
-                if (select) {
-                    select.value = 'default';
-                    select.dispatchEvent(new Event('change'));
-                }
+                applyAirfieldPreset('default');
             };
         }
 
@@ -8528,6 +9280,15 @@
                 camera.position.x += (desiredX - camera.position.x) * 0.08;
                 camera.position.y += (desiredY - camera.position.y) * 0.08;
                 camera.position.z += (desiredZ - camera.position.z) * 0.08;
+
+                // Terrain collision avoidance: keep camera at least 6m above ground surface
+                if (typeof getTerrainElevationAt === 'function') {
+                    const camGroundElev = getTerrainElevationAt(camera.position.x, camera.position.z);
+                    if (camera.position.y < camGroundElev + 6.0) {
+                        camera.position.y = camGroundElev + 6.0;
+                    }
+                }
+
                 controls.target.lerp(vtolGroup.position, 0.1);
             } else if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
@@ -8746,6 +9507,14 @@
             }
 
             renderer.render(scene, camera);
+
+            // Corv-GCS 3D Map & Tactical HUD per-frame rendering
+            if (typeof corvModeActive !== 'undefined' && corvModeActive) {
+                if (typeof updateCorvHudReadouts === 'function') updateCorvHudReadouts();
+                if (typeof renderCorvMiniMap === 'function' && corvFrameCount % 5 === 0) {
+                    renderCorvMiniMap();
+                }
+            }
         }
 
         // Immediate startup initialization of cached mission waypoints and LXNAV displays
@@ -9689,9 +10458,380 @@
 
         setInterval(updateEisInstrument, 60);
 
+        // ==========================================
+        // CORV-GCS 3D MAP & TACTICAL HUD CONTROLLER
+        // ==========================================
+        let corvModeActive = false;
+        let corvMiniMapZoom = 15;
+        const corvTileImgCache = new Map();
+        let corvFrameCount = 0;
+        let corvLastFpsTime = performance.now();
+        let corvFpsValue = 60;
+        const corvSavedWidgetStates = {
+            uiPanel: true,
+            lxnav: true,
+            eis: true,
+            compass: true,
+            graph: true,
+            toolbar: true,
+            expandBtn: false
+        };
+
+        function setCorvMode(enable) {
+            corvModeActive = (enable !== undefined) ? !!enable : !corvModeActive;
+            document.body.classList.toggle('corv-mode-active', corvModeActive);
+
+            const overlay = document.getElementById('corv-hud-overlay');
+            const btnToolbar = document.getElementById('btn-toggle-corv-mode');
+            if (btnToolbar) btnToolbar.classList.toggle('active', corvModeActive);
+
+            const uiPanel = document.getElementById('ui-panel');
+            const lxnav = document.getElementById('lxnav-mfd-widget');
+            const eis = document.getElementById('eis-widget');
+            const compass = document.getElementById('compass-widget');
+            const graph = document.getElementById('terrain-graph-container');
+            const toolbar = document.querySelector('.floating-toolbar');
+            const expandBtn = document.getElementById('btn-expand-panel');
+
+            if (corvModeActive) {
+                // Save current visibility state of desktop avionics widgets
+                corvSavedWidgetStates.uiPanel = uiPanel ? (uiPanel.style.display !== 'none') : true;
+                corvSavedWidgetStates.lxnav = lxnav ? (lxnav.style.display !== 'none') : true;
+                corvSavedWidgetStates.eis = eis ? (eis.style.display !== 'none') : true;
+                corvSavedWidgetStates.compass = compass ? (compass.style.display !== 'none') : true;
+                corvSavedWidgetStates.graph = graph ? (graph.style.display !== 'none') : true;
+                corvSavedWidgetStates.toolbar = toolbar ? (toolbar.style.display !== 'none') : true;
+                corvSavedWidgetStates.expandBtn = expandBtn ? (expandBtn.style.display !== 'none') : false;
+
+                if (uiPanel) uiPanel.style.display = 'none';
+                if (lxnav) lxnav.style.display = 'none';
+                if (eis) eis.style.display = 'none';
+                if (compass) compass.style.display = 'none';
+                if (graph) graph.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
+                if (expandBtn) expandBtn.style.display = 'none';
+
+                if (overlay) overlay.style.display = 'block';
+
+                // Activate Corv-GCS 3P Chase Camera and 3D Topographic DEM
+                if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
+
+                if (!terrain3DEnabled) {
+                    terrain3DEnabled = true;
+                    localStorage.setItem('pilot_terrain_3d', 'true');
+                    const chk = document.getElementById('chk-toggle-terrain-3d');
+                    if (chk) chk.checked = true;
+                    const status = document.getElementById('terrain-3d-status');
+                    if (status) {
+                        status.innerText = '3D ACTIVE';
+                        status.style.color = 'var(--success)';
+                    }
+                    if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
+                }
+
+                // If aircraft is disarmed or sitting at ground (y < 30) while at peaks, lift preview
+                if (typeof vtolGroup !== 'undefined' && vtolGroup && vtolGroup.position.y < 30) {
+                    const presetVal = document.getElementById('map-cache-preset')?.value;
+                    if (presetVal === 'corv_peaks') {
+                        vtolGroup.position.set(0, 240, 0);
+                        if (typeof targetPos !== 'undefined') targetPos.set(0, 240, 0);
+                    }
+                }
+
+                renderCorvMiniMap();
+            } else {
+                if (overlay) overlay.style.display = 'none';
+
+                // Restore previous visibility state of all avionics widgets
+                if (uiPanel && corvSavedWidgetStates.uiPanel) uiPanel.style.display = '';
+                if (lxnav && corvSavedWidgetStates.lxnav) lxnav.style.display = '';
+                if (eis && corvSavedWidgetStates.eis) eis.style.display = '';
+                if (compass && corvSavedWidgetStates.compass) compass.style.display = '';
+                if (graph && corvSavedWidgetStates.graph) graph.style.display = '';
+                if (toolbar && corvSavedWidgetStates.toolbar) toolbar.style.display = '';
+                if (expandBtn && corvSavedWidgetStates.expandBtn) expandBtn.style.display = '';
+            }
+        }
+
+        function getCorvMapTile(z, x, y) {
+            const key = `${z}_${x}_${y}`;
+            if (corvTileImgCache.has(key)) return corvTileImgCache.get(key);
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            const mt = Math.abs(x + y) % 4;
+            img.src = `https://mt${mt}.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
+            corvTileImgCache.set(key, img);
+            img.onload = () => {
+                if (corvModeActive) renderCorvMiniMap();
+            };
+            return img;
+        }
+
+        function renderCorvMiniMap() {
+            const cvs = document.getElementById('corv-minimap-canvas');
+            if (!cvs || !corvModeActive) return;
+            const ctx = cvs.getContext('2d');
+            if (!ctx) return;
+
+            const w = cvs.width;
+            const h = cvs.height;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            const lat = currentPlaneLat || (homeLat || 8.43919);
+            const lon = currentPlaneLon || (homeLon || 77.43659);
+            const z = corvMiniMapZoom;
+
+            const fx = lon2tileFloat(lon, z);
+            const fy = lat2tileFloat(lat, z);
+            const centerTx = Math.floor(fx);
+            const centerTy = Math.floor(fy);
+
+            ctx.fillStyle = '#060c12';
+            ctx.fillRect(0, 0, w, h);
+
+            // Render 3x3 surrounding Google Satellite tiles
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const tx = centerTx + dx;
+                    const ty = centerTy + dy;
+                    const img = getCorvMapTile(z, tx, ty);
+                    const drawX = Math.round(cx + (tx - fx) * 256);
+                    const drawY = Math.round(cy + (ty - fy) * 256);
+                    if (img.complete && img.naturalWidth > 0) {
+                        ctx.drawImage(img, drawX, drawY, 256, 256);
+                    }
+                }
+            }
+
+            // Subtle 500m tactical range ring
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 32, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Aircraft Silhouette & Heading Vector
+            const yawDeg = planeHeading || 0;
+            const yawRad = yawDeg * Math.PI / 180;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(yawRad);
+
+            // Forward red heading laser ray
+            ctx.strokeStyle = '#ff3b30';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -6);
+            ctx.lineTo(0, -32);
+            ctx.stroke();
+
+            // White aircraft silhouette with orange wingtips
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(0, -9);
+            ctx.lineTo(2, -3);
+            ctx.lineTo(11, 1);
+            ctx.lineTo(11, 3);
+            ctx.lineTo(2, 3);
+            ctx.lineTo(1.5, 8);
+            ctx.lineTo(5, 10);
+            ctx.lineTo(5, 11);
+            ctx.lineTo(-5, 11);
+            ctx.lineTo(-5, 10);
+            ctx.lineTo(-1.5, 8);
+            ctx.lineTo(-2, 3);
+            ctx.lineTo(-11, 3);
+            ctx.lineTo(-11, 1);
+            ctx.lineTo(-2, -3);
+            ctx.closePath();
+            ctx.fill();
+
+            // Orange wingtips
+            ctx.fillStyle = '#ff9f0a';
+            ctx.fillRect(-11, 1, 2.5, 2);
+            ctx.fillRect(8.5, 1, 2.5, 2);
+
+            ctx.restore();
+        }
+
+        function updateCorvHudReadouts() {
+            if (!corvModeActive) return;
+
+            // Airspeed & Groundspeed
+            const elAspd = document.getElementById('corv-val-airspeed');
+            if (elAspd) elAspd.innerText = (planeAirspeed || 0).toFixed(1);
+            const elGspd = document.getElementById('corv-val-groundspeed');
+            if (elGspd) elGspd.innerText = (planeGroundspeed || 0).toFixed(1);
+
+            // G-load
+            const elGload = document.getElementById('corv-val-gload');
+            if (elGload) {
+                const gVal = 1.0 + Math.min(0.8, Math.max(-0.6, (planeClimbRate || 0) * 0.05));
+                elGload.innerText = gVal.toFixed(1) + ' G';
+            }
+
+            // Altitude MSL
+            const elAltMsl = document.getElementById('corv-val-alt-msl');
+            const py = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.y : 0;
+            const msl = currentPlaneAltMSL || (homeElevationMSL ? (homeElevationMSL + py) : py);
+            if (elAltMsl) elAltMsl.innerText = Math.round(msl);
+
+            // Altitude AGL (Terrain Clearance)
+            const px = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.x : 0;
+            const pz = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.z : 0;
+            const gElev = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(px, pz) : 0;
+            const agl = Math.max(0, py - gElev);
+            const elAltAgl = document.getElementById('corv-val-alt-agl');
+            if (elAltAgl) elAltAgl.innerText = Math.round(agl);
+
+            // Lidar
+            const elLidar = document.getElementById('corv-val-lidar');
+            if (elLidar) elLidar.innerText = (Math.max(0.4, agl)).toFixed(2);
+
+            // Coordinates
+            const lat = currentPlaneLat || (homeLat || 8.43919);
+            const lon = currentPlaneLon || (homeLon || 77.43659);
+            const elLat = document.getElementById('corv-coord-lat');
+            if (elLat) elLat.innerText = Number(lat).toFixed(5);
+            const elLon = document.getElementById('corv-coord-lon');
+            if (elLon) elLon.innerText = Number(lon).toFixed(5);
+
+            // Throttle / Rotor Load
+            const throttlePct = (typeof am32Telemetry !== 'undefined' && am32Telemetry) ? (am32Telemetry.throttle_pct || 0) : 0;
+            const elThrotArc = document.getElementById('corv-throttle-meter-arc');
+            if (elThrotArc) {
+                const dashOffset = 197 - (197 * (throttlePct / 100.0) * 0.75);
+                elThrotArc.style.strokeDashoffset = dashOffset;
+            }
+            const elThrotTxt = document.getElementById('corv-val-throttle');
+            if (elThrotTxt) elThrotTxt.textContent = throttlePct > 0 ? (throttlePct + '%') : 'CH3';
+
+            // Battery Warning & Indicator
+            const battAlert = document.getElementById('corv-val-batt-alert');
+            if (battAlert) {
+                const v = batteryVoltage || 12.2;
+                const p = batteryPercent || 85;
+                battAlert.innerText = `BATT ${v.toFixed(1)}V (${p}%)`;
+            }
+
+            // Bottom Action Bar Telemetry
+            const btmMode = document.getElementById('corv-flight-mode-badge');
+            if (btmMode) btmMode.innerText = currentFlightMode || 'GUIDED';
+
+            const btmBatt = document.getElementById('corv-btm-batt');
+            if (btmBatt) btmBatt.innerText = `${(batteryVoltage || 12.2).toFixed(1)}V  ${(batteryPercent || 85)}%`;
+
+            const btmGps = document.getElementById('corv-btm-gps');
+            if (btmGps) {
+                const sats = (typeof gpsSatellites !== 'undefined') ? gpsSatellites : 0;
+                btmGps.innerText = sats > 0 ? `GPS 3D Fix (${sats} sat)` : 'No GPS 0 sat';
+            }
+
+            const tblAlt = document.getElementById('corv-tbl-alt');
+            if (tblAlt) tblAlt.innerText = Math.round(py);
+
+            // FPS Meter
+            corvFrameCount++;
+            const now = performance.now();
+            if (now - corvLastFpsTime >= 500) {
+                corvFpsValue = Math.round((corvFrameCount * 1000) / (now - corvLastFpsTime));
+                corvFrameCount = 0;
+                corvLastFpsTime = now;
+                const elFps = document.getElementById('corv-live-fps');
+                if (elFps) elFps.innerText = `${corvFpsValue} FPS`;
+            }
+        }
+
+        function initCorvControls() {
+            const btnToolbarCorv = document.getElementById('btn-toggle-corv-mode');
+            if (btnToolbarCorv) btnToolbarCorv.onclick = () => setCorvMode();
+
+            const btnExit = document.getElementById('corv-btn-exit');
+            if (btnExit) btnExit.onclick = () => setCorvMode(false);
+
+            const btnPeaks = document.getElementById('corv-btn-peaks');
+            if (btnPeaks) {
+                btnPeaks.onclick = () => applyAirfieldPreset('corv_peaks');
+            }
+
+            const btnHome = document.getElementById('corv-btn-home');
+            if (btnHome) {
+                btnHome.onclick = () => applyAirfieldPreset('default');
+            }
+
+            const btnSun = document.getElementById('corv-btn-sun');
+            if (btnSun) {
+                btnSun.onclick = () => {
+                    if (typeof toggleSunlight === 'function') toggleSunlight();
+                };
+            }
+
+            const btnChase = document.getElementById('corv-btn-chase');
+            if (btnChase) {
+                btnChase.onclick = () => {
+                    if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
+                };
+            }
+
+            const btnFull = document.getElementById('corv-btn-fullscreen');
+            if (btnFull) {
+                btnFull.onclick = () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                };
+            }
+
+            // Mini-map zoom controls
+            const mmIn = document.getElementById('corv-mm-in');
+            const mmOut = document.getElementById('corv-mm-out');
+            if (mmIn) mmIn.onclick = () => {
+                corvMiniMapZoom = Math.min(18, corvMiniMapZoom + 1);
+                renderCorvMiniMap();
+            };
+            if (mmOut) mmOut.onclick = () => {
+                corvMiniMapZoom = Math.max(12, corvMiniMapZoom - 1);
+                renderCorvMiniMap();
+            };
+
+            // Tactical Action Bar MAVLink command buttons
+            function sendWsCmd(payload) {
+                if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify(payload));
+                }
+            }
+
+            const btnArm = document.getElementById('corv-btn-arm');
+            if (btnArm) {
+                btnArm.onclick = () => {
+                    const isArm = (btnArm.innerText === 'ARM');
+                    sendWsCmd({ action: 'arm', value: isArm });
+                    btnArm.innerText = isArm ? 'DISARM' : 'ARM';
+                    btnArm.classList.toggle('corv-arm-btn', isArm);
+                };
+            }
+            const btnTakeoff = document.getElementById('corv-btn-takeoff');
+            if (btnTakeoff) btnTakeoff.onclick = () => sendWsCmd({ action: 'takeoff', alt: 30 });
+            const btnRtl = document.getElementById('corv-btn-rtl');
+            if (btnRtl) btnRtl.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'RTL' });
+            const btnAuto = document.getElementById('corv-btn-auto');
+            if (btnAuto) btnAuto.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'AUTO' });
+            const btnGuided = document.getElementById('corv-btn-guided');
+            if (btnGuided) btnGuided.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'GUIDED' });
+            const btnLand = document.getElementById('corv-btn-land');
+            if (btnLand) btnLand.onclick = () => sendWsCmd({ action: 'set_mode', mode: 'LAND' });
+        }
+
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.key === 'e' || e.key === 'E') {
+            if (e.key === 'v' || e.key === 'V') {
+                // Toggle Corv 3D Map & Tactical HUD Mode
+                setCorvMode(!corvModeActive);
+            } else if (e.key === 'e' || e.key === 'E') {
                 toggleEisWidget();
             } else if (e.key === 'c' || e.key === 'C') {
                 toggleCompassWidget();
@@ -9715,6 +10855,9 @@
                 if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
             }
         });
+
+        // Initialize Corv 3D Map Controls
+        initCorvControls();
 
         // Start animation loop after all avionics instruments and handlers are loaded
         animate();
