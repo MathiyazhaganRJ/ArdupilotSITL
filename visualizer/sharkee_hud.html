@@ -3581,9 +3581,9 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">IMAGERY PROVIDER</span>
                         <select id="sel-map-provider" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px; font-weight: 600;">
-                            <option value="google" selected>Google Satellite (Photographic)</option>
+                            <option value="esri" selected>ESRI World Imagery (Aviation High-Res)</option>
+                            <option value="google">Google Satellite (Photographic)</option>
                             <option value="google_hybrid">Google Hybrid (Satellite + Roads)</option>
-                            <option value="esri">ESRI World Imagery (Aviation High-Res)</option>
                         </select>
                     </div>
                     <div>
@@ -5024,7 +5024,7 @@
         }
 
         // 3D Topographic DEM Elevation Controls (Corv-GCS Engine)
-        let terrain3DEnabled = true;
+        let terrain3DEnabled = false;
         let terrainExaggeration = 2.0;
         let terrainWireframeMode = false;
 
@@ -5033,9 +5033,9 @@
         const selTerrainScale = document.getElementById('sel-terrain-scale');
         const selTerrainStyle = document.getElementById('sel-terrain-style');
 
-        // Restore 3D preference (always active by default for photorealistic topography)
-        terrain3DEnabled = true;
-        localStorage.setItem('pilot_terrain_3d', 'true');
+        // Default to FLAT MESH for clean, instantaneous airfield startup
+        const savedTerrain3D = localStorage.getItem('pilot_terrain_3d');
+        terrain3DEnabled = (savedTerrain3D === 'true');
         if (chkToggleTerrain3D) chkToggleTerrain3D.checked = terrain3DEnabled;
         if (terrain3DStatus) {
             terrain3DStatus.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
@@ -5093,11 +5093,7 @@
         const selMapProvider = document.getElementById('sel-map-provider');
         const selMapMode = document.getElementById('sel-map-mode');
         if (selMapProvider) {
-            let storedProvider = localStorage.getItem('pilot_map_provider');
-            if (!storedProvider || storedProvider === 'esri') {
-                storedProvider = 'google';
-                try { localStorage.setItem('pilot_map_provider', 'google'); } catch(e){}
-            }
+            let storedProvider = localStorage.getItem('pilot_map_provider') || 'esri';
             selMapProvider.value = storedProvider;
             selMapProvider.onchange = (e) => {
                 const newProvider = e.target.value;
@@ -7540,8 +7536,7 @@
             }
 
             if (ekfHomeInitialized && homeLat !== null && homeLon !== null) {
-                const d = (typeof calcGeodeticDistance === 'function') ? calcGeodeticDistance(homeLat, homeLon, hLat, hLon) : 0;
-                if (d < 50) return; // Keep locked to confirmed airfield Home
+                return; // Keep locked to confirmed airfield Home - prevent rebuild thrashing
             }
 
             ekfHomeInitialized = true;
@@ -7715,7 +7710,7 @@
             const modeEl = document.getElementById('sel-map-mode');
             const providerEl = document.getElementById('sel-map-provider');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
-            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'google');
+            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
             const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
             const radiusKm = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
@@ -7788,15 +7783,6 @@
                 if (dLat < 0.0005 && dLon < 0.0005) {
                     return;
                 }
-                // If aircraft has flown far (> 4km) from home airfield origin, trigger a clean recenter
-                if (homeLat !== null && homeLon !== null) {
-                    const dHomeLat = Math.abs(lat - homeLat);
-                    const dHomeLon = Math.abs(lon - homeLon);
-                    if (dHomeLat > 0.04 || dHomeLon > 0.04) {
-                        updateMap(lat, lon, true);
-                        return;
-                    }
-                }
             }
 
             lastMapUpdateLat = lat;
@@ -7804,6 +7790,110 @@
 
             const currentTileX = Math.floor(lon2tileFloat(lon, activeZoom));
             const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
+
+            // ==========================================
+            // FLAT SATELLITE MAP ENGINE (FULL AIRFIELD RADIUS)
+            // ==========================================
+            if (!terrain3DEnabled) {
+                if (typeof horizonGroup !== 'undefined') {
+                    horizonGroup.visible = false;
+                }
+                const radMeters = radiusKm * 1000;
+                const span = Math.ceil(radMeters / tileSize) + 1;
+                const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
+
+                for (let dx = -span; dx <= span; dx++) {
+                    for (let dy = -span; dy <= span; dy++) {
+                        const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
+                        if (distSq > maxDistSq) continue;
+
+                        const tx = currentTileX + dx;
+                        const ty = currentTileY + dy;
+                        const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
+
+                        if (!mapTiles.has(key)) {
+                            mapTiles.set(key, true);
+
+                            const mt = Math.abs(tx + ty) % 4;
+                            const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                            let remoteUrl;
+                            if (provider === 'esri') {
+                                remoteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${activeZoom}/${ty}/${tx}`;
+                            } else if (provider === 'google_hybrid') {
+                                remoteUrl = `https://mt${mt}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${activeZoom}`;
+                            } else {
+                                remoteUrl = `https://mt${mt}.google.com/vt/lyrs=s&x=${tx}&y=${ty}&z=${activeZoom}`;
+                            }
+
+                            function attachFlatTile(texture) {
+                                if (thisGen !== mapGeneration) {
+                                    texture.dispose();
+                                    return;
+                                }
+                                texture.anisotropy = 16;
+                                texture.generateMipmaps = true;
+                                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                                texture.magFilter = THREE.LinearFilter;
+                                texture.encoding = THREE.sRGBEncoding;
+
+                                const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+                                const mat = new THREE.MeshBasicMaterial({
+                                    map: texture,
+                                    side: THREE.FrontSide,
+                                    depthWrite: false,
+                                    fog: false
+                                });
+                                const mesh = new THREE.Mesh(geo, mat);
+                                mesh.renderOrder = -1;
+                                mesh.rotation.x = -Math.PI / 2;
+                                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                                mesh.position.y = -2.0;
+                                mesh.userData = { tx, ty, zoom: activeZoom, displaced: false };
+                                mapGroup.add(mesh);
+                            }
+
+                            const loader = new THREE.TextureLoader();
+                            loader.setCrossOrigin('anonymous');
+
+                            if (mapMode === 'direct') {
+                                loader.load(
+                                    remoteUrl,
+                                    (texture) => attachFlatTile(texture),
+                                    undefined,
+                                    () => { mapTiles.delete(key); }
+                                );
+                            } else {
+                                loader.load(
+                                    localUrl,
+                                    (texture) => attachFlatTile(texture),
+                                    undefined,
+                                    () => {
+                                        if (mapMode !== 'offline') {
+                                            loader.load(
+                                                remoteUrl,
+                                                (texture) => attachFlatTile(texture),
+                                                undefined,
+                                                () => { mapTiles.delete(key); }
+                                            );
+                                        } else {
+                                            mapTiles.delete(key);
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            // ==========================================
+            // 3D TOPOGRAPHIC CORV-GCS TERRAIN ENGINE
+            // ==========================================
+            if (typeof horizonGroup !== 'undefined') {
+                horizonGroup.visible = true;
+            }
 
             // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
             // 9x9 grid (81 tiles) provides continuous 5.5km to 11km high-fidelity coverage
@@ -8322,8 +8412,8 @@
             }
         }
 
-        // Initialize 3D Satellite Map immediately with default airfield coordinates (so terrain is visible with or without SITL!)
-        updateMap(8.30413, 77.30760);
+        // Initialize Satellite Map immediately with default airfield coordinates (so terrain is visible with or without SITL!)
+        updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon);
         // ==========================================
         const ws = new WebSocket(`ws://${window.location.hostname || '127.0.0.1'}:8766`);
 
@@ -10526,7 +10616,9 @@
                         status.innerText = '3D ACTIVE';
                         status.style.color = 'var(--success)';
                     }
-                    if (typeof updateAllTileElevations === 'function') updateAllTileElevations();
+                }
+                if (typeof horizonGroup !== 'undefined') {
+                    horizonGroup.visible = true;
                 }
 
                 // If aircraft is disarmed or sitting at ground (y < 30) while at peaks, lift preview
@@ -10537,6 +10629,10 @@
                         if (typeof targetPos !== 'undefined') targetPos.set(0, 240, 0);
                     }
                 }
+
+                const activeLat = currentPlaneLat || homeLat || DEFAULT_PRESET.lat;
+                const activeLon = currentPlaneLon || homeLon || DEFAULT_PRESET.lon;
+                if (typeof updateMap === 'function') updateMap(activeLat, activeLon, true);
 
                 renderCorvMiniMap();
             } else {
@@ -10550,6 +10646,32 @@
                 if (graph && corvSavedWidgetStates.graph) graph.style.display = '';
                 if (toolbar && corvSavedWidgetStates.toolbar) toolbar.style.display = '';
                 if (expandBtn && corvSavedWidgetStates.expandBtn) expandBtn.style.display = '';
+
+                // Restore standard follow camera and flat terrain mode
+                if (typeof setCameraMode === 'function') setCameraMode('follow');
+                if (typeof vtolGroup !== 'undefined' && vtolGroup) {
+                    const presetVal = document.getElementById('map-cache-preset')?.value;
+                    if (presetVal === 'default' && (!currentPlaneAltMSL || currentPlaneAltMSL < 10)) {
+                        vtolGroup.position.set(0, 0, 0);
+                        if (typeof targetPos !== 'undefined') targetPos.set(0, 0, 0);
+                    }
+                }
+
+                terrain3DEnabled = false;
+                localStorage.setItem('pilot_terrain_3d', 'false');
+                const chk = document.getElementById('chk-toggle-terrain-3d');
+                if (chk) chk.checked = false;
+                const status = document.getElementById('terrain-3d-status');
+                if (status) {
+                    status.innerText = 'FLAT MESH';
+                    status.style.color = 'var(--text-secondary)';
+                }
+                if (typeof horizonGroup !== 'undefined') {
+                    horizonGroup.visible = false;
+                }
+                const activeLat = homeLat || DEFAULT_PRESET.lat;
+                const activeLon = homeLon || DEFAULT_PRESET.lon;
+                if (typeof updateMap === 'function') updateMap(activeLat, activeLon, true);
             }
         }
 

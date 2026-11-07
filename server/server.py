@@ -1162,10 +1162,21 @@ def start_http_server():
                         root_tile_file = os.path.join(tile_cache_dir, tile_filename)
 
                         target_file = None
-                        if os.path.exists(preset_tile_file) and os.path.getsize(preset_tile_file) > 100:
-                            target_file = preset_tile_file
-                        elif os.path.exists(root_tile_file) and os.path.getsize(root_tile_file) > 100:
-                            target_file = root_tile_file
+                        candidates = [
+                            preset_tile_file,
+                            os.path.join(preset_dir, f"{z}_{x}_{y}.jpg"),
+                            os.path.join(preset_dir, f"{z}_{x}_{y}_esri.jpg"),
+                            os.path.join(preset_dir, f"{z}_{x}_{y}_google.jpg"),
+                            root_tile_file,
+                            os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg"),
+                            os.path.join(tile_cache_dir, 'My_Home_Airfield', tile_filename),
+                            os.path.join(tile_cache_dir, 'My_Home_Airfield', f"{z}_{x}_{y}.jpg"),
+                            os.path.join(tile_cache_dir, 'My_Home_Airfield', f"{z}_{x}_{y}_esri.jpg")
+                        ]
+                        for cand in candidates:
+                            if os.path.exists(cand) and os.path.getsize(cand) > 100:
+                                target_file = cand
+                                break
 
                         if target_file:
                             with open(target_file, 'rb') as f:
