@@ -3688,6 +3688,7 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
+                            <option value="20">Zoom 20 - Ultra Sub-Meter (0.15m/px - Google Max)</option>
                             <option value="19">Zoom 19 - Sub-Meter Recon (0.3m/px - Google)</option>
                             <option value="18">Zoom 18 - Extreme Aerial (0.59m/px - 2x Sharper)</option>
                             <option value="17" selected>Zoom 17 - Ultra-Crisp Imagery (1.1m/px)</option>
@@ -7678,7 +7679,7 @@
             let targetZoom = 17;
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
-                if (!isNaN(parsed) && parsed >= 10 && parsed <= 19) {
+                if (!isNaN(parsed) && parsed >= 10 && parsed <= 20) {
                     targetZoom = parsed;
                 }
             } else {
@@ -7693,7 +7694,7 @@
             else if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
             else if (radiusKm >= 10.0 && targetZoom > 15) targetZoom = 15;
             else if (radiusKm >= 5.0 && targetZoom > 16) targetZoom = 16;
-            else if (radiusKm > 2.5 && targetZoom > 18) targetZoom = 18;
+            else if (radiusKm > 2.5 && targetZoom > 19) targetZoom = 19;
             return targetZoom;
         }
 
@@ -7962,7 +7963,8 @@
                                     texture.dispose();
                                     return;
                                 }
-                                texture.anisotropy = 16;
+                                const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                                texture.anisotropy = maxAniso;
                                 texture.generateMipmaps = true;
                                 texture.minFilter = THREE.LinearMipmapLinearFilter;
                                 texture.magFilter = THREE.LinearFilter;
@@ -8145,7 +8147,8 @@
                                 texture.dispose();
                                 return;
                             }
-                            texture.anisotropy = 16;
+                            const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                            texture.anisotropy = maxAniso;
                             texture.generateMipmaps = true;
                             texture.minFilter = THREE.LinearMipmapLinearFilter;
                             texture.magFilter = THREE.LinearFilter;
