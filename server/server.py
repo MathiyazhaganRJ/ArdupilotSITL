@@ -1074,19 +1074,37 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
     def proc_tile(tile_info):
         z, x, y = tile_info
-        suffix = f"_{provider}" if provider != 'google' else ""
-        tile_filename = f"{z}_{x}_{y}{suffix}.jpg"
-        tile_path = os.path.join(target_cache_dir, tile_filename)
-        root_tile_path = os.path.join(tile_cache_dir, tile_filename)
+        if provider == 'google':
+            tile_filename = f"{z}_{x}_{y}_google.jpg"
+            target_names = [f"{z}_{x}_{y}_google.jpg", f"{z}_{x}_{y}.jpg"]
+        elif provider == 'google_hybrid':
+            tile_filename = f"{z}_{x}_{y}_google_hybrid.jpg"
+            target_names = [f"{z}_{x}_{y}_google_hybrid.jpg", f"{z}_{x}_{y}_y.jpg"]
+        else: # esri default
+            tile_filename = f"{z}_{x}_{y}_esri.jpg"
+            target_names = [f"{z}_{x}_{y}_esri.jpg"]
 
-        if os.path.exists(tile_path) and os.path.getsize(tile_path) > 100:
-            return 'CACHED'
-        if os.path.exists(root_tile_path) and os.path.getsize(root_tile_path) > 100:
-            try:
-                shutil.copy2(root_tile_path, tile_path)
+        tile_path = os.path.join(target_cache_dir, tile_filename)
+
+        # Check if already cached under any valid name for this provider
+        for aname in target_names:
+            p1 = os.path.join(target_cache_dir, aname)
+            p2 = os.path.join(tile_cache_dir, aname)
+            p3 = os.path.join(tile_cache_dir, 'My_Home_Airfield', aname)
+            if os.path.exists(p1) and os.path.getsize(p1) > 100:
                 return 'CACHED'
-            except Exception:
-                pass
+            if os.path.exists(p2) and os.path.getsize(p2) > 100:
+                try:
+                    shutil.copy2(p2, tile_path)
+                    return 'CACHED'
+                except Exception:
+                    pass
+            if os.path.exists(p3) and os.path.getsize(p3) > 100:
+                try:
+                    shutil.copy2(p3, tile_path)
+                    return 'CACHED'
+                except Exception:
+                    pass
 
         # Also pre-cache DEM elevation tile for 3D terrain
         try:
@@ -1144,7 +1162,7 @@ def start_http_server():
                     query_str = self.path.split('?')[1] if '?' in self.path else ''
                     query_params = urllib.parse.parse_qs(query_str)
                     mode = query_params.get('mode', ['auto'])[0]
-                    provider = query_params.get('provider', ['esri'])[0]
+                    provider = query_params.get('provider', ['esri'])[0].lower()
                     preset = query_params.get('preset', ['default'])[0]
                     lyrs = query_params.get('lyrs', ['s'])[0]
                     parts = clean_path.split('/')
@@ -1152,43 +1170,53 @@ def start_http_server():
                         z = parts[2]
                         x = parts[3]
                         y = parts[4].split('.')[0]
-                        suffix = f"_{provider}" if provider != 'google' else (f"_{lyrs}" if lyrs != 's' else "")
-                        tile_filename = f"{z}_{x}_{y}{suffix}.jpg"
+
+                        # STRICT PROVIDER ISOLATION:
+                        # Define provider-specific filenames to guarantee zero cross-provider contamination
+                        if provider == 'google':
+                            primary_filename = f"{z}_{x}_{y}_google.jpg"
+                            target_names = [f"{z}_{x}_{y}_google.jpg", f"{z}_{x}_{y}.jpg"]
+                        elif provider == 'google_hybrid':
+                            primary_filename = f"{z}_{x}_{y}_google_hybrid.jpg"
+                            target_names = [f"{z}_{x}_{y}_google_hybrid.jpg", f"{z}_{x}_{y}_y.jpg"]
+                        else:  # esri default
+                            primary_filename = f"{z}_{x}_{y}_esri.jpg"
+                            target_names = [f"{z}_{x}_{y}_esri.jpg"]
 
                         preset_folder = sanitize_preset_folder(preset)
                         preset_dir = os.path.join(tile_cache_dir, preset_folder)
                         os.makedirs(preset_dir, exist_ok=True)
-                        preset_tile_file = os.path.join(preset_dir, tile_filename)
-                        root_tile_file = os.path.join(tile_cache_dir, tile_filename)
+                        preset_tile_file = os.path.join(preset_dir, primary_filename)
 
                         target_file = None
-                        candidates = [
-                            preset_tile_file,
-                            os.path.join(preset_dir, f"{z}_{x}_{y}.jpg"),
-                            os.path.join(preset_dir, f"{z}_{x}_{y}_esri.jpg"),
-                            os.path.join(preset_dir, f"{z}_{x}_{y}_google.jpg"),
-                            root_tile_file,
-                            os.path.join(tile_cache_dir, f"{z}_{x}_{y}.jpg"),
-                            os.path.join(tile_cache_dir, 'My_Home_Airfield', tile_filename),
-                            os.path.join(tile_cache_dir, 'My_Home_Airfield', f"{z}_{x}_{y}.jpg"),
-                            os.path.join(tile_cache_dir, 'My_Home_Airfield', f"{z}_{x}_{y}_esri.jpg")
-                        ]
-                        for cand in candidates:
-                            if os.path.exists(cand) and os.path.getsize(cand) > 100:
-                                target_file = cand
+                        # Check strictly within requested provider's valid candidate filenames
+                        for name in target_names:
+                            p_cand = os.path.join(preset_dir, name)
+                            if os.path.exists(p_cand) and os.path.getsize(p_cand) > 100:
+                                target_file = p_cand
                                 break
+
+                        if not target_file:
+                            for name in target_names:
+                                r_cand = os.path.join(tile_cache_dir, name)
+                                if os.path.exists(r_cand) and os.path.getsize(r_cand) > 100:
+                                    target_file = r_cand
+                                    break
+
+                        if not target_file:
+                            for name in target_names:
+                                home_cand = os.path.join(tile_cache_dir, 'My_Home_Airfield', name)
+                                if os.path.exists(home_cand) and os.path.getsize(home_cand) > 100:
+                                    target_file = home_cand
+                                    break
 
                         if not target_file:
                             try:
                                 for sub in os.listdir(tile_cache_dir):
                                     sub_dir = os.path.join(tile_cache_dir, sub)
                                     if os.path.isdir(sub_dir) and sub != 'dem':
-                                        for cf in [
-                                            os.path.join(sub_dir, tile_filename),
-                                            os.path.join(sub_dir, f"{z}_{x}_{y}.jpg"),
-                                            os.path.join(sub_dir, f"{z}_{x}_{y}_esri.jpg"),
-                                            os.path.join(sub_dir, f"{z}_{x}_{y}_google.jpg")
-                                        ]:
+                                        for name in target_names:
+                                            cf = os.path.join(sub_dir, name)
                                             if os.path.exists(cf) and os.path.getsize(cf) > 100:
                                                 target_file = cf
                                                 break
@@ -1209,9 +1237,7 @@ def start_http_server():
                             return
                         elif mode != 'offline':
                             data = fetch_tile(int(z), int(x), int(y), provider=provider, lyrs=lyrs)
-                            if not data or len(data) < 500:
-                                alt_provider = 'google' if provider == 'esri' else 'esri'
-                                data = fetch_tile(int(z), int(x), int(y), provider=alt_provider, lyrs=lyrs)
+                            # STRICT PROVIDER ISOLATION: Never swap providers online
                             if data and len(data) > 100:
                                 try:
                                     with open(preset_tile_file, 'wb') as f:

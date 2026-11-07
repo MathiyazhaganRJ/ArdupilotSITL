@@ -7983,14 +7983,17 @@
                                 undefined,
                                 () => {
                                     if (mapMode !== 'offline') {
-                                        const altProvider = (provider === 'esri') ? 'google' : 'esri';
-                                        const fallbackUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${altProvider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
-                                        loader.load(
-                                            fallbackUrl,
-                                            (texture) => applyFlatTexture(texture),
-                                            undefined,
-                                            () => { /* mesh remains visible with dark base */ }
-                                        );
+                                        // Single retry with exact same provider - never mix providers
+                                        setTimeout(() => {
+                                            if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                                loader.load(
+                                                    localUrl,
+                                                    (texture) => applyFlatTexture(texture),
+                                                    undefined,
+                                                    () => { /* mesh remains visible with dark base */ }
+                                                );
+                                            }
+                                        }, 600);
                                     }
                                 }
                             );
@@ -8169,14 +8172,17 @@
                             undefined,
                             () => {
                                 if (mapMode !== 'offline') {
-                                    const fallbackProvider = (provider === 'esri') ? 'google' : 'esri';
-                                    const fallbackUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${fallbackProvider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
-                                    loader.load(
-                                        fallbackUrl,
-                                        (texture) => applyTextureToMesh(texture),
-                                        undefined,
-                                        () => { /* Even if satellite imagery fails, 3D terrain mesh remains intact and visible */ }
-                                    );
+                                    // Single retry with exact same provider - never mix providers
+                                    setTimeout(() => {
+                                        if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                            loader.load(
+                                                localUrl,
+                                                (texture) => applyTextureToMesh(texture),
+                                                undefined,
+                                                () => { /* Even if satellite imagery fails, 3D terrain mesh remains intact and visible */ }
+                                            );
+                                        }
+                                    }, 600);
                                 }
                             }
                         );
