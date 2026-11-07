@@ -7500,6 +7500,11 @@
         }
 
         let cameraMode = 'corv_chase', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
+        let corvChaseDist = 55.0;
+        let corvChaseTargetDist = 55.0;
+        let corvUserYawOffset = 0.0;
+        let corvUserPitchOffset = 0.0;
+        let corvLookAtPos = new THREE.Vector3();
         const btnCorvChase = document.getElementById('btn-corv-chase');
         const btnFollow = document.getElementById('btn-follow');
         const btnFree = document.getElementById('btn-free');
@@ -7511,24 +7516,82 @@
             if (btnFree) btnFree.classList.toggle('btn-active', mode === 'free');
 
             if (typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
-                controls.target.copy(vtolGroup.position);
                 if (mode === 'corv_chase') {
+                    controls.enabled = false;
+                    corvChaseTargetDist = 55.0;
+                    corvUserYawOffset = 0.0;
+                    corvUserPitchOffset = 0.0;
+                    corvLookAtPos.copy(vtolGroup.position);
                     const yaw = vtolGroup.rotation.y || 0;
                     camera.position.set(
                         vtolGroup.position.x - Math.sin(yaw) * 55.0,
                         vtolGroup.position.y + 24.0,
                         vtolGroup.position.z - Math.cos(yaw) * 55.0
                     );
+                    camera.lookAt(vtolGroup.position);
                 } else if (mode === 'follow') {
+                    controls.enabled = true;
+                    controls.target.copy(vtolGroup.position);
                     camera.position.set(vtolGroup.position.x, vtolGroup.position.y + 16.0, vtolGroup.position.z + 32.0);
+                    controls.update();
+                } else {
+                    controls.enabled = true;
+                    controls.target.copy(vtolGroup.position);
+                    controls.update();
                 }
-                controls.update();
             }
         }
 
         if (btnCorvChase) btnCorvChase.onclick = () => setCameraMode('corv_chase');
         if (btnFollow) btnFollow.onclick = () => setCameraMode('follow');
         if (btnFree) btnFree.onclick = () => setCameraMode('free');
+
+        // Dynamic 3P Chase Camera Mouse Wheel & Pinch Zoom
+        window.addEventListener('wheel', (e) => {
+            if (cameraMode === 'corv_chase') {
+                if (e.target && typeof e.target.closest === 'function' && (e.target.closest('.corv-radar-widget') || e.target.closest('#ui-panel') || e.target.closest('#lxnav-mfd-widget'))) return;
+                const factor = Math.exp(e.deltaY * 0.0012);
+                corvChaseTargetDist = Math.max(6.0, Math.min(1200.0, corvChaseTargetDist * factor));
+            }
+        }, { passive: true });
+
+        // Dynamic 3P Chase Camera Orbit Controls (Drag to rotate around aircraft)
+        let isPointerDown3P = false;
+        let lastPointerX = 0, lastPointerY = 0;
+
+        window.addEventListener('pointerdown', (e) => {
+            if (cameraMode === 'corv_chase') {
+                if (e.target && typeof e.target.closest === 'function' && (e.target.closest('button') || e.target.closest('select') || e.target.closest('input') ||
+                    e.target.closest('#corv-topbar') || e.target.closest('.corv-radar-widget') || e.target.closest('#corv-traffic-panel') ||
+                    e.target.closest('#ui-panel') || e.target.closest('#lxnav-mfd-widget') || e.target.closest('#eis-widget'))) return;
+                isPointerDown3P = true;
+                lastPointerX = e.clientX;
+                lastPointerY = e.clientY;
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (isPointerDown3P && cameraMode === 'corv_chase') {
+                const dx = e.clientX - lastPointerX;
+                const dy = e.clientY - lastPointerY;
+                lastPointerX = e.clientX;
+                lastPointerY = e.clientY;
+
+                corvUserYawOffset -= dx * 0.006;
+                corvUserPitchOffset = Math.max(-0.55, Math.min(1.15, corvUserPitchOffset + dy * 0.005));
+            }
+        });
+
+        window.addEventListener('pointerup', () => { isPointerDown3P = false; });
+        window.addEventListener('pointercancel', () => { isPointerDown3P = false; });
+
+        window.addEventListener('dblclick', (e) => {
+            if (cameraMode === 'corv_chase') {
+                corvChaseTargetDist = 55.0;
+                corvUserYawOffset = 0.0;
+                corvUserPitchOffset = 0.0;
+            }
+        });
 
         let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
         let latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
@@ -9561,33 +9624,48 @@
             }
 
             if (cameraMode === 'corv_chase') {
-                // Cinematic Corv-GCS Third-Person Chase Camera: 55m behind, 24m above, looking forward across terrain
-                const yaw = vtolGroup.rotation.y || 0;
-                const chaseDist = 55.0;
-                const chaseHeight = 24.0;
-                const desiredX = vtolGroup.position.x - Math.sin(yaw) * chaseDist;
-                const desiredZ = vtolGroup.position.z - Math.cos(yaw) * chaseDist;
-                const desiredY = vtolGroup.position.y + chaseHeight;
+                // Smooth inertial zoom
+                corvChaseDist += (corvChaseTargetDist - corvChaseDist) * 0.12;
 
-                camera.position.x += (desiredX - camera.position.x) * 0.08;
-                camera.position.y += (desiredY - camera.position.y) * 0.08;
-                camera.position.z += (desiredZ - camera.position.z) * 0.08;
+                // Total orientation: aircraft yaw + user orbit offset
+                const planeYaw = vtolGroup.rotation.y || 0;
+                const totalYaw = planeYaw + corvUserYawOffset;
 
-                // Terrain collision avoidance: keep camera at least 6m above ground surface
+                // Spherical distance with pitch offset
+                const pitchCos = Math.cos(corvUserPitchOffset);
+                const pitchSin = Math.sin(corvUserPitchOffset);
+
+                const horizDist = corvChaseDist * pitchCos;
+                const desiredX = vtolGroup.position.x - Math.sin(totalYaw) * horizDist;
+                const desiredZ = vtolGroup.position.z - Math.cos(totalYaw) * horizDist;
+
+                const baseElev = Math.max(2.5, corvChaseDist * 0.436);
+                const desiredY = vtolGroup.position.y + baseElev + (corvChaseDist * pitchSin);
+
+                // Smoothly lerp camera position
+                camera.position.x += (desiredX - camera.position.x) * 0.12;
+                camera.position.y += (desiredY - camera.position.y) * 0.12;
+                camera.position.z += (desiredZ - camera.position.z) * 0.12;
+
+                // Terrain collision avoidance: keep camera at least 4m above local ground
                 if (typeof getTerrainElevationAt === 'function') {
                     const camGroundElev = getTerrainElevationAt(camera.position.x, camera.position.z);
-                    if (camera.position.y < camGroundElev + 6.0) {
-                        camera.position.y = camGroundElev + 6.0;
+                    if (camera.position.y < camGroundElev + 4.0) {
+                        camera.position.y = camGroundElev + 4.0;
                     }
                 }
 
-                controls.target.lerp(vtolGroup.position, 0.1);
+                // Smoothly look at aircraft center
+                corvLookAtPos.lerp(vtolGroup.position, 0.15);
+                camera.lookAt(corvLookAtPos);
             } else if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
                 camera.position.copy(controls.target).add(offset);
+                controls.update();
+            } else {
+                controls.update();
             }
-            controls.update();
             lastPlanePos.copy(vtolGroup.position);
 
             trackPoint.getWorldPosition(currentTrackPos);
@@ -11113,7 +11191,15 @@
             const btnChase = document.getElementById('corv-btn-chase');
             if (btnChase) {
                 btnChase.onclick = () => {
-                    if (typeof setCameraMode === 'function') setCameraMode('corv_chase');
+                    if (typeof setCameraMode === 'function') {
+                        if (cameraMode === 'corv_chase') {
+                            corvChaseTargetDist = 55.0;
+                            corvUserYawOffset = 0.0;
+                            corvUserPitchOffset = 0.0;
+                        } else {
+                            setCameraMode('corv_chase');
+                        }
+                    }
                 };
             }
 
@@ -11183,6 +11269,14 @@
                 if (typeof setTerrainWireframeMode === 'function') setTerrainWireframeMode(terrainWireframeMode);
                 const sel = document.getElementById('sel-terrain-style');
                 if (sel) sel.value = terrainWireframeMode ? 'wireframe' : 'satellite';
+            } else if (e.key === '+' || e.key === '=') {
+                if (cameraMode === 'corv_chase') {
+                    corvChaseTargetDist = Math.max(6.0, corvChaseTargetDist * 0.82);
+                }
+            } else if (e.key === '-' || e.key === '_') {
+                if (cameraMode === 'corv_chase') {
+                    corvChaseTargetDist = Math.min(1200.0, corvChaseTargetDist * 1.22);
+                }
             } else if (e.key === 't' || e.key === 'T') {
                 // Toggle 3D Topographic DEM Elevation
                 terrain3DEnabled = !terrain3DEnabled;
