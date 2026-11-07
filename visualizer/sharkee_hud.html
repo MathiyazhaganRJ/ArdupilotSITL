@@ -6370,6 +6370,7 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.enabled = false; // Disabled by default for corv_chase to eliminate camera fighting
 
         // Realistic Sun-Directional Scene Lighting (Matching Corv-GCS Hillshading Engine)
         const ambient = new THREE.AmbientLight(0xffffff, 0.35);
@@ -7042,6 +7043,30 @@
                         }
                     }
                 }
+
+                // Prune distant flat tiles beyond radius to keep clean perimeter
+                const maxFlatSpan = span + 2;
+                const toCullFlat = [];
+                mapGroup.children.forEach(m => {
+                    if (m.userData && m.userData.tx !== undefined) {
+                        const dtx = Math.abs(m.userData.tx - currentTileX);
+                        const dty = Math.abs(m.userData.ty - currentTileY);
+                        if (dtx > maxFlatSpan || dty > maxFlatSpan) {
+                            toCullFlat.push(m);
+                        }
+                    }
+                });
+                toCullFlat.forEach(m => {
+                    const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
+                    mapTiles.delete(k);
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) {
+                        if (m.material.map) m.material.map.dispose();
+                        m.material.dispose();
+                    }
+                    mapGroup.remove(m);
+                });
+
                 return;
             }
 
@@ -7678,14 +7703,14 @@
             // > 14.0 km  -> Zoom 14 (~2.4km/tile, 9.5m/px regional vista)
             if (terrain3DEnabled) {
                 // High-Resolution 3D Corv Topographic Streaming:
-                // Stream Zoom 16 for crisp 2.38m/pixel satellite textures on ridges & valleys
-                // (2x sharper than zoom 15, matching the Corv-GCS tactical aerial imagery standard)
-                if (radiusKm <= 3.0) return 17; // 1.19m/px ultra-high resolution
-                if (radiusKm <= 6.0) return 16; // 2.38m/px tactical mountain resolution
-                if (radiusKm <= 12.0) return 15; // 4.77m/px regional
+                // Lock Zoom 16 for stable mountain relief (2.38m/pixel satellite resolution, 6.6km tactical span)
+                // Wide hysteresis bands prevent map wiping and thrashing during flight or camera orbit
+                if (radiusKm <= 2.0) return 17;
+                if (radiusKm <= 7.0) return 16;
+                if (radiusKm <= 14.0) return 15;
                 return 14;
             }
-            if (radiusKm <= 3.0) return 17;
+            if (radiusKm <= 2.0) return 17;
             if (radiusKm <= 7.0) return 16;
             if (radiusKm <= 14.0) return 15;
             return 14;
@@ -8147,7 +8172,34 @@
                 }
             }
 
-                        // In unified 3D mode, all terrain is rendered seamlessly in mapGroup (no horizon seams)
+            // Prune distant tiles beyond active tactical envelope (culls orphaned islands, keeps solid seamless terrain)
+            const maxSpan3D = gridSpan + 2;
+            const toCull3D = [];
+            mapGroup.children.forEach(m => {
+                if (m.userData && m.userData.tx !== undefined) {
+                    const dtx = Math.abs(m.userData.tx - currentTileX);
+                    const dty = Math.abs(m.userData.ty - currentTileY);
+                    if (dtx > maxSpan3D || dty > maxSpan3D) {
+                        toCull3D.push(m);
+                    }
+                }
+            });
+            toCull3D.forEach(m => {
+                const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
+                mapTiles.delete(k);
+                if (m.geometry) m.geometry.dispose();
+                if (m.material) {
+                    if (m.material.map) m.material.map.dispose();
+                    m.material.dispose();
+                }
+                if (m.userData.skirtMesh) {
+                    if (m.userData.skirtMesh.geometry) m.userData.skirtMesh.geometry.dispose();
+                    m.remove(m.userData.skirtMesh);
+                }
+                mapGroup.remove(m);
+            });
+
+            // In unified 3D mode, all terrain is rendered seamlessly in mapGroup (no horizon seams)
             if (typeof horizonGroup !== 'undefined') {
                 horizonGroup.visible = false;
             }
@@ -8236,15 +8288,11 @@
 
         // ==========================================
         // 3D TOPOGRAPHIC DEM ELEVATION ENGINE (CORV-GCS)
+        // High-Fidelity Central-Difference Analytical Normals + Laplacian Anti-Terracing Filter
         // ==========================================
         const TILE_SEGS = 40; // 40x40 segments per tile (1600 quads for buttery smooth 60 FPS performance)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
         let homeElevationMSL = null;
-
-        const demCanvas = document.createElement('canvas');
-        demCanvas.width = 256;
-        demCanvas.height = 256;
-        const demCtx = demCanvas.getContext('2d', { willReadFrequently: true });
 
         function decodeTerrariumElev(raw, idx) {
             if (!raw || idx + 3 >= raw.length || raw[idx + 3] < 64) return 0.0;
@@ -8253,11 +8301,11 @@
             return h;
         }
 
-        // Bilinear DEM elevation sampler: converts Terrarium RGB to floating elevation with C1 continuity
+        // Precise continuous sub-pixel Terrarium bilinear sampler
         function sampleTerrariumBilinear(raw, u, v) {
             if (!raw) return 0.0;
-            const fx = Math.max(0, Math.min(255, u * 255));
-            const fy = Math.max(0, Math.min(255, v * 255));
+            const fx = Math.max(0, Math.min(255, u * 255.0));
+            const fy = Math.max(0, Math.min(255, v * 255.0));
             const x0 = Math.floor(fx);
             const y0 = Math.floor(fy);
             const x1 = Math.min(255, x0 + 1);
@@ -8283,7 +8331,7 @@
 
         function initHomeElevation(lat, lon) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
-            const demZ = 14;
+            const demZ = 15; // Match high-resolution zoom 15 DEM tiles
             const demX = Math.floor(lon2tileFloat(lon, demZ));
             const demY = Math.floor(lat2tileFloat(lat, demZ));
             const demKey = `${demZ}_${demX}_${demY}`;
@@ -8348,10 +8396,9 @@
         }
 
         // ==========================================
-        // ==========================================
         // SEAMLESS EXTERIOR PERIMETER SKIRTS & FAST EDGE SNAPPING
-        // Internal tiles have zero skirts (permanently eliminates trenches/creases)
-        // Outer boundaries drop subtle 35m skirt to eliminate horizon sky leaks
+        // Internal adjacent tiles have zero skirts (permanently eliminates trenches/creases)
+        // Outer boundaries drop subtle 50m skirt to eliminate horizon sky leaks
         // ==========================================
         let skirtUpdateTimer = null;
         function scheduleSkirtUpdate() {
@@ -8382,7 +8429,7 @@
 
             const segs = TILE_SEGS;
             const nx = segs + 1;
-            const skirtDepth = 35; // Subtle 35m outer rim; prevents sky leaks, never towers into sky
+            const skirtDepth = 50; // 50m outer rim seals horizon sky leaks without towering into sky
 
             mapGroup.children.forEach(mesh => {
                 if (!mesh.userData || mesh.userData.tx === undefined || !mesh.userData.displaced) {
@@ -8397,8 +8444,7 @@
                 const tx = mesh.userData.tx;
                 const ty = mesh.userData.ty;
 
-                // CRITICAL: Skirts are ONLY created on true EXTERIOR boundaries facing empty space!
-                // Internal adjacent tiles NEVER get skirts, eliminating internal trenches/creases entirely.
+                // Skirts are ONLY created on true EXTERIOR boundaries facing empty space
                 const boundaryEdgeIndices = [];
                 if (!tileMap.has(tx + '_' + (ty - 1))) {
                     for (let ix = 0; ix < segs; ix++) boundaryEdgeIndices.push(0 * nx + ix, 0 * nx + (ix + 1));
@@ -8474,6 +8520,51 @@
         }
         const updatePerimeterSkirts = updateAllTileSkirts;
 
+        // Central-difference analytical grid normals (eliminates quad diagonal bias and stepped shelves)
+        function computeAnalyticalGridNormals(mesh) {
+            if (!mesh || !mesh.geometry || !mesh.geometry.attributes.position) return;
+            const pos = mesh.geometry.attributes.position;
+            const segs = (mesh.geometry.parameters && mesh.geometry.parameters.widthSegments) ? mesh.geometry.parameters.widthSegments : TILE_SEGS;
+            const nx = segs + 1;
+
+            let norm = mesh.geometry.attributes.normal;
+            if (!norm || norm.count !== pos.count) {
+                norm = new THREE.BufferAttribute(new Float32Array(pos.count * 3), 3);
+                mesh.geometry.setAttribute('normal', norm);
+            }
+
+            for (let iy = 0; iy < nx; iy++) {
+                for (let ix = 0; ix < nx; ix++) {
+                    const vIdx = iy * nx + ix;
+
+                    const ixL = (ix > 0) ? (ix - 1) : 0;
+                    const ixR = (ix < segs) ? (ix + 1) : segs;
+                    const dx = pos.getX(iy * nx + ixR) - pos.getX(iy * nx + ixL);
+                    const dzX = pos.getZ(iy * nx + ixR) - pos.getZ(iy * nx + ixL);
+
+                    const iyT = (iy > 0) ? (iy - 1) : 0;
+                    const iyB = (iy < segs) ? (iy + 1) : segs;
+                    const dy = pos.getY(iyB * nx + ix) - pos.getY(iyT * nx + ix);
+                    const dzY = pos.getZ(iyB * nx + ix) - pos.getZ(iyT * nx + ix);
+
+                    let cX = -dy * dzX;
+                    let cY = -dx * dzY;
+                    let cZ = dx * dy;
+
+                    if (cZ < 0) {
+                        cX = -cX;
+                        cY = -cY;
+                        cZ = -cZ;
+                    }
+
+                    const len = Math.hypot(cX, cY, cZ) || 1.0;
+                    norm.setXYZ(vIdx, cX / len, cY / len, cZ / len);
+                }
+            }
+            norm.needsUpdate = true;
+        }
+
+        // C1 continuous adjacent neighbor edge snapping and normal averaging
         function stitchAdjacentNeighbors(meshA) {
             if (!meshA || !meshA.userData || meshA.userData.tx === undefined) return;
             const tx = meshA.userData.tx;
@@ -8481,6 +8572,7 @@
             const segs = (meshA.geometry.parameters && meshA.geometry.parameters.widthSegments) ? meshA.geometry.parameters.widthSegments : TILE_SEGS;
             const nx = segs + 1;
             const posA = meshA.geometry.attributes.position;
+            const normA = meshA.geometry.attributes.normal;
 
             for (let i = 0; i < mapGroup.children.length; i++) {
                 const meshB = mapGroup.children[i];
@@ -8490,47 +8582,92 @@
 
                 if (bx === tx + 1 && by === ty) {
                     const posB = meshB.geometry.attributes.position;
+                    const normB = meshB.geometry.attributes.normal;
                     for (let iy = 0; iy < nx; iy++) {
                         const idxA = iy * nx + segs;
                         const idxB = iy * nx + 0;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
+
+                        if (normA && normB) {
+                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                        }
                     }
                     posB.needsUpdate = true;
+                    if (normB) normB.needsUpdate = true;
                 } else if (bx === tx - 1 && by === ty) {
                     const posB = meshB.geometry.attributes.position;
+                    const normB = meshB.geometry.attributes.normal;
                     for (let iy = 0; iy < nx; iy++) {
                         const idxA = iy * nx + 0;
                         const idxB = iy * nx + segs;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
+
+                        if (normA && normB) {
+                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                        }
                     }
                     posB.needsUpdate = true;
+                    if (normB) normB.needsUpdate = true;
                 } else if (bx === tx && by === ty + 1) {
                     const posB = meshB.geometry.attributes.position;
+                    const normB = meshB.geometry.attributes.normal;
                     for (let ix = 0; ix < nx; ix++) {
                         const idxA = segs * nx + ix;
                         const idxB = 0 * nx + ix;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
+
+                        if (normA && normB) {
+                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                        }
                     }
                     posB.needsUpdate = true;
+                    if (normB) normB.needsUpdate = true;
                 } else if (bx === tx && by === ty - 1) {
                     const posB = meshB.geometry.attributes.position;
+                    const normB = meshB.geometry.attributes.normal;
                     for (let ix = 0; ix < nx; ix++) {
                         const idxA = 0 * nx + ix;
                         const idxB = segs * nx + ix;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
+
+                        if (normA && normB) {
+                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                        }
                     }
                     posB.needsUpdate = true;
+                    if (normB) normB.needsUpdate = true;
                 }
             }
             posA.needsUpdate = true;
+            if (normA) normA.needsUpdate = true;
         }
 
         function displaceMeshVertices(mesh, raw, zoomDiff, tx, ty) {
@@ -8554,18 +8691,40 @@
             const ny = segsY + 1;
             const refHomeMSL = (homeElevationMSL !== null) ? homeElevationMSL : 0;
 
+            // 1. Raw Bilinear Elevation Sampling from DEM
+            const rawElev = new Float32Array(nx * ny);
             for (let iy = 0; iy < ny; iy++) {
                 for (let ix = 0; ix < nx; ix++) {
                     const vIdx = iy * nx + ix;
                     const u = (subX + (ix / segsX)) / subSpan;
                     const v = (subY + (iy / segsY)) / subSpan;
                     const elevMSL = sampleTerrariumBilinear(raw, u, v);
-                    const relElev = (elevMSL - refHomeMSL) * terrainExaggeration;
-                    pos.setZ(vIdx, relElev);
+                    rawElev[vIdx] = (elevMSL - refHomeMSL) * terrainExaggeration;
+                }
+            }
+
+            // 2. Anti-Terracing Filter (5-point Laplacian smoothing on interior vertices)
+            // Preserves mountain macro-relief while erasing 1m SRTM integer quantization steps
+            for (let iy = 0; iy < ny; iy++) {
+                for (let ix = 0; ix < nx; ix++) {
+                    const vIdx = iy * nx + ix;
+                    if (ix > 0 && ix < segsX && iy > 0 && iy < segsY) {
+                        const zC = rawElev[vIdx];
+                        const zL = rawElev[iy * nx + (ix - 1)];
+                        const zR = rawElev[iy * nx + (ix + 1)];
+                        const zT = rawElev[(iy - 1) * nx + ix];
+                        const zB = rawElev[(iy + 1) * nx + ix];
+                        pos.setZ(vIdx, 0.5 * zC + 0.125 * (zL + zR + zT + zB));
+                    } else {
+                        pos.setZ(vIdx, rawElev[vIdx]);
+                    }
                 }
             }
             pos.needsUpdate = true;
-            mesh.geometry.computeVertexNormals();
+
+            // 3. Compute Smooth Analytical Grid Normals
+            computeAnalyticalGridNormals(mesh);
+
             mesh.userData.displaced = true;
             stitchAdjacentNeighbors(mesh);
             scheduleSkirtUpdate();
@@ -8601,7 +8760,7 @@
             const fracX = tileXFloat - tx;
             const fracY = tileYFloat - ty;
 
-            const z = currentMapZoom || 17;
+            const z = currentMapZoom || 16;
             const demZ = Math.min(z, 15);
             const zoomDiff = z - demZ;
             const demX = tx >> zoomDiff;
@@ -8609,7 +8768,6 @@
             const key = `${demZ}_${demX}_${demY}`;
             let raw = demCache.get(key);
             if (!raw) {
-                // Check if zoom 13 horizon DEM tile is in cache
                 const diff13 = z - 13;
                 if (diff13 > 0) {
                     const x13 = tx >> diff13;
@@ -9630,18 +9788,14 @@
                 const baseElev = Math.max(2.5, corvChaseDist * 0.436);
                 const desiredY = vtolGroup.position.y + baseElev + (corvChaseDist * pitchSin);
 
-                // Smoothly lerp camera position
-                camera.position.x += (desiredX - camera.position.x) * 0.12;
-                camera.position.y += (desiredY - camera.position.y) * 0.12;
-                camera.position.z += (desiredZ - camera.position.z) * 0.12;
+                // Terrain collision avoidance: smoothly bias desired height above local terrain
+                const camGroundElev = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(desiredX, desiredZ) : 0;
+                const safeDesiredY = Math.max(desiredY, camGroundElev + 3.5);
 
-                // Terrain collision avoidance: keep camera at least 4m above local ground
-                if (typeof getTerrainElevationAt === 'function') {
-                    const camGroundElev = getTerrainElevationAt(camera.position.x, camera.position.z);
-                    if (camera.position.y < camGroundElev + 4.0) {
-                        camera.position.y = camGroundElev + 4.0;
-                    }
-                }
+                // Smoothly lerp camera position with zero snapping or jumping
+                camera.position.x += (desiredX - camera.position.x) * 0.12;
+                camera.position.y += (safeDesiredY - camera.position.y) * 0.12;
+                camera.position.z += (desiredZ - camera.position.z) * 0.12;
 
                 // Smoothly look at aircraft center
                 corvLookAtPos.lerp(vtolGroup.position, 0.15);
