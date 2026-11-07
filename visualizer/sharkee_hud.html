@@ -3669,11 +3669,16 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">AIRSPACE RADIUS</span>
                         <select id="map-cache-radius" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
-                            <option value="1">1.0 km (2 km box)</option>
-                            <option value="2">2.0 km (4 km box)</option>
-                            <option value="3" selected>3.0 km (6 km box)</option>
-                            <option value="5">5.0 km (10 km box)</option>
-                            <option value="10">10.0 km (20 km box)</option>
+                            <option value="1">1.0 km (2 km box - 4 sq km)</option>
+                            <option value="2">2.0 km (4 km box - 16 sq km)</option>
+                            <option value="3" selected>3.0 km (6 km box - 36 sq km)</option>
+                            <option value="5">5.0 km (10 km box - 100 sq km)</option>
+                            <option value="8">8.0 km (16 km box - 256 sq km)</option>
+                            <option value="10">10.0 km (20 km box - 400 sq km)</option>
+                            <option value="15">15.0 km (30 km box - 900 sq km)</option>
+                            <option value="20">20.0 km (40 km box - 1,600 sq km)</option>
+                            <option value="25">25.0 km (50 km box - 2,500 sq km)</option>
+                            <option value="30">30.0 km (60 km box - 3,600 sq km)</option>
                         </select>
                     </div>
                     <div>
@@ -5450,12 +5455,17 @@
         };
 
         function updateMapEstimate() {
-            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
-            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 15 : 14);
-            const span = (rad > 8.0 && z === 14) ? 4 : 3;
-            const tileCount = Math.pow(2 * span + 1, 2); // 49 or 81 tiles
-            const estMb = (tileCount * 0.025).toFixed(1);
-            document.getElementById('map-cache-est-text').innerText = `~${tileCount} tiles (~${estMb} MB)`;
+            const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
+            const lat = parseFloat(document.getElementById('map-cache-lat')?.value || 8.3105);
+            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
+            const tileSizeMeters = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z);
+            const span = Math.ceil((rad * 1000) / tileSizeMeters);
+            const diameterTiles = 2 * span + 1;
+            const tileCount = diameterTiles * diameterTiles;
+            const sqKm = Math.round(Math.pow(rad * 2, 2));
+            const estMb = (tileCount * 0.028).toFixed(1);
+            const estEl = document.getElementById('map-cache-est-text');
+            if (estEl) estEl.innerText = `~${tileCount} tiles (~${estMb} MB, ${sqKm} sq km) [Zoom ${z}]`;
         }
 
         document.getElementById('map-cache-radius').onchange = () => {
@@ -5535,15 +5545,8 @@
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
             const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
             const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
-            const zoomMode = document.getElementById('map-cache-zoom').value;
-            let zooms = [];
-            if (zoomMode === 'auto') {
-                zooms = [(rad <= 1.2 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)))];
-            } else if (zoomMode.includes(',')) {
-                zooms = zoomMode.split(',').map(Number);
-            } else {
-                zooms = [parseInt(zoomMode)];
-            }
+            const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
+            const zooms = [optZoom];
             const provider = document.getElementById('sel-map-provider')?.value || 'esri';
             const presetName = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
@@ -7663,30 +7666,22 @@
 
         function getOptimalZoom(radiusKm) {
             const zoomSelect = document.getElementById('map-cache-zoom')?.value;
+            let targetZoom = 17;
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
                 if (!isNaN(parsed) && parsed >= 14 && parsed <= 18) {
-                    return parsed;
+                    targetZoom = parsed;
                 }
+            } else {
+                targetZoom = (radiusKm <= 2.5 ? 17 : (radiusKm <= 7.0 ? 16 : (radiusKm <= 14.0 ? 15 : 14)));
             }
-            // High-Performance Macro-Chunk Terrain Grid matching Corv-GCS:
-            // <= 3.0 km -> Zoom 17 (~300m/tile, 1.1m/px resolution, 7x7 grid = 2.1km crisp focus, locked 60 FPS)
-            // <= 7.0 km -> Zoom 16 (~600m/tile, 2.3m/px resolution, 7x7 grid = 4.2km tactical span, locked 60 FPS)
-            // <= 14.0 km -> Zoom 15 (~1.2km/tile, 4.7m/px resolution, 7x7 grid = 8.5km span)
-            // > 14.0 km  -> Zoom 14 (~2.4km/tile, 9.5m/px regional vista)
-            if (terrain3DEnabled) {
-                // High-Resolution 3D Corv Topographic Streaming:
-                // Lock Zoom 16 for stable mountain relief (2.38m/pixel satellite resolution, 6.6km tactical span)
-                // Wide hysteresis bands prevent map wiping and thrashing during flight or camera orbit
-                if (radiusKm <= 2.0) return 17;
-                if (radiusKm <= 7.0) return 16;
-                if (radiusKm <= 14.0) return 15;
-                return 14;
-            }
-            if (radiusKm <= 2.0) return 17;
-            if (radiusKm <= 7.0) return 16;
-            if (radiusKm <= 14.0) return 15;
-            return 14;
+
+            // WebGL Memory & Performance Guard: Cap zoom levels for large operational radiuses
+            // Guarantees solid 60 FPS and prevents out-of-memory browser tab crashes for massive 3,600 sq km areas
+            if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
+            else if (radiusKm >= 10.0 && targetZoom > 15) targetZoom = 15;
+            else if (radiusKm >= 5.0 && targetZoom > 16) targetZoom = 16;
+            return targetZoom;
         }
 
         // Render Ground-Level Tactical Airspace Range Rings & Perimeter
@@ -7730,9 +7725,10 @@
             ring.position.y = yOffset;
             airspaceRingGroup.add(ring);
 
-            // 3. Concentric 1 km range rings (Green)
+            // 3. Concentric range rings (Green)
             const maxKm = Math.floor(radiusKm);
-            for (let k = 1; k <= maxKm; k++) {
+            const stepKm = (maxKm >= 20) ? 5 : ((maxKm >= 8) ? 2 : 1);
+            for (let k = stepKm; k <= maxKm; k += stepKm) {
                 if (Math.abs(k - radiusKm) < 0.2) continue; // Skip if basically the outer ring
                 const innerRadM = k * 1000;
                 const innerGeo = new THREE.RingGeometry(Math.max(1, innerRadM - 1.5), innerRadM + 1.5, 64);
@@ -8023,8 +8019,9 @@
             }
 
             // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
-            // 11x11 grid (121 tiles) provides continuous 13.5km to 27km high-fidelity seamless coverage
-            const gridSpan = 5;
+            // Dynamically sized to user-selected airspace radius (up to 30km / 3,600 sq km)
+            const radMeters = radiusKm * 1000;
+            const gridSpan = Math.max(5, Math.min(22, Math.ceil(radMeters / tileSize) + 1));
 
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
                 for (let dy = -gridSpan; dy <= gridSpan; dy++) {
@@ -8587,7 +8584,7 @@
 
         // C1 continuous adjacent neighbor edge snapping and normal averaging
         function stitchAdjacentNeighbors(meshA) {
-            if (!meshA || !meshA.userData || meshA.userData.tx === undefined) return;
+            if (!meshA || !meshA.userData || meshA.userData.tx === undefined || !meshA.userData.displaced) return;
             const tx = meshA.userData.tx;
             const ty = meshA.userData.ty;
             const segs = (meshA.geometry.parameters && meshA.geometry.parameters.widthSegments) ? meshA.geometry.parameters.widthSegments : TILE_SEGS;
@@ -8595,85 +8592,138 @@
             const posA = meshA.geometry.attributes.position;
             const normA = meshA.geometry.attributes.normal;
 
-            for (let i = 0; i < mapGroup.children.length; i++) {
-                const meshB = mapGroup.children[i];
-                if (!meshB.userData || !meshB.userData.displaced || meshB === meshA) continue;
-                const bx = meshB.userData.tx;
-                const by = meshB.userData.ty;
+            const tileMap = new Map();
+            mapGroup.children.forEach(m => {
+                if (m.userData && m.userData.tx !== undefined && m.userData.displaced && m !== meshA) {
+                    tileMap.set(m.userData.tx + '_' + m.userData.ty, m);
+                }
+            });
 
-                if (bx === tx + 1 && by === ty) {
-                    const posB = meshB.geometry.attributes.position;
-                    const normB = meshB.geometry.attributes.normal;
+            // East neighbor (tx + 1, ty)
+            const mEast = tileMap.get((tx + 1) + '_' + ty);
+            if (mEast) {
+                const posB = mEast.geometry.attributes.position;
+                const normB = mEast.geometry.attributes.normal;
+                for (let iy = 0; iy < nx; iy++) {
+                    const idxA = iy * nx + segs;
+                    const idxB = iy * nx + 0;
+                    const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
+                    posA.setZ(idxA, avgZ); posB.setZ(idxB, avgZ);
+                    if (normA && normB) {
+                        const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                        const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                        const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                        const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                        normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                        normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                    }
+                }
+                posB.needsUpdate = true;
+                if (normB) normB.needsUpdate = true;
+            }
+
+            // West neighbor (tx - 1, ty)
+            const mWest = tileMap.get((tx - 1) + '_' + ty);
+            if (mWest) {
+                const posB = mWest.geometry.attributes.position;
+                const normB = mWest.geometry.attributes.normal;
+                for (let iy = 0; iy < nx; iy++) {
+                    const idxA = iy * nx + 0;
+                    const idxB = iy * nx + segs;
+                    const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
+                    posA.setZ(idxA, avgZ); posB.setZ(idxB, avgZ);
+                    if (normA && normB) {
+                        const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                        const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                        const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                        const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                        normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                        normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                    }
+                }
+                posB.needsUpdate = true;
+                if (normB) normB.needsUpdate = true;
+            }
+
+            // South neighbor (tx, ty + 1)
+            const mSouth = tileMap.get(tx + '_' + (ty + 1));
+            if (mSouth) {
+                const posB = mSouth.geometry.attributes.position;
+                const normB = mSouth.geometry.attributes.normal;
+                for (let ix = 0; ix < nx; ix++) {
+                    const idxA = segs * nx + ix;
+                    const idxB = 0 * nx + ix;
+                    const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
+                    posA.setZ(idxA, avgZ); posB.setZ(idxB, avgZ);
+                    if (normA && normB) {
+                        const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                        const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                        const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                        const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                        normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                        normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                    }
+                }
+                posB.needsUpdate = true;
+                if (normB) normB.needsUpdate = true;
+            }
+
+            // North neighbor (tx, ty - 1)
+            const mNorth = tileMap.get(tx + '_' + (ty - 1));
+            if (mNorth) {
+                const posB = mNorth.geometry.attributes.position;
+                const normB = mNorth.geometry.attributes.normal;
+                for (let ix = 0; ix < nx; ix++) {
+                    const idxA = 0 * nx + ix;
+                    const idxB = segs * nx + ix;
+                    const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
+                    posA.setZ(idxA, avgZ); posB.setZ(idxB, avgZ);
+                    if (normA && normB) {
+                        const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                        const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                        const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                        const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                        normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                        normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                    }
+                }
+                posB.needsUpdate = true;
+                if (normB) normB.needsUpdate = true;
+            }
+
+            posA.needsUpdate = true;
+            if (normA) normA.needsUpdate = true;
+            scheduleSkirtUpdate();
+        }
+
+        // Unified multi-tile grid edge stitching and normal smoothing
+        function stitchAllGridTiles() {
+            const tileMap = new Map();
+            mapGroup.children.forEach(m => {
+                if (m.userData && m.userData.tx !== undefined && m.userData.displaced) {
+                    tileMap.set(m.userData.tx + '_' + m.userData.ty, m);
+                }
+            });
+
+            tileMap.forEach((meshA) => {
+                const tx = meshA.userData.tx;
+                const ty = meshA.userData.ty;
+                const segs = (meshA.geometry.parameters && meshA.geometry.parameters.widthSegments) ? meshA.geometry.parameters.widthSegments : TILE_SEGS;
+                const nx = segs + 1;
+                const posA = meshA.geometry.attributes.position;
+                const normA = meshA.geometry.attributes.normal;
+
+                // East neighbor (tx + 1, ty)
+                const meshEast = tileMap.get((tx + 1) + '_' + ty);
+                if (meshEast) {
+                    const posB = meshEast.geometry.attributes.position;
+                    const normB = meshEast.geometry.attributes.normal;
                     for (let iy = 0; iy < nx; iy++) {
                         const idxA = iy * nx + segs;
                         const idxB = iy * nx + 0;
                         const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
                         posA.setZ(idxA, avgZ);
                         posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
-                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
-                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
-                        }
-                    }
-                    posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                } else if (bx === tx - 1 && by === ty) {
-                    const posB = meshB.geometry.attributes.position;
-                    const normB = meshB.geometry.attributes.normal;
-                    for (let iy = 0; iy < nx; iy++) {
-                        const idxA = iy * nx + 0;
-                        const idxB = iy * nx + segs;
-                        const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
-                        posA.setZ(idxA, avgZ);
-                        posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
-                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
-                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
-                        }
-                    }
-                    posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                } else if (bx === tx && by === ty + 1) {
-                    const posB = meshB.geometry.attributes.position;
-                    const normB = meshB.geometry.attributes.normal;
-                    for (let ix = 0; ix < nx; ix++) {
-                        const idxA = segs * nx + ix;
-                        const idxB = 0 * nx + ix;
-                        const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
-                        posA.setZ(idxA, avgZ);
-                        posB.setZ(idxB, avgZ);
-
-                        if (normA && normB) {
-                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
-                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
-                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
-                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
-                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
-                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
-                        }
-                    }
-                    posB.needsUpdate = true;
-                    if (normB) normB.needsUpdate = true;
-                } else if (bx === tx && by === ty - 1) {
-                    const posB = meshB.geometry.attributes.position;
-                    const normB = meshB.geometry.attributes.normal;
-                    for (let ix = 0; ix < nx; ix++) {
-                        const idxA = 0 * nx + ix;
-                        const idxB = segs * nx + ix;
-                        const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
-                        posA.setZ(idxA, avgZ);
-                        posB.setZ(idxB, avgZ);
-
                         if (normA && normB) {
                             const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
                             const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
@@ -8686,12 +8736,41 @@
                     posB.needsUpdate = true;
                     if (normB) normB.needsUpdate = true;
                 }
-            }
-            posA.needsUpdate = true;
-            if (normA) normA.needsUpdate = true;
+
+                // South neighbor (tx, ty + 1)
+                const meshSouth = tileMap.get(tx + '_' + (ty + 1));
+                if (meshSouth) {
+                    const posB = meshSouth.geometry.attributes.position;
+                    const normB = meshSouth.geometry.attributes.normal;
+                    for (let ix = 0; ix < nx; ix++) {
+                        const idxA = segs * nx + ix;
+                        const idxB = 0 * nx + ix;
+                        const avgZ = (posA.getZ(idxA) + posB.getZ(idxB)) * 0.5;
+                        posA.setZ(idxA, avgZ);
+                        posB.setZ(idxB, avgZ);
+                        if (normA && normB) {
+                            const nxAvg = (normA.getX(idxA) + normB.getX(idxB)) * 0.5;
+                            const nyAvg = (normA.getY(idxA) + normB.getY(idxB)) * 0.5;
+                            const nzAvg = (normA.getZ(idxA) + normB.getZ(idxB)) * 0.5;
+                            const len = Math.hypot(nxAvg, nyAvg, nzAvg) || 1.0;
+                            normA.setXYZ(idxA, nxAvg / len, nyAvg / len, nzAvg / len);
+                            normB.setXYZ(idxB, nxAvg / len, nyAvg / len, nzAvg / len);
+                        }
+                    }
+                    posB.needsUpdate = true;
+                    if (normB) normB.needsUpdate = true;
+                }
+
+                posA.needsUpdate = true;
+                if (normA) normA.needsUpdate = true;
+            });
         }
 
         function displaceMeshVertices(mesh, raw, zoomDiff, tx, ty) {
+            displaceMeshVerticesInternal(mesh, raw, zoomDiff, tx, ty, true);
+        }
+
+        function displaceMeshVerticesInternal(mesh, raw, zoomDiff, tx, ty, triggerStitch = true) {
             if (!mesh || !mesh.geometry || !mesh.geometry.attributes.position) return;
             const pos = mesh.geometry.attributes.position;
             if (!terrain3DEnabled) {
@@ -8724,8 +8803,8 @@
                 }
             }
 
-            // 2. Anti-Terracing Filter (5-point Laplacian smoothing on interior vertices)
-            // Preserves mountain macro-relief while erasing 1m SRTM integer quantization steps
+            // 2. Slope-Adaptive Anti-Terracing Filter
+            // Smooths gentle plains (eliminates SRTM 1m steps) while preserving steep mountain ridges without edge ridges
             for (let iy = 0; iy < ny; iy++) {
                 for (let ix = 0; ix < nx; ix++) {
                     const vIdx = iy * nx + ix;
@@ -8735,7 +8814,12 @@
                         const zR = rawElev[iy * nx + (ix + 1)];
                         const zT = rawElev[(iy - 1) * nx + ix];
                         const zB = rawElev[(iy + 1) * nx + ix];
-                        pos.setZ(vIdx, 0.5 * zC + 0.125 * (zL + zR + zT + zB));
+                        const maxDiff = Math.max(Math.abs(zC - zL), Math.abs(zC - zR), Math.abs(zC - zT), Math.abs(zC - zB));
+                        if (maxDiff < 3.5 * terrainExaggeration) {
+                            pos.setZ(vIdx, 0.5 * zC + 0.125 * (zL + zR + zT + zB));
+                        } else {
+                            pos.setZ(vIdx, zC);
+                        }
                     } else {
                         pos.setZ(vIdx, rawElev[vIdx]);
                     }
@@ -8745,13 +8829,16 @@
 
             // 3. Compute Smooth Analytical Grid Normals
             computeAnalyticalGridNormals(mesh);
-
             mesh.userData.displaced = true;
-            stitchAdjacentNeighbors(mesh);
-            scheduleSkirtUpdate();
+
+            if (triggerStitch) {
+                stitchAdjacentNeighbors(mesh);
+                scheduleSkirtUpdate();
+            }
         }
 
         function updateAllTileElevations() {
+            // Pass 1: Displace all meshes with the updated relief scale
             mapGroup.children.forEach(mesh => {
                 if (mesh.userData && mesh.userData.tx !== undefined) {
                     const z = mesh.userData.zoom;
@@ -8762,11 +8849,19 @@
                     const key = `${demZ}_${demX}_${demY}`;
                     const raw = demCache.get(key);
                     if (raw) {
-                        displaceMeshVertices(mesh, raw, zoomDiff, mesh.userData.tx, mesh.userData.ty);
+                        displaceMeshVerticesInternal(mesh, raw, zoomDiff, mesh.userData.tx, mesh.userData.ty, false);
+                    } else {
+                        applyDemElevationToMesh(mesh, z, mesh.userData.tx, mesh.userData.ty);
                     }
                 }
             });
+
+            // Pass 2: Unified boundary stitching across all displaced tiles
+            stitchAllGridTiles();
+
+            // Pass 3: Exterior perimeter skirts
             updateAllTileSkirts();
+
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
