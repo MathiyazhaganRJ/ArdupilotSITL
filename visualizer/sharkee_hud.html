@@ -3684,6 +3684,8 @@
                     <div>
                         <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">RESOLUTION</span>
                         <select id="map-cache-zoom" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
+                            <option value="19">Zoom 19 - Sub-Meter Recon (0.3m/px - Google)</option>
+                            <option value="18">Zoom 18 - Extreme Aerial (0.59m/px - 2x Sharper)</option>
                             <option value="17" selected>Zoom 17 - Ultra-Crisp Imagery (1.1m/px)</option>
                             <option value="auto">Auto Optimal (Corv-GCS 60 FPS)</option>
                             <option value="16">Zoom 16 - Tactical High-Res (2.3m/px)</option>
@@ -5457,7 +5459,13 @@
         function updateMapEstimate() {
             const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             const lat = parseFloat(document.getElementById('map-cache-lat')?.value || 8.3105);
-            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
+            const zoomMode = document.getElementById('map-cache-zoom')?.value || '17';
+            let z = 17;
+            if (zoomMode === 'auto') {
+                z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 1.5 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 15)));
+            } else if (!isNaN(parseInt(zoomMode))) {
+                z = parseInt(zoomMode);
+            }
             const tileSizeMeters = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z);
             const span = Math.ceil((rad * 1000) / tileSizeMeters);
             const diameterTiles = 2 * span + 1;
@@ -7669,11 +7677,11 @@
             let targetZoom = 17;
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
-                if (!isNaN(parsed) && parsed >= 14 && parsed <= 18) {
+                if (!isNaN(parsed) && parsed >= 14 && parsed <= 19) {
                     targetZoom = parsed;
                 }
             } else {
-                targetZoom = (radiusKm <= 2.5 ? 17 : (radiusKm <= 7.0 ? 16 : (radiusKm <= 14.0 ? 15 : 14)));
+                targetZoom = (radiusKm <= 1.5 ? 18 : (radiusKm <= 3.5 ? 17 : (radiusKm <= 7.0 ? 16 : (radiusKm <= 14.0 ? 15 : 14))));
             }
 
             // WebGL Memory & Performance Guard: Cap zoom levels for large operational radiuses
@@ -7681,6 +7689,7 @@
             if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
             else if (radiusKm >= 10.0 && targetZoom > 15) targetZoom = 15;
             else if (radiusKm >= 5.0 && targetZoom > 16) targetZoom = 16;
+            else if (radiusKm > 2.5 && targetZoom > 18) targetZoom = 18;
             return targetZoom;
         }
 
