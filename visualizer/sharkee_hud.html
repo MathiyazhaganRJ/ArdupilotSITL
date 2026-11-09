@@ -4722,8 +4722,15 @@
         }
         if (selCoverageWidth) {
             selCoverageWidth.onchange = () => {
-                coverageSwathWidth = parseFloat(selCoverageWidth.value) || 1000.0;
-                localStorage.setItem('pilot_coverage_swath_width', String(coverageSwathWidth));
+                const w = parseFloat(selCoverageWidth.value) || 1000.0;
+                coverageSwathWidth = w;
+                localStorage.setItem('pilot_coverage_swath_width', String(w));
+                if (typeof rebuildFlightCoverage === 'function') {
+                    rebuildFlightCoverage(w);
+                }
+                if (typeof showTacticalAlert === 'function') {
+                    showTacticalAlert(`SURVEY SWATH WIDTH: ${(w / 1000).toFixed(1)} KM (±${(w / 2).toFixed(0)}m)`, 1400);
+                }
             };
             const savedWidth = localStorage.getItem('pilot_coverage_swath_width');
             if (savedWidth) {
@@ -7381,6 +7388,7 @@
 
         const coverageSwathMesh = new THREE.Mesh(coverageGeo, coverageMat);
         coverageSwathMesh.renderOrder = 20;
+        coverageSwathMesh.frustumCulled = false;
 
         const leftEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
         const rightEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
@@ -7405,6 +7413,8 @@
         const rightEdgeLine = new THREE.Line(rightEdgeGeo, edgeMat);
         leftEdgeLine.renderOrder = 21;
         rightEdgeLine.renderOrder = 21;
+        leftEdgeLine.frustumCulled = false;
+        rightEdgeLine.frustumCulled = false;
 
         const flightCoverageGroup = new THREE.Group();
         flightCoverageGroup.name = 'flightCoverageGroup';
@@ -7454,7 +7464,8 @@
                 return;
             }
 
-            const groundY = (typeof terrain3DEnabled !== 'undefined' && terrain3DEnabled) ? 0.5 : -1.8;
+            const elev = (typeof getTerrainElevationAt === 'function' && terrain3DEnabled) ? getTerrainElevationAt(pos.x, pos.z) : 0;
+            const groundY = terrain3DEnabled ? (elev + 0.8) : -1.8;
             const halfW = coverageSwathWidth * 0.5;
 
             // On first in-flight point: initialize anchor
@@ -7475,6 +7486,16 @@
 
                 leftEdgePos[0] = lx; leftEdgePos[1] = groundY; leftEdgePos[2] = lz;
                 rightEdgePos[0] = rx; rightEdgePos[1] = groundY; rightEdgePos[2] = rz;
+
+                flownTrackSamples.push({
+                    lat: currentPlaneLat || 0,
+                    lon: currentPlaneLon || 0,
+                    x: pos.x,
+                    y: groundY,
+                    z: pos.z,
+                    nx: lastFlownNormal.x,
+                    ny: lastFlownNormal.y
+                });
 
                 coveragePointCount = 1;
                 return;
@@ -7558,7 +7579,15 @@
             lastCoverageSamplePos.copy(pos);
 
             if (currentPlaneLat && currentPlaneLon) {
-                flownTrackSamples.push({ lat: currentPlaneLat, lon: currentPlaneLon, x: pos.x, z: pos.z });
+                flownTrackSamples.push({
+                    lat: currentPlaneLat,
+                    lon: currentPlaneLon,
+                    x: pos.x,
+                    y: groundY,
+                    z: pos.z,
+                    nx: lastFlownNormal.x,
+                    ny: lastFlownNormal.y
+                });
                 if (flownTrackSamples.length > 8000) {
                     flownTrackSamples.splice(0, 100);
                 }
@@ -7586,6 +7615,51 @@
                 rightEdgeGeo.attributes.position.needsUpdate = true;
             }
         }
+
+        function rebuildFlightCoverage(newWidth) {
+            if (newWidth && !isNaN(newWidth)) coverageSwathWidth = parseFloat(newWidth);
+            const halfW = coverageSwathWidth * 0.5;
+            const count = flownTrackSamples.length;
+            if (count < 2) return;
+
+            const nPoints = Math.min(count, MAX_COVERAGE_POINTS);
+            for (let i = 0; i < nPoints; i++) {
+                const pt = flownTrackSamples[i];
+                const elev = (typeof getTerrainElevationAt === 'function' && terrain3DEnabled) ? getTerrainElevationAt(pt.x, pt.z) : 0;
+                const gY = terrain3DEnabled ? (elev + 0.8) : -1.8;
+
+                const lx = pt.x - pt.nx * halfW;
+                const lz = pt.z - pt.ny * halfW;
+                const rx = pt.x + pt.nx * halfW;
+                const rz = pt.z + pt.ny * halfW;
+
+                const vIdx = i * 2;
+                coverageVertices[vIdx * 3 + 0] = lx;
+                coverageVertices[vIdx * 3 + 1] = gY;
+                coverageVertices[vIdx * 3 + 2] = lz;
+
+                coverageVertices[(vIdx + 1) * 3 + 0] = rx;
+                coverageVertices[(vIdx + 1) * 3 + 1] = gY;
+                coverageVertices[(vIdx + 1) * 3 + 2] = rz;
+
+                leftEdgePos[i * 3 + 0] = lx;
+                leftEdgePos[i * 3 + 1] = gY;
+                leftEdgePos[i * 3 + 2] = lz;
+
+                rightEdgePos[i * 3 + 0] = rx;
+                rightEdgePos[i * 3 + 1] = gY;
+                rightEdgePos[i * 3 + 2] = rz;
+            }
+
+            coveragePointCount = nPoints;
+            coverageGeo.setDrawRange(0, (nPoints - 1) * 6);
+            coverageGeo.attributes.position.needsUpdate = true;
+            leftEdgeGeo.setDrawRange(0, nPoints);
+            leftEdgeGeo.attributes.position.needsUpdate = true;
+            rightEdgeGeo.setDrawRange(0, nPoints);
+            rightEdgeGeo.attributes.position.needsUpdate = true;
+        }
+        window.rebuildFlightCoverage = rebuildFlightCoverage;
 
         function reloadFlown2DTiles() {
             if (!flownTrackSamples || flownTrackSamples.length === 0) return;
@@ -8689,22 +8763,11 @@
                 if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
                 if (typeof clearFlightCoverage === 'function') clearFlightCoverage();
             } else {
-                // Throttle incremental checks during flight (~50m threshold or >15° heading change in 3D)
+                // Throttle incremental checks during flight (~55m position threshold)
+                // Independent of aircraft heading to guarantee 100% stable map during loiter/orbit
                 const dLat = Math.abs(lat - lastMapUpdateLat);
                 const dLon = Math.abs(lon - lastMapUpdateLon);
-                let hdgTrigger = false;
-                if (terrain3DEnabled) {
-                    let curHdg = (planeGroundspeed > 0.8 && planeGroundTrack !== null) ? planeGroundTrack : planeHeading;
-                    if (typeof curHdg === 'number' && !isNaN(curHdg)) {
-                        let dHdg = Math.abs(curHdg - lastMapUpdateHdg);
-                        while (dHdg > 180) dHdg = Math.abs(dHdg - 360);
-                        if (dHdg > 15) {
-                            hdgTrigger = true;
-                            lastMapUpdateHdg = curHdg;
-                        }
-                    }
-                }
-                if (dLat < 0.0005 && dLon < 0.0005 && !hdgTrigger) {
+                if (dLat < 0.0005 && dLon < 0.0005) {
                     return;
                 }
             }
@@ -8866,47 +8929,23 @@
                 horizonGroup.visible = true;
             }
 
-            // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Forward Directional Architecture)
-            // 3.5 km forward lookahead along track, 1.8-2.0 km lateral corridor, 0.5 km rear cutoff
-            let trackHdg = (planeGroundspeed > 0.8 && planeGroundTrack !== null) ? planeGroundTrack : planeHeading;
-            if (typeof trackHdg !== 'number' || isNaN(trackHdg)) trackHdg = 0;
-
-            const trkRad = (trackHdg % 360) * (Math.PI / 180.0);
-            const sinHdg = Math.sin(trkRad);
-            const cosHdg = Math.cos(trkRad);
-
-            const fwdLookaheadMeters = 3800;      // 3.8 km forward along track
-            const lateralHalfWidthMeters = 2000;  // 2.0 km left, 2.0 km right (4.0 km corridor)
-            const rearCutoffMeters = 2000;         // 2.0 km behind aircraft tail
-            const isStationary = (planeGroundspeed < 0.5 && (!firstPos || !isArmed));
-            const staticAirfieldRadiusMeters = Math.max(2500, radiusKm * 1000); // Full circular landscape around aircraft
-
-            const maxEnvelopeMeters = Math.max(fwdLookaheadMeters, lateralHalfWidthMeters, staticAirfieldRadiusMeters) + tileSize;
-            const maxSpan = Math.ceil(maxEnvelopeMeters / tileSize);
+            // Stable Rotation-Invariant 3D Circular Terrain Grid
+            // Guarantees zero corner jumping during turns, orbits, and loitering!
+            const radMeters = Math.max(3000, radiusKm * 1000);
+            const gridSpan = Math.ceil(radMeters / tileSize) + 1;
+            const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
 
             const terrainOffsets = [];
-            for (let dx = -maxSpan; dx <= maxSpan; dx++) {
-                for (let dy = -maxSpan; dy <= maxSpan; dy++) {
-                    const eastM = dx * tileSize;
-                    const northM = -dy * tileSize;
-                    const distForward = eastM * sinHdg + northM * cosHdg;
-                    const distCross = Math.abs(eastM * cosHdg - northM * sinHdg);
-                    const distCenterSq = eastM * eastM + northM * northM;
-
-                    let inEnvelope = false;
-                    if (distForward >= -rearCutoffMeters && distForward <= fwdLookaheadMeters && distCross <= lateralHalfWidthMeters) {
-                        inEnvelope = true;
-                    } else if (distCenterSq <= (staticAirfieldRadiusMeters * staticAirfieldRadiusMeters)) {
-                        inEnvelope = true;
-                    }
-
-                    if (inEnvelope) {
-                        const score = Math.max(0, distForward) * 0.35 + distCross * 1.0;
-                        terrainOffsets.push({ dx, dy, score, distForward, distCross });
+            for (let dx = -gridSpan; dx <= gridSpan; dx++) {
+                for (let dy = -gridSpan; dy <= gridSpan; dy++) {
+                    const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
+                    if (distSq <= maxDistSq) {
+                        terrainOffsets.push({ dx, dy, distSq });
                     }
                 }
             }
-            terrainOffsets.sort((a, b) => a.score - b.score);
+            // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
+            terrainOffsets.sort((a, b) => a.distSq - b.distSq);
 
             for (const { dx, dy } of terrainOffsets) {
                 const tx = currentTileX + dx;
@@ -9067,10 +9106,13 @@
                 }
             }
 
-            // High-Performance 3D Scene Tile Budget & Flown Track Protection
-            // Retains flown terrain chunks under the flight path and survey swath
+            // High-Performance Stable 3D Scene Tile Eviction
+            // Pure radial distance eviction guarantees zero corner jumping during turns and loiter!
             const MAX_SCENE_TILES_3D = 350;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
+                const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
+                const homeTx = Math.floor(homeTileXFloat);
+                const homeTy = Math.floor(homeTileYFloat);
                 const scored = [];
                 mapGroup.children.forEach(m => {
                     if (m.userData && m.userData.tx !== undefined) {
@@ -9078,29 +9120,16 @@
                         // Protect flown terrain chunks under the flight path and survey swath
                         if (typeof flownTileKeys !== 'undefined' && flownTileKeys.has(tileCoordKey)) return;
 
-                        const dx = m.userData.tx - currentTileX;
-                        const dy = m.userData.ty - currentTileY;
-                        const eastM = dx * tileSize;
-                        const northM = -dy * tileSize;
-                        const distForward = eastM * sinHdg + northM * cosHdg;
-                        const distCross = Math.abs(eastM * cosHdg - northM * sinHdg);
+                        const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
+                        const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
+                        if (distToPlane <= gridSpan) return; // Keep active circle around plane
+                        if (distToHome <= (gridSpan + 1)) return; // Protect home airfield
 
-                        let evictScore = 0;
-                        if (distForward < -rearCutoffMeters) {
-                            evictScore = 20000 + Math.abs(distForward);
-                        } else if (distCross > (lateralHalfWidthMeters + tileSize)) {
-                            evictScore = 10000 + distCross;
-                        } else if (distForward > (fwdLookaheadMeters + tileSize)) {
-                            evictScore = 5000 + distForward;
-                        } else {
-                            evictScore = distForward * 0.1;
-                        }
-                        scored.push({ mesh: m, evictScore });
+                        scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
                     }
                 });
 
-                scored.sort((a, b) => b.evictScore - a.evictScore);
-                const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
+                scored.sort((a, b) => b.score - a.score);
                 const toRemove = scored.slice(0, excess);
                 toRemove.forEach(({ mesh: m }) => {
                     const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
@@ -12098,12 +12127,15 @@
             if (!terrain3DEnabled && typeof reloadFlown2DTiles === 'function') {
                 reloadFlown2DTiles();
             }
+            if (typeof rebuildFlightCoverage === 'function') {
+                rebuildFlightCoverage(coverageSwathWidth);
+            }
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
 
             if (typeof showTacticalAlert === 'function') {
-                showTacticalAlert(terrain3DEnabled ? "MAP MODE: 3D TOPOGRAPHY (3.5KM FORWARD STREAMING)" : "MAP MODE: 2D FLAT SATELLITE (FULL TRACK RETENTION)", 1600);
+                showTacticalAlert(terrain3DEnabled ? "MAP MODE: 3D TOPOGRAPHIC TERRAIN" : "MAP MODE: 2D FLAT SATELLITE", 1600);
             }
         }
 
