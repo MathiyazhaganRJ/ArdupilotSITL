@@ -1180,6 +1180,67 @@ def get_tiles_for_radius(lat, lon, radius_km, zoom):
             tiles.append((zoom, x, y))
     return tiles
 
+def get_tiles_for_waypoints(waypoints, corridor_km, zoom):
+    """
+    Computes all unique (zoom, x, y) tiles covering a flight corridor buffer around
+    a list of waypoints [{lat, lon}, ...].
+    Interpolates along path segments so even 200 km diagonal routes only download
+    the narrow corridor (e.g. 3 km buffer) instead of an oversized bounding box.
+    """
+    valid_pts = []
+    for w in waypoints:
+        if isinstance(w, dict):
+            w_lat = float(w.get('lat', 0.0))
+            w_lon = float(w.get('lon', 0.0))
+            if abs(w_lat) > 0.001 and abs(w_lon) > 0.001:
+                valid_pts.append((w_lat, w_lon))
+
+    if not valid_pts:
+        return []
+
+    if len(valid_pts) == 1:
+        return get_tiles_for_radius(valid_pts[0][0], valid_pts[0][1], corridor_km, zoom)
+
+    sample_points = []
+    for i in range(len(valid_pts) - 1):
+        p1 = valid_pts[i]
+        p2 = valid_pts[i + 1]
+        sample_points.append(p1)
+        d_lat = p2[0] - p1[0]
+        d_lon = p2[1] - p1[1]
+        mid_lat = (p1[0] + p2[0]) / 2.0
+        seg_dist = math.sqrt((d_lat * 111.0) ** 2 + (d_lon * 111.0 * math.cos(math.radians(mid_lat))) ** 2)
+        step_km = max(0.5, min(1.5, corridor_km * 0.5))
+        num_steps = max(1, int(math.ceil(seg_dist / step_km)))
+        for s in range(1, num_steps):
+            frac = s / float(num_steps)
+            sample_points.append((p1[0] + d_lat * frac, p1[1] + d_lon * frac))
+    sample_points.append(valid_pts[-1])
+
+    unique_tiles = set()
+    limit_sq = (corridor_km * 1.15) ** 2
+    for s_lat, s_lon in sample_points:
+        lat_delta = (corridor_km / 6371.0) * (180.0 / math.pi)
+        lon_delta = (corridor_km / (6371.0 * math.cos(math.radians(s_lat)))) * (180.0 / math.pi)
+        def l2t(ln, z): return (ln + 180.0) / 360.0 * (2 ** z)
+        def a2t(lt, z):
+            rad = math.radians(lt)
+            return (1.0 - math.log(math.tan(rad) + 1.0 / math.cos(rad)) / math.pi) / 2.0 * (2 ** z)
+        min_x = int(l2t(s_lon - lon_delta, zoom))
+        max_x = int(l2t(s_lon + lon_delta, zoom))
+        min_y = int(a2t(s_lat + lat_delta, zoom))
+        max_y = int(a2t(s_lat - lat_delta, zoom))
+        for x in range(min(min_x, max_x), max(min_x, max_x) + 1):
+            for y in range(min(min_y, max_y), max(min_y, max_y) + 1):
+                t_lon = (x + 0.5) / (2 ** zoom) * 360.0 - 180.0
+                t_lat = math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * (y + 0.5) / (2 ** zoom)))))
+                d_lat_km = (t_lat - s_lat) * 111.0
+                d_lon_km = (t_lon - s_lon) * 111.0 * math.cos(math.radians(s_lat))
+                if (d_lat_km * d_lat_km + d_lon_km * d_lon_km) <= limit_sq:
+                    unique_tiles.add((zoom, x, y))
+
+    return list(unique_tiles)
+
 def sanitize_preset_folder(preset_name):
     if not preset_name or not str(preset_name).strip():
         return "My_Home_Airfield"
@@ -1188,7 +1249,7 @@ def sanitize_preset_folder(preset_name):
         return "My_Home_Airfield"
     return clean if clean else "My_Home_Airfield"
 
-def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', preset='default'):
+def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', preset='default', waypoints=None, corridor_km=3.0):
     global precache_state
     precache_state["is_downloading"] = True
     precache_state["status"] = "Calculating tiles..."
@@ -1198,15 +1259,36 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
     os.makedirs(target_cache_dir, exist_ok=True)
     
     all_tiles = []
-    for z in zoom_levels:
-        all_tiles.extend(get_tiles_for_radius(lat, lon, radius_km, z))
+    is_corridor = bool(waypoints and isinstance(waypoints, list) and len(waypoints) > 1)
+    if is_corridor:
+        tile_set = set()
+        for z in zoom_levels:
+            tile_set.update(get_tiles_for_waypoints(waypoints, corridor_km, z))
+        all_tiles = list(tile_set)
+    else:
+        for z in zoom_levels:
+            all_tiles.extend(get_tiles_for_radius(lat, lon, radius_km, z))
 
     total = len(all_tiles)
     precache_state["total"] = total
     precache_state["downloaded"] = 0
     precache_state["cached"] = 0
     precache_state["failed"] = 0
-    precache_state["status"] = f"Downloading {total} tiles for {preset_folder}..."
+    mode_desc = f"corridor ({len(waypoints)} WPs)" if is_corridor else f"{radius_km}km radius"
+    precache_state["status"] = f"Downloading {total} tiles [{mode_desc}] for {preset_folder}..."
+
+    # Pre-collect all available cache search directories for fast local hit detection
+    search_dirs = [target_cache_dir]
+    if os.path.exists(tile_cache_dir):
+        try:
+            for sub in os.listdir(tile_cache_dir):
+                s_path = os.path.join(tile_cache_dir, sub)
+                if os.path.isdir(s_path) and s_path not in search_dirs and sub != 'dem':
+                    search_dirs.append(s_path)
+        except Exception:
+            pass
+    if tile_cache_dir not in search_dirs:
+        search_dirs.append(tile_cache_dir)
 
     def proc_tile(tile_info):
         z, x, y = tile_info
@@ -1238,25 +1320,19 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
         tile_path = os.path.join(target_cache_dir, tile_filename)
 
-        # Check if already cached under any valid name for this provider (skip 2521-byte placeholders)
+        # Check if already cached in target preset or ANY existing preset (skip 2521-byte placeholders)
         for aname in target_names:
             p1 = os.path.join(target_cache_dir, aname)
-            p2 = os.path.join(tile_cache_dir, aname)
-            p3 = os.path.join(tile_cache_dir, 'My_Home_Airfield', aname)
             if os.path.exists(p1) and os.path.getsize(p1) > 100 and os.path.getsize(p1) != 2521:
                 return 'CACHED'
-            if os.path.exists(p2) and os.path.getsize(p2) > 100 and os.path.getsize(p2) != 2521:
-                try:
-                    shutil.copy2(p2, tile_path)
-                    return 'CACHED'
-                except Exception:
-                    pass
-            if os.path.exists(p3) and os.path.getsize(p3) > 100 and os.path.getsize(p3) != 2521:
-                try:
-                    shutil.copy2(p3, tile_path)
-                    return 'CACHED'
-                except Exception:
-                    pass
+            for sdir in search_dirs:
+                cand_p = os.path.join(sdir, aname)
+                if os.path.exists(cand_p) and os.path.getsize(cand_p) > 100 and os.path.getsize(cand_p) != 2521:
+                    try:
+                        shutil.copy2(cand_p, tile_path)
+                        return 'CACHED'
+                    except Exception:
+                        pass
 
         data = fetch_tile(z, x, y, provider=provider)
         if data and len(data) > 100 and len(data) != 2521:
@@ -1281,6 +1357,9 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
     meta = {
         "name": str(preset).replace('_', ' '),
         "folder": preset_folder,
+        "type": "corridor" if is_corridor else "circular",
+        "waypoints_count": len(waypoints) if is_corridor else 0,
+        "corridor_km": corridor_km if is_corridor else 0.0,
         "lat": lat,
         "lon": lon,
         "radius_km": radius_km,
@@ -1317,11 +1396,16 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
     preset_dir = os.path.join(tile_cache_dir, preset_folder)
     os.makedirs(preset_dir, exist_ok=True)
 
-    # Search hierarchy: active preset dir -> My_Home_Airfield -> root tile_cache
+    # Search hierarchy: active preset dir -> ALL other preset dirs in tile_cache -> root tile_cache
     search_dirs = [preset_dir]
-    home_dir = os.path.join(tile_cache_dir, 'My_Home_Airfield')
-    if os.path.exists(home_dir) and home_dir not in search_dirs:
-        search_dirs.append(home_dir)
+    if os.path.exists(tile_cache_dir):
+        try:
+            for sub in os.listdir(tile_cache_dir):
+                s_path = os.path.join(tile_cache_dir, sub)
+                if os.path.isdir(s_path) and s_path not in search_dirs and sub != 'dem':
+                    search_dirs.append(s_path)
+        except Exception:
+            pass
     if tile_cache_dir not in search_dirs:
         search_dirs.append(tile_cache_dir)
 
@@ -1679,6 +1763,25 @@ def start_http_server():
                     self.send_error(500, str(e))
                     return
 
+            # 2b. Waypoints API: /api/waypoints
+            elif self.path.startswith('/api/waypoints'):
+                try:
+                    wps = [w for w in mission_handler.waypoints if w is not None] if mission_handler.waypoints else []
+                    if not wps and os.path.exists(mission_handler.cache_file):
+                        try:
+                            with open(mission_handler.cache_file, 'r', encoding='utf-8') as cf:
+                                wps = json.load(cf)
+                        except Exception:
+                            pass
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"waypoints": wps, "count": len(wps)}).encode('utf-8'))
+                    return
+                except Exception as e:
+                    self.send_error(500, str(e))
+                    return
+
             # 3. Cache status API: /api/cache_status?preset=...
             elif self.path.startswith('/api/cache_status'):
                 try:
@@ -1863,11 +1966,17 @@ def start_http_server():
                     lat = float(data.get('lat', 8.3105))
                     lon = float(data.get('lon', 77.3137))
                     radius = float(data.get('radius_km', 3.0))
-                    zooms = data.get('zooms', [18])
+                    corridor_km = float(data.get('corridor_km', 3.0))
+                    waypoints = data.get('waypoints')
+                    zooms = data.get('zooms', [17])
                     provider = data.get('provider', 'esri')
                     preset = data.get('preset', 'default')
                     if not precache_state["is_downloading"]:
-                        threading.Thread(target=run_precache_worker, args=(lat, lon, radius, zooms, provider, preset), daemon=True).start()
+                        threading.Thread(
+                            target=run_precache_worker,
+                            args=(lat, lon, radius, zooms, provider, preset, waypoints, corridor_km),
+                            daemon=True
+                        ).start()
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()

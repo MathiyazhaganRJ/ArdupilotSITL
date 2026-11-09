@@ -5767,9 +5767,18 @@
                 resPrev.innerText = `${resLabel} [Zooms ${config.zooms.join(', ')}]`;
             }
             if (advBox) {
-                if (config.radiusKm >= 15.0 && config.zooms && config.zooms[0] >= 17) {
+                if (config.waypoints && config.waypoints.length > 1) {
                     advBox.style.display = 'block';
-                    advBox.innerText = `Note: Large area (${config.radiusKm.toFixed(0)} km) at Zoom ${config.zooms[0]} takes longer to download. For fast caching, 'Download Flight Plan Corridor' or a smaller radius is recommended.`;
+                    advBox.innerText = `Corridor mode active: Pre-caching high-resolution satellite imagery and 3D terrain elevation strictly along the ${config.coverageText}. Provides continuous razor-sharp mapping offline up to 200 km without downloading unneeded areas.`;
+                    advBox.style.borderColor = '#30d158';
+                    advBox.style.color = '#30d158';
+                    advBox.style.background = 'rgba(48, 209, 88, 0.12)';
+                } else if (config.radiusKm >= 15.0 && config.zooms && config.zooms[0] >= 17) {
+                    advBox.style.display = 'block';
+                    advBox.innerText = `Note: Large circular area (${config.radiusKm.toFixed(0)} km) at Zoom ${config.zooms[0]} takes longer to download. For long-distance flights, 'Download Flight Plan Corridor' is recommended.`;
+                    advBox.style.borderColor = '#ff9f0a';
+                    advBox.style.color = '#ff9f0a';
+                    advBox.style.background = 'rgba(255, 159, 10, 0.12)';
                 } else {
                     advBox.style.display = 'none';
                 }
@@ -5858,6 +5867,8 @@
                     lat: cfg.lat,
                     lon: cfg.lon,
                     radius_km: cfg.radiusKm,
+                    corridor_km: cfg.corridorKm || 3.0,
+                    waypoints: cfg.waypoints || null,
                     zooms: cfg.zooms,
                     provider: cfg.provider,
                     preset: cfg.folder
@@ -5914,56 +5925,78 @@
 
         const btnCacheCorridor = document.getElementById('btn-cache-corridor');
         if (btnCacheCorridor) {
-            btnCacheCorridor.onclick = () => {
-                const validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
+            btnCacheCorridor.onclick = async () => {
+                let validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
+                
+                // If no waypoints in memory, try fetching from backend cache API
+                if (validWps.length === 0) {
+                    try {
+                        const wpResp = await fetch('/api/waypoints');
+                        const wpData = await wpResp.json();
+                        if (wpData && Array.isArray(wpData.waypoints) && wpData.waypoints.length > 0) {
+                            missionWaypoints = wpData.waypoints;
+                            validWps = missionWaypoints.filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
+                        }
+                    } catch(e) {}
+                }
+
                 if (validWps.length === 0) {
                     alert('No mission waypoints loaded yet. Please sync flight plan from Mission Planner / SITL first.');
                     return;
                 }
+
+                // Calculate cumulative flight path distance along all waypoints
+                let totalDistKm = 0;
                 let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
-                validWps.forEach(w => {
+                for (let i = 0; i < validWps.length; i++) {
+                    const w = validWps[i];
                     if (w.lat < minLat) minLat = w.lat;
                     if (w.lat > maxLat) maxLat = w.lat;
                     if (w.lon < minLon) minLon = w.lon;
                     if (w.lon > maxLon) maxLon = w.lon;
-                });
+                    if (i < validWps.length - 1) {
+                        const p2 = validWps[i + 1];
+                        const dLat = (p2.lat - w.lat) * 111.0;
+                        const dLon = (p2.lon - w.lon) * 111.0 * Math.cos(((w.lat + p2.lat) / 2) * Math.PI / 180);
+                        totalDistKm += Math.sqrt(dLat * dLat + dLon * dLon);
+                    }
+                }
+                if (totalDistKm < 1.0) totalDistKm = 3.0;
+
                 const centerLat = (minLat + maxLat) / 2;
                 const centerLon = (minLon + maxLon) / 2;
-                const dLatKm = Math.abs(maxLat - minLat) * 111.0;
-                const dLonKm = Math.abs(maxLon - minLon) * 111.0 * Math.cos(centerLat * Math.PI / 180);
-                const routeSpanKm = Math.sqrt(dLatKm * dLatKm + dLonKm * dLonKm);
-                const corridorRadiusKm = Math.max(3.0, Math.ceil((routeSpanKm / 2) + 2.5));
+                const corridorKm = 3.0; // 3.0 km buffer radius = 6.0 km wide tactical flight corridor
 
-                document.getElementById('map-cache-lat').value = centerLat.toFixed(4);
-                document.getElementById('map-cache-lon').value = centerLon.toFixed(4);
-
-                const radSelect = document.getElementById('map-cache-radius');
-                if (radSelect) {
-                    let bestVal = '3';
-                    for (let opt of radSelect.options) {
-                        if (parseFloat(opt.value) >= corridorRadiusKm) {
-                            bestVal = opt.value;
-                            break;
-                        }
+                // Honor user's explicit map-cache-zoom resolution setting!
+                const zoomVal = document.getElementById('map-cache-zoom')?.value;
+                let optZoom = 17; // Default to ultra-crisp Zoom 17 (1.1 m/px) for flight corridor
+                if (zoomVal && zoomVal !== 'auto') {
+                    const parsed = parseInt(zoomVal);
+                    if (!isNaN(parsed) && parsed >= 12 && parsed <= 20) {
+                        optZoom = parsed;
                     }
-                    radSelect.value = bestVal;
                 }
-                updateMapEstimate();
-
-                const rad = parseFloat(document.getElementById('map-cache-radius')?.value || corridorRadiusKm);
-                const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : 15));
                 const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
                 const provider = document.getElementById('sel-map-provider')?.value || 'esri';
 
+                // Accurate corridor tile count estimation:
+                // At Zoom 17 with 3 km buffer: ~7.3 tiles/km across Zooms [17, 16, 15]
+                // At Zoom 18: ~21.5 tiles/km across Zooms [18, 17, 16]
+                const factor = (optZoom >= 18) ? 21.5 : ((optZoom === 17) ? 7.3 : 3.5);
+                const estTiles = Math.max(60, Math.round(totalDistKm * factor));
+                const estMb = (estTiles * 0.028).toFixed(1);
+
                 openDownloadNameModal({
-                    suggestedName: 'Flight Mission Corridor',
+                    suggestedName: `Mission Corridor (${Math.round(totalDistKm)}km)`,
                     lat: centerLat,
                     lon: centerLon,
-                    radiusKm: rad,
+                    radiusKm: 3.0,
+                    corridorKm: corridorKm,
+                    waypoints: validWps,
                     zooms: zooms,
                     provider: provider,
-                    coverageText: `Flight Corridor (${corridorRadiusKm.toFixed(1)} km radius covering ${validWps.length} waypoints)`,
-                    estText: document.getElementById('map-cache-est-text')?.innerText || `~${Math.round(corridorRadiusKm * 150)} tiles`
+                    coverageText: `${validWps.length} Waypoints (${totalDistKm.toFixed(1)} km route, 6 km corridor)`,
+                    estText: `~${estTiles.toLocaleString()} tiles (~${estMb} MB) [Zooms ${zooms.join(', ')}]`
                 });
             };
         }
