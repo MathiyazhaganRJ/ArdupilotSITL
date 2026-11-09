@@ -13,6 +13,8 @@ import urllib.request
 import math
 import concurrent.futures
 import sys
+import io
+from PIL import Image
 from pymavlink import mavutil
 
 # Ensure current directory is in sys.path for sibling module imports without triggering circular import
@@ -383,15 +385,22 @@ async def mavlink_listener():
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
     
     while True:
-        msg = connection.recv_match(
-            type=['HEARTBEAT', 'ATTITUDE', 'AUTOPILOT_VERSION', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
-                  'ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
-                  'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
-                  'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
-                  'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'MISSION_ACK', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
-                  'STATUSTEXT', 'PARAM_VALUE'],
-            blocking=False
-        )
+        try:
+            msg = connection.recv_match(
+                type=['HEARTBEAT', 'ATTITUDE', 'AUTOPILOT_VERSION', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
+                      'ESC_TELEMETRY_1_TO_4', 'ESC_TELEMETRY_5_TO_8', 'ESC_TELEMETRY_9_TO_12', 'ESC_STATUS', 'BATTERY_STATUS', 'SYS_STATUS',
+                      'GLOBAL_POSITION_INT', 'TERRAIN_REPORT', 'WIND', 'GPS_RAW_INT', 'SIMSTATE',
+                      'ESTIMATOR_STATUS', 'MISSION_COUNT', 'MISSION_ITEM_INT', 'MISSION_ITEM',
+                      'MISSION_CURRENT', 'MISSION_ITEM_REACHED', 'MISSION_ACK', 'NAV_CONTROLLER_OUTPUT', 'HOME_POSITION',
+                      'STATUSTEXT', 'PARAM_VALUE'],
+                blocking=False
+            )
+        except (ConnectionResetError, ConnectionError, OSError):
+            await asyncio.sleep(0.01)
+            continue
+        except Exception:
+            await asyncio.sleep(0.01)
+            continue
         timeout_res = mission_handler.check_timeout()
         if timeout_res and clients:
             t_str = json.dumps(timeout_res)
@@ -901,13 +910,16 @@ async def ws_handler(websocket, path=None):
                     param_id = param_name.encode('utf-8')[:16]
                     target_sys = getattr(connection, 'target_system', 1) or 1
                     target_comp = getattr(connection, 'target_component', 1) or 1
-                    connection.mav.param_set_send(
-                        target_sys,
-                        target_comp,
-                        param_id,
-                        param_val,
-                        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
-                    )
+                    try:
+                        connection.mav.param_set_send(
+                            target_sys,
+                            target_comp,
+                            param_id,
+                            param_val,
+                            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+                        )
+                    except (ConnectionResetError, ConnectionError, OSError):
+                        pass
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
                 elif action == "fetch_waypoints":
                     force = bool(cmd.get("force", False))
@@ -934,13 +946,16 @@ async def ws_handler(websocket, path=None):
                     arm_val = 1 if cmd.get("value", True) else 0
                     target_sys = getattr(connection, 'target_system', 1) or 1
                     target_comp = getattr(connection, 'target_component', 1) or 1
-                    connection.mav.command_long_send(
-                        target_sys,
-                        target_comp,
-                        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-                        0,
-                        arm_val, 0, 0, 0, 0, 0, 0
-                    )
+                    try:
+                        connection.mav.command_long_send(
+                            target_sys,
+                            target_comp,
+                            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                            0,
+                            arm_val, 0, 0, 0, 0, 0, 0
+                        )
+                    except (ConnectionResetError, ConnectionError, OSError):
+                        pass
                     print(f"[MAVLink] Sent ARM_DISARM ({arm_val}) to Sys {target_sys}:{target_comp}")
                 elif action == "set_mode":
                     mode_name = str(cmd.get("mode", "GUIDED")).upper()
@@ -958,13 +973,16 @@ async def ws_handler(websocket, path=None):
                     alt = float(cmd.get("alt", 30.0))
                     target_sys = getattr(connection, 'target_system', 1) or 1
                     target_comp = getattr(connection, 'target_component', 1) or 1
-                    connection.mav.command_long_send(
-                        target_sys,
-                        target_comp,
-                        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
-                        0,
-                        0, 0, 0, 0, 0, 0, alt
-                    )
+                    try:
+                        connection.mav.command_long_send(
+                            target_sys,
+                            target_comp,
+                            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+                            0,
+                            0, 0, 0, 0, 0, 0, alt
+                        )
+                    except (ConnectionResetError, ConnectionError, OSError):
+                        pass
                     print(f"[MAVLink] Sent NAV_TAKEOFF (alt={alt}m) to Sys {target_sys}:{target_comp}")
             except Exception as e:
                 print(f"[Server] Error processing client message: {e}")
@@ -1074,6 +1092,22 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
     def proc_tile(tile_info):
         z, x, y = tile_info
+
+        # 1. ALWAYS pre-cache DEM elevation tile for 3D terrain
+        try:
+            dem_z = min(z, 15)
+            zoom_diff = z - dem_z
+            dem_x = x >> zoom_diff
+            dem_y = y >> zoom_diff
+            dem_file = os.path.join(dem_cache_dir, f"{dem_z}_{dem_x}_{dem_y}.png")
+            if not os.path.exists(dem_file) or os.path.getsize(dem_file) <= 100:
+                dem_bytes = fetch_dem_tile(dem_z, dem_x, dem_y)
+                if dem_bytes and len(dem_bytes) > 100:
+                    with open(dem_file, 'wb') as df:
+                        df.write(dem_bytes)
+        except Exception:
+            pass
+
         if provider == 'google':
             tile_filename = f"{z}_{x}_{y}_google.jpg"
             target_names = [f"{z}_{x}_{y}_google.jpg", f"{z}_{x}_{y}.jpg"]
@@ -1106,21 +1140,6 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
                 except Exception:
                     pass
 
-        # Also pre-cache DEM elevation tile for 3D terrain
-        try:
-            dem_z = min(z, 15)
-            zoom_diff = z - dem_z
-            dem_x = x >> zoom_diff
-            dem_y = y >> zoom_diff
-            dem_file = os.path.join(dem_cache_dir, f"{dem_z}_{dem_x}_{dem_y}.png")
-            if not os.path.exists(dem_file) or os.path.getsize(dem_file) <= 100:
-                dem_bytes = fetch_dem_tile(dem_z, dem_x, dem_y)
-                if dem_bytes and len(dem_bytes) > 100:
-                    with open(dem_file, 'wb') as df:
-                        df.write(dem_bytes)
-        except Exception:
-            pass
-
         data = fetch_tile(z, x, y, provider=provider)
         if data and len(data) > 100:
             try:
@@ -1141,17 +1160,277 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
     precache_state["is_downloading"] = False
     precache_state["status"] = f"Complete: {precache_state['downloaded'] + precache_state['cached']}/{total} tiles ready in {preset_folder}/"
 
+def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='auto', lyrs='s'):
+    """
+    Finds exact satellite tile on disk or online.
+    If offline or pending online download, synthesizes missing zoom level
+    from the closest available parent zoom tile using PIL crop & bilinear resize.
+    Guarantees zero 404s and seamless LOD display.
+    """
+    if provider == 'google':
+        pref_suffix = '_google.jpg'
+        candidate_suffixes = ['_google.jpg']
+    elif provider == 'google_hybrid':
+        pref_suffix = '_google_hybrid.jpg'
+        candidate_suffixes = ['_google_hybrid.jpg']
+    else:
+        provider = 'esri'
+        pref_suffix = '_esri.jpg'
+        candidate_suffixes = ['_esri.jpg']
+
+    preset_folder = sanitize_preset_folder(preset)
+    preset_dir = os.path.join(tile_cache_dir, preset_folder)
+    os.makedirs(preset_dir, exist_ok=True)
+
+    # Strictly isolated search dirs for this preset to prevent patchwork cross-contamination
+    search_dirs = [preset_dir]
+    if preset_folder == 'default':
+        search_dirs.append(os.path.join(tile_cache_dir, 'My_Home_Airfield'))
+        search_dirs.append(tile_cache_dir)
+
+    # 1. Look for exact tile on disk matching provider
+    for sdir in search_dirs:
+        for suff in candidate_suffixes:
+            cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
+            if os.path.exists(cand) and os.path.getsize(cand) > 100:
+                try:
+                    with open(cand, 'rb') as f:
+                        return f.read(), 'image/jpeg'
+                except Exception:
+                    pass
+
+    # 1b. If in offline mode and requested provider tile not found, accept ANY cached tile in this preset
+    if mode == 'offline':
+        for sdir in search_dirs:
+            for suff in ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']:
+                cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
+                if os.path.exists(cand) and os.path.getsize(cand) > 100:
+                    try:
+                        with open(cand, 'rb') as f:
+                            return f.read(), 'image/jpeg'
+                    except Exception:
+                        pass
+
+    # 2. If online/auto mode, fetch tile from remote server
+    if mode != 'offline':
+        data = fetch_tile(z, x, y, provider=provider, lyrs=lyrs)
+        if data and len(data) > 100:
+            target_path = os.path.join(preset_dir, f"{z}_{x}_{y}{pref_suffix}")
+            try:
+                with open(target_path, 'wb') as f:
+                    f.write(data)
+            except Exception:
+                pass
+            return data, 'image/jpeg'
+
+    # 3. Dynamic LOD Parent Zoom Synthesis (for offline mode or when remote fetch fails)
+    # If the user has Zoom 17 cached, and requests Zoom 18, 19, 20 or Zoom 16, 15:
+    # Crop the exact quadrant from the nearest ancestor zoom and resize to 256x256 via PIL
+    for pz in range(z - 1, max(0, z - 6), -1):
+        dz = z - pz
+        px = x >> dz
+        py = y >> dz
+
+        parent_file = None
+        for sdir in search_dirs:
+            for suff in (candidate_suffixes if mode != 'offline' else ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']):
+                p_cand = os.path.join(sdir, f"{pz}_{px}_{py}{suff}")
+                if os.path.exists(p_cand) and os.path.getsize(p_cand) > 100:
+                    parent_file = p_cand
+                    break
+            if parent_file:
+                break
+
+        if parent_file:
+            try:
+                p_img = Image.open(parent_file)
+                sub_span = 1 << dz
+                sub_mask = sub_span - 1
+                sub_x = x & sub_mask
+                sub_y = y & sub_mask
+
+                w, h = p_img.size
+                crop_w = w / sub_span
+                crop_h = h / sub_span
+
+                x0 = int(round(sub_x * crop_w))
+                y0 = int(round(sub_y * crop_h))
+                x1 = int(round(x0 + crop_w))
+                y1 = int(round(y0 + crop_h))
+
+                cropped = p_img.crop((x0, y0, x1, y1))
+                resized = cropped.resize((256, 256), Image.Resampling.BILINEAR)
+
+                out_io = io.BytesIO()
+                resized.save(out_io, format='JPEG', quality=85)
+                synth_bytes = out_io.getvalue()
+
+                # Cache synthesized tile for instant future reads
+                if mode == 'offline':
+                    try:
+                        save_p = os.path.join(preset_dir, f"{z}_{x}_{y}{pref_suffix}")
+                        with open(save_p, 'wb') as sf:
+                            sf.write(synth_bytes)
+                    except Exception:
+                        pass
+                return synth_bytes, 'image/jpeg'
+            except Exception:
+                pass
+
+    # 4. If zoomed out (e.g. asking for Zoom 15 when Zoom 17 is cached), downsample child
+    for cz in range(z + 1, min(21, z + 3)):
+        dz = cz - z
+        cx = x << dz
+        cy = y << dz
+        child_file = None
+        for sdir in search_dirs:
+            for suff in (candidate_suffixes if mode != 'offline' else ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']):
+                c_cand = os.path.join(sdir, f"{cz}_{cx}_{cy}{suff}")
+                if os.path.exists(c_cand) and os.path.getsize(c_cand) > 100:
+                    child_file = c_cand
+                    break
+            if child_file:
+                break
+        if child_file:
+            try:
+                c_img = Image.open(child_file)
+                resized = c_img.resize((256, 256), Image.Resampling.BILINEAR)
+                out_io = io.BytesIO()
+                resized.save(out_io, format='JPEG', quality=80)
+                return out_io.getvalue(), 'image/jpeg'
+            except Exception:
+                pass
+
+    return None
+
+def find_or_synthesize_dem(z, x, y, mode='auto'):
+    """
+    Finds or synthesizes Terrarium DEM tile for 3D elevation.
+    If missing, checks parent DEM tile. If none exists, generates
+    a synthetic 0m flat sea-level tile RGB(128, 0, 0) so 3D terrain NEVER 404s!
+    """
+    dem_z = min(z, 15)
+    zoom_diff = z - dem_z
+    dem_x = x >> zoom_diff
+    dem_y = y >> zoom_diff
+
+    dem_filename = f"{dem_z}_{dem_x}_{dem_y}.png"
+    dem_file = os.path.join(dem_cache_dir, dem_filename)
+
+    # 1. Exact cached DEM tile
+    if os.path.exists(dem_file) and os.path.getsize(dem_file) > 100:
+        try:
+            with open(dem_file, 'rb') as f:
+                return f.read(), 'image/png'
+        except Exception:
+            pass
+
+    # 2. Remote DEM fetch if online
+    if mode != 'offline':
+        data = fetch_dem_tile(dem_z, dem_x, dem_y)
+        if data and len(data) > 100:
+            try:
+                with open(dem_file, 'wb') as df:
+                    df.write(data)
+            except Exception:
+                pass
+            return data, 'image/png'
+
+    # 3. Dynamic LOD Parent DEM Synthesis
+    for pz in range(dem_z - 1, max(0, dem_z - 4), -1):
+        dz = dem_z - pz
+        px = dem_x >> dz
+        py = dem_y >> dz
+        p_cand = os.path.join(dem_cache_dir, f"{pz}_{px}_{py}.png")
+        if os.path.exists(p_cand) and os.path.getsize(p_cand) > 100:
+            try:
+                p_img = Image.open(p_cand)
+                sub_span = 1 << dz
+                sub_mask = sub_span - 1
+                sub_x = dem_x & sub_mask
+                sub_y = dem_y & sub_mask
+
+                w, h = p_img.size
+                crop_w = w / sub_span
+                crop_h = h / sub_span
+
+                x0 = int(round(sub_x * crop_w))
+                y0 = int(round(sub_y * crop_h))
+                x1 = int(round(x0 + crop_w))
+                y1 = int(round(y0 + crop_h))
+
+                cropped = p_img.crop((x0, y0, x1, y1))
+                resized = cropped.resize((256, 256), Image.Resampling.NEAREST)
+                out_io = io.BytesIO()
+                resized.save(out_io, format='PNG')
+                synth_bytes = out_io.getvalue()
+                try:
+                    with open(dem_file, 'wb') as df:
+                        df.write(synth_bytes)
+                except Exception:
+                    pass
+                return synth_bytes, 'image/png'
+            except Exception:
+                pass
+
+    # 4. Universal flat 0m sea-level Terrarium tile fallback (RGB 128, 0, 0 -> 0.0m MSL)
+    # Guarantees DEM requests never 404
+    try:
+        flat_dem = Image.new('RGB', (256, 256), color=(128, 0, 0))
+        out_io = io.BytesIO()
+        flat_dem.save(out_io, format='PNG')
+        flat_bytes = out_io.getvalue()
+        try:
+            with open(dem_file, 'wb') as df:
+                df.write(flat_bytes)
+        except Exception:
+            pass
+        return flat_bytes, 'image/png'
+    except Exception:
+        return b'', 'image/png'
+
+class RobustThreadingHTTPServer(http.server.ThreadingHTTPServer):
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        exc_type, exc_val, _ = sys.exc_info()
+        # Suppress normal client aborts / resets (e.g. WinError 10053 / 10054 on cancelled tile requests)
+        if exc_type in (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            return
+        super().handle_error(request, client_address)
+
 def start_http_server():
     vis_dir = os.path.join(os.path.dirname(__file__), '..', 'visualizer')
     os.chdir(vis_dir)
     class QuietHandler(http.server.SimpleHTTPRequestHandler):
         def end_headers(self):
-            if not getattr(self, '_is_tile', False):
-                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                self.send_header('Pragma', 'no-cache')
-                self.send_header('Expires', '0')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            super().end_headers()
+            try:
+                if not getattr(self, '_is_tile', False):
+                    self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                    self.send_header('Pragma', 'no-cache')
+                    self.send_header('Expires', '0')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                super().end_headers()
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                pass
+
+        def send_error(self, code, message=None, explain=None):
+            try:
+                super().send_error(code, message=message, explain=explain)
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                pass
+
+        def finish(self):
+            try:
+                super().finish()
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                pass
+
+        def handle_one_request(self):
+            try:
+                super().handle_one_request()
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                pass
 
         def do_GET(self):
             # 1. Tile proxy and disk caching: /tiles/<z>/<x>/<y>.jpg
@@ -1167,92 +1446,29 @@ def start_http_server():
                     lyrs = query_params.get('lyrs', ['s'])[0]
                     parts = clean_path.split('/')
                     if len(parts) >= 5:
-                        z = parts[2]
-                        x = parts[3]
-                        y = parts[4].split('.')[0]
+                        z = int(parts[2])
+                        x = int(parts[3])
+                        y = int(parts[4].split('.')[0])
 
-                        # STRICT PROVIDER ISOLATION:
-                        # Define provider-specific filenames to guarantee zero cross-provider contamination
-                        if provider == 'google':
-                            primary_filename = f"{z}_{x}_{y}_google.jpg"
-                            target_names = [f"{z}_{x}_{y}_google.jpg", f"{z}_{x}_{y}.jpg"]
-                        elif provider == 'google_hybrid':
-                            primary_filename = f"{z}_{x}_{y}_google_hybrid.jpg"
-                            target_names = [f"{z}_{x}_{y}_google_hybrid.jpg", f"{z}_{x}_{y}_y.jpg"]
-                        else:  # esri default
-                            primary_filename = f"{z}_{x}_{y}_esri.jpg"
-                            target_names = [f"{z}_{x}_{y}_esri.jpg"]
-
-                        preset_folder = sanitize_preset_folder(preset)
-                        preset_dir = os.path.join(tile_cache_dir, preset_folder)
-                        os.makedirs(preset_dir, exist_ok=True)
-                        preset_tile_file = os.path.join(preset_dir, primary_filename)
-
-                        target_file = None
-                        # Check strictly within requested provider's valid candidate filenames
-                        for name in target_names:
-                            p_cand = os.path.join(preset_dir, name)
-                            if os.path.exists(p_cand) and os.path.getsize(p_cand) > 100:
-                                target_file = p_cand
-                                break
-
-                        if not target_file:
-                            for name in target_names:
-                                r_cand = os.path.join(tile_cache_dir, name)
-                                if os.path.exists(r_cand) and os.path.getsize(r_cand) > 100:
-                                    target_file = r_cand
-                                    break
-
-                        if not target_file:
-                            for name in target_names:
-                                home_cand = os.path.join(tile_cache_dir, 'My_Home_Airfield', name)
-                                if os.path.exists(home_cand) and os.path.getsize(home_cand) > 100:
-                                    target_file = home_cand
-                                    break
-
-                        if not target_file:
+                        res = find_or_synthesize_tile(z, x, y, provider=provider, preset=preset, mode=mode, lyrs=lyrs)
+                        if res:
+                            data, content_type = res
                             try:
-                                for sub in os.listdir(tile_cache_dir):
-                                    sub_dir = os.path.join(tile_cache_dir, sub)
-                                    if os.path.isdir(sub_dir) and sub != 'dem':
-                                        for name in target_names:
-                                            cf = os.path.join(sub_dir, name)
-                                            if os.path.exists(cf) and os.path.getsize(cf) > 100:
-                                                target_file = cf
-                                                break
-                                        if target_file:
-                                            break
-                            except Exception:
-                                pass
-
-                        if target_file:
-                            with open(target_file, 'rb') as f:
-                                data = f.read()
-                            self.send_response(200)
-                            self.send_header('Content-Type', 'image/jpeg')
-                            self.send_header('Content-Length', str(len(data)))
-                            self.send_header('Cache-Control', 'public, max-age=31536000')
-                            self.end_headers()
-                            self.wfile.write(data)
-                            return
-                        elif mode != 'offline':
-                            data = fetch_tile(int(z), int(x), int(y), provider=provider, lyrs=lyrs)
-                            # STRICT PROVIDER ISOLATION: Never swap providers online
-                            if data and len(data) > 100:
-                                try:
-                                    with open(preset_tile_file, 'wb') as f:
-                                        f.write(data)
-                                except Exception: pass
                                 self.send_response(200)
-                                self.send_header('Content-Type', 'image/jpeg')
+                                self.send_header('Content-Type', content_type)
                                 self.send_header('Content-Length', str(len(data)))
                                 self.send_header('Cache-Control', 'public, max-age=31536000')
                                 self.end_headers()
                                 self.wfile.write(data)
-                                return
+                            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                                pass
+                            return
                 except Exception:
                     pass
-                self.send_error(404, "Tile not found")
+                try:
+                    self.send_error(404, "Tile not found")
+                except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                    pass
                 return
 
             # 1b. DEM Elevation Tile proxy and disk caching: /dem/<z>/<x>/<y>.png
@@ -1260,48 +1476,34 @@ def start_http_server():
                 self._is_tile = True
                 try:
                     clean_path = self.path.split('?')[0]
+                    query_str = self.path.split('?')[1] if '?' in self.path else ''
+                    query_params = urllib.parse.parse_qs(query_str)
+                    mode = query_params.get('mode', ['auto'])[0]
                     parts = clean_path.split('/')
                     if len(parts) >= 5:
                         z = int(parts[2])
                         x = int(parts[3])
                         y = int(parts[4].split('.')[0])
 
-                        # Terrarium DEM tiles natively exist up to zoom 15
-                        dem_z = min(z, 15)
-                        zoom_diff = z - dem_z
-                        dem_x = x >> zoom_diff
-                        dem_y = y >> zoom_diff
-
-                        dem_filename = f"{dem_z}_{dem_x}_{dem_y}.png"
-                        dem_file = os.path.join(dem_cache_dir, dem_filename)
-
-                        if os.path.exists(dem_file) and os.path.getsize(dem_file) > 100:
-                            with open(dem_file, 'rb') as f:
-                                data = f.read()
-                            self.send_response(200)
-                            self.send_header('Content-Type', 'image/png')
-                            self.send_header('Content-Length', str(len(data)))
-                            self.send_header('Cache-Control', 'public, max-age=31536000')
-                            self.end_headers()
-                            self.wfile.write(data)
-                            return
-                        else:
-                            data = fetch_dem_tile(dem_z, dem_x, dem_y)
-                            if data and len(data) > 100:
-                                try:
-                                    with open(dem_file, 'wb') as f:
-                                        f.write(data)
-                                except Exception: pass
+                        res = find_or_synthesize_dem(z, x, y, mode=mode)
+                        if res:
+                            data, content_type = res
+                            try:
                                 self.send_response(200)
-                                self.send_header('Content-Type', 'image/png')
+                                self.send_header('Content-Type', content_type)
                                 self.send_header('Content-Length', str(len(data)))
                                 self.send_header('Cache-Control', 'public, max-age=31536000')
                                 self.end_headers()
                                 self.wfile.write(data)
-                                return
+                            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                                pass
+                            return
                 except Exception:
                     pass
-                self.send_error(404, "DEM Tile not found")
+                try:
+                    self.send_error(404, "DEM Tile not found")
+                except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, OSError):
+                    pass
                 return
 
             # 2. Clear cache endpoint: /api/clear_cache?preset=...
@@ -1492,7 +1694,7 @@ def start_http_server():
     
     try:
         # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
-        with http.server.ThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
+        with RobustThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
             print("HTTP Web Server with Offline Tile Cache started on port 8000")
             httpd.serve_forever()
     except OSError as e:
@@ -1520,10 +1722,15 @@ async def main():
         raise
 
 def start_asyncio_loop():
-    # Set up a new event loop for this background thread
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    # Set up a resilient event loop that automatically recovers if connection is interrupted
+    while True:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(main())
+        except Exception as e:
+            print(f"[AsyncIO Loop] Recovering from connection event: {e}")
+            time.sleep(1)
 
 class Api:
     def open_cesium(self):

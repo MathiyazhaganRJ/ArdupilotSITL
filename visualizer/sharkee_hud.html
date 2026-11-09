@@ -5497,14 +5497,17 @@
             const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             const lat = parseFloat(document.getElementById('map-cache-lat')?.value || 8.3105);
             const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 1.5 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 14)));
-            const tileSizeMeters = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, z);
-            const span = Math.ceil((rad * 1000) / tileSizeMeters);
-            const diameterTiles = 2 * span + 1;
-            const tileCount = diameterTiles * diameterTiles;
+            const targetZooms = Array.from(new Set([z, Math.max(10, z - 1), Math.max(10, z - 2)]));
+            let totalTiles = 0;
+            targetZooms.forEach(zi => {
+                const tsm = 40075016.686 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zi);
+                const span = Math.ceil((rad * 1000) / tsm);
+                totalTiles += Math.pow(2 * span + 1, 2);
+            });
             const sqKm = Math.round(Math.pow(rad * 2, 2));
-            const estMb = (tileCount * 0.028).toFixed(1);
+            const estMb = (totalTiles * 0.028).toFixed(1);
             const estEl = document.getElementById('map-cache-est-text');
-            if (estEl) estEl.innerText = `~${tileCount} tiles (~${estMb} MB, ${sqKm.toLocaleString()} sq km) [Zoom ${z}]`;
+            if (estEl) estEl.innerText = `~${totalTiles} tiles (~${estMb} MB, ${sqKm.toLocaleString()} sq km) [Zooms ${targetZooms.join(', ')}]`;
         }
 
         document.getElementById('map-cache-radius').onchange = () => {
@@ -5575,7 +5578,7 @@
             const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
             const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
             const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
-            const zooms = [optZoom];
+            const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
             const provider = document.getElementById('sel-map-provider')?.value || 'esri';
             const presetName = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
 
@@ -6384,6 +6387,7 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.outputEncoding = THREE.sRGBEncoding; // Ensures CAD colors aren't overly vibrant
         document.getElementById('canvas-container').appendChild(renderer.domElement);
+        THREE.Cache.enabled = true;
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -7975,7 +7979,7 @@
                         const geo = new THREE.PlaneGeometry(tileSize, tileSize);
                         const mat = new THREE.MeshBasicMaterial({
                             color: 0x141f17,
-                            side: THREE.FrontSide,
+                            side: THREE.DoubleSide,
                             depthWrite: false,
                             fog: false
                         });
@@ -8112,7 +8116,7 @@
                     const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
                     const mat = new THREE.MeshLambertMaterial({
                         color: terrainWireframeMode ? 0x00e676 : 0x1f2e24,
-                        side: THREE.FrontSide,
+                        side: THREE.DoubleSide,
                         wireframe: terrainWireframeMode
                     });
 
@@ -8452,6 +8456,10 @@
                 demCache.set(demKey, data);
                 sampleAndApply(data);
             };
+            img.onerror = () => {
+                homeElevationMSL = 0;
+                updateAllTileElevations();
+            };
             img.src = demUrl;
         }
 
@@ -8481,6 +8489,9 @@
                 const imgData = ctx.getImageData(0, 0, 256, 256).data;
                 demCache.set(demKey, imgData);
                 displaceMeshVertices(mesh, imgData, zoomDiff, tx, ty);
+            };
+            img.onerror = () => {
+                mesh.userData.displaced = true;
             };
             img.src = demUrl;
         }
