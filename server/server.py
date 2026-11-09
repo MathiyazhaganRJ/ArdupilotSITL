@@ -17,6 +17,21 @@ import io
 from PIL import Image
 from pymavlink import mavutil
 
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    _has_requests = True
+    tile_http_session = requests.Session()
+    _adapter = HTTPAdapter(pool_connections=35, pool_maxsize=70, max_retries=1)
+    tile_http_session.mount('https://', _adapter)
+    tile_http_session.mount('http://', _adapter)
+    tile_http_session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    })
+except ImportError:
+    _has_requests = False
+    tile_http_session = None
+
 # Ensure current directory is in sys.path for sibling module imports without triggering circular import
 _server_dir = os.path.dirname(os.path.abspath(__file__))
 if _server_dir not in sys.path:
@@ -1126,23 +1141,38 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
             mt = abs(x + y) % 4
             url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
             
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            if resp.status == 200:
-                data = resp.read()
-                # If ESRI returned its 2,521-byte "No Imagery Available" placeholder, fallback to Google Satellite
+        if _has_requests and tile_http_session:
+            resp = tile_http_session.get(url, timeout=3.5)
+            if resp.status_code == 200:
+                data = resp.content
                 if len(data) == 2521 and provider == 'esri':
                     try:
                         mt = abs(x + y) % 4
                         g_url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                        g_req = urllib.request.Request(g_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                        with urllib.request.urlopen(g_req, timeout=8) as g_resp:
-                            if g_resp.status == 200:
-                                return g_resp.read()
+                        g_resp = tile_http_session.get(g_url, timeout=3.0)
+                        if g_resp.status_code == 200 and len(g_resp.content) > 100:
+                            return g_resp.content
                     except Exception:
                         pass
                     return None
                 return data
+        else:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                if resp.status == 200:
+                    data = resp.read()
+                    if len(data) == 2521 and provider == 'esri':
+                        try:
+                            mt = abs(x + y) % 4
+                            g_url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                            g_req = urllib.request.Request(g_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                            with urllib.request.urlopen(g_req, timeout=5) as g_resp:
+                                if g_resp.status == 200:
+                                    return g_resp.read()
+                        except Exception:
+                            pass
+                        return None
+                    return data
     except Exception:
         return None
     return None
@@ -1152,10 +1182,15 @@ def fetch_dem_tile(z, x, y):
         return None
     try:
         url = f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            if resp.status == 200:
-                return resp.read()
+        if _has_requests and tile_http_session:
+            resp = tile_http_session.get(url, timeout=3.5)
+            if resp.status_code == 200:
+                return resp.content
+        else:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                if resp.status == 200:
+                    return resp.read()
     except Exception:
         return None
     return None
@@ -1461,6 +1496,17 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
                     break
             if parent_file:
                 break
+
+        if not parent_file and mode != 'offline' and check_internet_reachability() and pz >= 12:
+            p_data = fetch_tile(pz, px, py, provider=provider, lyrs=lyrs)
+            if p_data and len(p_data) > 100 and len(p_data) != 2521:
+                p_cand_save = os.path.join(preset_dir, f"{pz}_{px}_{py}{pref_suffix}")
+                try:
+                    with open(p_cand_save, 'wb') as f:
+                        f.write(p_data)
+                    parent_file = p_cand_save
+                except Exception:
+                    pass
 
         if parent_file:
             try:

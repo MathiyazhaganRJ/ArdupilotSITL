@@ -4698,7 +4698,7 @@
 
         function setCoverageSwathVisible(vis) {
             if (typeof flightCoverageGroup !== 'undefined') {
-                flightCoverageGroup.visible = vis && !terrain3DEnabled;
+                flightCoverageGroup.visible = vis;
             }
             if (chkToggleCoverageSwath) chkToggleCoverageSwath.checked = vis;
             if (btnToggleCoverage) btnToggleCoverage.classList.toggle('active', vis);
@@ -7380,7 +7380,7 @@
         });
 
         const coverageSwathMesh = new THREE.Mesh(coverageGeo, coverageMat);
-        coverageSwathMesh.renderOrder = 2;
+        coverageSwathMesh.renderOrder = 20;
 
         const leftEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
         const rightEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
@@ -7396,22 +7396,22 @@
         const edgeMat = new THREE.LineBasicMaterial({
             color: 0x00e5ff,
             transparent: true,
-            opacity: 0.65,
+            opacity: 0.75,
             depthWrite: false,
             depthTest: false
         });
 
         const leftEdgeLine = new THREE.Line(leftEdgeGeo, edgeMat);
         const rightEdgeLine = new THREE.Line(rightEdgeGeo, edgeMat);
-        leftEdgeLine.renderOrder = 3;
-        rightEdgeLine.renderOrder = 3;
+        leftEdgeLine.renderOrder = 21;
+        rightEdgeLine.renderOrder = 21;
 
         const flightCoverageGroup = new THREE.Group();
         flightCoverageGroup.name = 'flightCoverageGroup';
         flightCoverageGroup.add(coverageSwathMesh);
         flightCoverageGroup.add(leftEdgeLine);
         flightCoverageGroup.add(rightEdgeLine);
-        flightCoverageGroup.visible = !terrain3DEnabled;
+        flightCoverageGroup.visible = (localStorage.getItem('pilot_coverage_swath') !== '0');
         scene.add(flightCoverageGroup);
 
         const flownTrackSamples = [];
@@ -7454,7 +7454,7 @@
                 return;
             }
 
-            const groundY = -1.8;
+            const groundY = (typeof terrain3DEnabled !== 'undefined' && terrain3DEnabled) ? 0.5 : -1.8;
             const halfW = coverageSwathWidth * 0.5;
 
             // On first in-flight point: initialize anchor
@@ -8875,13 +8875,13 @@
             const sinHdg = Math.sin(trkRad);
             const cosHdg = Math.cos(trkRad);
 
-            const fwdLookaheadMeters = 3500;      // 3.5 km forward along track
-            const lateralHalfWidthMeters = 1000;  // 1.0 km left, 1.0 km right (2.0 km corridor)
-            const rearCutoffMeters = 500;         // 0.5 km behind aircraft tail
+            const fwdLookaheadMeters = 3800;      // 3.8 km forward along track
+            const lateralHalfWidthMeters = 2000;  // 2.0 km left, 2.0 km right (4.0 km corridor)
+            const rearCutoffMeters = 2000;         // 2.0 km behind aircraft tail
             const isStationary = (planeGroundspeed < 0.5 && (!firstPos || !isArmed));
-            const staticAirfieldRadiusMeters = 1200; // 1.2 km circular preview on ground
+            const staticAirfieldRadiusMeters = Math.max(2500, radiusKm * 1000); // Full circular landscape around aircraft
 
-            const maxEnvelopeMeters = Math.max(fwdLookaheadMeters, lateralHalfWidthMeters) + tileSize;
+            const maxEnvelopeMeters = Math.max(fwdLookaheadMeters, lateralHalfWidthMeters, staticAirfieldRadiusMeters) + tileSize;
             const maxSpan = Math.ceil(maxEnvelopeMeters / tileSize);
 
             const terrainOffsets = [];
@@ -8896,7 +8896,7 @@
                     let inEnvelope = false;
                     if (distForward >= -rearCutoffMeters && distForward <= fwdLookaheadMeters && distCross <= lateralHalfWidthMeters) {
                         inEnvelope = true;
-                    } else if (isStationary && distCenterSq <= (staticAirfieldRadiusMeters * staticAirfieldRadiusMeters)) {
+                    } else if (distCenterSq <= (staticAirfieldRadiusMeters * staticAirfieldRadiusMeters)) {
                         inEnvelope = true;
                     }
 
@@ -9067,13 +9067,17 @@
                 }
             }
 
-            // High-Performance 3D Directional Eviction: Aggressively cull chunks behind tail
-            // Locks 3D GPU vertex load at max 120 tiles (~40MB VRAM) and guarantees flat 60 FPS
-            const MAX_SCENE_TILES_3D = 120;
+            // High-Performance 3D Scene Tile Budget & Flown Track Protection
+            // Retains flown terrain chunks under the flight path and survey swath
+            const MAX_SCENE_TILES_3D = 350;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
                 const scored = [];
                 mapGroup.children.forEach(m => {
                     if (m.userData && m.userData.tx !== undefined) {
+                        const tileCoordKey = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}`;
+                        // Protect flown terrain chunks under the flight path and survey swath
+                        if (typeof flownTileKeys !== 'undefined' && flownTileKeys.has(tileCoordKey)) return;
+
                         const dx = m.userData.tx - currentTileX;
                         const dy = m.userData.ty - currentTileY;
                         const eastM = dx * tileSize;
@@ -12080,19 +12084,19 @@
                 status.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
             }
 
-            // Update 2D Survey Coverage Swath visibility and toolbar pill
+            // Update Survey Coverage Swath visibility and toolbar pill across both 2D and 3D
             const btnCov = document.getElementById('btn-toggle-coverage');
             const cardCov = document.getElementById('card-coverage-swath');
             if (typeof flightCoverageGroup !== 'undefined') {
                 const userEnabled = localStorage.getItem('pilot_coverage_swath') !== '0';
-                flightCoverageGroup.visible = !terrain3DEnabled && userEnabled;
+                flightCoverageGroup.visible = userEnabled;
                 if (btnCov) {
-                    btnCov.style.opacity = terrain3DEnabled ? '0.35' : '1.0';
-                    btnCov.style.pointerEvents = terrain3DEnabled ? 'none' : 'auto';
-                    btnCov.title = terrain3DEnabled ? 'Coverage Swath (Active in 2D Mode)' : 'Toggle Flown Survey Coverage Swath';
+                    btnCov.style.opacity = '1.0';
+                    btnCov.style.pointerEvents = 'auto';
+                    btnCov.title = userEnabled ? 'Survey Coverage Swath (Active in 2D & 3D)' : 'Toggle Flown Survey Coverage Swath';
                 }
                 if (cardCov) {
-                    cardCov.style.opacity = terrain3DEnabled ? '0.45' : '1.0';
+                    cardCov.style.opacity = '1.0';
                 }
             }
         }
