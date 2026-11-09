@@ -29,16 +29,49 @@ except ImportError:
     def format_fc_board_name(name): return name
     def resolve_board_from_text(text): return None
 
+def check_port_listening(host, port, timeout=0.25):
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(timeout)
+    try:
+        s.connect((host, port))
+        s.close()
+        return True
+    except Exception:
+        return False
+
 def parse_mavlink_target():
-    target = os.environ.get('MAVLINK_URL', 'udpin:127.0.0.1:14551')
+    explicit = None
     baud = 115200
     for i, arg in enumerate(sys.argv):
         if arg in ('--connect', '--mavlink', '-c') and i + 1 < len(sys.argv):
-            target = sys.argv[i + 1]
+            explicit = sys.argv[i + 1]
             break
         elif arg.startswith(('--connect=', '--mavlink=')):
-            target = arg.split('=', 1)[1]
+            explicit = arg.split('=', 1)[1]
             break
+    if not explicit:
+        explicit = os.environ.get('MAVLINK_URL')
+
+    is_auto = False
+    if explicit:
+        target = explicit
+    else:
+        is_auto = True
+        # Smart Auto-Discovery:
+        # Check if ArduPilot SITL TCP port 5762 is open (highest reliability, 100% offline localhost, zero Mission Planner conflict)
+        if check_port_listening('127.0.0.1', 5762):
+            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5762 (Direct Offline/Online Link)")
+            return 'tcp:127.0.0.1:5762', baud, is_auto
+        elif check_port_listening('127.0.0.1', 5763):
+            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5763")
+            return 'tcp:127.0.0.1:5763', baud, is_auto
+        elif check_port_listening('127.0.0.1', 5760):
+            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5760")
+            return 'tcp:127.0.0.1:5760', baud, is_auto
+        # Default UDP fallback
+        target = 'udpin:127.0.0.1:14551'
+
     if ':' in target and not target.startswith(('udp', 'tcp')):
         parts = target.split(':')
         target = parts[0]
@@ -48,9 +81,9 @@ def parse_mavlink_target():
             pass
     if target.lower().startswith('com'):
         target = target.upper()
-    return target, baud
+    return target, baud, is_auto
 
-MAVLINK_DEVICE, MAVLINK_BAUD = parse_mavlink_target()
+MAVLINK_DEVICE, MAVLINK_BAUD, is_auto_target = parse_mavlink_target()
 MAVLINK_URL = f'{MAVLINK_DEVICE}:{MAVLINK_BAUD}' if not MAVLINK_DEVICE.startswith(('udp', 'tcp')) else MAVLINK_DEVICE
 if MAVLINK_DEVICE.startswith(('udp', 'tcp')):
     print(f"[MAVLink] Connecting via network: {MAVLINK_DEVICE}")
@@ -381,10 +414,31 @@ cached_heartbeat = None
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat, detected_firmware, detected_fc_hardware, last_version_req_time
+    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat
+    global detected_firmware, detected_fc_hardware, last_version_req_time, connection, MAVLINK_URL, MAVLINK_DEVICE, is_network_sitl
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
-    
+
+    last_auto_scan_time = 0
+
     while True:
+        # If in auto mode and no heartbeat received yet on UDP, periodically scan if SITL started on tcp:127.0.0.1:5762
+        now = time.time()
+        if is_auto_target and not heartbeat_received and not MAVLINK_DEVICE.startswith('tcp:127.0.0.1:5762'):
+            if now - last_auto_scan_time > 1.0:
+                last_auto_scan_time = now
+                if check_port_listening('127.0.0.1', 5762):
+                    try:
+                        print("[MAVLink Auto-Discovery] ArduPilot SITL launched on tcp:127.0.0.1:5762! Connecting directly...")
+                        new_conn = mavutil.mavlink_connection('tcp:127.0.0.1:5762')
+                        connection = new_conn
+                        mission_handler.conn = connection
+                        MAVLINK_DEVICE = 'tcp:127.0.0.1:5762'
+                        MAVLINK_URL = 'tcp:127.0.0.1:5762'
+                        is_network_sitl = True
+                        detected_fc_hardware = "SITL"
+                    except Exception:
+                        pass
+
         try:
             msg = connection.recv_match(
                 type=['HEARTBEAT', 'ATTITUDE', 'AUTOPILOT_VERSION', 'SERVO_OUTPUT_RAW', 'LOCAL_POSITION_NED', 'VFR_HUD',
@@ -395,7 +449,24 @@ async def mavlink_listener():
                       'STATUSTEXT', 'PARAM_VALUE'],
                 blocking=False
             )
-        except (ConnectionResetError, ConnectionError, OSError):
+        except (ConnectionResetError, ConnectionError, BrokenPipeError, OSError):
+            # If TCP socket was disconnected (e.g. SITL stopped or restarted), auto-reconnect
+            if MAVLINK_DEVICE.startswith('tcp'):
+                if heartbeat_received:
+                    print(f"[MAVLink] Connection to {MAVLINK_URL} interrupted. Reconnecting in background...")
+                    heartbeat_received = False
+                await asyncio.sleep(1.0)
+                reconnect_target = 'tcp:127.0.0.1:5762' if check_port_listening('127.0.0.1', 5762) else ('tcp:127.0.0.1:5763' if check_port_listening('127.0.0.1', 5763) else None)
+                if reconnect_target:
+                    try:
+                        connection = mavutil.mavlink_connection(reconnect_target)
+                        mission_handler.conn = connection
+                        MAVLINK_DEVICE = reconnect_target
+                        MAVLINK_URL = reconnect_target
+                        print(f"[MAVLink] Successfully reconnected to SITL on {MAVLINK_URL}")
+                    except Exception:
+                        pass
+                continue
             await asyncio.sleep(0.01)
             continue
         except Exception:
