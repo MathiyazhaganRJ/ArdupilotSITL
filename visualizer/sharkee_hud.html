@@ -7601,13 +7601,23 @@
                 }
             }
 
-            if (typeof activeZoom === 'number' && typeof homeTileXFloat === 'number' && tileSize) {
+            const curZ = (typeof currentMapZoom === 'number' && currentMapZoom) ? currentMapZoom : 17;
+            if (typeof homeTileXFloat === 'number' && tileSize) {
                 const tx = Math.floor(homeTileXFloat + (pos.x / tileSize));
                 const ty = Math.floor(homeTileYFloat + (pos.z / tileSize));
-                const spanTiles = Math.ceil(halfW / tileSize);
+                const spanTiles = Math.max(1, Math.ceil(halfW / tileSize));
                 for (let stx = -spanTiles; stx <= spanTiles; stx++) {
                     for (let sty = -spanTiles; sty <= spanTiles; sty++) {
-                        flownTileKeys.add(`${activeZoom}_${tx + stx}_${ty + sty}`);
+                        const tk = `${curZ}_${tx + stx}_${ty + sty}`;
+                        flownTileKeys.add(tk);
+                        if (!terrain3DEnabled && typeof createFlatTileMesh === 'function') {
+                            const modeEl = document.getElementById('sel-map-mode');
+                            const providerEl = document.getElementById('sel-map-provider');
+                            const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+                            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+                            const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+                            createFlatTileMesh(tx + stx, ty + sty, curZ, provider, activePreset, mapMode);
+                        }
                     }
                 }
             }
@@ -7670,15 +7680,71 @@
         window.rebuildFlightCoverage = rebuildFlightCoverage;
 
         function reloadFlown2DTiles() {
-            if (!flownTrackSamples || flownTrackSamples.length === 0) return;
-            const step = Math.max(1, Math.floor(flownTrackSamples.length / 40));
-            for (let i = 0; i < flownTrackSamples.length; i += step) {
-                const s = flownTrackSamples[i];
-                if (s && s.lat && s.lon && typeof updateMap === 'function') {
-                    updateMap(s.lat, s.lon, false);
+            if (terrain3DEnabled) return;
+            if (!tileSize || !homeTileXFloat || !homeTileYFloat) return;
+            const z = (typeof currentMapZoom === 'number' && currentMapZoom) ? currentMapZoom : 17;
+            const modeEl = document.getElementById('sel-map-mode');
+            const providerEl = document.getElementById('sel-map-provider');
+            const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+            const provider = providerEl ? providerEl.value : (localStorage.getItem('pilot_map_provider') || 'esri');
+            const activePreset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+
+            if (typeof createFlatTileMesh !== 'function') return;
+
+            // 1. Re-instantiate all recorded tiles from flownTileKeys
+            if (typeof flownTileKeys !== 'undefined' && flownTileKeys.size > 0) {
+                flownTileKeys.forEach(tileKey => {
+                    const parts = tileKey.split('_');
+                    if (parts.length >= 3) {
+                        const tz = parseInt(parts[0], 10);
+                        const tx = parseInt(parts[1], 10);
+                        const ty = parseInt(parts[2], 10);
+                        if (tz === z && !isNaN(tx) && !isNaN(ty)) {
+                            createFlatTileMesh(tx, ty, z, provider, activePreset, mapMode);
+                        }
+                    }
+                });
+            }
+
+            // 2. Also ensure every recorded point along flownTrackSamples has its tile + swath footprint loaded
+            if (typeof flownTrackSamples !== 'undefined' && flownTrackSamples.length > 0) {
+                const halfW = (typeof coverageSwathWidth === 'number' ? coverageSwathWidth : 1000.0) * 0.5;
+                const spanTiles = Math.max(1, Math.ceil(halfW / tileSize));
+                for (let i = 0; i < flownTrackSamples.length; i++) {
+                    const s = flownTrackSamples[i];
+                    if (!s || s.x === undefined || s.z === undefined) continue;
+                    const tx = Math.floor(homeTileXFloat + (s.x / tileSize));
+                    const ty = Math.floor(homeTileYFloat + (s.z / tileSize));
+                    for (let stx = -spanTiles; stx <= spanTiles; stx++) {
+                        for (let sty = -spanTiles; sty <= spanTiles; sty++) {
+                            const tk = `${z}_${tx + stx}_${ty + sty}`;
+                            if (typeof flownTileKeys !== 'undefined') flownTileKeys.add(tk);
+                            createFlatTileMesh(tx + stx, ty + sty, z, provider, activePreset, mapMode);
+                        }
+                    }
+                }
+            }
+
+            // 3. Fallback: Also sample raw 3D flight breadcrumb trail (trailPositions) to bridge any remaining gaps
+            if (typeof trailCount === 'number' && trailCount > 0 && typeof trailPositions !== 'undefined') {
+                const sampleStep = Math.max(1, Math.floor(trailCount / 200));
+                for (let i = 0; i <= trailCount; i += sampleStep) {
+                    const px = trailPositions[i * 3 + 0];
+                    const pz = trailPositions[i * 3 + 2];
+                    if (isNaN(px) || isNaN(pz)) continue;
+                    const tx = Math.floor(homeTileXFloat + (px / tileSize));
+                    const ty = Math.floor(homeTileYFloat + (pz / tileSize));
+                    for (let stx = -1; stx <= 1; stx++) {
+                        for (let sty = -1; sty <= 1; sty++) {
+                            const tk = `${z}_${tx + stx}_${ty + sty}`;
+                            if (typeof flownTileKeys !== 'undefined') flownTileKeys.add(tk);
+                            createFlatTileMesh(tx + stx, ty + sty, z, provider, activePreset, mapMode);
+                        }
+                    }
                 }
             }
         }
+        window.reloadFlown2DTiles = reloadFlown2DTiles;
 
         // ==========================================
         // DEAD RECKONING 3D VISUAL SUITE
@@ -8673,6 +8739,95 @@
             controls.update();
         }
 
+        // Fast, deterministic 2D flat tile instantiation for continuous flight corridors
+        function createFlatTileMesh(tx, ty, zoom, provider, activePreset, mapMode) {
+            if (terrain3DEnabled) return null;
+            if (!tileSize || !homeTileXFloat || !homeTileYFloat) return null;
+            const prov = provider || currentMapProvider || (localStorage.getItem('pilot_map_provider') || 'esri');
+            const preset = activePreset || ((typeof getActivePresetName === 'function') ? getActivePresetName() : 'default');
+            const mode = mapMode || currentMapMode || (localStorage.getItem('pilot_map_mode') || 'auto');
+            const z = zoom || currentMapZoom || 17;
+
+            const key = `${z}_${tx}_${ty}_${prov}_${preset}`;
+            if (mapTiles.has(key)) return null;
+            mapTiles.set(key, true);
+
+            const thisGen = mapGeneration;
+            const localUrl = `/tiles/${z}/${tx}/${ty}.jpg?mode=${mode}&provider=${prov}&preset=${encodeURIComponent(preset)}&lyrs=s`;
+
+            const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x141f17,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                fog: false
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.renderOrder = -1;
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+            mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+            mesh.position.y = -2.0;
+            mesh.userData = { tx, ty, zoom: z, displaced: false, thisGen: thisGen };
+            mapGroup.add(mesh);
+
+            activeStreamingTiles++;
+            totalStreamingTiles++;
+            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+
+            function applyFlatTexture(texture) {
+                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
+                    texture.dispose();
+                    return;
+                }
+                const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                texture.anisotropy = maxAniso;
+                texture.generateMipmaps = true;
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.encoding = THREE.sRGBEncoding;
+                mat.map = texture;
+                mat.color.setHex(0xffffff);
+                mat.needsUpdate = true;
+            }
+
+            const loader = new THREE.TextureLoader();
+            loader.setCrossOrigin('anonymous');
+
+            loader.load(
+                localUrl,
+                (texture) => applyFlatTexture(texture),
+                undefined,
+                () => {
+                    if (mode !== 'offline') {
+                        setTimeout(() => {
+                            if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                loader.load(
+                                    localUrl,
+                                    (texture) => applyFlatTexture(texture),
+                                    undefined,
+                                    () => {
+                                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                    }
+                                );
+                            } else {
+                                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                            }
+                        }, 600);
+                    } else {
+                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                    }
+                }
+            );
+            return mesh;
+        }
+        window.createFlatTileMesh = createFlatTileMesh;
+
         function updateMap(lat, lon, recenter = false) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
 
@@ -8769,7 +8924,7 @@
                 }
 
                 if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
-                if (typeof clearFlightCoverage === 'function') clearFlightCoverage();
+                // Preserve flight track history and coverage across map rebuilds / mode toggles
             } else {
                 // Tactical Loiter Lock & Spatial Hysteresis
                 // When in LOITER, CIRCLE, QLOITER, or orbiting, freeze the map anchor completely.
@@ -8782,9 +8937,11 @@
                 const dLon = Math.abs(lon - lastMapUpdateLon);
                 const distMovedM = Math.sqrt(Math.pow(dLat * 111320, 2) + Math.pow(dLon * 111320 * Math.cos(lat * Math.PI / 180), 2));
                 
-                // If in loiter/circle, freeze grid unless aircraft leaves area (>500m).
-                // In forward flight, update only when displaced >= 280m (~1 tile), keeping the perimeter perfectly stationary during maneuvers.
-                const hysteresisThreshold = isLoiterState ? 500.0 : Math.max(280.0, (typeof tileSize === 'number' ? tileSize * 0.85 : 280.0));
+                // Loiter freeze and 280m threshold strictly applies to 3D mode (to keep constant 3D perimeter during circling).
+                // In 2D flat mode, update frequently (>=50m) to continuously lay down seamless tiles along the flight path.
+                const hysteresisThreshold = terrain3DEnabled
+                    ? (isLoiterState ? 500.0 : Math.max(280.0, (typeof tileSize === 'number' ? tileSize * 0.85 : 280.0)))
+                    : 50.0;
                 if (distMovedM < hysteresisThreshold) {
                     return; // 100% constant map perimeter during loiter and localized flight!
                 }
@@ -8823,90 +8980,16 @@
                 for (const { dx, dy } of flatOffsets) {
                     const tx = currentTileX + dx;
                     const ty = currentTileY + dy;
-                    const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
-
-                    if (!mapTiles.has(key)) {
-                        mapTiles.set(key, true);
-
-                        const mt = Math.abs(tx + ty) % 4;
-                        const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
-
-                        // Immediate flat mesh creation with neutral dark tactical slate base
-                        const geo = new THREE.PlaneGeometry(tileSize, tileSize);
-                        const mat = new THREE.MeshBasicMaterial({
-                            color: 0x141f17,
-                            side: THREE.DoubleSide,
-                            depthWrite: false,
-                            fog: false
-                        });
-                        const mesh = new THREE.Mesh(geo, mat);
-                        mesh.renderOrder = -1;
-                        mesh.rotation.x = -Math.PI / 2;
-                        mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                        mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                        mesh.position.y = -2.0;
-                        mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
-                        mapGroup.add(mesh);
-
-                        activeStreamingTiles++;
-                        totalStreamingTiles++;
-                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-
-                        function applyFlatTexture(texture) {
-                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                            if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
-                                texture.dispose();
-                                return;
-                            }
-                            const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
-                            texture.anisotropy = maxAniso;
-                            texture.generateMipmaps = true;
-                            texture.minFilter = THREE.LinearMipmapLinearFilter;
-                            texture.magFilter = THREE.LinearFilter;
-                            texture.encoding = THREE.sRGBEncoding;
-                            mat.map = texture;
-                            mat.color.setHex(0xffffff);
-                            mat.needsUpdate = true;
-                        }
-
-                        const loader = new THREE.TextureLoader();
-                        loader.setCrossOrigin('anonymous');
-
-                        loader.load(
-                            localUrl,
-                            (texture) => applyFlatTexture(texture),
-                            undefined,
-                            () => {
-                                if (mapMode !== 'offline') {
-                                    // Single retry with exact same provider - never mix providers
-                                    setTimeout(() => {
-                                        if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
-                                            loader.load(
-                                                localUrl,
-                                                (texture) => applyFlatTexture(texture),
-                                                undefined,
-                                                () => {
-                                                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                                }
-                                            );
-                                        } else {
-                                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                        }
-                                    }, 600);
-                                } else {
-                                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                }
-                            }
-                        );
-                    }
+                    createFlatTileMesh(tx, ty, activeZoom, provider, activePreset, mapMode);
                 }
 
-                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles (up to 3500 tiles)
-                const MAX_SCENE_TILES = 3500;
+                // In 2D flat mode, ensure all flown route tiles remain loaded
+                if (typeof reloadFlown2DTiles === 'function') {
+                    reloadFlown2DTiles();
+                }
+
+                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles (up to 6000 tiles)
+                const MAX_SCENE_TILES = 6000;
                 if (mapGroup.children.length > MAX_SCENE_TILES) {
                     const excess = mapGroup.children.length - MAX_SCENE_TILES;
                     const homeTx = Math.floor(homeTileXFloat);
@@ -9162,7 +9245,8 @@
             }
 
             // High-Performance Stable 3D Scene Tile Eviction
-            // Pure radial distance eviction with hysteresis buffer guarantees zero corner jumping during turns and loiter!
+            // Pure radial distance eviction with hysteresis buffer guarantees zero corner jumping during turns and loiter.
+            // In 3D terrain mode, continuity is intentionally bounded to the active radius + home airfield to preserve GPU memory.
             const MAX_SCENE_TILES_3D = 550;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
                 const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
@@ -9171,10 +9255,6 @@
                 const scored = [];
                 mapGroup.children.forEach(m => {
                     if (m.userData && m.userData.tx !== undefined) {
-                        const tileCoordKey = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}`;
-                        // Protect flown terrain chunks under the flight path and survey swath
-                        if (typeof flownTileKeys !== 'undefined' && flownTileKeys.has(tileCoordKey)) return;
-
                         const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                         const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
                         if (distToPlane <= (gridSpan + 2)) return; // Keep active circle plus 2-tile buffer around plane
@@ -10844,7 +10924,7 @@
             lastRenderTime = now;
 
             // Continuous dynamic map streaming during flight (streams tiles around vehicle wherever it flies)
-            if (now - lastPeriodicMapUpdate > 1500 && currentPlaneLat && currentPlaneLon && (cameraMode === 'follow' || cameraMode === 'corv_chase')) {
+            if (now - lastPeriodicMapUpdate > 1500 && currentPlaneLat && currentPlaneLon) {
                 lastPeriodicMapUpdate = now;
                 updateMap(currentPlaneLat, currentPlaneLon, false);
             }
