@@ -3582,6 +3582,10 @@
                         <option value="3000">3.0 km (±1.5km) - Tactical</option>
                     </select>
                 </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                    <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">FLOWN SWATH DATA</span>
+                    <button id="btn-clear-coverage" class="btn-refresh" style="padding: 2px 8px; font-size: 9.5px; font-weight: 700; color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); background: transparent; cursor: pointer;">CLEAR SWATH</button>
+                </div>
             </div>
 
             <!-- 3D Topographic DEM Elevation (Corv-GCS Engine) -->
@@ -4676,6 +4680,16 @@
                 }
             }
         };
+
+        const btnClearCoverage = document.getElementById('btn-clear-coverage');
+        if (btnClearCoverage) {
+            btnClearCoverage.onclick = () => {
+                if (typeof clearFlightCoverage === 'function') {
+                    clearFlightCoverage();
+                    if (typeof showTacticalAlert === 'function') showTacticalAlert("SURVEY COVERAGE SWATH CLEARED", 1400);
+                }
+            };
+        }
 
         const btnToggleCoverage = document.getElementById('btn-toggle-coverage');
         const chkToggleCoverageSwath = document.getElementById('chk-toggle-coverage-swath');
@@ -7404,15 +7418,112 @@
         const flownTileKeys = new Set();
         let coverageSwathWidth = 1000.0;
         const lastCoverageSamplePos = new THREE.Vector3(1e9, 1e9, 1e9);
+        let lastFlownSamplePos = null;
+        const lastFlownNormal = new THREE.Vector2(1, 0);
+
+        function clearFlightCoverage() {
+            coveragePointCount = 0;
+            lastCoverageSamplePos.set(1e9, 1e9, 1e9);
+            lastFlownSamplePos = null;
+            lastFlownNormal.set(1, 0);
+            flownTrackSamples.length = 0;
+            flownTileKeys.clear();
+            if (coverageGeo) {
+                coverageGeo.setDrawRange(0, 0);
+                coverageGeo.attributes.position.needsUpdate = true;
+            }
+            if (leftEdgeGeo) {
+                leftEdgeGeo.setDrawRange(0, 0);
+                leftEdgeGeo.attributes.position.needsUpdate = true;
+            }
+            if (rightEdgeGeo) {
+                rightEdgeGeo.setDrawRange(0, 0);
+                rightEdgeGeo.attributes.position.needsUpdate = true;
+            }
+        }
+        window.clearFlightCoverage = clearFlightCoverage;
 
         function addCoverageSample(pos, headingDeg) {
             if (!pos || isNaN(pos.x) || isNaN(pos.z)) return;
-            const dist = pos.distanceTo(lastCoverageSamplePos);
-            if (dist < 15.0 && coveragePointCount > 0) {
-                updateLeadingTip(pos, headingDeg);
+
+            // Strict In-Flight Gate: Never generate or rotate survey swath while stationary on ground
+            // This prevents stationary compass/heading rotations from fanning out pinwheel discs
+            const isMovingFlight = (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.8) ||
+                                   (typeof isArmed === 'boolean' && isArmed && planeGroundspeed > 1.0);
+            if (!isMovingFlight) {
                 return;
             }
 
+            const groundY = -1.8;
+            const halfW = coverageSwathWidth * 0.5;
+
+            // On first in-flight point: initialize anchor
+            if (lastFlownSamplePos === null) {
+                lastFlownSamplePos = new THREE.Vector3(pos.x, pos.y, pos.z);
+                lastCoverageSamplePos.copy(pos);
+
+                const initRad = ((headingDeg || 0) % 360) * (Math.PI / 180.0);
+                lastFlownNormal.set(Math.cos(initRad), Math.sin(initRad));
+
+                const lx = pos.x - lastFlownNormal.x * halfW;
+                const lz = pos.z - lastFlownNormal.y * halfW;
+                const rx = pos.x + lastFlownNormal.x * halfW;
+                const rz = pos.z + lastFlownNormal.y * halfW;
+
+                coverageVertices[0] = lx; coverageVertices[1] = groundY; coverageVertices[2] = lz;
+                coverageVertices[3] = rx; coverageVertices[4] = groundY; coverageVertices[5] = rz;
+
+                leftEdgePos[0] = lx; leftEdgePos[1] = groundY; leftEdgePos[2] = lz;
+                rightEdgePos[0] = rx; rightEdgePos[1] = groundY; rightEdgePos[2] = rz;
+
+                coveragePointCount = 1;
+                return;
+            }
+
+            // Metric distance moved across the ground plane
+            const dx = pos.x - lastFlownSamplePos.x;
+            const dz = pos.z - lastFlownSamplePos.z;
+            const distM = Math.hypot(dx, dz);
+
+            // Calculate flight track normal directly from physical ground translation vector (dx, dz)
+            // This mathematically guarantees the swath ribbon is strictly perpendicular to flight path
+            if (distM > 1.0) {
+                lastFlownNormal.set(-dz / distM, dx / distM);
+            }
+
+            // If moved less than 15 meters, update the leading edge tip in place
+            if (distM < 15.0) {
+                if (coveragePointCount > 0) {
+                    const tipIdx = (coveragePointCount - 1) * 2;
+                    const lx = pos.x - lastFlownNormal.x * halfW;
+                    const lz = pos.z - lastFlownNormal.y * halfW;
+                    const rx = pos.x + lastFlownNormal.x * halfW;
+                    const rz = pos.z + lastFlownNormal.y * halfW;
+
+                    coverageVertices[tipIdx * 3 + 0] = lx;
+                    coverageVertices[tipIdx * 3 + 1] = groundY;
+                    coverageVertices[tipIdx * 3 + 2] = lz;
+
+                    coverageVertices[(tipIdx + 1) * 3 + 0] = rx;
+                    coverageVertices[(tipIdx + 1) * 3 + 1] = groundY;
+                    coverageVertices[(tipIdx + 1) * 3 + 2] = rz;
+
+                    leftEdgePos[(coveragePointCount - 1) * 3 + 0] = lx;
+                    leftEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
+                    leftEdgePos[(coveragePointCount - 1) * 3 + 2] = lz;
+
+                    rightEdgePos[(coveragePointCount - 1) * 3 + 0] = rx;
+                    rightEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
+                    rightEdgePos[(coveragePointCount - 1) * 3 + 2] = rz;
+
+                    coverageGeo.attributes.position.needsUpdate = true;
+                    leftEdgeGeo.attributes.position.needsUpdate = true;
+                    rightEdgeGeo.attributes.position.needsUpdate = true;
+                }
+                return;
+            }
+
+            // Aircraft has advanced >= 15 meters: commit new ribbon segment
             if (coveragePointCount >= MAX_COVERAGE_POINTS - 1) {
                 coverageVertices.copyWithin(0, 2 * 3);
                 leftEdgePos.copyWithin(0, 3);
@@ -7420,16 +7531,10 @@
                 coveragePointCount--;
             }
 
-            const halfW = coverageSwathWidth * 0.5;
-            const rad = ((headingDeg || 0) % 360) * (Math.PI / 180.0);
-            const nx = Math.cos(rad);
-            const nz = Math.sin(rad);
-            const groundY = -1.8;
-
-            const lx = pos.x - nx * halfW;
-            const lz = pos.z - nz * halfW;
-            const rx = pos.x + nx * halfW;
-            const rz = pos.z + nz * halfW;
+            const lx = pos.x - lastFlownNormal.x * halfW;
+            const lz = pos.z - lastFlownNormal.y * halfW;
+            const rx = pos.x + lastFlownNormal.x * halfW;
+            const rz = pos.z + lastFlownNormal.y * halfW;
 
             const vIdx = coveragePointCount * 2;
             coverageVertices[vIdx * 3 + 0] = lx;
@@ -7449,6 +7554,7 @@
             rightEdgePos[coveragePointCount * 3 + 2] = rz;
 
             coveragePointCount++;
+            lastFlownSamplePos.copy(pos);
             lastCoverageSamplePos.copy(pos);
 
             if (currentPlaneLat && currentPlaneLon) {
@@ -7479,41 +7585,6 @@
                 rightEdgeGeo.setDrawRange(0, coveragePointCount);
                 rightEdgeGeo.attributes.position.needsUpdate = true;
             }
-        }
-
-        function updateLeadingTip(pos, headingDeg) {
-            if (coveragePointCount <= 0) return;
-            const halfW = coverageSwathWidth * 0.5;
-            const rad = ((headingDeg || 0) % 360) * (Math.PI / 180.0);
-            const nx = Math.cos(rad);
-            const nz = Math.sin(rad);
-            const groundY = -1.8;
-
-            const tipIdx = (coveragePointCount - 1) * 2;
-            const lx = pos.x - nx * halfW;
-            const lz = pos.z - nz * halfW;
-            const rx = pos.x + nx * halfW;
-            const rz = pos.z + nz * halfW;
-
-            coverageVertices[tipIdx * 3 + 0] = lx;
-            coverageVertices[tipIdx * 3 + 1] = groundY;
-            coverageVertices[tipIdx * 3 + 2] = lz;
-
-            coverageVertices[(tipIdx + 1) * 3 + 0] = rx;
-            coverageVertices[(tipIdx + 1) * 3 + 1] = groundY;
-            coverageVertices[(tipIdx + 1) * 3 + 2] = rz;
-
-            leftEdgePos[(coveragePointCount - 1) * 3 + 0] = lx;
-            leftEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
-            leftEdgePos[(coveragePointCount - 1) * 3 + 2] = lz;
-
-            rightEdgePos[(coveragePointCount - 1) * 3 + 0] = rx;
-            rightEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
-            rightEdgePos[(coveragePointCount - 1) * 3 + 2] = rz;
-
-            coverageGeo.attributes.position.needsUpdate = true;
-            leftEdgeGeo.attributes.position.needsUpdate = true;
-            rightEdgeGeo.attributes.position.needsUpdate = true;
         }
 
         function reloadFlown2DTiles() {
@@ -8616,6 +8687,7 @@
                 }
 
                 if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
+                if (typeof clearFlightCoverage === 'function') clearFlightCoverage();
             } else {
                 // Throttle incremental checks during flight (~50m threshold or >15° heading change in 3D)
                 const dLat = Math.abs(lat - lastMapUpdateLat);
