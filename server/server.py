@@ -517,21 +517,7 @@ async def mavlink_listener():
                         )
                     except Exception as e:
                         pass
-                else:
-                    # Periodically re-query Autopilot Version if hardware identity is not yet fully resolved
-                    if not is_network_sitl and detected_fc_hardware in ('Hardware FC', 'Unknown FC'):
-                        now_t = time.time()
-                        if now_t - last_version_req_time > 3.0:
-                            last_version_req_time = now_t
-                            try:
-                                connection.mav.command_long_send(
-                                    connection.target_system, connection.target_component,
-                                    mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
-                                    mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
-                                    0, 0, 0, 0, 0, 0
-                                )
-                            except Exception:
-                                pass
+
                     # Request data streams
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS, 10, 1)
@@ -638,6 +624,21 @@ async def mavlink_listener():
 
                     # Trigger initial mission download from vehicle
                     mission_handler.start_fetch()
+                else:
+                    # Periodically re-query Autopilot Version if hardware identity is not yet fully resolved
+                    if not is_network_sitl and detected_fc_hardware in ('Hardware FC', 'Unknown FC'):
+                        now_t = time.time()
+                        if now_t - last_version_req_time > 3.0:
+                            last_version_req_time = now_t
+                            try:
+                                connection.mav.command_long_send(
+                                    connection.target_system, connection.target_component,
+                                    mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
+                                    mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
+                                    0, 0, 0, 0, 0, 0
+                                )
+                            except Exception:
+                                pass
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
