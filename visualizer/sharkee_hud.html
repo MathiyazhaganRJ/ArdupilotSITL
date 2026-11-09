@@ -4691,13 +4691,16 @@
             };
         }
 
+        let flightCoverageGroup = null;
+        let coverageSwathWidth = 1000.0;
+
         const btnToggleCoverage = document.getElementById('btn-toggle-coverage');
         const chkToggleCoverageSwath = document.getElementById('chk-toggle-coverage-swath');
         const selCoverageWidth = document.getElementById('sel-coverage-width');
         const coverageSwathStatus = document.getElementById('coverage-swath-status');
 
         function setCoverageSwathVisible(vis) {
-            if (typeof flightCoverageGroup !== 'undefined') {
+            if (flightCoverageGroup) {
                 flightCoverageGroup.visible = vis;
             }
             if (chkToggleCoverageSwath) chkToggleCoverageSwath.checked = vis;
@@ -4715,7 +4718,7 @@
 
         if (btnToggleCoverage) {
             btnToggleCoverage.onclick = () => {
-                const curVis = (typeof flightCoverageGroup !== 'undefined') ? flightCoverageGroup.visible : false;
+                const curVis = flightCoverageGroup ? flightCoverageGroup.visible : false;
                 setCoverageSwathVisible(!curVis);
             };
         }
@@ -7422,7 +7425,7 @@
         leftEdgeLine.frustumCulled = false;
         rightEdgeLine.frustumCulled = false;
 
-        const flightCoverageGroup = new THREE.Group();
+        flightCoverageGroup = new THREE.Group();
         flightCoverageGroup.name = 'flightCoverageGroup';
         flightCoverageGroup.add(coverageSwathMesh);
         flightCoverageGroup.add(leftEdgeLine);
@@ -7432,7 +7435,6 @@
 
         const flownTrackSamples = [];
         const flownTileKeys = new Set();
-        let coverageSwathWidth = 1000.0;
         const lastCoverageSamplePos = new THREE.Vector3(1e9, 1e9, 1e9);
         let lastFlownSamplePos = null;
         const lastFlownNormal = new THREE.Vector2(1, 0);
