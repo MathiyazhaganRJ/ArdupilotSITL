@@ -4511,6 +4511,15 @@
                     <span style="color: #86868b;">Airspace Coverage:</span>
                     <span id="modal-coverage-preview" style="font-weight: 600;">3.0 km radius</span>
                 </div>
+                <div id="modal-corridor-width-row" style="display: none; justify-content: space-between; align-items: center; margin: 2px 0;">
+                    <span style="color: #86868b;">Corridor Width:</span>
+                    <select id="modal-corridor-width-select" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(0,113,227,0.4); border-radius: 6px; padding: 2px 6px; color: #34c759; font-weight: 700; font-size: 11px; outline: none; cursor: pointer;">
+                        <option value="0.5">1.0 km Width (±500m) - Lightest (Workload Minimal)</option>
+                        <option value="1.0" selected>2.0 km Width (±1.0km) - Recommended</option>
+                        <option value="1.5">3.0 km Width (±1.5km) - Tactical Horizon</option>
+                        <option value="2.5">5.0 km Width (±2.5km) - Wide Perimeter</option>
+                    </select>
+                </div>
                 <div style="display: flex; justify-content: space-between;">
                     <span style="color: #86868b;">Estimated Size:</span>
                     <span id="modal-est-preview" style="color: #0071e3; font-weight: 700;">~611 tiles (~17.1 MB)</span>
@@ -5784,6 +5793,28 @@
                 }
             }
 
+            const corridorRow = document.getElementById('modal-corridor-width-row');
+            const corridorSelect = document.getElementById('modal-corridor-width-select');
+            if (corridorRow && corridorSelect) {
+                if (config.waypoints && config.waypoints.length > 1) {
+                    corridorRow.style.display = 'flex';
+                    corridorSelect.value = String(config.corridorKm || 1.0);
+                    corridorSelect.onchange = () => {
+                        const bufferKm = parseFloat(corridorSelect.value);
+                        config.corridorKm = bufferKm;
+                        const totalWidthKm = bufferKm * 2.0;
+                        const dist = config.totalDistKm || 10.0;
+                        const factor = (config.zooms && config.zooms[0] >= 18) ? (totalWidthKm * 6.5) : ((config.zooms && config.zooms[0] === 17) ? (totalWidthKm * 2.45) : (totalWidthKm * 1.2));
+                        const estTiles = Math.max(40, Math.round(dist * factor));
+                        const estMb = (estTiles * 0.028).toFixed(1);
+                        if (estPrev) estPrev.innerText = `~${estTiles.toLocaleString()} tiles (~${estMb} MB) [Zooms ${config.zooms.join(', ')}]`;
+                        if (covPrev) covPrev.innerText = `${config.waypoints.length} WPs (${dist.toFixed(1)} km route, ${totalWidthKm.toFixed(1)} km width)`;
+                    };
+                } else {
+                    corridorRow.style.display = 'none';
+                }
+            }
+
             modal.style.display = 'flex';
             setTimeout(() => {
                 if (input) {
@@ -5829,7 +5860,9 @@
             }
             const enteredName = document.getElementById('input-offline-map-name')?.value.trim() || pendingDownloadConfig.suggestedName || 'Field Map Area';
             const folderName = sanitizePresetFolderName(enteredName);
-            const cfg = { ...pendingDownloadConfig, name: enteredName, folder: folderName };
+            const corridorSelect = document.getElementById('modal-corridor-width-select');
+            const chosenCorridorKm = (corridorSelect && pendingDownloadConfig.waypoints) ? parseFloat(corridorSelect.value) : (pendingDownloadConfig.corridorKm || 1.0);
+            const cfg = { ...pendingDownloadConfig, name: enteredName, folder: folderName, corridorKm: chosenCorridorKm };
             closeDownloadNameModal();
 
             // 1. Register / Save into Presets
@@ -5965,7 +5998,7 @@
 
                 const centerLat = (minLat + maxLat) / 2;
                 const centerLon = (minLon + maxLon) / 2;
-                const corridorKm = 3.0; // 3.0 km buffer radius = 6.0 km wide tactical flight corridor
+                const corridorKm = 1.0; // 1.0 km buffer radius = 2.0 km wide tactical flight corridor (selectable in modal)
 
                 // Honor user's explicit map-cache-zoom resolution setting!
                 const zoomVal = document.getElementById('map-cache-zoom')?.value;
@@ -5979,11 +6012,9 @@
                 const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
                 const provider = document.getElementById('sel-map-provider')?.value || 'esri';
 
-                // Accurate corridor tile count estimation:
-                // At Zoom 17 with 3 km buffer: ~7.3 tiles/km across Zooms [17, 16, 15]
-                // At Zoom 18: ~21.5 tiles/km across Zooms [18, 17, 16]
-                const factor = (optZoom >= 18) ? 21.5 : ((optZoom === 17) ? 7.3 : 3.5);
-                const estTiles = Math.max(60, Math.round(totalDistKm * factor));
+                // Accurate corridor tile count estimation for 2.0 km corridor width:
+                const factor = (optZoom >= 18) ? 14.5 : ((optZoom === 17) ? 4.9 : 2.5);
+                const estTiles = Math.max(50, Math.round(totalDistKm * factor));
                 const estMb = (estTiles * 0.028).toFixed(1);
 
                 openDownloadNameModal({
@@ -5992,10 +6023,11 @@
                     lon: centerLon,
                     radiusKm: 3.0,
                     corridorKm: corridorKm,
+                    totalDistKm: totalDistKm,
                     waypoints: validWps,
                     zooms: zooms,
                     provider: provider,
-                    coverageText: `${validWps.length} Waypoints (${totalDistKm.toFixed(1)} km route, 6 km corridor)`,
+                    coverageText: `${validWps.length} Waypoints (${totalDistKm.toFixed(1)} km route, 2.0 km corridor)`,
                     estText: `~${estTiles.toLocaleString()} tiles (~${estMb} MB) [Zooms ${zooms.join(', ')}]`
                 });
             };
