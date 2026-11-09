@@ -1164,9 +1164,11 @@ def get_tiles_for_radius(lat, lon, radius_km, zoom):
 
 def sanitize_preset_folder(preset_name):
     if not preset_name or not str(preset_name).strip():
-        return "default"
+        return "My_Home_Airfield"
     clean = re.sub(r'[^a-zA-Z0-9_\-]+', '_', str(preset_name).strip()).strip('_')
-    return clean if clean else "default"
+    if clean.lower() in ("default", "my_home_airfield"):
+        return "My_Home_Airfield"
+    return clean if clean else "My_Home_Airfield"
 
 def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', preset='default'):
     global precache_state
@@ -1257,6 +1259,23 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
     precache_state["is_downloading"] = False
     precache_state["status"] = f"Complete: {precache_state['downloaded'] + precache_state['cached']}/{total} tiles ready in {preset_folder}/"
+
+    meta = {
+        "name": str(preset).replace('_', ' '),
+        "folder": preset_folder,
+        "lat": lat,
+        "lon": lon,
+        "radius_km": radius_km,
+        "zooms": zoom_levels,
+        "provider": provider,
+        "tiles_cached": precache_state["downloaded"] + precache_state["cached"],
+        "updated_at": time.time()
+    }
+    try:
+        with open(os.path.join(target_cache_dir, "metadata.json"), "w", encoding="utf-8") as mf:
+            json.dump(meta, mf, indent=2)
+    except Exception:
+        pass
 
 def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='auto', lyrs='s'):
     """
@@ -1667,10 +1686,55 @@ def start_http_server():
                     total_mb = total_bytes / (1024 * 1024)
 
                     available_folders = []
+                    preset_metadata_map = {}
                     if os.path.exists(tile_cache_dir):
                         for item in os.listdir(tile_cache_dir):
-                            if os.path.isdir(os.path.join(tile_cache_dir, item)) and item != 'dem':
+                            item_path = os.path.join(tile_cache_dir, item)
+                            if os.path.isdir(item_path) and item != 'dem':
                                 available_folders.append(item)
+                                meta_file = os.path.join(item_path, 'metadata.json')
+                                if os.path.exists(meta_file):
+                                    try:
+                                        with open(meta_file, 'r', encoding='utf-8') as mf:
+                                            preset_metadata_map[item] = json.load(mf)
+                                    except Exception:
+                                        pass
+                                elif item == 'My_Home_Airfield':
+                                    preset_metadata_map[item] = {
+                                        "name": "My Home Airfield",
+                                        "folder": "My_Home_Airfield",
+                                        "lat": 8.3105,
+                                        "lon": 77.3137,
+                                        "radius_km": 3.0,
+                                        "zooms": [17, 16, 15],
+                                        "provider": "esri",
+                                        "tiles_cached": len([f for f in os.listdir(item_path) if f.endswith('.jpg')])
+                                    }
+                                else:
+                                    # Fallback: estimate coordinates from first cached tile
+                                    try:
+                                        tfiles = [f for f in os.listdir(item_path) if f.endswith('.jpg')]
+                                        if tfiles:
+                                            parts = tfiles[0].split('_')
+                                            if len(parts) >= 3 and parts[0].isdigit() and parts[1].isdigit():
+                                                tz, tx = int(parts[0]), int(parts[1])
+                                                ty = int(parts[2].split('.')[0])
+                                                n = 2.0 ** tz
+                                                t_lon = tx / n * 360.0 - 180.0
+                                                lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ty / n)))
+                                                t_lat = math.degrees(lat_rad)
+                                                preset_metadata_map[item] = {
+                                                    "name": item.replace('_', ' '),
+                                                    "folder": item,
+                                                    "lat": round(t_lat, 5),
+                                                    "lon": round(t_lon, 5),
+                                                    "radius_km": 3.0,
+                                                    "zooms": [tz],
+                                                    "provider": "esri",
+                                                    "tiles_cached": len(tfiles)
+                                                }
+                                    except Exception:
+                                        pass
 
                     resp = {
                         "preset_folder": preset_folder,
@@ -1681,6 +1745,7 @@ def start_http_server():
                         "total_cached_mb": round(total_mb, 2),
                         "is_online": check_internet_reachability(),
                         "available_presets": available_folders,
+                        "preset_metadata": preset_metadata_map,
                         "is_downloading": precache_state["is_downloading"],
                         "progress_pct": precache_state["progress_pct"],
                         "downloaded": precache_state["downloaded"],

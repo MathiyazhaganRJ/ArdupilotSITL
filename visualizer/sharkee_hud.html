@@ -4478,6 +4478,53 @@
         <span class="toast-hint">Click to open [M]</span>
     </div>
 
+    <!-- Offline Map Naming & Confirmation Modal -->
+    <div id="modal-download-map-name" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: rgba(18, 22, 28, 0.96); border: 1px solid rgba(0, 113, 227, 0.45); box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 24px rgba(0,113,227,0.25); border-radius: 14px; width: 400px; max-width: 90vw; padding: 22px; display: flex; flex-direction: column; gap: 14px; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span style="font-size: 14px; font-weight: 800; letter-spacing: 0.3px;">Save Offline Map Area</span>
+                </div>
+                <button id="btn-close-name-modal" style="background: none; border: none; color: #86868b; cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 6px;">&times;</button>
+            </div>
+
+            <p style="font-size: 11.5px; color: #a1a1a6; margin: 0; line-height: 1.45;">
+                Assign a custom name to this offline region. It will be stored in your presets and organized in its own disk cache folder for seamless offline field flights.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 10px; font-weight: 700; color: #86868b; letter-spacing: 0.5px;">MAP / AIRFIELD PRESET NAME</label>
+                <input type="text" id="input-offline-map-name" placeholder="e.g. South Ridge Survey, Home Base 5km" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.22); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 13px; font-weight: 600; outline: none; transition: border-color 0.2s;">
+            </div>
+
+            <div id="modal-download-details-summary" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; font-size: 11px; color: #d1d1d6; display: flex; flex-direction: column; gap: 5px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Target Folder:</span>
+                    <span id="modal-target-folder-preview" style="font-family: monospace; color: #34c759; font-weight: 600;">tile_cache/.../</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Airspace Coverage:</span>
+                    <span id="modal-coverage-preview" style="font-weight: 600;">3.0 km radius</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Estimated Size:</span>
+                    <span id="modal-est-preview" style="color: #0071e3; font-weight: 700;">~611 tiles (~17.1 MB)</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+                <button id="btn-cancel-name-modal" style="flex: 1; padding: 9px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; cursor: pointer;">
+                    Cancel
+                </button>
+                <button id="btn-confirm-name-download" style="flex: 1.5; padding: 9px; font-size: 12px; font-weight: 700; background: #0071e3; color: #fff; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,113,227,0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Confirm & Download
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="canvas-container"></div>
     <script>
         var missionWaypoints = [];
@@ -5219,15 +5266,25 @@
             };
         }
 
-        // Preset Storage Architecture (localStorage)
+        // Preset Storage Architecture (localStorage & Disk-backed)
         const DEFAULT_PRESET = {
             id: 'default',
             name: 'My Home Airfield',
+            folder: 'My_Home_Airfield',
             lat: 8.3105,
             lon: 77.3137,
             radius: 3.0,
             zoom: '17'
         };
+
+        window.diskPresetMetadata = {};
+        window.lastDiskPresets = [];
+
+        function sanitizePresetFolderName(rawName) {
+            if (!rawName || !rawName.trim()) return 'Field_Map_Area';
+            const clean = rawName.trim().replace(/[^a-zA-Z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '');
+            return clean || 'Field_Map_Area';
+        }
 
         function getSavedPresets() {
             let list = [];
@@ -5236,7 +5293,7 @@
                 if (raw) list = JSON.parse(raw);
             } catch (e) {}
             if (!Array.isArray(list)) list = [];
-            // Filter out unwanted preset entries so user airfield remains clean
+            // Filter out unwanted legacy entries
             list = list.filter(p => p.id !== 'corv_peaks' && p.id !== 'corv_valley');
             return list;
         }
@@ -5246,30 +5303,32 @@
             const nameInput = document.getElementById('map-cache-name');
             const customName = nameInput && nameInput.value.trim();
             if (presetSelect && presetSelect.value) {
-                if (presetSelect.value === 'default') return DEFAULT_PRESET.name;
+                if (presetSelect.value === 'default') return 'My_Home_Airfield';
+                if (presetSelect.value.startsWith('disk_')) {
+                    return presetSelect.value.replace('disk_', '');
+                }
                 if (presetSelect.value !== 'new') {
                     const p = getSavedPresets().find(x => x.id === presetSelect.value);
-                    if (p && p.name) return p.name;
+                    if (p) return p.folder || sanitizePresetFolderName(p.name);
                 }
             }
-            if (customName) return customName;
-            return DEFAULT_PRESET.name;
+            if (customName) return sanitizePresetFolderName(customName);
+            return 'My_Home_Airfield';
         }
 
-        function saveCustomPreset(name, lat, lon, radius, zoom) {
+        function saveOrUpdatePreset(id, name, lat, lon, radius, zoom, folder) {
             let presets = getSavedPresets();
-            const id = 'preset_' + Date.now();
-            presets.push({ id, name, lat, lon, radius, zoom });
-            localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
-            return id;
-        }
-
-        function updateCustomPreset(id, name, lat, lon, radius, zoom) {
-            let presets = getSavedPresets();
-            const idx = presets.findIndex(p => p.id === id);
+            const cleanFolder = folder || sanitizePresetFolderName(name);
+            const idx = presets.findIndex(p => p.id === id || p.name.toLowerCase() === name.toLowerCase() || (p.folder && p.folder === cleanFolder));
             if (idx !== -1) {
-                presets[idx] = { id, name, lat, lon, radius, zoom };
+                presets[idx] = { id: presets[idx].id, name, lat, lon, radius, zoom, folder: cleanFolder };
                 localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
+                return presets[idx].id;
+            } else {
+                const newId = id || ('preset_' + Date.now());
+                presets.push({ id: newId, name, lat, lon, radius, zoom, folder: cleanFolder });
+                localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
+                return newId;
             }
         }
 
@@ -5284,15 +5343,16 @@
             const nameRow = document.getElementById('map-cache-name-row');
             if (!select) return;
 
+            const preserveVal = selectedId || select.value || DEFAULT_PRESET.id;
             select.innerHTML = '';
 
-            // Default SITL Airfield
+            // 1. Default Airfield
             const defOpt = document.createElement('option');
             defOpt.value = DEFAULT_PRESET.id;
             defOpt.innerText = `${DEFAULT_PRESET.name} (Default)`;
             select.appendChild(defOpt);
 
-            // User Saved Presets
+            // 2. User Saved Presets
             const customPresets = getSavedPresets();
             customPresets.forEach(p => {
                 const opt = document.createElement('option');
@@ -5301,28 +5361,53 @@
                 select.appendChild(opt);
             });
 
-            // New Preset Option
+            // 3. Available Disk Folders from Server
+            if (Array.isArray(window.lastDiskPresets)) {
+                window.lastDiskPresets.forEach(dp => {
+                    if (dp === 'default' || dp === 'My_Home_Airfield' || dp === 'dem') return;
+                    const optVal = 'disk_' + dp;
+                    const cleanName = dp.replace(/_/g, ' ');
+                    const alreadyInCustom = customPresets.some(p => (p.folder && p.folder === dp) || p.name.toLowerCase() === cleanName.toLowerCase());
+                    if (!alreadyInCustom) {
+                        const opt = document.createElement('option');
+                        opt.value = optVal;
+                        const meta = window.diskPresetMetadata && window.diskPresetMetadata[dp];
+                        const countStr = (meta && meta.tiles_cached) ? ` (${meta.tiles_cached} tiles)` : ' (Offline Folder)';
+                        opt.innerText = `${cleanName}${countStr}`;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+
+            // 4. New Preset Option
             const newOpt = document.createElement('option');
             newOpt.value = 'new';
             newOpt.innerText = `+ Enter New Field Location...`;
             select.appendChild(newOpt);
 
-            if (selectedId) {
-                select.value = selectedId;
-            } else if (!select.value) {
+            // Restore selection or match
+            let found = false;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === preserveVal) {
+                    select.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 select.value = DEFAULT_PRESET.id;
             }
 
-            // Show name input row and delete button only when appropriate (hidden for default)
+            // Update name row and delete button visibility
             if (nameRow) {
                 nameRow.style.display = (select.value === 'default') ? 'none' : 'flex';
             }
             if (deleteBtn) {
-                deleteBtn.style.display = (select.value && select.value !== 'default' && select.value !== 'new') ? 'inline-flex' : 'none';
+                deleteBtn.style.display = (select.value && select.value !== 'default' && select.value !== 'new' && !select.value.startsWith('disk_')) ? 'inline-flex' : 'none';
             }
         }
 
-        // Quick Preset Shortcut Buttons (Corv 3D Peaks & Home Airfield)
+        // Quick Preset Shortcut Button
         function applyAirfieldPreset(presetId) {
             const select = document.getElementById('map-cache-preset');
             if (select) {
@@ -5375,6 +5460,31 @@
                     }
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     refreshCacheStatus();
+                } else if (val.startsWith('disk_')) {
+                    if (nameRow) nameRow.style.display = 'flex';
+                    const folder = val.replace('disk_', '');
+                    if (nameInput) nameInput.value = folder.replace(/_/g, ' ');
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+
+                    const meta = (window.diskPresetMetadata && window.diskPresetMetadata[folder]);
+                    if (meta && meta.lat && meta.lon) {
+                        document.getElementById('map-cache-lat').value = Number(meta.lat).toFixed(4);
+                        document.getElementById('map-cache-lon').value = Number(meta.lon).toFixed(4);
+                        if (meta.radius_km) document.getElementById('map-cache-radius').value = String(meta.radius_km);
+                        if (meta.zooms && meta.zooms[0]) document.getElementById('map-cache-zoom').value = String(meta.zooms[0]);
+                        if (meta.provider) {
+                            const provEl = document.getElementById('sel-map-provider');
+                            if (provEl) provEl.value = meta.provider;
+                        }
+                        updateMapEstimate();
+                        refreshCacheStatus();
+                        if (typeof updateMap === 'function') updateMap(meta.lat, meta.lon, true);
+                    } else {
+                        updateMapEstimate();
+                        refreshCacheStatus();
+                        const coords = getActiveMapCoords();
+                        if (typeof updateMap === 'function') updateMap(coords.lat, coords.lon, true);
+                    }
                 } else {
                     if (nameRow) nameRow.style.display = 'flex';
                     const preset = getSavedPresets().find(p => p.id === val);
@@ -5388,8 +5498,6 @@
                         updateMapEstimate();
                         refreshCacheStatus();
                         if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
-
-
                     }
                 }
             };
@@ -5414,15 +5522,12 @@
                 const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
                 const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
                 const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
-                const zoom = document.getElementById('map-cache-zoom').value || '18';
+                const zoom = document.getElementById('map-cache-zoom').value || '17';
+                const folder = sanitizePresetFolderName(name);
 
-                if (select && select.value !== 'new') {
-                    updateCustomPreset(select.value, name, lat, lon, rad, zoom);
-                    populatePresetDropdown(select.value);
-                } else {
-                    const newId = saveCustomPreset(name, lat, lon, rad, zoom);
-                    populatePresetDropdown(newId);
-                }
+                let targetId = (select && select.value !== 'new' && !select.value.startsWith('disk_')) ? select.value : ('preset_' + folder);
+                const savedId = saveOrUpdatePreset(targetId, name, lat, lon, rad, zoom, folder);
+                populatePresetDropdown(savedId);
                 refreshCacheStatus();
 
                 // Visual feedback on save button
@@ -5535,31 +5640,15 @@
 
         function syncDiskPresets(diskPresets) {
             if (!Array.isArray(diskPresets)) return;
+            window.lastDiskPresets = diskPresets;
             const select = document.getElementById('map-cache-preset');
             if (!select) return;
-            diskPresets.forEach(dp => {
-                if (dp === 'default' || dp === 'My_Home_Airfield' || dp === 'dem') return;
-                const optVal = 'disk_' + dp;
-                const cleanName = dp.replace(/_/g, ' ');
-                let exists = false;
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value === optVal || select.options[i].innerText.toLowerCase().startsWith(cleanName.toLowerCase())) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    const opt = document.createElement('option');
-                    opt.value = optVal;
-                    opt.innerText = `${cleanName} (Offline Folder)`;
-                    const lastOpt = select.options[select.options.length - 1];
-                    select.insertBefore(opt, lastOpt);
-                }
-            });
+            const currentVal = select.value;
+            populatePresetDropdown(currentVal);
         }
 
         function refreshCacheStatus() {
-            const preset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+            const preset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'My_Home_Airfield';
             fetch(`/api/cache_status?preset=${encodeURIComponent(preset)}`)
                 .then(r => r.json())
                 .then(data => {
@@ -5572,6 +5661,9 @@
                         window.serverIsOnline = data.is_online;
                         updateNetBadge();
                     }
+                    if (data.preset_metadata) {
+                        window.diskPresetMetadata = Object.assign(window.diskPresetMetadata || {}, data.preset_metadata);
+                    }
                     if (Array.isArray(data.available_presets)) {
                         syncDiskPresets(data.available_presets);
                     }
@@ -5583,26 +5675,30 @@
                     const btnDl = document.getElementById('btn-start-cache-dl');
 
                     if (data.is_downloading) {
-                        progBox.style.display = 'flex';
-                        progBar.style.width = data.progress_pct + '%';
-                        progPct.innerText = data.progress_pct + '%';
-                        progStat.innerText = `${data.status} (${data.downloaded + data.cached}/${data.total})`;
-                        btnDl.disabled = true;
-                        btnDl.style.opacity = '0.6';
-                        btnDl.innerText = 'Downloading Airspace Tiles...';
+                        if (progBox) progBox.style.display = 'flex';
+                        if (progBar) progBar.style.width = data.progress_pct + '%';
+                        if (progPct) progPct.innerText = data.progress_pct + '%';
+                        if (progStat) progStat.innerText = `${data.status} (${data.downloaded + data.cached}/${data.total})`;
+                        if (btnDl) {
+                            btnDl.disabled = true;
+                            btnDl.style.opacity = '0.6';
+                            btnDl.innerText = 'Downloading Airspace Tiles...';
+                        }
                     } else {
                         if (cachePollInterval && data.total > 0 && data.progress_pct >= 100) {
                             clearInterval(cachePollInterval);
                             cachePollInterval = null;
-                            progBar.style.width = '100%';
-                            progPct.innerText = '100%';
-                            progStat.innerText = data.status || 'Complete! Ready for Offline Flight.';
-                            btnDl.disabled = false;
-                            btnDl.style.opacity = '1.0';
-                            btnDl.innerText = 'Offline Map Saved (Ready for Field Flight)';
-                            setTimeout(() => {
-                                btnDl.innerText = 'Download Offline Map';
-                            }, 4000);
+                            if (progBar) progBar.style.width = '100%';
+                            if (progPct) progPct.innerText = '100%';
+                            if (progStat) progStat.innerText = data.status || 'Complete! Ready for Offline Flight.';
+                            if (btnDl) {
+                                btnDl.disabled = false;
+                                btnDl.style.opacity = '1.0';
+                                btnDl.innerText = 'Offline Map Saved (Ready for Field Flight)';
+                                setTimeout(() => {
+                                    btnDl.innerText = 'Download Offline Map';
+                                }, 4000);
+                            }
                         }
                     }
                 })
@@ -5620,25 +5716,119 @@
         populatePresetDropdown();
         setInterval(refreshCacheStatus, 4000);
 
-        document.getElementById('btn-start-cache-dl').onclick = () => {
-            const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
-            const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
-            const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
-            const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
-            const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
-            const provider = document.getElementById('sel-map-provider')?.value || 'esri';
-            const presetName = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
+        // Tactical Offline Map Naming & Execution Logic
+        let pendingDownloadConfig = null;
 
+        function openDownloadNameModal(config) {
+            pendingDownloadConfig = config;
+            const modal = document.getElementById('modal-download-map-name');
+            const input = document.getElementById('input-offline-map-name');
+            const folderPrev = document.getElementById('modal-target-folder-preview');
+            const covPrev = document.getElementById('modal-coverage-preview');
+            const estPrev = document.getElementById('modal-est-preview');
+            if (!modal) return;
+
+            const defaultName = config.suggestedName || 'Field Survey Area';
+            if (input) {
+                input.value = defaultName;
+            }
+            if (folderPrev) {
+                folderPrev.innerText = `tile_cache/${sanitizePresetFolderName(defaultName)}/`;
+            }
+            if (covPrev) {
+                covPrev.innerText = config.coverageText || `${config.radiusKm.toFixed(1)} km radius`;
+            }
+            if (estPrev) {
+                estPrev.innerText = config.estText || `~${config.totalTiles || 0} tiles`;
+            }
+
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 60);
+        }
+
+        function closeDownloadNameModal() {
+            const modal = document.getElementById('modal-download-map-name');
+            if (modal) modal.style.display = 'none';
+            pendingDownloadConfig = null;
+        }
+
+        const inputMapName = document.getElementById('input-offline-map-name');
+        if (inputMapName) {
+            inputMapName.addEventListener('input', (e) => {
+                const folderPrev = document.getElementById('modal-target-folder-preview');
+                if (folderPrev) {
+                    const cleanFolder = sanitizePresetFolderName(e.target.value);
+                    folderPrev.innerText = `tile_cache/${cleanFolder}/`;
+                }
+            });
+            inputMapName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('btn-confirm-name-download')?.click();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeDownloadNameModal();
+                }
+            });
+        }
+
+        document.getElementById('btn-close-name-modal')?.addEventListener('click', closeDownloadNameModal);
+        document.getElementById('btn-cancel-name-modal')?.addEventListener('click', closeDownloadNameModal);
+
+        document.getElementById('btn-confirm-name-download')?.addEventListener('click', () => {
+            if (!pendingDownloadConfig) {
+                closeDownloadNameModal();
+                return;
+            }
+            const enteredName = document.getElementById('input-offline-map-name')?.value.trim() || pendingDownloadConfig.suggestedName || 'Field Map Area';
+            const folderName = sanitizePresetFolderName(enteredName);
+            const cfg = { ...pendingDownloadConfig, name: enteredName, folder: folderName };
+            closeDownloadNameModal();
+
+            // 1. Register / Save into Presets
+            let presetId = 'preset_' + folderName;
+            saveOrUpdatePreset(presetId, enteredName, cfg.lat, cfg.lon, cfg.radiusKm, cfg.zooms[0], folderName);
+            populatePresetDropdown(presetId);
+            const nameInput = document.getElementById('map-cache-name');
+            if (nameInput) nameInput.value = enteredName;
+
+            // 2. Execute Precache
+            executeMapPrecache(cfg);
+        });
+
+        function executeMapPrecache(cfg) {
             const progBox = document.getElementById('map-cache-prog-box');
-            progBox.style.display = 'flex';
-            document.getElementById('map-cache-prog-bar').style.width = '2%';
-            document.getElementById('map-cache-prog-pct').innerText = '0%';
-            document.getElementById('map-cache-prog-status').innerText = 'Starting multi-threaded download...';
+            if (progBox) progBox.style.display = 'flex';
+            const progBar = document.getElementById('map-cache-prog-bar');
+            if (progBar) progBar.style.width = '2%';
+            const progPct = document.getElementById('map-cache-prog-pct');
+            if (progPct) progPct.innerText = '0%';
+            const progStat = document.getElementById('map-cache-prog-status');
+            if (progStat) progStat.innerText = `Starting download for ${cfg.name}...`;
+
+            const btnDl = document.getElementById('btn-start-cache-dl');
+            if (btnDl) {
+                btnDl.disabled = true;
+                btnDl.style.opacity = '0.6';
+                btnDl.innerText = 'Downloading Airspace Tiles...';
+            }
 
             fetch('/api/cache_region', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lon, radius_km: rad, zooms, provider, preset: presetName })
+                body: JSON.stringify({
+                    lat: cfg.lat,
+                    lon: cfg.lon,
+                    radius_km: cfg.radiusKm,
+                    zooms: cfg.zooms,
+                    provider: cfg.provider,
+                    preset: cfg.folder
+                })
             })
             .then(r => r.json())
             .then(res => {
@@ -5647,8 +5837,47 @@
             })
             .catch(err => {
                 alert('Error starting download: ' + err);
+                if (btnDl) {
+                    btnDl.disabled = false;
+                    btnDl.style.opacity = '1.0';
+                    btnDl.innerText = 'Download Offline Map';
+                }
             });
-        };
+        }
+
+        const btnStartCacheDl = document.getElementById('btn-start-cache-dl');
+        if (btnStartCacheDl) {
+            btnStartCacheDl.onclick = () => {
+                const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
+                const lon = parseFloat(document.getElementById('map-cache-lon').value || 77.3137);
+                const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
+                const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : (rad <= 14.0 ? 15 : 14)));
+                const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
+                const provider = document.getElementById('sel-map-provider')?.value || 'esri';
+
+                let suggested = 'Field Airspace Area';
+                const presetSelect = document.getElementById('map-cache-preset');
+                const nameInput = document.getElementById('map-cache-name');
+                if (nameInput && nameInput.value.trim()) {
+                    suggested = nameInput.value.trim();
+                } else if (presetSelect && presetSelect.value && presetSelect.value !== 'default' && presetSelect.value !== 'new') {
+                    suggested = presetSelect.options[presetSelect.selectedIndex]?.text.replace(/ \(Offline Folder\)$/, '').replace(/ \(\d+ tiles\)$/, '') || 'Field Airspace Area';
+                } else {
+                    suggested = `Airfield ${rad.toFixed(1)}km Area`;
+                }
+
+                openDownloadNameModal({
+                    suggestedName: suggested,
+                    lat: lat,
+                    lon: lon,
+                    radiusKm: rad,
+                    zooms: zooms,
+                    provider: provider,
+                    coverageText: `${rad.toFixed(1)} km radius (${Math.round(Math.pow(rad * 2, 2))} sq km) at ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`,
+                    estText: document.getElementById('map-cache-est-text')?.innerText || `~${zooms.length * 100} tiles`
+                });
+            };
+        }
 
         const btnCacheCorridor = document.getElementById('btn-cache-corridor');
         if (btnCacheCorridor) {
@@ -5687,7 +5916,22 @@
                     radSelect.value = bestVal;
                 }
                 updateMapEstimate();
-                document.getElementById('btn-start-cache-dl').click();
+
+                const rad = parseFloat(document.getElementById('map-cache-radius')?.value || corridorRadiusKm);
+                const optZoom = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 3.0 ? 17 : (rad <= 7.0 ? 16 : 15));
+                const zooms = Array.from(new Set([optZoom, Math.max(10, optZoom - 1), Math.max(10, optZoom - 2)]));
+                const provider = document.getElementById('sel-map-provider')?.value || 'esri';
+
+                openDownloadNameModal({
+                    suggestedName: 'Flight Mission Corridor',
+                    lat: centerLat,
+                    lon: centerLon,
+                    radiusKm: rad,
+                    zooms: zooms,
+                    provider: provider,
+                    coverageText: `Flight Corridor (${corridorRadiusKm.toFixed(1)} km radius covering ${validWps.length} waypoints)`,
+                    estText: document.getElementById('map-cache-est-text')?.innerText || `~${Math.round(corridorRadiusKm * 150)} tiles`
+                });
             };
         }
 
@@ -9722,7 +9966,7 @@
                         initEkfHome(data.lat, data.lon);
                     } else {
                         const activePreset = document.getElementById('map-cache-preset')?.value || 'default';
-                        if (activePreset === 'default' || activePreset === 'telemetry') {
+                        if (activePreset !== 'new') {
                             const isTabVisible = !document.hidden && (Date.now() - lastRenderTime < 400);
                             if (!isTabVisible) {
                                 pendingTileRefresh = true;
