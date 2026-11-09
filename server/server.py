@@ -411,26 +411,35 @@ async def mavlink_listener():
     last_auto_scan_time = 0
 
     while True:
-        # If in auto mode on udpin:127.0.0.1:14551 (Mission Planner mirror) and no heartbeat arrives after 3.5s,
-        # check if direct ArduPilot SITL instance is running on tcp:127.0.0.1:5762
+        # If in auto mode on udpin:127.0.0.1:14551 (Mission Planner mirror) and no heartbeat arrives after 3.0s,
+        # check if direct ArduPilot SITL instance is running on tcp:127.0.0.1:5762, 5763, or 5760
         now = time.time()
-        if is_auto_target and not heartbeat_received and not MAVLINK_DEVICE.startswith('tcp:127.0.0.1:5762'):
+        if is_auto_target and not heartbeat_received and not MAVLINK_DEVICE.startswith('tcp:'):
             if last_auto_scan_time == 0:
                 last_auto_scan_time = now
-            elif now - last_auto_scan_time > 3.5:
+            elif now - last_auto_scan_time > 3.0:
                 last_auto_scan_time = now
-                if check_port_listening('127.0.0.1', 5762):
+                found_port = None
+                for candidate in (5762, 5763, 5760):
+                    if check_port_listening('127.0.0.1', candidate):
+                        found_port = candidate
+                        break
+                if found_port:
                     try:
-                        print("[MAVLink Auto-Discovery] No Mission Planner mirror detected on 14551. Direct SITL instance found on tcp:127.0.0.1:5762! Connecting directly...")
-                        new_conn = mavutil.mavlink_connection('tcp:127.0.0.1:5762')
+                        print(f"[MAVLink Auto-Discovery] No Mission Planner mirror detected on 14551. Direct SITL instance found on tcp:127.0.0.1:{found_port}! Connecting directly...")
+                        try:
+                            connection.close()
+                        except Exception:
+                            pass
+                        new_conn = mavutil.mavlink_connection(f'tcp:127.0.0.1:{found_port}')
                         connection = new_conn
                         mission_handler.conn = connection
-                        MAVLINK_DEVICE = 'tcp:127.0.0.1:5762'
-                        MAVLINK_URL = 'tcp:127.0.0.1:5762'
+                        MAVLINK_DEVICE = f'tcp:127.0.0.1:{found_port}'
+                        MAVLINK_URL = f'tcp:127.0.0.1:{found_port}'
                         is_network_sitl = True
                         detected_fc_hardware = "SITL"
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[MAVLink Auto-Discovery] Error connecting to tcp:127.0.0.1:{found_port}: {e}")
 
         try:
             msg = connection.recv_match(
