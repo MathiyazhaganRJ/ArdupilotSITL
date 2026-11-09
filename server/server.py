@@ -1113,7 +1113,12 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
         return None
     try:
         if provider == 'esri':
-            url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            if z > 18:
+                # ESRI World Imagery terminates at Zoom 18 in this region. Seamlessly fallback to Google Satellite for sub-meter zoom!
+                mt = abs(x + y) % 4
+                url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+            else:
+                url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         elif provider == 'google_hybrid':
             mt = abs(x + y) % 4
             url = f"https://mt{mt}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
@@ -1124,7 +1129,20 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
         with urllib.request.urlopen(req, timeout=8) as resp:
             if resp.status == 200:
-                return resp.read()
+                data = resp.read()
+                # If ESRI returned its 2,521-byte "No Imagery Available" placeholder, fallback to Google Satellite
+                if len(data) == 2521 and provider == 'esri':
+                    try:
+                        mt = abs(x + y) % 4
+                        g_url = f"https://mt{mt}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                        g_req = urllib.request.Request(g_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                        with urllib.request.urlopen(g_req, timeout=8) as g_resp:
+                            if g_resp.status == 200:
+                                return g_resp.read()
+                    except Exception:
+                        pass
+                    return None
+                return data
     except Exception:
         return None
     return None
@@ -1220,20 +1238,20 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
         tile_path = os.path.join(target_cache_dir, tile_filename)
 
-        # Check if already cached under any valid name for this provider
+        # Check if already cached under any valid name for this provider (skip 2521-byte placeholders)
         for aname in target_names:
             p1 = os.path.join(target_cache_dir, aname)
             p2 = os.path.join(tile_cache_dir, aname)
             p3 = os.path.join(tile_cache_dir, 'My_Home_Airfield', aname)
-            if os.path.exists(p1) and os.path.getsize(p1) > 100:
+            if os.path.exists(p1) and os.path.getsize(p1) > 100 and os.path.getsize(p1) != 2521:
                 return 'CACHED'
-            if os.path.exists(p2) and os.path.getsize(p2) > 100:
+            if os.path.exists(p2) and os.path.getsize(p2) > 100 and os.path.getsize(p2) != 2521:
                 try:
                     shutil.copy2(p2, tile_path)
                     return 'CACHED'
                 except Exception:
                     pass
-            if os.path.exists(p3) and os.path.getsize(p3) > 100:
+            if os.path.exists(p3) and os.path.getsize(p3) > 100 and os.path.getsize(p3) != 2521:
                 try:
                     shutil.copy2(p3, tile_path)
                     return 'CACHED'
@@ -1241,7 +1259,7 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
                     pass
 
         data = fetch_tile(z, x, y, provider=provider)
-        if data and len(data) > 100:
+        if data and len(data) > 100 and len(data) != 2521:
             try:
                 with open(tile_path, 'wb') as f:
                     f.write(data)
@@ -1311,7 +1329,7 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
     for sdir in search_dirs:
         for suff in candidate_suffixes:
             cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
-            if os.path.exists(cand) and os.path.getsize(cand) > 100:
+            if os.path.exists(cand) and os.path.getsize(cand) > 100 and os.path.getsize(cand) != 2521:
                 try:
                     with open(cand, 'rb') as f:
                         return f.read(), 'image/jpeg'
@@ -1323,7 +1341,7 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
         for sdir in search_dirs:
             for suff in ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']:
                 cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
-                if os.path.exists(cand) and os.path.getsize(cand) > 100:
+                if os.path.exists(cand) and os.path.getsize(cand) > 100 and os.path.getsize(cand) != 2521:
                     try:
                         with open(cand, 'rb') as f:
                             return f.read(), 'image/jpeg'
@@ -1333,7 +1351,7 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
     # 2. If online/auto mode and internet is reachable, fetch tile from remote server
     if mode != 'offline' and check_internet_reachability():
         data = fetch_tile(z, x, y, provider=provider, lyrs=lyrs)
-        if data and len(data) > 100:
+        if data and len(data) > 100 and len(data) != 2521:
             target_path = os.path.join(preset_dir, f"{z}_{x}_{y}{pref_suffix}")
             try:
                 with open(target_path, 'wb') as f:

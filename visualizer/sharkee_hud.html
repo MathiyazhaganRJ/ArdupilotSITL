@@ -4504,12 +4504,19 @@
                     <span id="modal-target-folder-preview" style="font-family: monospace; color: #34c759; font-weight: 600;">tile_cache/.../</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Resolution / LOD:</span>
+                    <span id="modal-resolution-preview" style="color: #ff9f0a; font-weight: 700;">Zoom 17 (1.1m/px)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
                     <span style="color: #86868b;">Airspace Coverage:</span>
                     <span id="modal-coverage-preview" style="font-weight: 600;">3.0 km radius</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                     <span style="color: #86868b;">Estimated Size:</span>
                     <span id="modal-est-preview" style="color: #0071e3; font-weight: 700;">~611 tiles (~17.1 MB)</span>
+                </div>
+                <div id="modal-advisory-box" style="display: none; margin-top: 4px; padding: 6px 8px; background: rgba(255, 159, 10, 0.12); border-left: 3px solid #ff9f0a; border-radius: 4px; font-size: 10px; color: #ff9f0a; line-height: 1.35;">
+                    Large area detected. For fastest download and maximum sharpness, 'Download Flight Plan Corridor' is recommended.
                 </div>
             </div>
 
@@ -5614,7 +5621,7 @@
         function updateMapEstimate() {
             const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
             const lat = parseFloat(document.getElementById('map-cache-lat')?.value || 8.3105);
-            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : (rad <= 1.5 ? 18 : (rad <= 3.5 ? 17 : (rad <= 7.0 ? 16 : 14)));
+            const z = (typeof getOptimalZoom === 'function') ? getOptimalZoom(rad) : 17;
             const targetZooms = Array.from(new Set([z, Math.max(10, z - 1), Math.max(10, z - 2)]));
             let totalTiles = 0;
             targetZooms.forEach(zi => {
@@ -5625,7 +5632,13 @@
             const sqKm = Math.round(Math.pow(rad * 2, 2));
             const estMb = (totalTiles * 0.028).toFixed(1);
             const estEl = document.getElementById('map-cache-est-text');
-            if (estEl) estEl.innerText = `~${totalTiles} tiles (~${estMb} MB, ${sqKm.toLocaleString()} sq km) [Zooms ${targetZooms.join(', ')}]`;
+            if (estEl) {
+                if (totalTiles > 4000) {
+                    estEl.innerText = `~${totalTiles.toLocaleString()} tiles (~${estMb} MB) [Zooms ${targetZooms.join(', ')}] (Tip: use Corridor or <=10km)`;
+                } else {
+                    estEl.innerText = `~${totalTiles.toLocaleString()} tiles (~${estMb} MB, ${sqKm.toLocaleString()} sq km) [Zooms ${targetZooms.join(', ')}]`;
+                }
+            }
         }
 
         document.getElementById('map-cache-radius').onchange = () => {
@@ -5726,6 +5739,8 @@
             const folderPrev = document.getElementById('modal-target-folder-preview');
             const covPrev = document.getElementById('modal-coverage-preview');
             const estPrev = document.getElementById('modal-est-preview');
+            const resPrev = document.getElementById('modal-resolution-preview');
+            const advBox = document.getElementById('modal-advisory-box');
             if (!modal) return;
 
             const defaultName = config.suggestedName || 'Field Survey Area';
@@ -5740,6 +5755,24 @@
             }
             if (estPrev) {
                 estPrev.innerText = config.estText || `~${config.totalTiles || 0} tiles`;
+            }
+            if (resPrev && config.zooms && config.zooms.length > 0) {
+                const z0 = config.zooms[0];
+                const resLabel = (z0 === 20) ? 'Zoom 20 (0.15m/px Ultra - Sub-Meter)' :
+                                 (z0 === 19) ? 'Zoom 19 (0.3m/px Recon)' :
+                                 (z0 === 18) ? 'Zoom 18 (0.59m/px 2x Sharper)' :
+                                 (z0 === 17) ? 'Zoom 17 (1.1m/px Ultra-Crisp)' :
+                                 (z0 === 16) ? 'Zoom 16 (2.3m/px High-Res)' :
+                                 (z0 === 15) ? 'Zoom 15 (4.7m/px Hi-Def)' : `Zoom ${z0}`;
+                resPrev.innerText = `${resLabel} [Zooms ${config.zooms.join(', ')}]`;
+            }
+            if (advBox) {
+                if (config.radiusKm >= 15.0 && config.zooms && config.zooms[0] >= 17) {
+                    advBox.style.display = 'block';
+                    advBox.innerText = `Note: Large area (${config.radiusKm.toFixed(0)} km) at Zoom ${config.zooms[0]} takes longer to download. For fast caching, 'Download Flight Plan Corridor' or a smaller radius is recommended.`;
+                } else {
+                    advBox.style.display = 'none';
+                }
             }
 
             modal.style.display = 'flex';
@@ -8031,26 +8064,21 @@
 
         function getOptimalZoom(radiusKm) {
             const zoomSelect = document.getElementById('map-cache-zoom')?.value;
-            let targetZoom = 17;
+            // 1. If user explicitly chose a resolution level, 100% honor their manual selection!
             if (zoomSelect && zoomSelect !== 'auto') {
                 const parsed = parseInt(zoomSelect);
                 if (!isNaN(parsed) && parsed >= 10 && parsed <= 20) {
-                    targetZoom = parsed;
+                    return parsed;
                 }
-            } else {
-                targetZoom = (radiusKm <= 1.5 ? 18 : (radiusKm <= 3.5 ? 17 : (radiusKm <= 7.0 ? 16 : (radiusKm <= 14.0 ? 15 : 14))));
             }
-
-            // WebGL Memory & Performance Guard: Cap zoom levels for large operational radiuses
-            // Guarantees solid 60 FPS and prevents out-of-memory browser tab crashes for massive 50-300 km areas
-            if (radiusKm >= 200.0 && targetZoom > 11) targetZoom = 11;
-            else if (radiusKm >= 80.0 && targetZoom > 12) targetZoom = 12;
-            else if (radiusKm >= 40.0 && targetZoom > 13) targetZoom = 13;
-            else if (radiusKm >= 20.0 && targetZoom > 14) targetZoom = 14;
-            else if (radiusKm >= 10.0 && targetZoom > 15) targetZoom = 15;
-            else if (radiusKm >= 5.0 && targetZoom > 16) targetZoom = 16;
-            else if (radiusKm > 2.5 && targetZoom > 19) targetZoom = 19;
-            return targetZoom;
+            // 2. Auto Optimal mode: dynamically pick best zoom based on operational radius
+            if (radiusKm <= 1.5) return 18;
+            if (radiusKm <= 4.0) return 17;
+            if (radiusKm <= 10.0) return 16;
+            if (radiusKm <= 25.0) return 15;
+            if (radiusKm <= 60.0) return 14;
+            if (radiusKm <= 120.0) return 13;
+            return 12;
         }
 
         // Render Ground-Level Tactical Airspace Range Rings & Perimeter
@@ -8420,9 +8448,10 @@
             }
 
             // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
-            // Dynamically sized to user-selected airspace radius (up to 300km / 360,000 sq km)
+            // Dynamically sized to user-selected airspace radius with Zoom-adaptive WebGL performance guard
             const radMeters = radiusKm * 1000;
-            const gridSpan = Math.max(5, Math.min(26, Math.ceil(radMeters / tileSize) + 1));
+            const maxSpanByZoom = (activeZoom >= 19) ? 16 : ((activeZoom >= 18) ? 14 : ((activeZoom >= 17) ? 12 : 26));
+            const gridSpan = Math.max(5, Math.min(maxSpanByZoom, Math.ceil(radMeters / tileSize) + 1));
 
             const terrainOffsets = [];
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
