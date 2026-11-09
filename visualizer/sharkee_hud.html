@@ -12509,6 +12509,10 @@
         }
 
         window.addEventListener('keydown', (e) => {
+            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                window.location.reload();
+                return;
+            }
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'v' || e.key === 'V') {
                 // Toggle 2D Flat Satellite Map vs 3D Topography
