@@ -1088,7 +1088,29 @@ opensky_cache = {
     'data': []
 }
 
+is_online = True
+last_connectivity_check = 0
+
+def check_internet_reachability():
+    global is_online, last_connectivity_check
+    now = time.time()
+    if now - last_connectivity_check < 4.0:
+        return is_online
+    last_connectivity_check = now
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.7)
+        s.connect(('8.8.8.8', 53))
+        s.close()
+        is_online = True
+    except Exception:
+        is_online = False
+    return is_online
+
 def fetch_tile(z, x, y, provider='esri', lyrs='s'):
+    if not check_internet_reachability():
+        return None
     try:
         if provider == 'esri':
             url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -1100,7 +1122,7 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
             url = f"https://mt{mt}.google.com/vt/lyrs={lyrs}&x={x}&y={y}&z={z}"
             
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=8) as resp:
             if resp.status == 200:
                 return resp.read()
     except Exception:
@@ -1108,10 +1130,12 @@ def fetch_tile(z, x, y, provider='esri', lyrs='s'):
     return None
 
 def fetch_dem_tile(z, x, y):
+    if not check_internet_reachability():
+        return None
     try:
         url = f"https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-        with urllib.request.urlopen(req, timeout=8) as resp:
+        with urllib.request.urlopen(req, timeout=6) as resp:
             if resp.status == 200:
                 return resp.read()
     except Exception:
@@ -1256,10 +1280,12 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
     preset_dir = os.path.join(tile_cache_dir, preset_folder)
     os.makedirs(preset_dir, exist_ok=True)
 
-    # Strictly isolated search dirs for this preset to prevent patchwork cross-contamination
+    # Search hierarchy: active preset dir -> My_Home_Airfield -> root tile_cache
     search_dirs = [preset_dir]
-    if preset_folder == 'default':
-        search_dirs.append(os.path.join(tile_cache_dir, 'My_Home_Airfield'))
+    home_dir = os.path.join(tile_cache_dir, 'My_Home_Airfield')
+    if os.path.exists(home_dir) and home_dir not in search_dirs:
+        search_dirs.append(home_dir)
+    if tile_cache_dir not in search_dirs:
         search_dirs.append(tile_cache_dir)
 
     # 1. Look for exact tile on disk matching provider
@@ -1274,7 +1300,7 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
                     pass
 
     # 1b. If in offline mode and requested provider tile not found, accept ANY cached tile in this preset
-    if mode == 'offline':
+    if mode == 'offline' or not check_internet_reachability():
         for sdir in search_dirs:
             for suff in ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']:
                 cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
@@ -1285,8 +1311,8 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
                     except Exception:
                         pass
 
-    # 2. If online/auto mode, fetch tile from remote server
-    if mode != 'offline':
+    # 2. If online/auto mode and internet is reachable, fetch tile from remote server
+    if mode != 'offline' and check_internet_reachability():
         data = fetch_tile(z, x, y, provider=provider, lyrs=lyrs)
         if data and len(data) > 100:
             target_path = os.path.join(preset_dir, f"{z}_{x}_{y}{pref_suffix}")
@@ -1399,8 +1425,8 @@ def find_or_synthesize_dem(z, x, y, mode='auto'):
         except Exception:
             pass
 
-    # 2. Remote DEM fetch if online
-    if mode != 'offline':
+    # 2. Remote DEM fetch if online and reachable
+    if mode != 'offline' and check_internet_reachability():
         data = fetch_dem_tile(dem_z, dem_x, dem_y)
         if data and len(data) > 100:
             try:
@@ -1640,6 +1666,12 @@ def start_http_server():
 
                     total_mb = total_bytes / (1024 * 1024)
 
+                    available_folders = []
+                    if os.path.exists(tile_cache_dir):
+                        for item in os.listdir(tile_cache_dir):
+                            if os.path.isdir(os.path.join(tile_cache_dir, item)) and item != 'dem':
+                                available_folders.append(item)
+
                     resp = {
                         "preset_folder": preset_folder,
                         "preset_dir": f"tile_cache/{preset_folder}/",
@@ -1647,6 +1679,8 @@ def start_http_server():
                         "cached_mb": round(preset_mb, 2),
                         "total_cached_count": total_files_count,
                         "total_cached_mb": round(total_mb, 2),
+                        "is_online": check_internet_reachability(),
+                        "available_presets": available_folders,
                         "is_downloading": precache_state["is_downloading"],
                         "progress_pct": precache_state["progress_pct"],
                         "downloaded": precache_state["downloaded"],

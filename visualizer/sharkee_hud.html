@@ -3715,6 +3715,10 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     Download Offline Map
                 </button>
+                <button id="btn-cache-corridor" style="width: 100%; justify-content: center; padding: 7px; font-size: 11px; font-weight: 700; background: rgba(0,113,227,0.12); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-top: 6px;" title="Calculate bounding envelope of all mission waypoints and pre-cache entire flight path">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    Download Flight Plan Corridor
+                </button>
                 <div id="map-cache-prog-box" style="display: none; flex-direction: column; gap: 4px; margin-top: 8px;">
                     <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 600;">
                         <span id="map-cache-prog-status" style="color: var(--accent);">Downloading...</span>
@@ -5141,6 +5145,7 @@
             selMapMode.onchange = (e) => {
                 const newMode = e.target.value;
                 localStorage.setItem('pilot_map_mode', newMode);
+                updateNetBadge();
                 const coords = getActiveMapCoords();
                 const latInput = document.getElementById('map-cache-lat');
                 const lonInput = document.getElementById('map-cache-lon');
@@ -5172,12 +5177,16 @@
                 updateTileStreamingBadge();
                 return;
             }
-            if (navigator.onLine) {
+            const mode = document.getElementById('sel-map-mode')?.value || localStorage.getItem('pilot_map_mode') || 'auto';
+            if (mode === 'offline') {
+                badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #0071e3; display: inline-block;"></span> OFFLINE (LOCAL DISK)';
+                badge.style.color = '#0a84ff';
+            } else if (window.serverIsOnline === false || !navigator.onLine) {
+                badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warning); display: inline-block;"></span> OFFLINE (NO INTERNET)';
+                badge.style.color = 'var(--warning)';
+            } else {
                 badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block;"></span> ONLINE LIVE';
                 badge.style.color = 'var(--success)';
-            } else {
-                badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warning); display: inline-block;"></span> OFFLINE DISK';
-                badge.style.color = 'var(--warning)';
             }
         }
         window.addEventListener('online', updateNetBadge);
@@ -5524,6 +5533,31 @@
 
         let cachePollInterval = null;
 
+        function syncDiskPresets(diskPresets) {
+            if (!Array.isArray(diskPresets)) return;
+            const select = document.getElementById('map-cache-preset');
+            if (!select) return;
+            diskPresets.forEach(dp => {
+                if (dp === 'default' || dp === 'My_Home_Airfield' || dp === 'dem') return;
+                const optVal = 'disk_' + dp;
+                const cleanName = dp.replace(/_/g, ' ');
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === optVal || select.options[i].innerText.toLowerCase().startsWith(cleanName.toLowerCase())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = optVal;
+                    opt.innerText = `${cleanName} (Offline Folder)`;
+                    const lastOpt = select.options[select.options.length - 1];
+                    select.insertBefore(opt, lastOpt);
+                }
+            });
+        }
+
         function refreshCacheStatus() {
             const preset = (typeof getActivePresetName === 'function') ? getActivePresetName() : 'default';
             fetch(`/api/cache_status?preset=${encodeURIComponent(preset)}`)
@@ -5533,6 +5567,14 @@
                     const dirEl = document.getElementById('map-cache-dir-label');
                     if (countEl) countEl.innerText = `${data.cached_count} tiles (${data.cached_mb} MB)`;
                     if (dirEl && data.preset_dir) dirEl.innerText = data.preset_dir;
+
+                    if (typeof data.is_online === 'boolean') {
+                        window.serverIsOnline = data.is_online;
+                        updateNetBadge();
+                    }
+                    if (Array.isArray(data.available_presets)) {
+                        syncDiskPresets(data.available_presets);
+                    }
 
                     const progBox = document.getElementById('map-cache-prog-box');
                     const progBar = document.getElementById('map-cache-prog-bar');
@@ -5576,6 +5618,7 @@
         refreshCacheStatus();
         updateMapEstimate();
         populatePresetDropdown();
+        setInterval(refreshCacheStatus, 4000);
 
         document.getElementById('btn-start-cache-dl').onclick = () => {
             const lat = parseFloat(document.getElementById('map-cache-lat').value || 8.3105);
@@ -5606,6 +5649,47 @@
                 alert('Error starting download: ' + err);
             });
         };
+
+        const btnCacheCorridor = document.getElementById('btn-cache-corridor');
+        if (btnCacheCorridor) {
+            btnCacheCorridor.onclick = () => {
+                const validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
+                if (validWps.length === 0) {
+                    alert('No mission waypoints loaded yet. Please sync flight plan from Mission Planner / SITL first.');
+                    return;
+                }
+                let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+                validWps.forEach(w => {
+                    if (w.lat < minLat) minLat = w.lat;
+                    if (w.lat > maxLat) maxLat = w.lat;
+                    if (w.lon < minLon) minLon = w.lon;
+                    if (w.lon > maxLon) maxLon = w.lon;
+                });
+                const centerLat = (minLat + maxLat) / 2;
+                const centerLon = (minLon + maxLon) / 2;
+                const dLatKm = Math.abs(maxLat - minLat) * 111.0;
+                const dLonKm = Math.abs(maxLon - minLon) * 111.0 * Math.cos(centerLat * Math.PI / 180);
+                const routeSpanKm = Math.sqrt(dLatKm * dLatKm + dLonKm * dLonKm);
+                const corridorRadiusKm = Math.max(3.0, Math.ceil((routeSpanKm / 2) + 2.5));
+
+                document.getElementById('map-cache-lat').value = centerLat.toFixed(4);
+                document.getElementById('map-cache-lon').value = centerLon.toFixed(4);
+
+                const radSelect = document.getElementById('map-cache-radius');
+                if (radSelect) {
+                    let bestVal = '3';
+                    for (let opt of radSelect.options) {
+                        if (parseFloat(opt.value) >= corridorRadiusKm) {
+                            bestVal = opt.value;
+                            break;
+                        }
+                    }
+                    radSelect.value = bestVal;
+                }
+                updateMapEstimate();
+                document.getElementById('btn-start-cache-dl').click();
+            };
+        }
 
         // Restore user toggle preferences
         if (localStorage.getItem('compass_visible') === '0') {
