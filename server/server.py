@@ -58,18 +58,8 @@ def parse_mavlink_target():
         target = explicit
     else:
         is_auto = True
-        # Smart Auto-Discovery:
-        # Check if ArduPilot SITL TCP port 5762 is open (highest reliability, 100% offline localhost, zero Mission Planner conflict)
-        if check_port_listening('127.0.0.1', 5762):
-            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5762 (Direct Offline/Online Link)")
-            return 'tcp:127.0.0.1:5762', baud, is_auto
-        elif check_port_listening('127.0.0.1', 5763):
-            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5763")
-            return 'tcp:127.0.0.1:5763', baud, is_auto
-        elif check_port_listening('127.0.0.1', 5760):
-            print("[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on tcp:127.0.0.1:5760")
-            return 'tcp:127.0.0.1:5760', baud, is_auto
-        # Default UDP fallback
+        # Default to Mission Planner MAVLink Mirror port (udpin:127.0.0.1:14551)
+        # Enables direct telemetry mirroring from Mission Planner Ctrl+F MAVLink mirror
         target = 'udpin:127.0.0.1:14551'
 
     if ':' in target and not target.startswith(('udp', 'tcp')):
@@ -421,14 +411,17 @@ async def mavlink_listener():
     last_auto_scan_time = 0
 
     while True:
-        # If in auto mode and no heartbeat received yet on UDP, periodically scan if SITL started on tcp:127.0.0.1:5762
+        # If in auto mode on udpin:127.0.0.1:14551 (Mission Planner mirror) and no heartbeat arrives after 3.5s,
+        # check if direct ArduPilot SITL instance is running on tcp:127.0.0.1:5762
         now = time.time()
         if is_auto_target and not heartbeat_received and not MAVLINK_DEVICE.startswith('tcp:127.0.0.1:5762'):
-            if now - last_auto_scan_time > 1.0:
+            if last_auto_scan_time == 0:
+                last_auto_scan_time = now
+            elif now - last_auto_scan_time > 3.5:
                 last_auto_scan_time = now
                 if check_port_listening('127.0.0.1', 5762):
                     try:
-                        print("[MAVLink Auto-Discovery] ArduPilot SITL launched on tcp:127.0.0.1:5762! Connecting directly...")
+                        print("[MAVLink Auto-Discovery] No Mission Planner mirror detected on 14551. Direct SITL instance found on tcp:127.0.0.1:5762! Connecting directly...")
                         new_conn = mavutil.mavlink_connection('tcp:127.0.0.1:5762')
                         connection = new_conn
                         mission_handler.conn = connection
