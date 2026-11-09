@@ -9969,36 +9969,8 @@
             const validWps = (Array.isArray(missionWaypoints) ? missionWaypoints : []).filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
             if (validWps.length === 0) return;
 
-            // Ensure terrain map tiles exist beneath all mission waypoints and transit flight corridors
-            if (typeof updateMap === 'function' && validWps.length > 0 && !window._missionTilesLoaded) {
-                window._missionTilesLoaded = true;
-                const startLat = (homeLat !== null) ? homeLat : validWps[0].lat;
-                const startLon = (homeLon !== null) ? homeLon : validWps[0].lon;
-
-                // Seamlessly bridge the transit corridor from Home to the mission area (eliminates black gaps)
-                const corridorPoints = [{ lat: startLat, lon: startLon }, ...validWps];
-                for (let i = 0; i < corridorPoints.length - 1; i++) {
-                    const pA = corridorPoints[i];
-                    const pB = corridorPoints[i + 1];
-                    const dLat = pB.lat - pA.lat;
-                    const dLon = pB.lon - pA.lon;
-                    const distKm = Math.hypot(dLat * 111.0, dLon * 111.0 * Math.cos(pA.lat * Math.PI / 180));
-                    if (distKm > 2.5) {
-                        const steps = Math.ceil(distKm / 3.0);
-                        for (let s = 1; s <= steps; s++) {
-                            const frac = s / steps;
-                            updateMap(pA.lat + dLat * frac, pA.lon + dLon * frac, false);
-                        }
-                    }
-                }
-
-                // Also ensure the survey centroid has full coverage
-                let sumLat = 0, sumLon = 0;
-                validWps.forEach(w => { sumLat += w.lat; sumLon += w.lon; });
-                const avgLat = sumLat / validWps.length;
-                const avgLon = sumLon / validWps.length;
-                updateMap(avgLat, avgLon, false);
-            }
+            // Live streaming strictly follows aircraft current location.
+            // Full waypoint route corridor caching is available on-demand via CACHE CORRIDOR in the drawer.
 
             const allPts = [];
 
