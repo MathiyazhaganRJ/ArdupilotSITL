@@ -3335,7 +3335,7 @@
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         </button>
-                <button class="toolbar-btn active" id="btn-toggle-coverage" title="Toggle 2D Survey Coverage Swath (1.0 km Corridor)">
+        <button class="toolbar-btn" id="btn-toggle-coverage" title="Toggle 2D Survey Coverage Swath (1.0 km Corridor)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="16" rx="2" stroke-dasharray="2 2"></rect>
                 <line x1="12" y1="4" x2="12" y2="20"></line>
@@ -3569,8 +3569,8 @@
                         2D SURVEY COVERAGE SWATH
                     </span>
                     <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
-                        <input type="checkbox" id="chk-toggle-coverage-swath" checked style="accent-color: #00e5ff; width: 14px; height: 14px; cursor: pointer;">
-                        <span id="coverage-swath-status" style="font-size: 9.5px; font-weight: 700; color: #00e5ff;">ACTIVE</span>
+                        <input type="checkbox" id="chk-toggle-coverage-swath" style="accent-color: #00e5ff; width: 14px; height: 14px; cursor: pointer;">
+                        <span id="coverage-swath-status" style="font-size: 9.5px; font-weight: 700; color: var(--text-secondary);">OFF</span>
                     </label>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -4709,9 +4709,13 @@
             localStorage.setItem('pilot_coverage_swath', vis ? '1' : '0');
         }
 
+        // Default Survey Swath to OFF unless explicitly saved as '1'
+        const initialSwathVisible = (localStorage.getItem('pilot_coverage_swath') === '1');
+        setCoverageSwathVisible(initialSwathVisible);
+
         if (btnToggleCoverage) {
             btnToggleCoverage.onclick = () => {
-                const curVis = (typeof flightCoverageGroup !== 'undefined') ? flightCoverageGroup.visible : true;
+                const curVis = (typeof flightCoverageGroup !== 'undefined') ? flightCoverageGroup.visible : false;
                 setCoverageSwathVisible(!curVis);
             };
         }
@@ -6219,6 +6223,8 @@
         let planeGroundTrack = null;// Degrees [0..360)
         let planeAirspeed = 0;      // m/s
         let planeGroundspeed = 0;   // m/s
+        let currentFlightMode = 'GUIDED'; // Auto, Loiter, Guided, RTL, etc.
+        window.currentFlightMode = 'GUIDED';
         
         // Genuine ArduPlane MAVLink Telemetry Wind (Direct Mission Planner readings)
         let planeWindSpd = 0.0;     // m/s
@@ -7421,7 +7427,7 @@
         flightCoverageGroup.add(coverageSwathMesh);
         flightCoverageGroup.add(leftEdgeLine);
         flightCoverageGroup.add(rightEdgeLine);
-        flightCoverageGroup.visible = (localStorage.getItem('pilot_coverage_swath') !== '0');
+        flightCoverageGroup.visible = (localStorage.getItem('pilot_coverage_swath') === '1');
         scene.add(flightCoverageGroup);
 
         const flownTrackSamples = [];
@@ -8763,12 +8769,22 @@
                 if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
                 if (typeof clearFlightCoverage === 'function') clearFlightCoverage();
             } else {
-                // Throttle incremental checks during flight (~55m position threshold)
-                // Independent of aircraft heading to guarantee 100% stable map during loiter/orbit
+                // Tactical Loiter Lock & Spatial Hysteresis
+                // When in LOITER, CIRCLE, QLOITER, or orbiting, freeze the map anchor completely.
+                // In normal transit flight, require >= 280m (approx 1 full tile) displacement before shifting the grid.
+                // This eliminates the periodic unrendering/re-rendering loop during turns and orbits, keeping a 100% constant map perimeter.
+                const isLoiterState = (typeof currentFlightMode === 'string') && 
+                    (currentFlightMode.includes('LOITER') || currentFlightMode.includes('CIRCLE') || currentFlightMode.includes('QLOITER'));
+                
                 const dLat = Math.abs(lat - lastMapUpdateLat);
                 const dLon = Math.abs(lon - lastMapUpdateLon);
-                if (dLat < 0.0005 && dLon < 0.0005) {
-                    return;
+                const distMovedM = Math.sqrt(Math.pow(dLat * 111320, 2) + Math.pow(dLon * 111320 * Math.cos(lat * Math.PI / 180), 2));
+                
+                // If in loiter/circle, freeze grid unless aircraft leaves area (>500m).
+                // In forward flight, update only when displaced >= 280m (~1 tile), keeping the perimeter perfectly stationary during maneuvers.
+                const hysteresisThreshold = isLoiterState ? 500.0 : Math.max(280.0, (typeof tileSize === 'number' ? tileSize * 0.85 : 280.0));
+                if (distMovedM < hysteresisThreshold) {
+                    return; // 100% constant map perimeter during loiter and localized flight!
                 }
             }
 
@@ -8935,17 +8951,31 @@
             const gridSpan = Math.ceil(radMeters / tileSize) + 1;
             const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
 
+            const activeFlightHdg = (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.2 && typeof planeGroundTrack === 'number' && planeGroundTrack !== null) 
+                                    ? planeGroundTrack 
+                                    : ((typeof planeHeading === 'number') ? planeHeading : 0);
+            const hdgRad = (activeFlightHdg % 360) * (Math.PI / 180.0);
+            // Tile coordinates: +X is East, +Y is South
+            // Heading 0° is North (dx=0, dy=-1), 90° is East (dx=1, dy=0), 180° is South (dx=0, dy=1), 270° is West (dx=-1, dy=0)
+            const forwardX = Math.sin(hdgRad);
+            const forwardY = -Math.cos(hdgRad);
+
             const terrainOffsets = [];
             for (let dx = -gridSpan; dx <= gridSpan; dx++) {
                 for (let dy = -gridSpan; dy <= gridSpan; dy++) {
                     const distSq = (dx * tileSize) * (dx * tileSize) + (dy * tileSize) * (dy * tileSize);
                     if (distSq <= maxDistSq) {
-                        terrainOffsets.push({ dx, dy, distSq });
+                        const dist = Math.sqrt(distSq);
+                        // Forward alignment: +1 for directly ahead, -1 for directly behind
+                        const fwdAlignment = dist > 0 ? ((dx * forwardX + dy * forwardY) / (dist / tileSize)) : 0;
+                        // Prioritize tiles directly under aircraft and along the forward flight cone
+                        const priorityScore = distSq - (2.5 * tileSize * radMeters * Math.max(0, fwdAlignment));
+                        terrainOffsets.push({ dx, dy, distSq, priorityScore });
                     }
                 }
             }
-            // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
-            terrainOffsets.sort((a, b) => a.distSq - b.distSq);
+            // Flight-vector prioritized: tiles in flight direction load first!
+            terrainOffsets.sort((a, b) => a.priorityScore - b.priorityScore);
 
             for (const { dx, dy } of terrainOffsets) {
                 const tx = currentTileX + dx;
@@ -9106,9 +9136,32 @@
                 }
             }
 
+            // Predictive Flight-Vector Lookahead Prefetch
+            // Pre-fetches tiles 600m-1200m ahead of the visible boundary along the aircraft's velocity vector
+            // Ensures forward tiles are already in browser/SSD cache before their 3D meshes are spawned!
+            if (typeof planeGroundspeed === 'number' && planeGroundspeed > 2.5) {
+                const lookaheadStepMin = Math.ceil(radMeters / tileSize);
+                const lookaheadStepMax = Math.ceil((radMeters + 1200) / tileSize);
+                if (!window._prefetchedTileSet) window._prefetchedTileSet = new Set();
+                for (let step = lookaheadStepMin; step <= lookaheadStepMax; step++) {
+                    for (let latOff = -1; latOff <= 1; latOff++) {
+                        const pTx = Math.round(currentTileX + forwardX * step - forwardY * latOff);
+                        const pTy = Math.round(currentTileY + forwardY * step + forwardX * latOff);
+                        const pKey = `p_${activeZoom}_${pTx}_${pTy}_${provider}`;
+                        if (!window._prefetchedTileSet.has(pKey)) {
+                            window._prefetchedTileSet.add(pKey);
+                            if (window._prefetchedTileSet.size > 2500) window._prefetchedTileSet.clear();
+                            const pUrl = `/tiles/${activeZoom}/${pTx}/${pTy}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                            const preImg = new Image();
+                            preImg.src = pUrl;
+                        }
+                    }
+                }
+            }
+
             // High-Performance Stable 3D Scene Tile Eviction
-            // Pure radial distance eviction guarantees zero corner jumping during turns and loiter!
-            const MAX_SCENE_TILES_3D = 350;
+            // Pure radial distance eviction with hysteresis buffer guarantees zero corner jumping during turns and loiter!
+            const MAX_SCENE_TILES_3D = 550;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
                 const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
                 const homeTx = Math.floor(homeTileXFloat);
@@ -9122,7 +9175,7 @@
 
                         const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                         const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
-                        if (distToPlane <= gridSpan) return; // Keep active circle around plane
+                        if (distToPlane <= (gridSpan + 2)) return; // Keep active circle plus 2-tile buffer around plane
                         if (distToHome <= (gridSpan + 1)) return; // Protect home airfield
 
                         scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
@@ -10395,6 +10448,8 @@
                     if (prevMode !== data.mode && prevMode !== 'UNKNOWN') {
                         addAutopilotMessage({ text: `Flight Mode: ${data.mode}`, severity: 5 });
                     }
+                    currentFlightMode = data.mode;
+                    window.currentFlightMode = data.mode;
                     document.getElementById('f_mode').innerText = data.mode;
                     const annunMode = document.getElementById('annun-flight-mode');
                     if (annunMode) annunMode.innerText = data.mode;
@@ -12089,7 +12144,7 @@
             const btnCov = document.getElementById('btn-toggle-coverage');
             const cardCov = document.getElementById('card-coverage-swath');
             if (typeof flightCoverageGroup !== 'undefined') {
-                const userEnabled = localStorage.getItem('pilot_coverage_swath') !== '0';
+                const userEnabled = localStorage.getItem('pilot_coverage_swath') === '1';
                 flightCoverageGroup.visible = userEnabled;
                 if (btnCov) {
                     btnCov.style.opacity = '1.0';
