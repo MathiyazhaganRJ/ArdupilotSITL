@@ -3335,6 +3335,12 @@
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         </button>
+                <button class="toolbar-btn active" id="btn-toggle-coverage" title="Toggle 2D Survey Coverage Swath (1.0 km Corridor)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2" stroke-dasharray="2 2"></rect>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+            </svg>
+        </button>
         <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Terrain Profile">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -3553,6 +3559,29 @@
                     <input type="checkbox" id="chk-toggle-map-vis" checked style="accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer;">
                     <span id="map-vis-status" style="font-size: 10px; font-weight: 700; color: var(--success);">ACTIVE</span>
                 </label>
+            </div>
+
+            <!-- 2D Survey Coverage Swath Card -->
+            <div id="card-coverage-swath" class="data-card" style="margin-bottom: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 5px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2" stroke-dasharray="2 2"></rect><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                        2D SURVEY COVERAGE SWATH
+                    </span>
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 6px;">
+                        <input type="checkbox" id="chk-toggle-coverage-swath" checked style="accent-color: #00e5ff; width: 14px; height: 14px; cursor: pointer;">
+                        <span id="coverage-swath-status" style="font-size: 9.5px; font-weight: 700; color: #00e5ff;">ACTIVE</span>
+                    </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 9.5px; color: var(--text-secondary); font-weight: 600;">SWATH WIDTH</span>
+                    <select id="sel-coverage-width" style="background: var(--btn-bg); color: #00e5ff; border: 1px solid var(--border-color); border-radius: 4px; padding: 3px 6px; font-size: 10.5px; font-weight: 700; outline: none; cursor: pointer;">
+                        <option value="500">0.5 km (±250m)</option>
+                        <option value="1000" selected>1.0 km (±500m) - Standard</option>
+                        <option value="2000">2.0 km (±1.0km) - Wide</option>
+                        <option value="3000">3.0 km (±1.5km) - Tactical</option>
+                    </select>
+                </div>
             </div>
 
             <!-- 3D Topographic DEM Elevation (Corv-GCS Engine) -->
@@ -4647,6 +4676,47 @@
                 }
             }
         };
+
+        const btnToggleCoverage = document.getElementById('btn-toggle-coverage');
+        const chkToggleCoverageSwath = document.getElementById('chk-toggle-coverage-swath');
+        const selCoverageWidth = document.getElementById('sel-coverage-width');
+        const coverageSwathStatus = document.getElementById('coverage-swath-status');
+
+        function setCoverageSwathVisible(vis) {
+            if (typeof flightCoverageGroup !== 'undefined') {
+                flightCoverageGroup.visible = vis && !terrain3DEnabled;
+            }
+            if (chkToggleCoverageSwath) chkToggleCoverageSwath.checked = vis;
+            if (btnToggleCoverage) btnToggleCoverage.classList.toggle('active', vis);
+            if (coverageSwathStatus) {
+                coverageSwathStatus.innerText = vis ? 'ACTIVE' : 'OFF';
+                coverageSwathStatus.style.color = vis ? '#00e5ff' : 'var(--text-secondary)';
+            }
+            localStorage.setItem('pilot_coverage_swath', vis ? '1' : '0');
+        }
+
+        if (btnToggleCoverage) {
+            btnToggleCoverage.onclick = () => {
+                const curVis = (typeof flightCoverageGroup !== 'undefined') ? flightCoverageGroup.visible : true;
+                setCoverageSwathVisible(!curVis);
+            };
+        }
+        if (chkToggleCoverageSwath) {
+            chkToggleCoverageSwath.onchange = (e) => {
+                setCoverageSwathVisible(e.target.checked);
+            };
+        }
+        if (selCoverageWidth) {
+            selCoverageWidth.onchange = () => {
+                coverageSwathWidth = parseFloat(selCoverageWidth.value) || 1000.0;
+                localStorage.setItem('pilot_coverage_swath_width', String(coverageSwathWidth));
+            };
+            const savedWidth = localStorage.getItem('pilot_coverage_swath_width');
+            if (savedWidth) {
+                selCoverageWidth.value = savedWidth;
+                coverageSwathWidth = parseFloat(savedWidth) || 1000.0;
+            }
+        }
 
         // Compass & Weather Toolbar Toggles
         const btnToggleCompass = document.getElementById('btn-toggle-compass');
@@ -7262,6 +7332,202 @@
         scene.add(trailLine);
 
         // ==========================================
+        // 2D HISTORICAL FLOWN COVERAGE SWATH (SURVEY FOOTPRINT RIBBON)
+        // Retains full flown GPS history in 2D for 200 km missions with selectable swath width
+        // ==========================================
+        const MAX_COVERAGE_POINTS = 25000;
+        let coveragePointCount = 0;
+        const coverageVertices = new Float32Array(MAX_COVERAGE_POINTS * 2 * 3);
+        const coverageIndices = new Uint32Array((MAX_COVERAGE_POINTS - 1) * 6);
+
+        for (let i = 0; i < MAX_COVERAGE_POINTS - 1; i++) {
+            const baseV = i * 2;
+            const baseI = i * 6;
+            coverageIndices[baseI + 0] = baseV;
+            coverageIndices[baseI + 1] = baseV + 1;
+            coverageIndices[baseI + 2] = baseV + 2;
+            coverageIndices[baseI + 3] = baseV + 1;
+            coverageIndices[baseI + 4] = baseV + 3;
+            coverageIndices[baseI + 5] = baseV + 2;
+        }
+
+        const coverageGeo = new THREE.BufferGeometry();
+        coverageGeo.setAttribute('position', new THREE.BufferAttribute(coverageVertices, 3).setUsage(THREE.DynamicDrawUsage));
+        coverageGeo.setIndex(new THREE.BufferAttribute(coverageIndices, 1));
+        coverageGeo.setDrawRange(0, 0);
+
+        const coverageMat = new THREE.MeshBasicMaterial({
+            color: 0x00e5ff,
+            transparent: true,
+            opacity: 0.22,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            depthTest: false
+        });
+
+        const coverageSwathMesh = new THREE.Mesh(coverageGeo, coverageMat);
+        coverageSwathMesh.renderOrder = 2;
+
+        const leftEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
+        const rightEdgePos = new Float32Array(MAX_COVERAGE_POINTS * 3);
+
+        const leftEdgeGeo = new THREE.BufferGeometry();
+        leftEdgeGeo.setAttribute('position', new THREE.BufferAttribute(leftEdgePos, 3).setUsage(THREE.DynamicDrawUsage));
+        leftEdgeGeo.setDrawRange(0, 0);
+
+        const rightEdgeGeo = new THREE.BufferGeometry();
+        rightEdgeGeo.setAttribute('position', new THREE.BufferAttribute(rightEdgePos, 3).setUsage(THREE.DynamicDrawUsage));
+        rightEdgeGeo.setDrawRange(0, 0);
+
+        const edgeMat = new THREE.LineBasicMaterial({
+            color: 0x00e5ff,
+            transparent: true,
+            opacity: 0.65,
+            depthWrite: false,
+            depthTest: false
+        });
+
+        const leftEdgeLine = new THREE.Line(leftEdgeGeo, edgeMat);
+        const rightEdgeLine = new THREE.Line(rightEdgeGeo, edgeMat);
+        leftEdgeLine.renderOrder = 3;
+        rightEdgeLine.renderOrder = 3;
+
+        const flightCoverageGroup = new THREE.Group();
+        flightCoverageGroup.name = 'flightCoverageGroup';
+        flightCoverageGroup.add(coverageSwathMesh);
+        flightCoverageGroup.add(leftEdgeLine);
+        flightCoverageGroup.add(rightEdgeLine);
+        flightCoverageGroup.visible = !terrain3DEnabled;
+        scene.add(flightCoverageGroup);
+
+        const flownTrackSamples = [];
+        const flownTileKeys = new Set();
+        let coverageSwathWidth = 1000.0;
+        const lastCoverageSamplePos = new THREE.Vector3(1e9, 1e9, 1e9);
+
+        function addCoverageSample(pos, headingDeg) {
+            if (!pos || isNaN(pos.x) || isNaN(pos.z)) return;
+            const dist = pos.distanceTo(lastCoverageSamplePos);
+            if (dist < 15.0 && coveragePointCount > 0) {
+                updateLeadingTip(pos, headingDeg);
+                return;
+            }
+
+            if (coveragePointCount >= MAX_COVERAGE_POINTS - 1) {
+                coverageVertices.copyWithin(0, 2 * 3);
+                leftEdgePos.copyWithin(0, 3);
+                rightEdgePos.copyWithin(0, 3);
+                coveragePointCount--;
+            }
+
+            const halfW = coverageSwathWidth * 0.5;
+            const rad = ((headingDeg || 0) % 360) * (Math.PI / 180.0);
+            const nx = Math.cos(rad);
+            const nz = Math.sin(rad);
+            const groundY = -1.8;
+
+            const lx = pos.x - nx * halfW;
+            const lz = pos.z - nz * halfW;
+            const rx = pos.x + nx * halfW;
+            const rz = pos.z + nz * halfW;
+
+            const vIdx = coveragePointCount * 2;
+            coverageVertices[vIdx * 3 + 0] = lx;
+            coverageVertices[vIdx * 3 + 1] = groundY;
+            coverageVertices[vIdx * 3 + 2] = lz;
+
+            coverageVertices[(vIdx + 1) * 3 + 0] = rx;
+            coverageVertices[(vIdx + 1) * 3 + 1] = groundY;
+            coverageVertices[(vIdx + 1) * 3 + 2] = rz;
+
+            leftEdgePos[coveragePointCount * 3 + 0] = lx;
+            leftEdgePos[coveragePointCount * 3 + 1] = groundY;
+            leftEdgePos[coveragePointCount * 3 + 2] = lz;
+
+            rightEdgePos[coveragePointCount * 3 + 0] = rx;
+            rightEdgePos[coveragePointCount * 3 + 1] = groundY;
+            rightEdgePos[coveragePointCount * 3 + 2] = rz;
+
+            coveragePointCount++;
+            lastCoverageSamplePos.copy(pos);
+
+            if (currentPlaneLat && currentPlaneLon) {
+                flownTrackSamples.push({ lat: currentPlaneLat, lon: currentPlaneLon, x: pos.x, z: pos.z });
+                if (flownTrackSamples.length > 8000) {
+                    flownTrackSamples.splice(0, 100);
+                }
+            }
+
+            if (typeof activeZoom === 'number' && typeof homeTileXFloat === 'number' && tileSize) {
+                const tx = Math.floor(homeTileXFloat + (pos.x / tileSize));
+                const ty = Math.floor(homeTileYFloat + (pos.z / tileSize));
+                const spanTiles = Math.ceil(halfW / tileSize);
+                for (let stx = -spanTiles; stx <= spanTiles; stx++) {
+                    for (let sty = -spanTiles; sty <= spanTiles; sty++) {
+                        flownTileKeys.add(`${activeZoom}_${tx + stx}_${ty + sty}`);
+                    }
+                }
+            }
+
+            if (coveragePointCount > 1) {
+                coverageGeo.setDrawRange(0, (coveragePointCount - 1) * 6);
+                coverageGeo.attributes.position.needsUpdate = true;
+
+                leftEdgeGeo.setDrawRange(0, coveragePointCount);
+                leftEdgeGeo.attributes.position.needsUpdate = true;
+
+                rightEdgeGeo.setDrawRange(0, coveragePointCount);
+                rightEdgeGeo.attributes.position.needsUpdate = true;
+            }
+        }
+
+        function updateLeadingTip(pos, headingDeg) {
+            if (coveragePointCount <= 0) return;
+            const halfW = coverageSwathWidth * 0.5;
+            const rad = ((headingDeg || 0) % 360) * (Math.PI / 180.0);
+            const nx = Math.cos(rad);
+            const nz = Math.sin(rad);
+            const groundY = -1.8;
+
+            const tipIdx = (coveragePointCount - 1) * 2;
+            const lx = pos.x - nx * halfW;
+            const lz = pos.z - nz * halfW;
+            const rx = pos.x + nx * halfW;
+            const rz = pos.z + nz * halfW;
+
+            coverageVertices[tipIdx * 3 + 0] = lx;
+            coverageVertices[tipIdx * 3 + 1] = groundY;
+            coverageVertices[tipIdx * 3 + 2] = lz;
+
+            coverageVertices[(tipIdx + 1) * 3 + 0] = rx;
+            coverageVertices[(tipIdx + 1) * 3 + 1] = groundY;
+            coverageVertices[(tipIdx + 1) * 3 + 2] = rz;
+
+            leftEdgePos[(coveragePointCount - 1) * 3 + 0] = lx;
+            leftEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
+            leftEdgePos[(coveragePointCount - 1) * 3 + 2] = lz;
+
+            rightEdgePos[(coveragePointCount - 1) * 3 + 0] = rx;
+            rightEdgePos[(coveragePointCount - 1) * 3 + 1] = groundY;
+            rightEdgePos[(coveragePointCount - 1) * 3 + 2] = rz;
+
+            coverageGeo.attributes.position.needsUpdate = true;
+            leftEdgeGeo.attributes.position.needsUpdate = true;
+            rightEdgeGeo.attributes.position.needsUpdate = true;
+        }
+
+        function reloadFlown2DTiles() {
+            if (!flownTrackSamples || flownTrackSamples.length === 0) return;
+            const step = Math.max(1, Math.floor(flownTrackSamples.length / 40));
+            for (let i = 0; i < flownTrackSamples.length; i += step) {
+                const s = flownTrackSamples[i];
+                if (s && s.lat && s.lon && typeof updateMap === 'function') {
+                    updateMap(s.lat, s.lon, false);
+                }
+            }
+        }
+
+        // ==========================================
         // DEAD RECKONING 3D VISUAL SUITE
         // ==========================================
         const drGroup = new THREE.Group();
@@ -8120,7 +8386,7 @@
         let currentMapRadius = null;
         let currentMapProvider = null;
         let currentMapMode = null;
-        let lastMapUpdateLat = 0, lastMapUpdateLon = 0;
+        let lastMapUpdateLat = 0, lastMapUpdateLon = 0, lastMapUpdateHdg = 0;
         let pendingTileRefresh = false;
         let mapGeneration = 0;
 
@@ -8351,10 +8617,22 @@
 
                 if (typeof initHomeElevation === 'function') initHomeElevation(refLat, refLon);
             } else {
-                // Throttle incremental checks during flight (~50m threshold)
+                // Throttle incremental checks during flight (~50m threshold or >15° heading change in 3D)
                 const dLat = Math.abs(lat - lastMapUpdateLat);
                 const dLon = Math.abs(lon - lastMapUpdateLon);
-                if (dLat < 0.0005 && dLon < 0.0005) {
+                let hdgTrigger = false;
+                if (terrain3DEnabled) {
+                    let curHdg = (planeGroundspeed > 0.8 && planeGroundTrack !== null) ? planeGroundTrack : planeHeading;
+                    if (typeof curHdg === 'number' && !isNaN(curHdg)) {
+                        let dHdg = Math.abs(curHdg - lastMapUpdateHdg);
+                        while (dHdg > 180) dHdg = Math.abs(dHdg - 360);
+                        if (dHdg > 15) {
+                            hdgTrigger = true;
+                            lastMapUpdateHdg = curHdg;
+                        }
+                    }
+                }
+                if (dLat < 0.0005 && dLon < 0.0005 && !hdgTrigger) {
                     return;
                 }
             }
@@ -8474,8 +8752,8 @@
                     }
                 }
 
-                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles
-                const MAX_SCENE_TILES = 3000;
+                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles (up to 3500 tiles)
+                const MAX_SCENE_TILES = 3500;
                 if (mapGroup.children.length > MAX_SCENE_TILES) {
                     const excess = mapGroup.children.length - MAX_SCENE_TILES;
                     const homeTx = Math.floor(homeTileXFloat);
@@ -8483,6 +8761,10 @@
                     const scored = [];
                     mapGroup.children.forEach(m => {
                         if (m.userData && m.userData.tx !== undefined) {
+                            const tileCoordKey = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}`;
+                            // Protect tiles under the flown track and survey coverage swath
+                            if (typeof flownTileKeys !== 'undefined' && flownTileKeys.has(tileCoordKey)) return;
+
                             const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                             const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
                             if (distToHome <= span) return; // Protect home airfield
@@ -8512,20 +8794,47 @@
                 horizonGroup.visible = true;
             }
 
-            // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Architecture)
-            // Dynamically sized to user-selected airspace radius with Zoom-adaptive WebGL performance guard
-            const radMeters = radiusKm * 1000;
-            const maxSpanByZoom = (activeZoom >= 19) ? 16 : ((activeZoom >= 18) ? 14 : ((activeZoom >= 17) ? 12 : 26));
-            const gridSpan = Math.max(5, Math.min(maxSpanByZoom, Math.ceil(radMeters / tileSize) + 1));
+            // Macro-Chunk Terrain Grid (Corv-GCS High-Performance Forward Directional Architecture)
+            // 3.5 km forward lookahead along track, 1.8-2.0 km lateral corridor, 0.5 km rear cutoff
+            let trackHdg = (planeGroundspeed > 0.8 && planeGroundTrack !== null) ? planeGroundTrack : planeHeading;
+            if (typeof trackHdg !== 'number' || isNaN(trackHdg)) trackHdg = 0;
+
+            const trkRad = (trackHdg % 360) * (Math.PI / 180.0);
+            const sinHdg = Math.sin(trkRad);
+            const cosHdg = Math.cos(trkRad);
+
+            const fwdLookaheadMeters = 3500;      // 3.5 km forward along track
+            const lateralHalfWidthMeters = 1000;  // 1.0 km left, 1.0 km right (2.0 km corridor)
+            const rearCutoffMeters = 500;         // 0.5 km behind aircraft tail
+            const isStationary = (planeGroundspeed < 0.5 && (!firstPos || !isArmed));
+            const staticAirfieldRadiusMeters = 1200; // 1.2 km circular preview on ground
+
+            const maxEnvelopeMeters = Math.max(fwdLookaheadMeters, lateralHalfWidthMeters) + tileSize;
+            const maxSpan = Math.ceil(maxEnvelopeMeters / tileSize);
 
             const terrainOffsets = [];
-            for (let dx = -gridSpan; dx <= gridSpan; dx++) {
-                for (let dy = -gridSpan; dy <= gridSpan; dy++) {
-                    terrainOffsets.push({ dx, dy, distSq: dx * dx + dy * dy });
+            for (let dx = -maxSpan; dx <= maxSpan; dx++) {
+                for (let dy = -maxSpan; dy <= maxSpan; dy++) {
+                    const eastM = dx * tileSize;
+                    const northM = -dy * tileSize;
+                    const distForward = eastM * sinHdg + northM * cosHdg;
+                    const distCross = Math.abs(eastM * cosHdg - northM * sinHdg);
+                    const distCenterSq = eastM * eastM + northM * northM;
+
+                    let inEnvelope = false;
+                    if (distForward >= -rearCutoffMeters && distForward <= fwdLookaheadMeters && distCross <= lateralHalfWidthMeters) {
+                        inEnvelope = true;
+                    } else if (isStationary && distCenterSq <= (staticAirfieldRadiusMeters * staticAirfieldRadiusMeters)) {
+                        inEnvelope = true;
+                    }
+
+                    if (inEnvelope) {
+                        const score = Math.max(0, distForward) * 0.35 + distCross * 1.0;
+                        terrainOffsets.push({ dx, dy, score, distForward, distCross });
+                    }
                 }
             }
-            // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
-            terrainOffsets.sort((a, b) => a.distSq - b.distSq);
+            terrainOffsets.sort((a, b) => a.score - b.score);
 
             for (const { dx, dy } of terrainOffsets) {
                 const tx = currentTileX + dx;
@@ -8686,22 +8995,36 @@
                 }
             }
 
-            // Persistent 3D Flight Map: Retain all past flown tiles and home airfield tiles
-            const MAX_SCENE_TILES_3D = 3000;
+            // High-Performance 3D Directional Eviction: Aggressively cull chunks behind tail
+            // Locks 3D GPU vertex load at max 120 tiles (~40MB VRAM) and guarantees flat 60 FPS
+            const MAX_SCENE_TILES_3D = 120;
             if (mapGroup.children.length > MAX_SCENE_TILES_3D) {
-                const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
-                const homeTx = Math.floor(homeTileXFloat);
-                const homeTy = Math.floor(homeTileYFloat);
                 const scored = [];
                 mapGroup.children.forEach(m => {
                     if (m.userData && m.userData.tx !== undefined) {
-                        const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
-                        const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
-                        if (distToHome <= (gridSpan + 2)) return; // Protect home airfield
-                        scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
+                        const dx = m.userData.tx - currentTileX;
+                        const dy = m.userData.ty - currentTileY;
+                        const eastM = dx * tileSize;
+                        const northM = -dy * tileSize;
+                        const distForward = eastM * sinHdg + northM * cosHdg;
+                        const distCross = Math.abs(eastM * cosHdg - northM * sinHdg);
+
+                        let evictScore = 0;
+                        if (distForward < -rearCutoffMeters) {
+                            evictScore = 20000 + Math.abs(distForward);
+                        } else if (distCross > (lateralHalfWidthMeters + tileSize)) {
+                            evictScore = 10000 + distCross;
+                        } else if (distForward > (fwdLookaheadMeters + tileSize)) {
+                            evictScore = 5000 + distForward;
+                        } else {
+                            evictScore = distForward * 0.1;
+                        }
+                        scored.push({ mesh: m, evictScore });
                     }
                 });
-                scored.sort((a, b) => b.score - a.score);
+
+                scored.sort((a, b) => b.evictScore - a.evictScore);
+                const excess = mapGroup.children.length - MAX_SCENE_TILES_3D;
                 const toRemove = scored.slice(0, excess);
                 toRemove.forEach(({ mesh: m }) => {
                     const k = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}_${provider}_${activePreset}`;
@@ -10483,6 +10806,12 @@
                 trailGeo.setDrawRange(0, trailCount + 1);
                 trailGeo.attributes.position.needsUpdate = true;
                 trailGeo.attributes.color.needsUpdate = true;
+
+                // Update 2D Historical Survey Coverage Swath
+                if (typeof addCoverageSample === 'function') {
+                    const smHdg = (planeGroundspeed > 0.8 && planeGroundTrack !== null) ? planeGroundTrack : planeHeading;
+                    addCoverageSample(currentTrackPos, smHdg);
+                }
             }
 
             let m_fr = parseInt(document.getElementById('m_fr').value), m_bl = parseInt(document.getElementById('m_bl').value),
@@ -11678,6 +12007,22 @@
                 status.innerText = terrain3DEnabled ? '3D ACTIVE' : 'FLAT MESH';
                 status.style.color = terrain3DEnabled ? 'var(--success)' : 'var(--text-secondary)';
             }
+
+            // Update 2D Survey Coverage Swath visibility and toolbar pill
+            const btnCov = document.getElementById('btn-toggle-coverage');
+            const cardCov = document.getElementById('card-coverage-swath');
+            if (typeof flightCoverageGroup !== 'undefined') {
+                const userEnabled = localStorage.getItem('pilot_coverage_swath') !== '0';
+                flightCoverageGroup.visible = !terrain3DEnabled && userEnabled;
+                if (btnCov) {
+                    btnCov.style.opacity = terrain3DEnabled ? '0.35' : '1.0';
+                    btnCov.style.pointerEvents = terrain3DEnabled ? 'none' : 'auto';
+                    btnCov.title = terrain3DEnabled ? 'Coverage Swath (Active in 2D Mode)' : 'Toggle Flown Survey Coverage Swath';
+                }
+                if (cardCov) {
+                    cardCov.style.opacity = terrain3DEnabled ? '0.45' : '1.0';
+                }
+            }
         }
 
         function setTerrain3DMode(enable) {
@@ -11702,12 +12047,15 @@
             if (currentPlaneLat && currentPlaneLon && (Math.abs(currentPlaneLat - targetLat) > 0.001 || Math.abs(currentPlaneLon - targetLon) > 0.001)) {
                 updateMap(currentPlaneLat, currentPlaneLon, false);
             }
+            if (!terrain3DEnabled && typeof reloadFlown2DTiles === 'function') {
+                reloadFlown2DTiles();
+            }
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
 
             if (typeof showTacticalAlert === 'function') {
-                showTacticalAlert(terrain3DEnabled ? "MAP MODE: 3D TOPOGRAPHY" : "MAP MODE: 2D FLAT SATELLITE", 1600);
+                showTacticalAlert(terrain3DEnabled ? "MAP MODE: 3D TOPOGRAPHY (3.5KM FORWARD STREAMING)" : "MAP MODE: 2D FLAT SATELLITE (FULL TRACK RETENTION)", 1600);
             }
         }
 
