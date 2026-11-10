@@ -1312,17 +1312,28 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
     mode_desc = f"corridor ({len(waypoints)} WPs)" if is_corridor else f"{radius_km}km radius"
     precache_state["status"] = f"Downloading {total} tiles [{mode_desc}] for {preset_folder}..."
 
-    # Pre-collect all available cache search directories for fast local hit detection
+    # Pre-collect cache search directories strictly matching requested provider family
     search_dirs = [target_cache_dir]
     if os.path.exists(tile_cache_dir):
         try:
             for sub in os.listdir(tile_cache_dir):
                 s_path = os.path.join(tile_cache_dir, sub)
                 if os.path.isdir(s_path) and s_path not in search_dirs and sub != 'dem':
-                    search_dirs.append(s_path)
+                    sub_meta = os.path.join(s_path, 'metadata.json')
+                    sub_prov = 'esri'
+                    if os.path.exists(sub_meta):
+                        try:
+                            with open(sub_meta, 'r', encoding='utf-8') as smf:
+                                sub_prov = json.load(smf).get('provider', 'esri')
+                        except Exception:
+                            pass
+                    if (provider in ('google', 'google_hybrid') and sub_prov in ('google', 'google_hybrid')) or \
+                       (provider == 'esri' and sub_prov == 'esri'):
+                        search_dirs.append(s_path)
         except Exception:
             pass
-    if tile_cache_dir not in search_dirs:
+    # Only append root tile_cache if provider is ESRI (since root tile_cache contains legacy ESRI tiles)
+    if provider == 'esri' and tile_cache_dir not in search_dirs:
         search_dirs.append(tile_cache_dir)
 
     def proc_tile(tile_info):
@@ -1345,17 +1356,17 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
 
         if provider == 'google':
             tile_filename = f"{z}_{x}_{y}_google.jpg"
-            target_names = [f"{z}_{x}_{y}_google.jpg", f"{z}_{x}_{y}.jpg"]
+            target_names = [f"{z}_{x}_{y}_google.jpg"]
         elif provider == 'google_hybrid':
             tile_filename = f"{z}_{x}_{y}_google_hybrid.jpg"
-            target_names = [f"{z}_{x}_{y}_google_hybrid.jpg", f"{z}_{x}_{y}_y.jpg"]
+            target_names = [f"{z}_{x}_{y}_google_hybrid.jpg"]
         else: # esri default
             tile_filename = f"{z}_{x}_{y}_esri.jpg"
-            target_names = [f"{z}_{x}_{y}_esri.jpg"]
+            target_names = [f"{z}_{x}_{y}_esri.jpg", f"{z}_{x}_{y}.jpg"]
 
         tile_path = os.path.join(target_cache_dir, tile_filename)
 
-        # Check if already cached in target preset or ANY existing preset (skip 2521-byte placeholders)
+        # Check if already cached in target preset or matching provider preset (skip 2521-byte placeholders)
         for aname in target_names:
             p1 = os.path.join(target_cache_dir, aname)
             if os.path.exists(p1) and os.path.getsize(p1) > 100 and os.path.getsize(p1) != 2521:
@@ -1431,17 +1442,28 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
     preset_dir = os.path.join(tile_cache_dir, preset_folder)
     os.makedirs(preset_dir, exist_ok=True)
 
-    # Search hierarchy: active preset dir -> ALL other preset dirs in tile_cache -> root tile_cache
+    # Search hierarchy: active preset dir first
     search_dirs = [preset_dir]
     if os.path.exists(tile_cache_dir):
         try:
             for sub in os.listdir(tile_cache_dir):
                 s_path = os.path.join(tile_cache_dir, sub)
                 if os.path.isdir(s_path) and s_path not in search_dirs and sub != 'dem':
-                    search_dirs.append(s_path)
+                    sub_meta = os.path.join(s_path, 'metadata.json')
+                    sub_prov = 'esri'
+                    if os.path.exists(sub_meta):
+                        try:
+                            with open(sub_meta, 'r', encoding='utf-8') as smf:
+                                sub_prov = json.load(smf).get('provider', 'esri')
+                        except Exception:
+                            pass
+                    if (provider in ('google', 'google_hybrid') and sub_prov in ('google', 'google_hybrid')) or \
+                       (provider == 'esri' and sub_prov == 'esri'):
+                        search_dirs.append(s_path)
         except Exception:
             pass
-    if tile_cache_dir not in search_dirs:
+    # Only search root tile_cache if provider is ESRI (since root tile_cache contains legacy ESRI tiles)
+    if provider == 'esri' and tile_cache_dir not in search_dirs:
         search_dirs.append(tile_cache_dir)
 
     # 1. Look for exact tile on disk matching provider
@@ -1455,10 +1477,11 @@ def find_or_synthesize_tile(z, x, y, provider='esri', preset='default', mode='au
                 except Exception:
                     pass
 
-    # 1b. If in offline mode and requested provider tile not found, accept ANY cached tile in this preset
+    # 1b. If in offline mode, accept cached tile strictly within requested provider family
     if mode == 'offline' or not check_internet_reachability():
+        offline_suffixes = candidate_suffixes if provider in ('google', 'google_hybrid') else ['_esri.jpg', '.jpg']
         for sdir in search_dirs:
-            for suff in ['_esri.jpg', '_google.jpg', '_google_hybrid.jpg', '.jpg']:
+            for suff in offline_suffixes:
                 cand = os.path.join(sdir, f"{z}_{x}_{y}{suff}")
                 if os.path.exists(cand) and os.path.getsize(cand) > 100 and os.path.getsize(cand) != 2521:
                     try:
@@ -1786,11 +1809,23 @@ def start_http_server():
                         target_dir = os.path.join(tile_cache_dir, preset_folder)
                         if os.path.exists(target_dir):
                             for f in os.listdir(target_dir):
-                                if f.endswith('.jpg'):
+                                if f.endswith('.jpg') or f.endswith('.png'):
                                     try:
                                         os.remove(os.path.join(target_dir, f))
                                         cleared_count += 1
                                     except Exception: pass
+                            # Synchronize metadata.json to reflect 0 cached tiles
+                            meta_file = os.path.join(target_dir, 'metadata.json')
+                            if os.path.exists(meta_file):
+                                try:
+                                    with open(meta_file, 'r', encoding='utf-8') as mf:
+                                        mdata = json.load(mf)
+                                    mdata['tiles_cached'] = 0
+                                    mdata['updated_at'] = time.time()
+                                    with open(meta_file, 'w', encoding='utf-8') as mf:
+                                        json.dump(mdata, mf, indent=2)
+                                except Exception:
+                                    pass
                     else:
                         for root, dirs, files in os.walk(tile_cache_dir):
                             for f in files:
@@ -1799,6 +1834,16 @@ def start_http_server():
                                         os.remove(os.path.join(root, f))
                                         cleared_count += 1
                                     except Exception: pass
+                                elif f == 'metadata.json':
+                                    try:
+                                        mf_path = os.path.join(root, f)
+                                        with open(mf_path, 'r', encoding='utf-8') as mf:
+                                            mdata = json.load(mf)
+                                        mdata['tiles_cached'] = 0
+                                        with open(mf_path, 'w', encoding='utf-8') as mf:
+                                            json.dump(mdata, mf, indent=2)
+                                    except Exception:
+                                        pass
 
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
@@ -1863,7 +1908,13 @@ def start_http_server():
                                 if os.path.exists(meta_file):
                                     try:
                                         with open(meta_file, 'r', encoding='utf-8') as mf:
-                                            preset_metadata_map[item] = json.load(mf)
+                                            mdata = json.load(mf)
+                                        # Count actual disk files to ensure metadata is dynamically truthful
+                                        actual_t = len([f for f in os.listdir(item_path) if f.endswith('.jpg') or f.endswith('.png')])
+                                        mdata['tiles_cached'] = actual_t
+                                        preset_metadata_map[item] = mdata
+                                    except Exception:
+                                        pass
                                     except Exception:
                                         pass
                                 elif item == 'My_Home_Airfield':
