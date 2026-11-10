@@ -393,12 +393,24 @@ class MissionHandler:
                     }
 
                 # Fast graceful resolution for 1-item missions (Home seq 0 in ArduPilot)
-                if self.expected_count == 1 and missing == [0] and self.retries >= 2:
-                    if cached_home_position and 'lat' in cached_home_position:
+                if self.expected_count == 1 and missing == [0] and self.retries >= 1:
+                    h_lat = None
+                    h_lon = None
+                    h_alt = 0.0
+                    if cached_home_position:
+                        h_lat = cached_home_position.get('home_lat') or cached_home_position.get('lat')
+                        h_lon = cached_home_position.get('home_lon') or cached_home_position.get('lon')
+                        h_alt = cached_home_position.get('home_alt') or cached_home_position.get('alt', 0.0)
+                    elif hasattr(self, 'waypoints') and self.waypoints and len(self.waypoints) > 0:
+                        h_lat = self.waypoints[0].get('lat')
+                        h_lon = self.waypoints[0].get('lon')
+                        h_alt = self.waypoints[0].get('alt', 0.0)
+
+                    if h_lat and h_lon:
                         item = {
                             "seq": 0, "command": 16, "frame": 0,
-                            "lat": cached_home_position['lat'], "lon": cached_home_position['lon'],
-                            "alt": cached_home_position.get('alt', 0.0),
+                            "lat": h_lat, "lon": h_lon,
+                            "alt": h_alt,
                             "param1": 0.0, "param2": 0.0, "param3": 0.0, "param4": 0.0,
                             "current": 0, "autocontinue": 1
                         }

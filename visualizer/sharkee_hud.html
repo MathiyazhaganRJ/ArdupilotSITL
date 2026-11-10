@@ -5290,24 +5290,34 @@
 
         // Mode-Aware Live Coordinates Synchronizer (Online Mode only)
         function syncOnlineVehicleCoordinates(lat, lon) {
+            if (typeof lat !== 'number' || typeof lon !== 'number' || Math.abs(lat) < 0.001 || Math.abs(lon) < 0.001 || isNaN(lat) || isNaN(lon)) return;
             const modeEl = document.getElementById('sel-map-mode');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
             if (mapMode === 'offline') return; // Strict offline isolation: do not overwrite manual coordinates
 
             const latInput = document.getElementById('map-cache-lat');
             const lonInput = document.getElementById('map-cache-lon');
-            if (!latInput || !lonInput) return;
+            if (latInput && lonInput && document.activeElement !== latInput && document.activeElement !== lonInput) {
+                const currentValLat = parseFloat(latInput.value);
+                const currentValLon = parseFloat(lonInput.value);
+                if (isNaN(currentValLat) || isNaN(currentValLon) ||
+                    Math.abs(lat - currentValLat) > 0.00005 || Math.abs(lon - currentValLon) > 0.00005) {
+                    latInput.value = lat.toFixed(5);
+                    lonInput.value = lon.toFixed(5);
+                    if (typeof updateMapEstimate === 'function') updateMapEstimate();
+                }
+            }
 
-            // Typing guard: do not overwrite while user is actively focused or editing
-            if (document.activeElement === latInput || document.activeElement === lonInput) return;
+            // In Online Mode: if map world origin is uninitialized, or still pinned to default Tamil Nadu airfield (8.3105), or distant (>2km):
+            const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+            const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                ? Math.hypot((lat - homeLat) * 111320, (lon - homeLon) * 111320 * Math.cos(lat * Math.PI / 180))
+                : 9999999;
 
-            const currentValLat = parseFloat(latInput.value);
-            const currentValLon = parseFloat(lonInput.value);
-            if (isNaN(currentValLat) || isNaN(currentValLon) ||
-                Math.abs(lat - currentValLat) > 0.00005 || Math.abs(lon - currentValLon) > 0.00005) {
-                latInput.value = lat.toFixed(5);
-                lonInput.value = lon.toFixed(5);
-                if (typeof updateMapEstimate === 'function') updateMapEstimate();
+            if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distFromHome > 2000) {
+                if (typeof initEkfHome === 'function') {
+                    initEkfHome(lat, lon, true);
+                }
             }
         }
         window.syncOnlineVehicleCoordinates = syncOnlineVehicleCoordinates;
@@ -5372,7 +5382,11 @@
                         if (lonInput && document.activeElement !== lonInput) lonInput.value = currentPlaneLon.toFixed(5);
                         if (typeof updateMapEstimate === 'function') updateMapEstimate();
                         const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
-                        if (typeof updateMap === 'function') updateMap(currentPlaneLat, currentPlaneLon, true);
+                        if (typeof initEkfHome === 'function') {
+                            initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                        } else if (typeof updateMap === 'function') {
+                            updateMap(currentPlaneLat, currentPlaneLon, true);
+                        }
                         if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(rad);
                         if (typeof showTacticalAlert === 'function') {
                             showTacticalAlert(`ONLINE STREAM: LOCKED TO VEHICLE (${currentPlaneLat.toFixed(4)}°, ${currentPlaneLon.toFixed(4)}°)`, 1800);
@@ -5622,18 +5636,38 @@
                     prov.value = 'esri';
                     localStorage.setItem('pilot_map_provider', 'esri');
                 }
-                document.getElementById('map-cache-lat').value = DEFAULT_PRESET.lat.toFixed(4);
-                document.getElementById('map-cache-lon').value = DEFAULT_PRESET.lon.toFixed(4);
-                document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
-                document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
-                if (nameInput) nameInput.value = '';
-                if (deleteBtn) deleteBtn.style.display = 'none';
-                updateMapEstimate();
-                refreshCacheStatus();
-                if (typeof updateMap === 'function') updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon, true);
-                if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(DEFAULT_PRESET.radius);
-                if (typeof showTacticalAlert === 'function') {
-                    showTacticalAlert('AIRFIELD APPLIED: My Home Airfield (Default)', 1600);
+                const modeEl = document.getElementById('sel-map-mode');
+                const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+                const isOnlineMode = (mapMode !== 'offline');
+
+                if (isOnlineMode && typeof currentPlaneLat === 'number' && typeof currentPlaneLon === 'number' && Math.abs(currentPlaneLat) > 0.001) {
+                    document.getElementById('map-cache-lat').value = currentPlaneLat.toFixed(5);
+                    document.getElementById('map-cache-lon').value = currentPlaneLon.toFixed(5);
+                    document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
+                    document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
+                    if (nameInput) nameInput.value = '';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                    updateMapEstimate();
+                    refreshCacheStatus();
+                    if (typeof initEkfHome === 'function') initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(DEFAULT_PRESET.radius);
+                    if (typeof showTacticalAlert === 'function') {
+                        showTacticalAlert(`AIRFIELD APPLIED: Telemetry GPS (${currentPlaneLat.toFixed(4)}°, ${currentPlaneLon.toFixed(4)}°)`, 1600);
+                    }
+                } else {
+                    document.getElementById('map-cache-lat').value = DEFAULT_PRESET.lat.toFixed(4);
+                    document.getElementById('map-cache-lon').value = DEFAULT_PRESET.lon.toFixed(4);
+                    document.getElementById('map-cache-radius').value = DEFAULT_PRESET.radius;
+                    document.getElementById('map-cache-zoom').value = DEFAULT_PRESET.zoom;
+                    if (nameInput) nameInput.value = '';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                    updateMapEstimate();
+                    refreshCacheStatus();
+                    if (typeof updateMap === 'function') updateMap(DEFAULT_PRESET.lat, DEFAULT_PRESET.lon, true);
+                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(DEFAULT_PRESET.radius);
+                    if (typeof showTacticalAlert === 'function') {
+                        showTacticalAlert('AIRFIELD APPLIED: My Home Airfield (Default)', 1600);
+                    }
                 }
             } else if (activeVal === 'new') {
                 if (nameRow) nameRow.style.display = 'flex';
@@ -5905,8 +5939,13 @@
                 const rad = parseFloat(document.getElementById('map-cache-radius').value || 3.0);
                 lastMapUpdateLat = 0;
                 lastMapUpdateLon = 0;
-                if (typeof updateMap === 'function') {
-                    updateMap(currentPlaneLat, currentPlaneLon, false);
+                if (typeof initEkfHome === 'function') {
+                    initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                } else if (typeof updateMap === 'function') {
+                    updateMap(currentPlaneLat, currentPlaneLon, true);
+                }
+                if (typeof showTacticalAlert === 'function') {
+                    showTacticalAlert('COORDINATES SNAPPED TO MODEL GPS', 1500);
                 }
             } else {
                 alert('No drone GPS position received yet. Using default coordinates.');
@@ -8734,8 +8773,8 @@
         let latestNedX = 0, latestNedY = 0, hasNedPos = false;
 
         // Unified Geodetic EKF Origin Lock - Anchors map, waypoints, and vehicle to exact same coordinate
-        function initEkfHome(hLat, hLon) {
-            if (typeof hLat !== 'number' || typeof hLon !== 'number' || Math.abs(hLat) < 0.001) return;
+        function initEkfHome(hLat, hLon, forceRecenter = false) {
+            if (typeof hLat !== 'number' || typeof hLon !== 'number' || Math.abs(hLat) < 0.001 || isNaN(hLat) || isNaN(hLon)) return;
 
             const modeEl = document.getElementById('sel-map-mode');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
@@ -8743,19 +8782,22 @@
                 return; // In offline mode, keep My Home Airfield / selected preset as default
             }
 
-            const presetVal = document.getElementById('map-cache-preset')?.value || 'default';
-            if (presetVal !== 'default' && presetVal !== 'telemetry') {
-                return; // User has selected a custom airfield or mountain peak preset
-            }
+            const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+            const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                ? Math.hypot((hLat - homeLat) * 111320, (hLon - homeLon) * 111320 * Math.cos(hLat * Math.PI / 180))
+                : 9999999;
 
-            if (ekfHomeInitialized && homeLat !== null && homeLon !== null) {
-                return; // Keep locked to confirmed airfield Home - prevent rebuild thrashing
+            const needsRecenter = forceRecenter || !ekfHomeInitialized || homeLat === null || isDefaultHome || distFromHome > 2000;
+            if (!needsRecenter) {
+                return; // Keep locked to confirmed airfield Home during local flight - prevent rebuild thrashing
             }
 
             ekfHomeInitialized = true;
             initialGpsCalibrated = true;
             homeLat = hLat;
             homeLon = hLon;
+            window.homeLat = homeLat;
+            window.homeLon = homeLon;
             setMissionAnchor(hLat, hLon, 0, 0);
 
             const latInput = document.getElementById('map-cache-lat');
@@ -9270,8 +9312,16 @@
                 // Keep manual coordinate inputs in AIRSPACE & MAP panel in sync with active map origin
                 const latInput = document.getElementById('map-cache-lat');
                 const lonInput = document.getElementById('map-cache-lon');
-                if (latInput && document.activeElement !== latInput) latInput.value = Number(refLat).toFixed(5);
-                if (lonInput && document.activeElement !== lonInput) lonInput.value = Number(refLon).toFixed(5);
+                if (latInput && document.activeElement !== latInput) {
+                    const isOnlineMode = (mapMode !== 'offline');
+                    if (isOnlineMode && typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
+                        latInput.value = Number(currentPlaneLat).toFixed(5);
+                        lonInput.value = Number(currentPlaneLon).toFixed(5);
+                    } else {
+                        latInput.value = Number(refLat).toFixed(5);
+                        lonInput.value = Number(refLon).toFixed(5);
+                    }
+                }
 
                 // Earth circumference at equator = 40075016.686 meters
                 tileSize = 40075016.686 * Math.cos(refLat * Math.PI / 180) / Math.pow(2, activeZoom);
@@ -11048,21 +11098,26 @@
                         syncOnlineVehicleCoordinates(data.lat, data.lon);
                     }
 
-                    // Mathematical EKF Home deduction: derived from vehicle GPS and local NED meters
-                    if (!ekfHomeInitialized && hasNedPos) {
-                        const latRad = data.lat * (Math.PI / 180.0);
-                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
-                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
-                        const calcHomeLat = data.lat - (latestNedX / mPerDegLat);
-                        const calcHomeLon = data.lon - (latestNedY / mPerDegLon);
-                        if (isOnlineMode) {
-                            initEkfHome(calcHomeLat, calcHomeLon);
+                    // Mode-Aware Map Alignment & Seamless Tile Streaming
+                    const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+                    const distToHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                        ? Math.hypot((data.lat - homeLat) * 111320, (data.lon - homeLon) * 111320 * Math.cos(data.lat * Math.PI / 180))
+                        : 9999999;
+
+                    if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distToHome > 2000) {
+                        if (hasNedPos) {
+                            const latRad = data.lat * (Math.PI / 180.0);
+                            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                            const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                            const calcHomeLat = data.lat - (latestNedX / mPerDegLat);
+                            const calcHomeLon = data.lon - (latestNedY / mPerDegLon);
+                            if (isOnlineMode) {
+                                initEkfHome(calcHomeLat, calcHomeLon, true);
+                            }
+                        } else if (isOnlineMode) {
+                            initEkfHome(data.lat, data.lon, true);
                         }
-                    } else if (!ekfHomeInitialized) {
-                        if (isOnlineMode) {
-                            initEkfHome(data.lat, data.lon);
-                        }
-                    } else {
+                    } else if (isOnlineMode) {
                         const activePreset = document.getElementById('map-cache-preset')?.value || 'default';
                         if (activePreset !== 'new') {
                             const isTabVisible = !document.hidden && (Date.now() - lastRenderTime < 400);
@@ -11227,7 +11282,11 @@
             }
             else if (data.type === 'HOME_POSITION') {
                 if (data.home_lat && data.home_lon && (Math.abs(data.home_lat) > 0.001 || Math.abs(data.home_lon) > 0.001)) {
-                    initEkfHome(data.home_lat, data.home_lon);
+                    const modeEl = document.getElementById('sel-map-mode');
+                    const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+                    if (mapMode !== 'offline') {
+                        initEkfHome(data.home_lat, data.home_lon, true);
+                    }
                 }
             }
             else if (data.type === 'GPS_RAW_INT') {
@@ -11251,14 +11310,22 @@
                         syncOnlineVehicleCoordinates(data.gps_lat, data.gps_lon);
                     }
 
-                    if (!ekfHomeInitialized && hasNedPos) {
-                        const latRad = data.gps_lat * (Math.PI / 180.0);
-                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
-                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
-                        const calcHomeLat = data.gps_lat - (latestNedX / mPerDegLat);
-                        const calcHomeLon = data.gps_lon - (latestNedY / mPerDegLon);
-                        if (isOnlineMode) {
-                            initEkfHome(calcHomeLat, calcHomeLon);
+                    const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+                    const distToHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                        ? Math.hypot((data.gps_lat - homeLat) * 111320, (data.gps_lon - homeLon) * 111320 * Math.cos(data.gps_lat * Math.PI / 180))
+                        : 9999999;
+                    if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distToHome > 2000) {
+                        if (hasNedPos) {
+                            const latRad = data.gps_lat * (Math.PI / 180.0);
+                            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                            const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                            const calcHomeLat = data.gps_lat - (latestNedX / mPerDegLat);
+                            const calcHomeLon = data.gps_lon - (latestNedY / mPerDegLon);
+                            if (isOnlineMode) {
+                                initEkfHome(calcHomeLat, calcHomeLon, true);
+                            }
+                        } else if (isOnlineMode) {
+                            initEkfHome(data.gps_lat, data.gps_lon, true);
                         }
                     }
                 }
@@ -11343,11 +11410,15 @@
                     if (missionWaypoints.length > 0) {
                         addAutopilotMessage({ text: `Mission: Loaded ${missionWaypoints.length} waypoints from flight controller`, severity: 6 });
                         const homeWp = missionWaypoints.find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
-                        if (homeWp) {
-                            setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
-                            initEkfHome(homeWp.lat, homeWp.lon);
-                        } else if (!ekfHomeInitialized && currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
-                            initEkfHome(currentPlaneLat, currentPlaneLon);
+                        const modeEl = document.getElementById('sel-map-mode');
+                        const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
+                        if (mapMode !== 'offline') {
+                            if (homeWp) {
+                                setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
+                                initEkfHome(homeWp.lat, homeWp.lon, true);
+                            } else if (currentPlaneLat && Math.abs(currentPlaneLat) > 0.001) {
+                                initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                            }
                         }
                     } else {
                         addAutopilotMessage({ text: "Mission: 0 waypoints received from flight controller (Empty)", severity: 5 });
