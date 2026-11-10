@@ -3482,7 +3482,7 @@
                     <span id="mavlink-port-display" class="data-val" style="color: var(--accent); font-family: 'B612 Mono', monospace; font-size: 11px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">udpin:0.0.0.0:14550</span>
                 </div>
                 <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
-                        style="color: #00e5ff; font-family: 'B612 Mono', monospace; font-weight: 700;">SITL</span></div>
+                        style="color: #8b949e; font-family: 'B612 Mono', monospace; font-weight: 700;">Detecting...</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
                         style="color: #f0f6fc; font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
@@ -11224,19 +11224,19 @@
             let name = String(rawName).trim();
             if (name.startsWith('AP_HW_')) name = name.substring(6);
             if (name.startsWith('TARGET_HW_')) name = name.substring(10);
-            if (name.toUpperCase() === 'SITL') return 'SITL';
+            if (/\bSITL\b/i.test(name)) return 'SITL';
             // SpeedyBee family
             const mSb = name.match(/^SpeedyBee([A-Za-z0-9_\-]+)$/i);
             if (mSb) {
                 let p = mSb[1].replace(/_/g, ' ').trim();
-                p = p.replace(/\s*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                p = p.replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
                 return `SpeedyBee ${p.trim()}`;
             }
             // Matek family
             const mMat = name.match(/^Matek([A-Za-z0-9_\-]+)$/i);
             if (mMat) {
                 let p = mMat[1].replace(/_/g, ' ').trim();
-                p = p.replace(/\s*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                p = p.replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
                 return `Matek ${p.trim()}`;
             }
             // Cube / CubePilot family
@@ -11255,19 +11255,70 @@
             // Kakute / Holybro family
             const mKak = name.match(/^(?:Holybro_)?Kakute([A-Za-z0-9_\-]+)$/i);
             if (mKak) {
-                let p = mKak[1].replace(/_/g, ' ').replace(/WING/i, '-WING').trim();
-                return `Kakute ${p}`;
+                let p = mKak[1].replace(/_/g, ' ').replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                return `Kakute ${p.trim()}`;
+            }
+            // Mamba / Diatone family
+            const mMam = name.match(/^(?:Diatone_)?Mamba([A-Za-z0-9_\-]+)$/i);
+            if (mMam) {
+                let p = mMam[1].replace(/_/g, ' ').replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                return `Mamba ${p.trim()}`;
+            }
+            // AtomRC family
+            const mAtom = name.match(/^AtomRC([A-Za-z0-9_\-]+)$/i);
+            if (mAtom) {
+                let p = mAtom[1].replace(/_/g, ' ').replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                return `AtomRC ${p.trim()}`;
+            }
+            // Foxeer family
+            const mFox = name.match(/^Foxeer([A-Za-z0-9_\-]+)$/i);
+            if (mFox) {
+                let p = mFox[1].replace(/_/g, ' ').replace(/[_\-\s]*WING/i, '-WING').replace(/([FfHhGg][0-9]{3})([A-Za-z]+)/, '$1 $2');
+                return `Foxeer ${p.trim()}`;
             }
             return name.replace(/_/g, ' ').trim();
         }
 
+        function resolveBoardFromText(rawText) {
+            if (!rawText) return null;
+            const s = String(rawText).trim();
+            if (/\bSITL\b/i.test(s)) return 'SITL';
+            const patterns = [
+                /\b(SpeedyBee\s*F[0-9]{3}[A-Za-z0-9_\-]*)\b/i,
+                /\b(Matek\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Cube\s*[A-Za-z0-9_\-+]+)\b/i,
+                /\b(Pixhawk\s*[0-9A-Za-z_\-]+)\b/i,
+                /\b(Kakute\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Holybro\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(CUAV\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Omnibus\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Mamba\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(AtomRC\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Foxeer\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Flywoo\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Diatone\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(JHEMCU\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Skystars\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Radiolink\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(SIYI\s*[A-Za-z0-9_\-]+)\b/i,
+                /\b(Durandal\s*[A-Za-z0-9_\-]+)\b/i
+            ];
+            for (const pat of patterns) {
+                const m = s.match(pat);
+                if (m) return formatFcBoardName(m[1]);
+            }
+            return null;
+        }
+
+        const genericFcNames = ['Detecting...', 'Detecting FC...', 'Searching...', 'Hardware FC', 'Unknown FC', 'UDP Mirror', '---'];
         let currentFcHardwareName = '';
 
         function updateFcHardwareUI(hardwareName) {
             const fcEl = document.getElementById('fc-hardware');
             if (!fcEl || !hardwareName) return;
-            // Prevent generic fallback "Hardware FC" from overwriting an already identified specific board
-            if (hardwareName === 'Hardware FC' && currentFcHardwareName && currentFcHardwareName !== 'Hardware FC') {
+            const isNewGeneric = genericFcNames.includes(hardwareName);
+            const isCurSpecific = currentFcHardwareName && !genericFcNames.includes(currentFcHardwareName) && currentFcHardwareName.toUpperCase() !== 'SITL';
+            if (isNewGeneric && isCurSpecific) {
                 return;
             }
             const formatted = formatFcBoardName(hardwareName);
@@ -11277,6 +11328,8 @@
             fcEl.style.fontWeight = "700";
             if (formatted.toUpperCase() === 'SITL') {
                 fcEl.style.color = '#00e5ff'; // Aviation Cyan for SITL
+            } else if (genericFcNames.includes(formatted)) {
+                fcEl.style.color = '#8b949e'; // Muted grey during identification
             } else {
                 fcEl.style.color = '#30d158'; // Crisp Aviation Emerald Green for real hardware
             }
@@ -11415,11 +11468,18 @@
                 if (data.text) {
                     const mFw = data.text.match(/^(Ardu[A-Za-z]+)\s+V?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9]+)?)/i);
                     if (mFw) updateFirmwareUI(`${mFw[1]} V${mFw[2]}`);
-                    const mBoard = data.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
-                    if (mBoard) {
-                        const bName = mBoard[1];
-                        if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
-                        else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf')) updateFcHardwareUI(bName);
+                    const txtBoard = resolveBoardFromText(data.text);
+                    if (txtBoard) {
+                        updateFcHardwareUI(txtBoard);
+                    } else {
+                        const mBoard = data.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
+                        if (mBoard) {
+                            const bName = mBoard[1];
+                            if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
+                            else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf') && !bName.toLowerCase().startsWith('baro') && !bName.toLowerCase().startsWith('gps')) {
+                                updateFcHardwareUI(bName);
+                            }
+                        }
                     }
                 }
             } else if (data.type === 'STATUSTEXT_HISTORY') {
@@ -11429,11 +11489,18 @@
                         if (m.text) {
                             const mFw = m.text.match(/^(Ardu[A-Za-z]+)\s+V?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9]+)?)/i);
                             if (mFw) updateFirmwareUI(`${mFw[1]} V${mFw[2]}`);
-                            const mBoard = m.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
-                            if (mBoard) {
-                                const bName = mBoard[1];
-                                if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
-                                else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf')) updateFcHardwareUI(bName);
+                            const txtBoard = resolveBoardFromText(m.text);
+                            if (txtBoard) {
+                                updateFcHardwareUI(txtBoard);
+                            } else {
+                                const mBoard = m.text.match(/^([A-Za-z0-9_\-]+)\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}/);
+                                if (mBoard) {
+                                    const bName = mBoard[1];
+                                    if (bName.toUpperCase() === 'SITL') updateFcHardwareUI('SITL');
+                                    else if (!bName.toLowerCase().startsWith('imu') && !bName.toLowerCase().startsWith('rcout') && !bName.toLowerCase().startsWith('ekf') && !bName.toLowerCase().startsWith('baro') && !bName.toLowerCase().startsWith('gps')) {
+                                        updateFcHardwareUI(bName);
+                                    }
+                                }
                             }
                         }
                     }

@@ -553,20 +553,20 @@ def format_fc_board_name(raw_name):
     for prefix in ['AP_HW_', 'TARGET_HW_']:
         if name.startswith(prefix):
             name = name[len(prefix):]
-    if name.upper() == 'SITL':
+    if re.search(r'\bSITL\b', name, re.IGNORECASE):
         return 'SITL'
     # SpeedyBee family
     m_sb = re.match(r'^SpeedyBee([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
     if m_sb:
         part = m_sb.group(1).replace('_', ' ').strip()
-        part = re.sub(r'(?i)\s*WING', '-WING', part)
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
         part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
         return f"SpeedyBee {part.strip()}"
     # Matek family
     m_mat = re.match(r'^Matek([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
     if m_mat:
         part = m_mat.group(1).replace('_', ' ').strip()
-        part = re.sub(r'(?i)\s*WING', '-WING', part)
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
         part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
         return f"Matek {part.strip()}"
     # Cube / CubePilot family
@@ -584,8 +584,30 @@ def format_fc_board_name(raw_name):
     m_kak = re.match(r'^(?:Holybro_)?Kakute([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
     if m_kak:
         part = m_kak.group(1).replace('_', ' ').strip()
-        part = re.sub(r'(?i)\s*WING', '-WING', part)
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
+        part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
         return f"Kakute {part.strip()}"
+    # Mamba / Diatone family
+    m_mam = re.match(r'^(?:Diatone_)?Mamba([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
+    if m_mam:
+        part = m_mam.group(1).replace('_', ' ').strip()
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
+        part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
+        return f"Mamba {part.strip()}"
+    # AtomRC family
+    m_atom = re.match(r'^AtomRC([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
+    if m_atom:
+        part = m_atom.group(1).replace('_', ' ').strip()
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
+        part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
+        return f"AtomRC {part.strip()}"
+    # Foxeer family
+    m_fox = re.match(r'^Foxeer([A-Za-z0-9_\-]+)$', name, re.IGNORECASE)
+    if m_fox:
+        part = m_fox.group(1).replace('_', ' ').strip()
+        part = re.sub(r'(?i)[_\-\s]*WING', '-WING', part)
+        part = re.sub(r'([FfHhGg][0-9]{3})([A-Za-z]+)', r'\1 \2', part)
+        return f"Foxeer {part.strip()}"
     return name.replace('_', ' ').strip()
 
 
@@ -605,7 +627,7 @@ def resolve_board_from_text(raw_text):
     if not raw_text:
         return None
     s = str(raw_text).strip()
-    if s.upper() == 'SITL':
+    if re.search(r'\bSITL\b', s, re.IGNORECASE):
         return 'SITL'
     # Check for known hardware vendor/board names
     patterns = [
@@ -617,6 +639,16 @@ def resolve_board_from_text(raw_text):
         (r'\b(Holybro\s*[A-Za-z0-9_\-]+)\b', 'Holybro'),
         (r'\b(CUAV\s*[A-Za-z0-9_\-]+)\b', 'CUAV'),
         (r'\b(Omnibus\s*[A-Za-z0-9_\-]+)\b', 'Omnibus'),
+        (r'\b(Mamba\s*[A-Za-z0-9_\-]+)\b', 'Mamba'),
+        (r'\b(AtomRC\s*[A-Za-z0-9_\-]+)\b', 'AtomRC'),
+        (r'\b(Foxeer\s*[A-Za-z0-9_\-]+)\b', 'Foxeer'),
+        (r'\b(Flywoo\s*[A-Za-z0-9_\-]+)\b', 'Flywoo'),
+        (r'\b(Diatone\s*[A-Za-z0-9_\-]+)\b', 'Diatone'),
+        (r'\b(JHEMCU\s*[A-Za-z0-9_\-]+)\b', 'JHEMCU'),
+        (r'\b(Skystars\s*[A-Za-z0-9_\-]+)\b', 'Skystars'),
+        (r'\b(Radiolink\s*[A-Za-z0-9_\-]+)\b', 'Radiolink'),
+        (r'\b(SIYI\s*[A-Za-z0-9_\-]+)\b', 'SIYI'),
+        (r'\b(Durandal\s*[A-Za-z0-9_\-]+)\b', 'Durandal'),
     ]
     for pattern, brand in patterns:
         m = re.search(pattern, s, re.IGNORECASE)
@@ -626,26 +658,40 @@ def resolve_board_from_text(raw_text):
 
 
 def resolve_board_name(board_version, vendor_id=0, product_id=0, is_network_sitl=False):
-    if is_network_sitl and vendor_id == 0 and product_id == 0 and board_version == 0:
-        return 'SITL'
     # Check direct USB VID:PID
     if (vendor_id, product_id) in USB_VID_PID_MAP:
         return USB_VID_PID_MAP[(vendor_id, product_id)]
+
+    if board_version:
+        # Direct match on integer board ID (e.g. from BRD_TYPE or AP_BOARD_ID)
+        if board_version in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[board_version])
+        # Check upper 16 bits (standard ChibiOS board ID format: board_id << 16)
+        bid_high = (board_version >> 16) & 0xFFFF
+        if bid_high in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[bid_high])
+        # Check lower 16 bits
+        bid_low = board_version & 0xFFFF
+        if bid_low in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[bid_low])
+        # Check middle 16 bits (board_version >> 8)
+        bid_mid = (board_version >> 8) & 0xFFFF
+        if bid_mid in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[bid_mid])
+        # Check byte 2 (board_version >> 8 & 0xFF)
+        bid_b2 = (board_version >> 8) & 0xFF
+        if bid_b2 in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[bid_b2])
+        # Check byte 3 (board_version >> 16 & 0xFF)
+        bid_b3 = (board_version >> 16) & 0xFF
+        if bid_b3 in BOARD_ID_MAP:
+            return format_fc_board_name(BOARD_ID_MAP[bid_b3])
+
+    # Only return SITL if explicitly verified as a local SITL TCP connection
+    if is_network_sitl and vendor_id == 0 and product_id == 0 and board_version == 0:
+        return 'SITL'
+
     if not board_version:
-        return 'SITL' if is_network_sitl else 'Hardware FC'
-    # Direct match on integer board ID (e.g. from BRD_TYPE or AP_BOARD_ID)
-    if board_version in BOARD_ID_MAP:
-        return format_fc_board_name(BOARD_ID_MAP[board_version])
-    # Check upper 16 bits (standard ChibiOS board ID format: board_id << 16)
-    bid_high = (board_version >> 16) & 0xFFFF
-    if bid_high in BOARD_ID_MAP:
-        return format_fc_board_name(BOARD_ID_MAP[bid_high])
-    # Check lower 16 bits
-    bid_low = board_version & 0xFFFF
-    if bid_low in BOARD_ID_MAP:
-        return format_fc_board_name(BOARD_ID_MAP[bid_low])
-    # Check middle 16 bits (board_version >> 8)
-    bid_mid = (board_version >> 8) & 0xFFFF
-    if bid_mid in BOARD_ID_MAP:
-        return format_fc_board_name(BOARD_ID_MAP[bid_mid])
+        return 'SITL' if is_network_sitl else None
+
     return f"FC Board #{bid_high or bid_low}"

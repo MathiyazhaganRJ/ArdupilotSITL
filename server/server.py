@@ -213,9 +213,67 @@ def create_mavlink_connection(target, baud=115200):
             print(f"[MAVLink] WARNING: Could not open serial port {target}: {e}. Falling back to udpin:0.0.0.0:14550.")
             return mavutil.mavlink_connection('udpin:0.0.0.0:14550')
 
+def is_ardupilot_sitl_target(dev_str):
+    if not dev_str:
+        return False
+    d = str(dev_str).lower()
+    return d.startswith('tcp') and any(h in d for h in ('127.0.0.1', 'localhost', '0.0.0.0')) and any(f':{p}' in d for p in (5760, 5762, 5763))
+
+def send_hardware_identity_queries(conn):
+    if not conn:
+        return
+    try:
+        t_sys = getattr(conn, 'target_system', 1) or 1
+        t_comp = getattr(conn, 'target_component', 1) or 1
+
+        # 1. MAV_CMD_DO_SEND_BANNER (Command ID 42428) - Prompts ArduPilot to send startup text banner via STATUSTEXT
+        try:
+            conn.mav.command_long_send(
+                t_sys, t_comp,
+                42428, 0,
+                0, 0, 0, 0, 0, 0, 0
+            )
+        except Exception:
+            pass
+
+        # 2. MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES (Command ID 520, param1=1)
+        try:
+            conn.mav.command_long_send(
+                t_sys, t_comp,
+                mavutil.mavlink.MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 0,
+                1, 0, 0, 0, 0, 0, 0
+            )
+        except Exception:
+            pass
+
+        # 3. MAV_CMD_REQUEST_MESSAGE for AUTOPILOT_VERSION (Command ID 512, param1=148)
+        try:
+            conn.mav.command_long_send(
+                t_sys, t_comp,
+                mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
+                mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
+                0, 0, 0, 0, 0, 0
+            )
+        except Exception:
+            pass
+
+        # 4. Standard AUTOPILOT_VERSION_REQUEST (Message 183)
+        try:
+            conn.mav.autopilot_version_request_send(t_sys, t_comp)
+        except Exception:
+            pass
+
+        # 5. Request BRD_TYPE parameter (for PX4/Pixhawk boards)
+        try:
+            conn.mav.param_request_read_send(t_sys, t_comp, b'BRD_TYPE', -1)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
 def switch_mavlink_target(raw_target, req_baud=115200):
     global connection, MAVLINK_DEVICE, MAVLINK_BAUD, MAVLINK_URL, heartbeat_received, is_auto_target
-    global is_network_sitl, detected_fc_hardware
+    global is_network_sitl, detected_fc_hardware, last_version_req_time
     new_dev, new_baud = normalize_mavlink_target(raw_target, req_baud)
     print(f"[MAVLink] Switching MAVLink connection to {new_dev} (baud={new_baud})...")
     try:
@@ -236,13 +294,24 @@ def switch_mavlink_target(raw_target, req_baud=115200):
         MAVLINK_URL = f'{new_dev}:{new_baud}' if not new_dev.startswith(('udp', 'tcp')) else new_dev
         heartbeat_received = False
         is_auto_target = False
-        is_network_sitl = new_dev.startswith('tcp') and any(h in new_dev for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
+        last_version_req_time = 0
+        is_network_sitl = is_ardupilot_sitl_target(new_dev)
         if is_network_sitl:
             detected_fc_hardware = "SITL"
-        elif new_dev.startswith('udp'):
-            detected_fc_hardware = "UDP Mirror"
         else:
-            detected_fc_hardware = "Hardware FC"
+            detected_fc_hardware = "Detecting FC..."
+            if not new_dev.startswith(('udp', 'tcp')):
+                try:
+                    import serial.tools.list_ports
+                    for p in serial.tools.list_ports.comports():
+                        if p.device.upper() == new_dev.upper():
+                            found_name = resolve_board_from_text(p.description) or resolve_board_from_text(p.product) or resolve_board_from_text(p.manufacturer)
+                            if found_name:
+                                detected_fc_hardware = found_name
+                                print(f"[FC Info] Identified FC from USB descriptor: {detected_fc_hardware}")
+                            break
+                except Exception:
+                    pass
         print(f"[MAVLink] Successfully switched connection to {MAVLINK_URL}")
         return True, f"Connected to {MAVLINK_URL}"
     except Exception as e:
@@ -255,11 +324,11 @@ connection = create_mavlink_connection(MAVLINK_DEVICE, MAVLINK_BAUD)
 
 clients = set()
 heartbeat_received = False
-is_network_sitl = MAVLINK_DEVICE.startswith(('udp', 'tcp')) and any(h in MAVLINK_DEVICE for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
-detected_fc_hardware = "SITL" if is_network_sitl else "Hardware FC"
+is_network_sitl = is_ardupilot_sitl_target(MAVLINK_DEVICE)
+detected_fc_hardware = "SITL" if is_network_sitl else "Detecting FC..."
 detected_firmware = "ArduPlane"
 
-if not is_network_sitl:
+if not is_network_sitl and not MAVLINK_DEVICE.startswith(('udp', 'tcp')):
     try:
         import serial.tools.list_ports
         for p in serial.tools.list_ports.comports():
@@ -771,21 +840,8 @@ async def mavlink_listener():
                                 await c.send(stat_payload)
                             except Exception:
                                 pass
-                    # Request Autopilot Version & Capabilities (Msg 148)
-                    try:
-                        connection.mav.command_long_send(
-                            connection.target_system, connection.target_component,
-                            mavutil.mavlink.MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, 0,
-                            1, 0, 0, 0, 0, 0, 0
-                        )
-                        connection.mav.command_long_send(
-                            connection.target_system, connection.target_component,
-                            mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
-                            mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
-                            0, 0, 0, 0, 0, 0
-                        )
-                    except Exception as e:
-                        pass
+                    # Request Autopilot Version & Capabilities (Multi-pronged queries)
+                    send_hardware_identity_queries(connection)
 
                     # Request data streams
                     connection.mav.request_data_stream_send(connection.target_system, connection.target_component, mavutil.mavlink.MAV_DATA_STREAM_EXTRA1, 30, 1) # ATTITUDE 30Hz
@@ -894,20 +950,13 @@ async def mavlink_listener():
                     # Trigger initial mission download from vehicle
                     mission_handler.start_fetch()
                 else:
-                    # Periodically re-query Autopilot Version if hardware identity is not yet fully resolved
-                    if not is_network_sitl and detected_fc_hardware in ('Hardware FC', 'Unknown FC'):
+                    # Periodically re-query Autopilot Version and Hardware Board Banner if hardware identity is not yet fully resolved
+                    UNRESOLVED_HARDWARE = ('Detecting...', 'Detecting FC...', 'Hardware FC', 'Unknown FC', 'UDP Mirror', 'Searching...')
+                    if detected_fc_hardware in UNRESOLVED_HARDWARE:
                         now_t = time.time()
-                        if now_t - last_version_req_time > 3.0:
+                        if now_t - last_version_req_time > 2.0:
                             last_version_req_time = now_t
-                            try:
-                                connection.mav.command_long_send(
-                                    connection.target_system, connection.target_component,
-                                    mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE, 0,
-                                    mavutil.mavlink.MAVLINK_MSG_ID_AUTOPILOT_VERSION,
-                                    0, 0, 0, 0, 0, 0
-                                )
-                            except Exception:
-                                pass
+                            send_hardware_identity_queries(connection)
 
             data = {"type": msg.get_type()}
             if msg.get_type() == 'HEARTBEAT':
@@ -1000,7 +1049,7 @@ async def mavlink_listener():
                 product_id = getattr(msg, 'product_id', 0)
                 board_ver = getattr(msg, 'board_version', 0)
                 resolved = resolve_board_name(board_ver, vendor_id, product_id, is_network_sitl)
-                if resolved and resolved != 'Hardware FC':
+                if resolved and resolved not in ('Hardware FC', 'Unknown FC', 'Detecting FC...', 'Detecting...'):
                     detected_fc_hardware = resolved
                     print(f"[FC Info] Autopilot Hardware resolved: {detected_fc_hardware} (board_version={board_ver})")
                 elif vendor_id == 0 and product_id == 0 and board_ver == 0 and is_network_sitl:
@@ -1041,7 +1090,7 @@ async def mavlink_listener():
 
                 # Detect FC hardware board name, e.g. 'SpeedyBeeF405WING 003C0028...' or 'SITL 00000000'
                 txt_board = resolve_board_from_text(clean_text)
-                if txt_board and txt_board not in ('Hardware FC', 'Unknown FC'):
+                if txt_board and txt_board not in ('Hardware FC', 'Unknown FC', 'Detecting FC...', 'Detecting...'):
                     detected_fc_hardware = txt_board
                     print(f"[FC Info] Hardware Board detected from text: {detected_fc_hardware}")
                     if cached_heartbeat:
@@ -1143,7 +1192,7 @@ async def mavlink_listener():
                 if param_id_str.upper() == 'BRD_TYPE':
                     board_id = int(param_val)
                     resolved = resolve_board_name(board_id, is_network_sitl=is_network_sitl)
-                    if resolved and resolved not in ('Hardware FC', 'Unknown FC'):
+                    if resolved and resolved not in ('Hardware FC', 'Unknown FC', 'Detecting FC...', 'Detecting...'):
                         detected_fc_hardware = resolved
                         print(f"[FC Info] Resolved FC from BRD_TYPE={board_id}: {detected_fc_hardware}")
                         if cached_heartbeat:
