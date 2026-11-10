@@ -3739,6 +3739,19 @@
                             <option value="14">Zoom 14 - Regional Vista (9.5m/px)</option>
                         </select>
                     </div>
+                    <div style="grid-column: 1 / -1; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                            <span style="font-size: 9px; color: var(--text-secondary); font-weight: 600;">EN-ROUTE FLIGHT PATH SWATH</span>
+                            <span id="transit-corridor-mode-tag" style="font-size: 8.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0, 229, 255, 0.12); color: #00e5ff; font-weight: 700;">DUAL-ZONE</span>
+                        </div>
+                        <select id="sel-transit-corridor-width" style="width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 11px;">
+                            <option value="1.0">1.0 km Path Swath (±500m - Ultra-Light / Max FPS)</option>
+                            <option value="1.5">1.5 km Path Swath (±750m - Lightweight)</option>
+                            <option value="2.4" selected>2.4 km Path Swath (±1.2km - Balanced / Crisp)</option>
+                            <option value="3.2">3.2 km Path Swath (±1.6km - Wide Tactical)</option>
+                            <option value="full">Full Airspace Radius (Match Terminal Airfield)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -6005,6 +6018,20 @@
         document.getElementById('map-cache-zoom').onchange = () => {
             debouncedMapRebuild(true, 120);
         };
+
+        const selTransitCorridor = document.getElementById('sel-transit-corridor-width');
+        if (selTransitCorridor) {
+            const savedTransit = localStorage.getItem('pilot_transit_corridor_width');
+            if (savedTransit) selTransitCorridor.value = savedTransit;
+            selTransitCorridor.onchange = () => {
+                localStorage.setItem('pilot_transit_corridor_width', selTransitCorridor.value);
+                debouncedMapRebuild(false, 80);
+                if (typeof showTacticalAlert === 'function') {
+                    const label = selTransitCorridor.options[selTransitCorridor.selectedIndex]?.text.split('(')[0].trim();
+                    showTacticalAlert(`TRANSIT SWATH: ${label}`, 1500);
+                }
+            };
+        }
 
         let cachePollInterval = null;
 
@@ -9432,14 +9459,51 @@
             const currentTileY = Math.floor(lat2tileFloat(lat, activeZoom));
 
             // ==========================================
-            // FLAT SATELLITE MAP ENGINE (FULL AIRFIELD RADIUS)
+            // DUAL-ZONE TACTICAL STREAMING ENGINE
+            // Zone 1: Terminal / Home Airfield (Ground standby or within departure/arrival perimeter)
+            // Zone 2: En-Route Transit Swath (Airborne cross-country flight along path)
+            // ==========================================
+            const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
+                               (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.5);
+            const distToHomeM = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                ? Math.hypot((lat - homeLat) * 111320, (lon - homeLon) * 111320 * Math.cos(lat * Math.PI / 180))
+                : 0;
+
+            const corridorSetting = document.getElementById('sel-transit-corridor-width')?.value || (localStorage.getItem('pilot_transit_corridor_width') || '2.4');
+            const isTransitZone = isAirborne && (distToHomeM > (radiusKm * 850));
+
+            let effectiveRadiusKm = radiusKm;
+            if (isTransitZone && corridorSetting !== 'full') {
+                const parsedWidth = parseFloat(corridorSetting);
+                if (!isNaN(parsedWidth) && parsedWidth > 0.2) {
+                    effectiveRadiusKm = parsedWidth / 2.0; // Half-width buffer radius around aircraft
+                }
+            }
+
+            const transitTag = document.getElementById('transit-corridor-mode-tag');
+            if (transitTag) {
+                if (isTransitZone && corridorSetting !== 'full') {
+                    transitTag.innerText = `TRANSIT (${(effectiveRadiusKm * 2).toFixed(1)}km)`;
+                    transitTag.style.color = '#30d158';
+                    transitTag.style.background = 'rgba(48, 209, 88, 0.12)';
+                } else {
+                    transitTag.innerText = `TERMINAL (${(radiusKm * 2).toFixed(0)}km)`;
+                    transitTag.style.color = '#00e5ff';
+                    transitTag.style.background = 'rgba(0, 229, 255, 0.12)';
+                }
+            }
+
+            const radMeters = effectiveRadiusKm * 1000;
+            const homeSpan = Math.ceil((radiusKm * 1000) / tileSize) + 1; // Always preserve full terminal airfield base
+
+            // ==========================================
+            // FLAT SATELLITE MAP ENGINE
             // ==========================================
             if (!terrain3DEnabled) {
                 if (typeof horizonGroup !== 'undefined') {
                     horizonGroup.visible = false;
                 }
                 if (typeof updateSceneTheme === 'function') updateSceneTheme();
-                const radMeters = radiusKm * 1000;
                 const span = Math.ceil(radMeters / tileSize) + 1;
                 const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
 
@@ -9488,7 +9552,7 @@
 
                             const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                             const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
-                            if (distToHome <= span) return; // Protect home airfield
+                            if (distToHome <= homeSpan) return; // Protect home airfield
                             scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
                         }
                     });
@@ -9517,9 +9581,11 @@
 
             // Stable Rotation-Invariant 3D Circular Terrain Grid
             // Guarantees zero corner jumping during turns, orbits, and loitering!
-            const radMeters = Math.max(3000, radiusKm * 1000);
-            const gridSpan = Math.ceil(radMeters / tileSize) + 1;
-            const maxDistSq = Math.pow(radMeters + (tileSize * 0.8), 2);
+            const radMeters3D = isTransitZone && corridorSetting !== 'full'
+                ? Math.max(1200, effectiveRadiusKm * 1000)
+                : Math.max(3000, radiusKm * 1000);
+            const gridSpan = Math.ceil(radMeters3D / tileSize) + 1;
+            const maxDistSq = Math.pow(radMeters3D + (tileSize * 0.8), 2);
 
             const activeFlightHdg = (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.2 && typeof planeGroundTrack === 'number' && planeGroundTrack !== null) 
                                     ? planeGroundTrack 
@@ -9761,7 +9827,7 @@
                         const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                         const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);
                         if (distToPlane <= (gridSpan + 2)) return; // Keep active circle plus 2-tile buffer around plane
-                        if (distToHome <= (gridSpan + 1)) return; // Protect home airfield
+                        if (distToHome <= homeSpan) return; // Protect full terminal airfield base
 
                         scored.push({ mesh: m, score: Math.min(distToPlane, distToHome) });
                     }
