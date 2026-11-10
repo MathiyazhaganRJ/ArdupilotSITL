@@ -173,6 +173,13 @@ def parse_mavlink_target():
                 pass
             i += 2
             continue
+        elif arg.startswith(('--baud=', '-b=')):
+            try:
+                baud = int(arg.split('=', 1)[1])
+            except ValueError:
+                pass
+            i += 1
+            continue
         elif not arg.startswith('-') and explicit is None:
             explicit = arg
             i += 1
