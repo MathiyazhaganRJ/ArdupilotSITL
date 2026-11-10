@@ -14,8 +14,38 @@ import math
 import concurrent.futures
 import sys
 import io
+import logging
 from PIL import Image
 from pymavlink import mavutil
+
+class WebSocketHandshakeFilter(logging.Filter):
+    """
+    Suppresses aborted or non-compliant handshake tracebacks (e.g., bare TCP port probes or early disconnects)
+    from polluting the server telemetry console.
+    """
+    def filter(self, record):
+        if record.exc_info:
+            exc_type = record.exc_info[0]
+            if exc_type and issubclass(exc_type, (EOFError, ConnectionResetError, BrokenPipeError)):
+                return False
+            if hasattr(websockets, 'exceptions') and issubclass(exc_type, (
+                websockets.exceptions.InvalidMessage,
+                websockets.exceptions.ConnectionClosedOK,
+                websockets.exceptions.ConnectionClosedError
+            )):
+                return False
+        msg = record.getMessage()
+        if "opening handshake failed" in msg:
+            return False
+        return True
+
+# Silence websockets handshake failure tracebacks for dropped or non-HTTP connections
+logging.getLogger("websockets.server").addFilter(WebSocketHandshakeFilter())
+logging.getLogger("websockets.protocol").addFilter(WebSocketHandshakeFilter())
+
+# Server readiness synchronization events
+http_server_ready_event = threading.Event()
+ws_server_ready_event = threading.Event()
 
 try:
     import requests
@@ -1158,8 +1188,8 @@ async def ws_handler(websocket, path=None):
                             }))
                         except Exception:
                             pass
-                    # 2. ALWAYS initiate a live fetch from the vehicle so newly uploaded/modified waypoints are updated
-                    ok = mission_handler.start_fetch(force=True)
+                    # 2. Initiate live fetch from vehicle (respecting force flag to avoid request thrashing)
+                    ok = mission_handler.start_fetch(force=force)
                     print(f"[Mission] Client requested waypoint fetch (initiated live vehicle sync: {ok})")
                 elif action == "set_current_waypoint":
                     seq = int(cmd.get("seq", 0))
@@ -2242,9 +2272,11 @@ def start_http_server():
     try:
         # Use ThreadingHTTPServer so a single browser's Keep-Alive doesn't block other connections
         with RobustThreadingHTTPServer(("0.0.0.0", 8000), QuietHandler) as httpd:
+            http_server_ready_event.set()
             print("HTTP Web Server with Offline Tile Cache started on port 8000")
             httpd.serve_forever()
     except OSError as e:
+        http_server_ready_event.set()
         if getattr(e, 'errno', None) in (10048, 98):
             print("[Notice] HTTP Port 8000 is already in use by an active server.")
         else:
@@ -2256,9 +2288,11 @@ async def main():
 
     try:
         server = await websockets.serve(ws_handler, "0.0.0.0", 8766)
+        ws_server_ready_event.set()
         print("WebSocket Server started on port 8766")
         await asyncio.gather(server.wait_closed(), mavlink_listener())
     except OSError as e:
+        ws_server_ready_event.set()
         if getattr(e, 'errno', None) in (10048, 98):
             print("\n" + "="*65)
             print(" [!] ERROR: Port 8766 is already in use by another Python instance.")
@@ -2346,8 +2380,11 @@ if __name__ == "__main__":
 
     if args.headless:
         print("\n[Server] Running in Headless Server Mode (--headless).")
-        print("[Visualizer] Opening browser tab at: http://127.0.0.1:8000/sharkee_hud.html\n")
-        open_browser("http://127.0.0.1:8000/sharkee_hud.html")
+        def _deferred_open_browser():
+            http_server_ready_event.wait(timeout=3.0)
+            print("[Visualizer] Opening browser tab at: http://127.0.0.1:8000/sharkee_hud.html\n")
+            open_browser("http://127.0.0.1:8000/sharkee_hud.html")
+        threading.Thread(target=_deferred_open_browser, daemon=True).start()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -2360,11 +2397,8 @@ if __name__ == "__main__":
         server_thread.start()
         
         # Await HTTP Web Server (Port 8000) & WebSocket Telemetry Gateway (Port 8766) readiness
-        t_wait = time.time()
-        while time.time() - t_wait < 3.0:
-            if check_port_listening('127.0.0.1', 8000) and check_port_listening('127.0.0.1', 8766):
-                break
-            time.sleep(0.05)
+        http_server_ready_event.wait(timeout=3.0)
+        ws_server_ready_event.wait(timeout=3.0)
 
         # 2. Launch the native desktop window on the main thread (with fallback if GTK/QT unavailable in WSL)
         try:

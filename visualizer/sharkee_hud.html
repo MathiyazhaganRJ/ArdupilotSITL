@@ -5201,7 +5201,7 @@
                     renderWaypoints3D();
                 }
                 if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true }));
+                    requestWaypoints(false);
                 } else if (!vehicleConnected && (!missionWaypoints || missionWaypoints.length === 0) && typeof loadDefaultWaypoints === 'function') {
                     loadDefaultWaypoints();
                 }
@@ -5216,12 +5216,23 @@
             };
         }
 
+        var lastWaypointRequestTime = 0;
+        function requestWaypoints(force = false) {
+            const now = Date.now();
+            if (!force && (now - lastWaypointRequestTime < 4000)) return;
+            lastWaypointRequestTime = now;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: force })); } catch(e){}
+            }
+        }
+        window.requestWaypoints = requestWaypoints;
+
         function forceSyncWaypoints() {
             const el = document.getElementById('mission-wpt-count-text');
             if (el) el.innerText = 'Syncing...';
             if (ws && ws.readyState === WebSocket.OPEN) {
                 addAutopilotMessage({ text: "Requesting live waypoint sync from flight controller...", severity: 6 });
-                ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true }));
+                requestWaypoints(true);
             } else {
                 addAutopilotMessage({ text: "Cannot sync waypoints: Telemetry offline", severity: 4 });
                 if (el) el.innerText = `${(missionWaypoints || []).length} WP`;
@@ -11078,7 +11089,7 @@
                     wsReconnectTimer = null;
                 }
                 // Proactively request waypoints on websocket connect
-                try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
+                requestWaypoints(false);
             };
 
             ws.onclose = () => {
@@ -11108,7 +11119,7 @@
                         st.style.color = "var(--success)";
                         if (!vehicleConnected) {
                             vehicleConnected = true;
-                            try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
+                            requestWaypoints(false);
                             addAutopilotMessage({ text: `Connected to ArduPilot SITL (${data.url || 'Port 8766'})`, severity: 6 });
                         }
                     } else {
@@ -11127,7 +11138,7 @@
                 }
                 vehicleConnected = true;
                 // Proactively request waypoints when vehicle connection is confirmed
-                try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
+                requestWaypoints(false);
                 addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
             }
             if (data.type === 'PARAM_VALUE') {
