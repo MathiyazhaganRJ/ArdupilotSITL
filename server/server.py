@@ -65,6 +65,9 @@ def parse_mavlink_target():
         elif arg.startswith(('--connect=', '--mavlink=')):
             explicit = arg.split('=', 1)[1]
             break
+        elif i > 0 and not arg.startswith('-') and sys.argv[i - 1] not in ('--connect', '--mavlink', '-c', '-m', '-p', '-b'):
+            explicit = arg
+            break
     if not explicit:
         explicit = os.environ.get('MAVLINK_URL')
 
@@ -73,9 +76,30 @@ def parse_mavlink_target():
         target = explicit
     else:
         is_auto = True
-        # Default to Mission Planner MAVLink Mirror port (udpin:127.0.0.1:14551)
-        # Enables direct telemetry mirroring from Mission Planner Ctrl+F MAVLink mirror
-        target = 'udpin:127.0.0.1:14551'
+        # 1. Proactively detect active ArduPilot SITL instance on local TCP ports
+        for candidate_port in (5762, 5763, 5760):
+            if check_port_listening('127.0.0.1', candidate_port):
+                target = f'tcp:127.0.0.1:{candidate_port}'
+                print(f"[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on {target}")
+                break
+        else:
+            # 2. Check for physical Flight Controller USB serial COM port
+            fc_port = None
+            try:
+                import serial.tools.list_ports
+                for p in serial.tools.list_ports.comports():
+                    desc = f"{p.description or ''} {p.manufacturer or ''} {p.product or ''}".lower()
+                    if any(kw in desc for kw in ('pixhawk', 'cube', 'ardupilot', 'matek', 'holybro', 'speedybee', 'f405', 'f745', 'h743', 'stm32', 'ch340', 'cp210')):
+                        fc_port = p.device
+                        print(f"[MAVLink Auto-Discovery] Detected Flight Controller on serial port {fc_port} ({p.description})")
+                        break
+            except Exception:
+                pass
+            if fc_port:
+                target = fc_port
+            else:
+                # 3. Default to universal UDP telemetry receiver (0.0.0.0 captures WSL2 vEthernet, localhost, and LAN MAVLink streams)
+                target = 'udpin:0.0.0.0:14550'
 
     if ':' in target and not target.startswith(('udp', 'tcp')):
         parts = target.split(':')
@@ -497,22 +521,21 @@ async def mavlink_listener():
     last_auto_scan_time = 0
 
     while True:
-        # If in auto mode on udpin:127.0.0.1:14551 (Mission Planner mirror) and no heartbeat arrives after 3.0s,
-        # check if direct ArduPilot SITL instance is running on tcp:127.0.0.1:5762, 5763, or 5760
+        # Proactive auto-scan if in auto mode and no heartbeat has been received
         now = time.time()
-        if is_auto_target and not heartbeat_received and not MAVLINK_DEVICE.startswith('tcp:'):
+        if is_auto_target and not heartbeat_received:
             if last_auto_scan_time == 0:
                 last_auto_scan_time = now
-            elif now - last_auto_scan_time > 3.0:
+            elif now - last_auto_scan_time > 2.0:
                 last_auto_scan_time = now
                 found_port = None
                 for candidate in (5762, 5763, 5760):
                     if check_port_listening('127.0.0.1', candidate):
                         found_port = candidate
                         break
-                if found_port:
+                if found_port and MAVLINK_DEVICE != f'tcp:127.0.0.1:{found_port}':
                     try:
-                        print(f"[MAVLink Auto-Discovery] No Mission Planner mirror detected on 14551. Direct SITL instance found on tcp:127.0.0.1:{found_port}! Connecting directly...")
+                        print(f"[MAVLink Auto-Discovery] Active SITL instance detected on tcp:127.0.0.1:{found_port}! Switching connection...")
                         try:
                             connection.close()
                         except Exception:
@@ -524,6 +547,7 @@ async def mavlink_listener():
                         MAVLINK_URL = f'tcp:127.0.0.1:{found_port}'
                         is_network_sitl = True
                         detected_fc_hardware = "SITL"
+                        heartbeat_received = False
                     except Exception as e:
                         print(f"[MAVLink Auto-Discovery] Error connecting to tcp:127.0.0.1:{found_port}: {e}")
 
@@ -543,6 +567,22 @@ async def mavlink_listener():
                 if heartbeat_received:
                     print(f"[MAVLink] Connection to {MAVLINK_URL} interrupted. Reconnecting in background...")
                     heartbeat_received = False
+                    if clients:
+                        stat_payload = json.dumps({
+                            "type": "MAVLINK_STATUS",
+                            "connected": False,
+                            "url": MAVLINK_URL,
+                            "fc_hardware": detected_fc_hardware
+                        })
+                        for c in list(clients):
+                            try:
+                                await c.send(stat_payload)
+                            except Exception:
+                                pass
+                try:
+                    connection.close()
+                except Exception:
+                    pass
                 await asyncio.sleep(1.0)
                 reconnect_target = 'tcp:127.0.0.1:5762' if check_port_listening('127.0.0.1', 5762) else ('tcp:127.0.0.1:5763' if check_port_listening('127.0.0.1', 5763) else None)
                 if reconnect_target:
@@ -597,6 +637,18 @@ async def mavlink_listener():
                     heartbeat_received = True
                     last_version_req_time = time.time()
                     print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to {detected_fc_hardware}.")
+                    if clients:
+                        stat_payload = json.dumps({
+                            "type": "MAVLINK_STATUS",
+                            "connected": True,
+                            "url": MAVLINK_URL,
+                            "fc_hardware": detected_fc_hardware
+                        })
+                        for c in list(clients):
+                            try:
+                                await c.send(stat_payload)
+                            except Exception:
+                                pass
                     # Request Autopilot Version & Capabilities (Msg 148)
                     try:
                         connection.mav.command_long_send(
@@ -1015,6 +1067,17 @@ async def ws_handler(websocket, path=None):
                 "type": "FC_INFO",
                 "fc_hardware": detected_fc_hardware,
                 "firmware": detected_firmware
+            }))
+        except Exception:
+            pass
+
+        # Deliver live connection link state
+        try:
+            await websocket.send(json.dumps({
+                "type": "MAVLINK_STATUS",
+                "connected": heartbeat_received,
+                "url": MAVLINK_URL,
+                "target": MAVLINK_DEVICE
             }))
         except Exception:
             pass
@@ -2266,8 +2329,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
     parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
-    parser.add_argument("--connect", "--mavlink", "-c", default="udpin:127.0.0.1:14551", help="MAVLink target (e.g. udpin:127.0.0.1:14551, COM3:57600, udpin:0.0.0.0:14550)")
-    args = parser.parse_args()
+    parser.add_argument("--connect", "--mavlink", "-c", default=None, help="MAVLink target (e.g. tcp:127.0.0.1:5762, udpin:0.0.0.0:14550, COM3:115200)")
+    parser.add_argument("target", nargs="?", default=None, help="Optional positional MAVLink target (e.g. tcp:127.0.0.1:5762)")
+    args, unknown = parser.parse_known_args()
 
     # Ensure Windows taskbar displays the custom app icon instead of generic python.exe
     try:

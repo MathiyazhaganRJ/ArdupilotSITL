@@ -11057,8 +11057,8 @@
             ws.onopen = () => {
                 const st = document.getElementById('status');
                 if (st) {
-                    st.innerText = "Waiting for Vehicle...";
-                    st.style.color = "var(--text-secondary)";
+                    st.innerText = "Gateway Ready (Awaiting SITL)...";
+                    st.style.color = "var(--accent-yellow)";
                 }
                 if (wsReconnectTimer) {
                     clearTimeout(wsReconnectTimer);
@@ -11086,15 +11086,37 @@
             };
 
             ws.onmessage = (event) => {
-            if (!vehicleConnected) {
-                document.getElementById('status').innerText = "Connected";
-                document.getElementById('status').style.color = "var(--success)";
+            const data = JSON.parse(event.data);
+            if (data.type === 'MAVLINK_STATUS') {
+                const st = document.getElementById('status');
+                if (st) {
+                    if (data.connected) {
+                        st.innerText = "Connected";
+                        st.style.color = "var(--success)";
+                        if (!vehicleConnected) {
+                            vehicleConnected = true;
+                            try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
+                            addAutopilotMessage({ text: `Connected to ArduPilot SITL (${data.url || 'Port 8766'})`, severity: 6 });
+                        }
+                    } else {
+                        st.innerText = `Searching (${data.url || 'SITL'})...`;
+                        st.style.color = "var(--accent-yellow)";
+                        vehicleConnected = false;
+                    }
+                }
+                return;
+            }
+            if (!vehicleConnected && (data.type === 'HEARTBEAT' || data.type === 'GLOBAL_POSITION_INT' || data.type === 'ATTITUDE' || data.type === 'VFR_HUD')) {
+                const st = document.getElementById('status');
+                if (st) {
+                    st.innerText = "Connected";
+                    st.style.color = "var(--success)";
+                }
                 vehicleConnected = true;
                 // Proactively request waypoints when vehicle connection is confirmed
                 try { ws.send(JSON.stringify({ action: 'fetch_waypoints', force: true })); } catch(e){}
                 addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
             }
-            const data = JSON.parse(event.data);
             if (data.type === 'PARAM_VALUE') {
                 if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
                     batteryCapacityMah = Math.round(data.param_value);
