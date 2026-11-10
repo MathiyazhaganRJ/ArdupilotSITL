@@ -801,6 +801,7 @@ def find_board_from_recent_tlogs(connected_usb_serials=None):
     candidate_files.sort(key=lambda x: x[0], reverse=True)
 
     for mtime, fpath in candidate_files[:6]:
+        mlog = None
         try:
             from pymavlink import mavutil
             mlog = mavutil.mavlink_connection(fpath)
@@ -825,6 +826,12 @@ def find_board_from_recent_tlogs(connected_usb_serials=None):
                         return resolved, f'AUTOPILOT_VERSION {bv}'
         except Exception:
             pass
+        finally:
+            if mlog is not None:
+                try:
+                    mlog.close()
+                except Exception:
+                    pass
     return None, None
 
 
