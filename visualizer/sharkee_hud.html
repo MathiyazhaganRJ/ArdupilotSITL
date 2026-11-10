@@ -5371,7 +5371,7 @@
                         if (typeof updateMapEstimate === 'function') updateMapEstimate();
                         const rad = parseFloat(document.getElementById('map-cache-radius')?.value || 3.0);
                         if (typeof initEkfHome === 'function') {
-                            initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                            initEkfHome(currentPlaneLat, currentPlaneLon, true, true);
                         } else if (typeof updateMap === 'function') {
                             updateMap(currentPlaneLat, currentPlaneLon, true);
                         }
@@ -5672,7 +5672,7 @@
                     if (deleteBtn) deleteBtn.style.display = 'none';
                     updateMapEstimate();
                     refreshCacheStatus();
-                    if (typeof initEkfHome === 'function') initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                    if (typeof initEkfHome === 'function') initEkfHome(currentPlaneLat, currentPlaneLon, true, true);
                     if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(DEFAULT_PRESET.radius);
                     if (typeof showTacticalAlert === 'function') {
                         showTacticalAlert(`AIRFIELD APPLIED: Telemetry GPS (${currentPlaneLat.toFixed(4)}°, ${currentPlaneLon.toFixed(4)}°)`, 1600);
@@ -5963,7 +5963,7 @@
                 lastMapUpdateLat = 0;
                 lastMapUpdateLon = 0;
                 if (typeof initEkfHome === 'function') {
-                    initEkfHome(currentPlaneLat, currentPlaneLon, true);
+                    initEkfHome(currentPlaneLat, currentPlaneLon, true, true);
                 } else if (typeof updateMap === 'function') {
                     updateMap(currentPlaneLat, currentPlaneLon, true);
                 }
@@ -8796,7 +8796,7 @@
         let latestNedX = 0, latestNedY = 0, hasNedPos = false;
 
         // Unified Geodetic EKF Origin Lock - Anchors map, waypoints, and vehicle to exact same coordinate
-        function initEkfHome(hLat, hLon, forceRecenter = false) {
+        function initEkfHome(hLat, hLon, forceRecenter = false, isUserCommand = false) {
             if (typeof hLat !== 'number' || typeof hLon !== 'number' || Math.abs(hLat) < 0.001 || isNaN(hLat) || isNaN(hLon)) return;
 
             const modeEl = document.getElementById('sel-map-mode');
@@ -8810,11 +8810,16 @@
                 ? Math.hypot((hLat - homeLat) * 111320, (hLon - homeLon) * 111320 * Math.cos(hLat * Math.PI / 180))
                 : 9999999;
 
+            // Strict Anti-Flashing Guard: If already anchored and stationary (< 50m displacement), ignore telemetry packets!
+            if (ekfHomeInitialized && homeLat !== null && !isDefaultHome && distFromHome < 50.0 && !isUserCommand) {
+                return;
+            }
+
             const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
                                (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
 
             // Re-anchor EKF Home ONLY on initial calibration, explicit user command, or if relocated on the ground > 10km
-            const needsRecenter = forceRecenter || !ekfHomeInitialized || homeLat === null || isDefaultHome || (!isAirborne && distFromHome > 10000);
+            const needsRecenter = isUserCommand || forceRecenter || !ekfHomeInitialized || homeLat === null || isDefaultHome || (!isAirborne && distFromHome > 10000);
             if (!needsRecenter) {
                 return; // Keep locked to confirmed airfield Home during flight - prevent rebuild thrashing
             }
@@ -9197,6 +9202,18 @@
                 if (meta.corridor_km) corridorKm = parseFloat(meta.corridor_km);
             }
 
+            // 1b. Check if active preset is in savedPresets (localStorage)
+            if (!wps || wps.length <= 1) {
+                try {
+                    const saved = (typeof getSavedPresets === 'function') ? getSavedPresets() : [];
+                    const sp = saved.find(p => p.folder === preset || p.id === preset || p.name === preset || ('preset_' + p.folder) === preset || ('disk_' + p.folder) === preset);
+                    if (sp && Array.isArray(sp.waypoints) && sp.waypoints.length > 1) {
+                        wps = sp.waypoints;
+                        if (sp.corridor_km) corridorKm = parseFloat(sp.corridor_km);
+                    }
+                } catch(e) {}
+            }
+
             // 2. Fall back to current missionWaypoints if available
             if ((!wps || wps.length <= 1) && Array.isArray(missionWaypoints) && missionWaypoints.length > 1) {
                 wps = missionWaypoints.filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
@@ -9244,10 +9261,10 @@
                 return da - db;
             });
 
-            // 7. Chunked progressive loading: immediate batch of 300 tiles, then 150 every 30ms
+            // 7. Chunked progressive loading: immediate batch of 500 tiles, then 250 every 20ms
             const thisGen = mapGeneration;
             let offset = 0;
-            const CHUNK_SIZE = 150;
+            const CHUNK_SIZE = 250;
 
             function processNextChunk() {
                 if (mapGeneration !== thisGen) return;
@@ -9261,12 +9278,12 @@
                 }
                 offset = end;
                 if (offset < corridorTiles.length) {
-                    corridorChunkTimer = setTimeout(processNextChunk, 30);
+                    corridorChunkTimer = setTimeout(processNextChunk, 20);
                 }
             }
 
             // Initial immediate batch
-            const initCount = Math.min(300, corridorTiles.length);
+            const initCount = Math.min(500, corridorTiles.length);
             for (let i = 0; i < initCount; i++) {
                 const t = corridorTiles[i];
                 const mesh = createFlatTileMesh(t.x, t.y, z, prov, preset, mode);
@@ -9276,7 +9293,7 @@
             }
             offset = initCount;
             if (offset < corridorTiles.length) {
-                corridorChunkTimer = setTimeout(processNextChunk, 30);
+                corridorChunkTimer = setTimeout(processNextChunk, 20);
             }
         }
         window.loadCorridorTiles = loadCorridorTiles;
@@ -11317,7 +11334,13 @@
                     const modeEl = document.getElementById('sel-map-mode');
                     const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
                     if (mapMode !== 'offline') {
-                        initEkfHome(data.home_lat, data.home_lon, true);
+                        const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+                        const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
+                            ? Math.hypot((data.home_lat - homeLat) * 111320, (data.home_lon - homeLon) * 111320 * Math.cos(data.home_lat * Math.PI / 180))
+                            : 9999999;
+                        if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distFromHome > 1000) {
+                            initEkfHome(data.home_lat, data.home_lon, false, false);
+                        }
                     }
                 }
             }
@@ -11503,8 +11526,6 @@
                 // Load any missing tiles around the aircraft's present position without moving the world origin
                 if (pendingTileRefresh) {
                     pendingTileRefresh = false;
-                    lastMapUpdateLat = 0;
-                    lastMapUpdateLon = 0;
                     if (currentPlaneLat && currentPlaneLon) {
                         updateMap(currentPlaneLat, currentPlaneLon, false);
                     }
