@@ -85,25 +85,99 @@ def check_port_listening(host, port, timeout=0.25):
     except Exception:
         return False
 
+def normalize_mavlink_target(raw_target, default_baud=115200):
+    if not raw_target:
+        return 'udpin:0.0.0.0:14550', default_baud
+    target = str(raw_target).strip()
+    baud = default_baud
+
+    # 1. Normalize pure port numbers or leading colon, e.g. '14550' or ':14550'
+    if target.isdigit():
+        return f'udpin:0.0.0.0:{target}', baud
+    if target.startswith(':') and target[1:].isdigit():
+        return f'udpin:0.0.0.0:{target[1:]}', baud
+
+    # 2. Extract baud if formatted as COM3:115200 or /dev/ttyUSB0:115200 (not IP:port, udp:, or tcp:)
+    if ':' in target and not target.startswith(('udp', 'tcp')) and not re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$', target):
+        parts = target.split(':', 1)
+        target = parts[0]
+        try:
+            baud = int(parts[1])
+        except ValueError:
+            pass
+    
+    # 3. Normalize IP:PORT without prefix (e.g., '0.0.0.0:14550' or '127.0.0.1:14550')
+    if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$', target):
+        return f'udpin:{target}', baud
+
+    # 4. Normalize udp:... (e.g. udp:14550 -> udpin:0.0.0.0:14550, udp:127.0.0.1:14550 -> udpin:127.0.0.1:14550)
+    if target.startswith('udp:'):
+        sub = target[4:]
+        if sub.isdigit():
+            return f'udpin:0.0.0.0:{sub}', baud
+        elif ':' not in sub:
+            return f'udpin:0.0.0.0:{sub}', baud
+        else:
+            return f'udpin:{sub}', baud
+
+    if target.lower().startswith('com'):
+        target = target.upper()
+
+    return target, baud
+
 def parse_mavlink_target():
     explicit = None
     baud = 115200
-    for i, arg in enumerate(sys.argv):
+
+    i = 1
+    while i < len(sys.argv):
+        arg = sys.argv[i]
         if arg in ('--connect', '--mavlink', '-c') and i + 1 < len(sys.argv):
             explicit = sys.argv[i + 1]
-            break
+            i += 2
+            continue
         elif arg.startswith(('--connect=', '--mavlink=')):
             explicit = arg.split('=', 1)[1]
-            break
-        elif i > 0 and not arg.startswith('-') and sys.argv[i - 1] not in ('--connect', '--mavlink', '-c', '-m', '-p', '-b'):
+            i += 1
+            continue
+        elif arg in ('--udp', '-u') and i + 1 < len(sys.argv):
+            udp_val = sys.argv[i + 1]
+            explicit = f'udpin:0.0.0.0:{udp_val}' if udp_val.isdigit() else udp_val
+            i += 2
+            continue
+        elif arg.startswith(('--udp=', '-u=')):
+            udp_val = arg.split('=', 1)[1]
+            explicit = f'udpin:0.0.0.0:{udp_val}' if udp_val.isdigit() else udp_val
+            i += 1
+            continue
+        elif arg in ('--com',) and i + 1 < len(sys.argv):
+            explicit = sys.argv[i + 1]
+            i += 2
+            continue
+        elif arg.startswith('--com='):
+            explicit = arg.split('=', 1)[1]
+            i += 1
+            continue
+        elif arg in ('--baud', '-b') and i + 1 < len(sys.argv):
+            try:
+                baud = int(sys.argv[i + 1])
+            except ValueError:
+                pass
+            i += 2
+            continue
+        elif not arg.startswith('-') and explicit is None:
             explicit = arg
-            break
+            i += 1
+            continue
+        i += 1
+
     if not explicit:
         explicit = os.environ.get('MAVLINK_URL')
 
     is_auto = False
     if explicit:
-        target = explicit
+        target, target_baud = normalize_mavlink_target(explicit, baud)
+        baud = target_baud
     else:
         is_auto = True
         # 1. Proactively detect active ArduPilot SITL instance on local TCP ports
@@ -113,53 +187,71 @@ def parse_mavlink_target():
                 print(f"[MAVLink Auto-Discovery] Detected active ArduPilot SITL instance on {target}")
                 break
         else:
-            # 2. Check for physical Flight Controller USB serial COM port
-            fc_port = None
-            try:
-                import serial.tools.list_ports
-                for p in serial.tools.list_ports.comports():
-                    desc = f"{p.description or ''} {p.manufacturer or ''} {p.product or ''}".lower()
-                    if any(kw in desc for kw in ('pixhawk', 'cube', 'ardupilot', 'matek', 'holybro', 'speedybee', 'f405', 'f745', 'h743', 'stm32', 'ch340', 'cp210')):
-                        fc_port = p.device
-                        print(f"[MAVLink Auto-Discovery] Detected Flight Controller on serial port {fc_port} ({p.description})")
-                        break
-            except Exception:
-                pass
-            if fc_port:
-                target = fc_port
-            else:
-                # 3. Default to universal UDP telemetry receiver (0.0.0.0 captures WSL2 vEthernet, localhost, and LAN MAVLink streams)
-                target = 'udpin:0.0.0.0:14550'
+            # 2. Default to universal UDP telemetry receiver (UDP mirror from Mission Planner, QGC, or LAN broadcast).
+            # Auto COM seizure is permanently disabled to prevent resource conflicts with Mission Planner.
+            target = 'udpin:0.0.0.0:14550'
+            print("[MAVLink Auto-Discovery] Auto COM scanning disabled. Defaulting to UDP receiver on udpin:0.0.0.0:14550")
+            print("[MAVLink] (To connect to a serial COM port manually, use --com COMx or switch connection in the HUD UI)")
 
-    if ':' in target and not target.startswith(('udp', 'tcp')):
-        parts = target.split(':')
-        target = parts[0]
-        try:
-            baud = int(parts[1])
-        except ValueError:
-            pass
-    if target.lower().startswith('com'):
-        target = target.upper()
     return target, baud, is_auto
+
+def create_mavlink_connection(target, baud=115200):
+    if target.startswith(('udp', 'tcp')):
+        print(f"[MAVLink] Connecting via network: {target}")
+        return mavutil.mavlink_connection(target)
+    else:
+        print(f"[MAVLink] Connecting to serial port {target} at {baud} baud...")
+        try:
+            conn = mavutil.mavlink_connection(target, baud=baud)
+            print(f"[MAVLink] Successfully opened serial port {target}.")
+            return conn
+        except PermissionError:
+            print(f"[MAVLink] WARNING: Serial port {target} is locked by another process (e.g. Mission Planner).")
+            print(f"[MAVLink] Falling back to UDP receiver udpin:0.0.0.0:14550 to keep visualizer online.")
+            return mavutil.mavlink_connection('udpin:0.0.0.0:14550')
+        except Exception as e:
+            print(f"[MAVLink] WARNING: Could not open serial port {target}: {e}. Falling back to udpin:0.0.0.0:14550.")
+            return mavutil.mavlink_connection('udpin:0.0.0.0:14550')
+
+def switch_mavlink_target(raw_target, req_baud=115200):
+    global connection, MAVLINK_DEVICE, MAVLINK_BAUD, MAVLINK_URL, heartbeat_received, is_auto_target
+    global is_network_sitl, detected_fc_hardware
+    new_dev, new_baud = normalize_mavlink_target(raw_target, req_baud)
+    print(f"[MAVLink] Switching MAVLink connection to {new_dev} (baud={new_baud})...")
+    try:
+        if new_dev.startswith(('udp', 'tcp')):
+            new_conn = mavutil.mavlink_connection(new_dev)
+        else:
+            new_conn = mavutil.mavlink_connection(new_dev, baud=new_baud)
+
+        try:
+            connection.close()
+        except Exception:
+            pass
+
+        connection = new_conn
+        mission_handler.conn = connection
+        MAVLINK_DEVICE = new_dev
+        MAVLINK_BAUD = new_baud
+        MAVLINK_URL = f'{new_dev}:{new_baud}' if not new_dev.startswith(('udp', 'tcp')) else new_dev
+        heartbeat_received = False
+        is_auto_target = False
+        is_network_sitl = new_dev.startswith('tcp') and any(h in new_dev for h in ('127.0.0.1', 'localhost', '0.0.0.0'))
+        if is_network_sitl:
+            detected_fc_hardware = "SITL"
+        elif new_dev.startswith('udp'):
+            detected_fc_hardware = "UDP Mirror"
+        else:
+            detected_fc_hardware = "Hardware FC"
+        print(f"[MAVLink] Successfully switched connection to {MAVLINK_URL}")
+        return True, f"Connected to {MAVLINK_URL}"
+    except Exception as e:
+        print(f"[MAVLink] Error switching connection to {new_dev}: {e}")
+        return False, str(e)
 
 MAVLINK_DEVICE, MAVLINK_BAUD, is_auto_target = parse_mavlink_target()
 MAVLINK_URL = f'{MAVLINK_DEVICE}:{MAVLINK_BAUD}' if not MAVLINK_DEVICE.startswith(('udp', 'tcp')) else MAVLINK_DEVICE
-if MAVLINK_DEVICE.startswith(('udp', 'tcp')):
-    print(f"[MAVLink] Connecting via network: {MAVLINK_DEVICE}")
-    connection = mavutil.mavlink_connection(MAVLINK_DEVICE)
-else:
-    print(f"[MAVLink] Connecting to serial port {MAVLINK_DEVICE} at {MAVLINK_BAUD} baud...")
-    while True:
-        try:
-            connection = mavutil.mavlink_connection(MAVLINK_DEVICE, baud=MAVLINK_BAUD)
-            print(f"[MAVLink] Successfully opened serial port {MAVLINK_DEVICE}.")
-            break
-        except PermissionError:
-            print(f"[MAVLink] WARNING: Serial port {MAVLINK_DEVICE} is currently locked by another process (e.g. Mission Planner or another terminal). Waiting for port to become free...")
-            time.sleep(2)
-        except Exception as e:
-            print(f"[MAVLink] Waiting for serial port {MAVLINK_DEVICE} ({e}). Retrying in 2 seconds...")
-            time.sleep(2)
+connection = create_mavlink_connection(MAVLINK_DEVICE, MAVLINK_BAUD)
 
 clients = set()
 heartbeat_received = False
@@ -551,9 +643,9 @@ async def mavlink_listener():
     last_auto_scan_time = 0
 
     while True:
-        # Proactive auto-scan if in auto mode and no heartbeat has been received
+        # Proactive auto-scan if in auto mode targeting SITL and no heartbeat has been received
         now = time.time()
-        if is_auto_target and not heartbeat_received:
+        if is_auto_target and not heartbeat_received and MAVLINK_DEVICE.startswith('tcp'):
             if last_auto_scan_time == 0:
                 last_auto_scan_time = now
             elif now - last_auto_scan_time > 2.0:
@@ -1237,6 +1329,43 @@ async def ws_handler(websocket, path=None):
                     except (ConnectionResetError, ConnectionError, OSError):
                         pass
                     print(f"[MAVLink] Sent NAV_TAKEOFF (alt={alt}m) to Sys {target_sys}:{target_comp}")
+                elif action == "connect_mavlink":
+                    raw_target = cmd.get("target", "udpin:0.0.0.0:14550")
+                    req_baud = int(cmd.get("baud", 115200))
+                    success, res_msg = switch_mavlink_target(raw_target, req_baud)
+                    status_payload = json.dumps({
+                        "type": "MAVLINK_STATUS",
+                        "connected": False,
+                        "url": MAVLINK_URL,
+                        "target": MAVLINK_DEVICE,
+                        "baud": MAVLINK_BAUD,
+                        "success": success,
+                        "message": res_msg
+                    })
+                    for c in list(clients):
+                        try:
+                            await c.send(status_payload)
+                        except Exception:
+                            pass
+                elif action == "get_serial_ports":
+                    ports_list = []
+                    try:
+                        import serial.tools.list_ports
+                        for p in serial.tools.list_ports.comports():
+                            ports_list.append({
+                                "device": p.device,
+                                "description": p.description or p.device,
+                                "manufacturer": p.manufacturer or ""
+                            })
+                    except Exception:
+                        pass
+                    try:
+                        await websocket.send(json.dumps({
+                            "type": "SERIAL_PORTS_LIST",
+                            "ports": ports_list
+                        }))
+                    except Exception:
+                        pass
             except Exception as e:
                 print(f"[Server] Error processing client message: {e}")
     except websockets.exceptions.ConnectionClosed:
@@ -2042,6 +2171,40 @@ def start_http_server():
                     self.send_error(500, str(e))
                     return
 
+            # 2c. Serial Ports List API: /api/list_ports
+            elif self.path.startswith('/api/list_ports'):
+                ports_list = []
+                try:
+                    import serial.tools.list_ports
+                    for p in serial.tools.list_ports.comports():
+                        ports_list.append({
+                            "device": p.device,
+                            "description": p.description or p.device,
+                            "manufacturer": p.manufacturer or ""
+                        })
+                except Exception:
+                    pass
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"ports": ports_list}).encode('utf-8'))
+                return
+
+            # 2d. MAVLink Status API: /api/mavlink_status
+            elif self.path.startswith('/api/mavlink_status'):
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "connected": heartbeat_received,
+                    "url": MAVLINK_URL,
+                    "target": MAVLINK_DEVICE,
+                    "baud": MAVLINK_BAUD
+                }).encode('utf-8'))
+                return
+
             # 3. Cache status API: /api/cache_status?preset=...
             elif self.path.startswith('/api/cache_status'):
                 try:
@@ -2265,6 +2428,32 @@ def start_http_server():
                     self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
                 return
 
+            elif self.path.startswith('/api/connect_mavlink'):
+                content_len = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_len).decode('utf-8') if content_len > 0 else '{}'
+                try:
+                    pdata = json.loads(body) if body else {}
+                    raw_target = pdata.get("target", "udpin:0.0.0.0:14550")
+                    req_baud = int(pdata.get("baud", 115200))
+                    success, res_msg = switch_mavlink_target(raw_target, req_baud)
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": success,
+                        "message": res_msg,
+                        "url": MAVLINK_URL,
+                        "target": MAVLINK_DEVICE
+                    }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+                return
+
             return super().do_POST()
 
         def log_message(self, format, *args): pass
@@ -2364,7 +2553,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ArduPilot SITL Telemetry & Visualizer Server")
     parser.add_argument("--headless", "--no-gui", action="store_true", help="Run without native desktop window (headless mode for WSL/Linux)")
     parser.add_argument("--connect", "--mavlink", "-c", default=None, help="MAVLink target (e.g. tcp:127.0.0.1:5762, udpin:0.0.0.0:14550, COM3:115200)")
-    parser.add_argument("target", nargs="?", default=None, help="Optional positional MAVLink target (e.g. tcp:127.0.0.1:5762)")
+    parser.add_argument("--udp", "-u", default=None, help="Connect via UDP port or IP:PORT (e.g. 14550, 0.0.0.0:14550)")
+    parser.add_argument("--com", default=None, help="Connect via serial COM port (e.g. COM3 or COM3:115200)")
+    parser.add_argument("--baud", "-b", type=int, default=115200, help="Serial baud rate (default: 115200)")
+    parser.add_argument("target", nargs="?", default=None, help="Optional positional MAVLink target (e.g. 14550, udpin:0.0.0.0:14550, COM3)")
     args, unknown = parser.parse_known_args()
 
     # Ensure Windows taskbar displays the custom app icon instead of generic python.exe

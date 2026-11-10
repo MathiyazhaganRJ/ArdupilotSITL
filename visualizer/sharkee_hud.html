@@ -3093,6 +3093,26 @@
             margin-left: 4px;
             cursor: pointer;
         }
+
+        .mavlink-preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-align: left;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-family: inherit;
+        }
+        .mavlink-preset-btn:hover {
+            background: rgba(0, 113, 227, 0.22);
+            border-color: rgba(0, 113, 227, 0.65);
+            transform: translateY(-1px);
+        }
     </style>
     <script src="libs/three.min.js"></script>
     <script>if (typeof THREE === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
@@ -3398,6 +3418,13 @@
                 <span class="panel-brand-title">ArduPilot SITL</span>
             </div>
             <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                <button id="btn-mavlink-link-hdr" class="icon-btn" title="MAVLink Connection Setup (UDP Mirror, SITL, COM)" onclick="openMavlinkModal()" style="width: 26px; height: 26px; font-size: 12px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </button>
                 <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="width: 26px; height: 26px; font-size: 12px; position: relative;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -3443,8 +3470,17 @@
         <!-- Tab 1: Live Flight Telemetry & Aircraft Config -->
         <div id="panel-view-telemetry">
             <div class="data-card">
-                <div class="data-row"><span class="data-label">Link Status</span><span id="status" class="data-val"
-                        style="color: var(--danger); font-family: 'B612 Mono', monospace; font-weight: 700;">Offline</span></div>
+                <div class="data-row" style="cursor: pointer;" onclick="openMavlinkModal()" title="Click to manage MAVLink connection (UDP, TCP, COM)">
+                    <span class="data-label">Link Status</span>
+                    <span id="status-wrap" style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span id="status" class="data-val" style="color: var(--danger); font-family: 'B612 Mono', monospace; font-weight: 700;">Offline</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity: 0.6;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </span>
+                </div>
+                <div class="data-row" style="cursor: pointer;" onclick="openMavlinkModal()" title="Click to switch MAVLink target (UDP Mirror, SITL, COM)">
+                    <span class="data-label">MAVLink Port</span>
+                    <span id="mavlink-port-display" class="data-val" style="color: var(--accent); font-family: 'B612 Mono', monospace; font-size: 11px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">udpin:0.0.0.0:14550</span>
+                </div>
                 <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
                         style="color: #00e5ff; font-family: 'B612 Mono', monospace; font-weight: 700;">SITL</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
@@ -4588,6 +4624,86 @@
                     Confirm & Download
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- MAVLink Connection & Mirror Setup Modal -->
+    <div id="modal-mavlink-connection" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: rgba(18, 22, 28, 0.96); border: 1px solid rgba(0, 113, 227, 0.45); box-shadow: 0 24px 60px rgba(0,0,0,0.85), 0 0 24px rgba(0,113,227,0.25); border-radius: 14px; width: 440px; max-width: 92vw; padding: 22px; display: flex; flex-direction: column; gap: 14px; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span style="font-size: 14px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;">MAVLink Link Setup</span>
+                </div>
+                <button id="btn-close-mavlink-modal" onclick="closeMavlinkModal()" style="background: none; border: none; color: #86868b; cursor: pointer; font-size: 22px; line-height: 1; padding: 2px 6px;">&times;</button>
+            </div>
+
+            <p style="font-size: 11.5px; color: #a1a1a6; margin: 0; line-height: 1.45;">
+                Connect to Mission Planner UDP Mirror, ArduPilot SITL, or direct serial flight controller without restarting the telemetry server.
+            </p>
+
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; font-size: 11px; display: flex; flex-direction: column; gap: 5px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Active MAVLink Link:</span>
+                    <span id="modal-active-mavlink-url" style="font-family: monospace; color: #00e5ff; font-weight: 700;">udpin:0.0.0.0:14550</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #86868b;">Heartbeat Status:</span>
+                    <span id="modal-mavlink-heartbeat-status" style="font-family: monospace; color: var(--danger); font-weight: 700;">Awaiting Packets</span>
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size: 10px; font-weight: 700; color: #86868b; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">Quick Presets</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <button type="button" class="mavlink-preset-btn" onclick="applyMavlinkPreset('udpin:0.0.0.0:14550')">
+                        <span style="font-size: 11.5px; font-weight: 700; color: #34c759;">Mission Planner UDP</span>
+                        <span style="color: #86868b; font-size: 10px; font-family: monospace;">udpin:0.0.0.0:14550</span>
+                    </button>
+                    <button type="button" class="mavlink-preset-btn" onclick="applyMavlinkPreset('udpin:127.0.0.1:14550')">
+                        <span style="font-size: 11.5px; font-weight: 700;">Localhost UDP In</span>
+                        <span style="color: #86868b; font-size: 10px; font-family: monospace;">udpin:127.0.0.1:14550</span>
+                    </button>
+                    <button type="button" class="mavlink-preset-btn" onclick="applyMavlinkPreset('tcp:127.0.0.1:5762')">
+                        <span style="font-size: 11.5px; font-weight: 700; color: #00e5ff;">ArduPilot SITL TCP</span>
+                        <span style="color: #86868b; font-size: 10px; font-family: monospace;">tcp:127.0.0.1:5762</span>
+                    </button>
+                    <button type="button" class="mavlink-preset-btn" onclick="applyMavlinkPreset('udpin:127.0.0.1:14551')">
+                        <span style="font-size: 11.5px; font-weight: 700;">UDP Mirror (14551)</span>
+                        <span style="color: #86868b; font-size: 10px; font-family: monospace;">udpin:127.0.0.1:14551</span>
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 10px; font-weight: 700; color: #86868b; letter-spacing: 0.5px; text-transform: uppercase;">Custom UDP Address or Port</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-custom-mavlink-target" placeholder="e.g. 14550, udpin:0.0.0.0:14550, or tcp:127.0.0.1:5762" value="udpin:0.0.0.0:14550" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,113,227,0.4); border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 12px; color: #fff; outline: none;">
+                    <button type="button" onclick="submitCustomMavlinkTarget()" style="background: #0071e3; border: none; border-radius: 6px; color: #fff; padding: 0 16px; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s ease;">Connect</button>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10px; font-weight: 700; color: #86868b; letter-spacing: 0.5px; text-transform: uppercase;">Manual Serial COM Port</span>
+                    <button type="button" onclick="refreshSerialPortsList()" style="background: none; border: none; color: #0071e3; font-size: 11px; cursor: pointer; font-weight: 600; text-decoration: underline;">Scan Ports</button>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <select id="select-serial-com-port" style="flex: 2; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.18); border-radius: 6px; padding: 6px 8px; font-family: monospace; font-size: 11px; color: #fff; outline: none;">
+                        <option value="">(Select or click Scan Ports)</option>
+                    </select>
+                    <select id="select-serial-baud" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.18); border-radius: 6px; padding: 6px 8px; font-family: monospace; font-size: 11px; color: #fff; outline: none;">
+                        <option value="115200" selected>115200</option>
+                        <option value="57600">57600</option>
+                        <option value="921600">921600</option>
+                        <option value="460800">460800</option>
+                        <option value="38400">38400</option>
+                    </select>
+                    <button type="button" onclick="connectSelectedSerialPort()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff; padding: 0 12px; font-weight: 600; font-size: 11px; cursor: pointer;">Open COM</button>
+                </div>
+            </div>
+
+            <div id="modal-mavlink-notification" style="display: none; padding: 8px 10px; border-radius: 6px; font-size: 11px; font-family: monospace;"></div>
         </div>
     </div>
 
@@ -6226,6 +6342,128 @@
             if (modal) modal.style.display = 'none';
             pendingDownloadConfig = null;
         }
+
+        function openMavlinkModal() {
+            const modal = document.getElementById('modal-mavlink-connection');
+            if (modal) {
+                modal.style.display = 'flex';
+                // Request current serial ports list from server
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    try { ws.send(JSON.stringify({ action: 'get_serial_ports' })); } catch(e){}
+                } else {
+                    fetch('/api/list_ports').then(r => r.json()).then(data => {
+                        if (data && data.ports) populateSerialPortsDropdown(data.ports);
+                    }).catch(() => {});
+                }
+            }
+        }
+        window.openMavlinkModal = openMavlinkModal;
+
+        function closeMavlinkModal() {
+            const modal = document.getElementById('modal-mavlink-connection');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeMavlinkModal = closeMavlinkModal;
+
+        function applyMavlinkPreset(target) {
+            const input = document.getElementById('input-custom-mavlink-target');
+            if (input) input.value = target;
+            submitMavlinkConnect(target);
+        }
+        window.applyMavlinkPreset = applyMavlinkPreset;
+
+        function submitCustomMavlinkTarget() {
+            const input = document.getElementById('input-custom-mavlink-target');
+            const target = input ? input.value.trim() : '';
+            if (!target) return;
+            submitMavlinkConnect(target);
+        }
+        window.submitCustomMavlinkTarget = submitCustomMavlinkTarget;
+
+        function connectSelectedSerialPort() {
+            const selPort = document.getElementById('select-serial-com-port');
+            const selBaud = document.getElementById('select-serial-baud');
+            const port = selPort ? selPort.value : '';
+            const baud = selBaud ? selBaud.value : '115200';
+            if (!port) {
+                showMavlinkModalNotification("Please select a valid COM port or click 'Scan Ports'", true);
+                return;
+            }
+            submitMavlinkConnect(`${port}:${baud}`, parseInt(baud));
+        }
+        window.connectSelectedSerialPort = connectSelectedSerialPort;
+
+        function submitMavlinkConnect(target, baud = 115200) {
+            showMavlinkModalNotification(`Switching connection to ${target}...`, false);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                    ws.send(JSON.stringify({ action: 'connect_mavlink', target: target, baud: baud }));
+                } catch(e) {
+                    showMavlinkModalNotification(`Error: ${e.message}`, true);
+                }
+            } else {
+                fetch('/api/connect_mavlink', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: target, baud: baud })
+                }).then(r => r.json()).then(res => {
+                    if (res.success) {
+                        showMavlinkModalNotification(`Success: ${res.message}`, false);
+                    } else {
+                        showMavlinkModalNotification(`Failed: ${res.error || res.message}`, true);
+                    }
+                }).catch(err => {
+                    showMavlinkModalNotification(`Connection request failed: ${err.message}`, true);
+                });
+            }
+        }
+        window.submitMavlinkConnect = submitMavlinkConnect;
+
+        function populateSerialPortsDropdown(ports) {
+            const sel = document.getElementById('select-serial-com-port');
+            if (!sel) return;
+            sel.innerHTML = '';
+            if (!ports || ports.length === 0) {
+                sel.innerHTML = '<option value="">No COM ports detected</option>';
+                return;
+            }
+            sel.innerHTML = '<option value="">-- Select COM Port --</option>';
+            ports.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.device;
+                opt.innerText = `${p.device} (${p.description || 'Serial'})`;
+                sel.appendChild(opt);
+            });
+        }
+        window.populateSerialPortsDropdown = populateSerialPortsDropdown;
+
+        function refreshSerialPortsList() {
+            showMavlinkModalNotification("Scanning available COM ports...", false);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try { ws.send(JSON.stringify({ action: 'get_serial_ports' })); } catch(e){}
+            } else {
+                fetch('/api/list_ports').then(r => r.json()).then(data => {
+                    if (data && data.ports) {
+                        populateSerialPortsDropdown(data.ports);
+                        showMavlinkModalNotification(`Found ${data.ports.length} COM port(s)`, false);
+                    }
+                }).catch(err => {
+                    showMavlinkModalNotification(`Port scan error: ${err.message}`, true);
+                });
+            }
+        }
+        window.refreshSerialPortsList = refreshSerialPortsList;
+
+        function showMavlinkModalNotification(msg, isError = false) {
+            const notif = document.getElementById('modal-mavlink-notification');
+            if (!notif) return;
+            notif.style.display = 'block';
+            notif.style.background = isError ? 'rgba(255, 69, 58, 0.15)' : 'rgba(0, 113, 227, 0.15)';
+            notif.style.color = isError ? '#ff453a' : '#00e5ff';
+            notif.style.border = isError ? '1px solid rgba(255, 69, 58, 0.3)' : '1px solid rgba(0, 113, 227, 0.3)';
+            notif.innerText = msg;
+        }
+        window.showMavlinkModalNotification = showMavlinkModalNotification;
 
         const inputMapName = document.getElementById('input-offline-map-name');
         if (inputMapName) {
@@ -11111,8 +11349,27 @@
 
             ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+            if (data.type === 'SERIAL_PORTS_LIST') {
+                populateSerialPortsDropdown(data.ports);
+                showMavlinkModalNotification(`Found ${(data.ports || []).length} serial COM port(s)`, false);
+                return;
+            }
             if (data.type === 'MAVLINK_STATUS') {
                 const st = document.getElementById('status');
+                const portDisp = document.getElementById('mavlink-port-display');
+                const modalUrl = document.getElementById('modal-active-mavlink-url');
+                const modalHb = document.getElementById('modal-mavlink-heartbeat-status');
+                if (portDisp && data.url) portDisp.innerText = data.url;
+                if (modalUrl && data.url) modalUrl.innerText = data.url;
+                if (modalHb) {
+                    modalHb.innerText = data.connected ? "Active (Receiving Heartbeats)" : "Searching / Waiting for Packets";
+                    modalHb.style.color = data.connected ? "var(--success)" : "var(--danger)";
+                }
+                if (data.message) {
+                    showMavlinkModalNotification(data.message, false);
+                } else if (data.error) {
+                    showMavlinkModalNotification(`Error: ${data.error}`, true);
+                }
                 if (st) {
                     if (data.connected) {
                         st.innerText = "Connected";
@@ -11120,10 +11377,10 @@
                         if (!vehicleConnected) {
                             vehicleConnected = true;
                             requestWaypoints(false);
-                            addAutopilotMessage({ text: `Connected to ArduPilot SITL (${data.url || 'Port 8766'})`, severity: 6 });
+                            addAutopilotMessage({ text: `Connected to MAVLink (${data.url || 'Port 8766'})`, severity: 6 });
                         }
                     } else {
-                        st.innerText = `Searching (${data.url || 'SITL'})...`;
+                        st.innerText = `Searching (${data.url || 'MAVLink'})...`;
                         st.style.color = "var(--accent-yellow)";
                         vehicleConnected = false;
                     }
@@ -11137,9 +11394,14 @@
                     st.style.color = "var(--success)";
                 }
                 vehicleConnected = true;
+                const modalHb = document.getElementById('modal-mavlink-heartbeat-status');
+                if (modalHb) {
+                    modalHb.innerText = "Active (Receiving Heartbeats)";
+                    modalHb.style.color = "var(--success)";
+                }
                 // Proactively request waypoints when vehicle connection is confirmed
                 requestWaypoints(false);
-                addAutopilotMessage({ text: "Connected to SITL Telemetry Gateway (Port 8766)", severity: 6 });
+                addAutopilotMessage({ text: "Connected to MAVLink Telemetry Gateway (Port 8766)", severity: 6 });
             }
             if (data.type === 'PARAM_VALUE') {
                 if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
