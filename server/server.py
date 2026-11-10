@@ -2359,6 +2359,13 @@ if __name__ == "__main__":
         server_thread = threading.Thread(target=start_asyncio_loop, daemon=True)
         server_thread.start()
         
+        # Await HTTP Web Server (Port 8000) & WebSocket Telemetry Gateway (Port 8766) readiness
+        t_wait = time.time()
+        while time.time() - t_wait < 3.0:
+            if check_port_listening('127.0.0.1', 8000) and check_port_listening('127.0.0.1', 8766):
+                break
+            time.sleep(0.05)
+
         # 2. Launch the native desktop window on the main thread (with fallback if GTK/QT unavailable in WSL)
         try:
             window = webview.create_window(

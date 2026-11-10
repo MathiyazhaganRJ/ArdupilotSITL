@@ -4613,6 +4613,17 @@
         var waypointsVisible = true;
         var currentLxnavPage = 1;
         var lxnavWidgetVisible = true;
+        var currentPlaneAltRel = 0.0;
+        var currentPlaneAltMSL = 0.0;
+        var currentTerrainAltMSL = 0.0;
+        var currentAGL = 0.0;
+        var planeGroundspeed = 0.0;
+        var planeGroundSpd = 0.0;
+        var planeAirspeed = 0.0;
+        var currentPlaneLat = null;
+        var currentPlaneLon = null;
+        var vehicleConnected = false;
+        var waypointGroup = null;
 
         const SVG_MOON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
         const SVG_SUN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
@@ -6502,8 +6513,9 @@
         // ============================================================
         let planeHeading = 0;       // Degrees [0..360)
         let planeGroundTrack = null;// Degrees [0..360)
-        let planeAirspeed = 0;      // m/s
-        let planeGroundspeed = 0;   // m/s
+        planeAirspeed = 0;      // m/s
+        planeGroundspeed = 0;   // m/s
+        planeGroundSpd = 0;     // m/s
         let currentFlightMode = 'GUIDED'; // Auto, Loiter, Guided, RTL, etc.
         window.currentFlightMode = 'GUIDED';
         
@@ -6517,8 +6529,8 @@
         let currentWindDir = 270;   // Degrees
         let currentWindTurb = 0.20; // 0.0 - 1.0
         let currentWindGust = 7.5;  // m/s
-        let currentPlaneLat = null;
-        let currentPlaneLon = null;
+        currentPlaneLat = null;
+        currentPlaneLon = null;
         window.currentPlaneLat = null;
         window.currentPlaneLon = null;
         window.setCurrentPlanePosition = function(lat, lon) {
@@ -7151,6 +7163,10 @@
 
         const scene = new THREE.Scene();
         window.scene = scene;
+        waypointGroup = new THREE.Group();
+        waypointGroup.visible = true;
+        scene.add(waypointGroup);
+        window.waypointGroup = waypointGroup;
         let gridHelper;
 
         function updateSceneTheme() {
@@ -10594,9 +10610,6 @@
         // ==========================================
         // 3D WAYPOINTS & SURVEY GRID ENGINE (CORV-GCS)
         // ==========================================
-        const waypointGroup = new THREE.Group();
-        waypointGroup.visible = true;
-        scene.add(waypointGroup);
         // Permanent Geographic Earth Anchor - Synchronized directly to ArduPilot EKF Local NED Origin
         function setMissionAnchor(lat, lon, x = 0, z = 0) {
             if (typeof lat !== 'number' || typeof lon !== 'number' || Math.abs(lat) < 0.001) return;
@@ -10856,10 +10869,10 @@
         let terrainHistory = [];
         const MAX_HISTORY = 100;
         let hasTerrainData = false;
-        let currentPlaneAltRel = 0;
-        let currentPlaneAltMSL = 0;
-        let currentTerrainAltMSL = 0;
-        let currentAGL = 0;
+        currentPlaneAltRel = 0;
+        currentPlaneAltMSL = 0;
+        currentTerrainAltMSL = 0;
+        currentAGL = 0;
         let lastGraphUpdate = 0;
 
         function updateTerrainGraph() {
@@ -11030,7 +11043,7 @@
         }
 
         let wsReconnectTimer = null;
-        let vehicleConnected = false;
+        vehicleConnected = false;
 
         function scheduleWsReconnect() {
             if (wsReconnectTimer) return;
@@ -11185,6 +11198,7 @@
                 document.getElementById('g_spd').innerText = data.groundspeed.toFixed(1) + " m/s";
                 planeAirspeed = data.airspeed;
                 planeGroundspeed = data.groundspeed;
+                planeGroundSpd = data.groundspeed;
                 if (data.climb !== undefined && data.climb !== null) {
                     planeClimbRate = data.climb;
                 }
