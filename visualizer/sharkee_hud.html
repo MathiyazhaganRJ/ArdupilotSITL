@@ -5307,18 +5307,6 @@
                     if (typeof updateMapEstimate === 'function') updateMapEstimate();
                 }
             }
-
-            // In Online Mode: if map world origin is uninitialized, or still pinned to default Tamil Nadu airfield (8.3105), or distant (>2km):
-            const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
-            const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
-                ? Math.hypot((lat - homeLat) * 111320, (lon - homeLon) * 111320 * Math.cos(lat * Math.PI / 180))
-                : 9999999;
-
-            if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distFromHome > 2000) {
-                if (typeof initEkfHome === 'function') {
-                    initEkfHome(lat, lon, true);
-                }
-            }
         }
         window.syncOnlineVehicleCoordinates = syncOnlineVehicleCoordinates;
 
@@ -5403,20 +5391,55 @@
 
         let activeStreamingTiles = 0;
         let totalStreamingTiles = 0;
+        let streamingIdleTimer = null;
+        let badgeThrottleTimer = null;
+
         function updateTileStreamingBadge() {
             const badge = document.getElementById('map-net-badge');
             if (!badge) return;
+
             if (activeStreamingTiles > 0) {
-                const loaded = Math.max(0, totalStreamingTiles - activeStreamingTiles);
-                const pct = Math.round((loaded / Math.max(1, totalStreamingTiles)) * 100);
-                badge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: #ffaa00; display: inline-block; animation: pulseBadge 1s infinite;"></span> STREAMING ${pct}% (${loaded}/${totalStreamingTiles})`;
-                badge.style.color = '#ffaa00';
+                if (streamingIdleTimer) {
+                    clearTimeout(streamingIdleTimer);
+                    streamingIdleTimer = null;
+                }
+                if (!badgeThrottleTimer) {
+                    badgeThrottleTimer = setTimeout(() => {
+                        badgeThrottleTimer = null;
+                        if (activeStreamingTiles > 0) {
+                            const loaded = Math.max(0, totalStreamingTiles - activeStreamingTiles);
+                            const pct = Math.round((loaded / Math.max(1, totalStreamingTiles)) * 100);
+                            badge.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: #ffaa00; display: inline-block; animation: pulseBadge 1s infinite;"></span> STREAMING ${pct}% (${loaded}/${totalStreamingTiles})`;
+                            badge.style.color = '#ffaa00';
+                        } else {
+                            scheduleNetBadgeIdle();
+                        }
+                    }, 80);
+                }
             } else {
-                updateNetBadge();
+                scheduleNetBadgeIdle();
             }
         }
 
+        function scheduleNetBadgeIdle() {
+            if (streamingIdleTimer) return;
+            // 600ms grace period of zero active tiles before transitioning to ONLINE LIVE
+            streamingIdleTimer = setTimeout(() => {
+                streamingIdleTimer = null;
+                totalStreamingTiles = 0;
+                renderNetBadge();
+            }, 600);
+        }
+
         function updateNetBadge() {
+            if (activeStreamingTiles > 0) {
+                updateTileStreamingBadge();
+                return;
+            }
+            scheduleNetBadgeIdle();
+        }
+
+        function renderNetBadge() {
             const badge = document.getElementById('map-net-badge');
             if (!badge) return;
             if (activeStreamingTiles > 0) {
@@ -8787,9 +8810,13 @@
                 ? Math.hypot((hLat - homeLat) * 111320, (hLon - homeLon) * 111320 * Math.cos(hLat * Math.PI / 180))
                 : 9999999;
 
-            const needsRecenter = forceRecenter || !ekfHomeInitialized || homeLat === null || isDefaultHome || distFromHome > 2000;
+            const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
+                               (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
+
+            // Re-anchor EKF Home ONLY on initial calibration, explicit user command, or if relocated on the ground > 10km
+            const needsRecenter = forceRecenter || !ekfHomeInitialized || homeLat === null || isDefaultHome || (!isAirborne && distFromHome > 10000);
             if (!needsRecenter) {
-                return; // Keep locked to confirmed airfield Home during local flight - prevent rebuild thrashing
+                return; // Keep locked to confirmed airfield Home during flight - prevent rebuild thrashing
             }
 
             ekfHomeInitialized = true;
@@ -11098,13 +11125,18 @@
                         syncOnlineVehicleCoordinates(data.lat, data.lon);
                     }
 
-                    // Mode-Aware Map Alignment & Seamless Tile Streaming
+                    // Mode-Aware Map Alignment & Seamless Dynamic Tile Streaming
                     const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+                    const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
+                                       (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
                     const distToHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
                         ? Math.hypot((data.lat - homeLat) * 111320, (data.lon - homeLon) * 111320 * Math.cos(data.lat * Math.PI / 180))
                         : 9999999;
 
-                    if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distToHome > 2000) {
+                    const needsInitialLock = !ekfHomeInitialized || homeLat === null || isDefaultHome;
+                    const isRelocatedOnGround = !isAirborne && (typeof homeLat === 'number' && homeLat !== null && distToHome > 10000);
+
+                    if (needsInitialLock || isRelocatedOnGround) {
                         if (hasNedPos) {
                             const latRad = data.lat * (Math.PI / 180.0);
                             const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
@@ -11311,10 +11343,16 @@
                     }
 
                     const isDefaultHome = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat - DEFAULT_PRESET.lat) < 0.001);
+                    const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
+                                       (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
                     const distToHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
                         ? Math.hypot((data.gps_lat - homeLat) * 111320, (data.gps_lon - homeLon) * 111320 * Math.cos(data.gps_lat * Math.PI / 180))
                         : 9999999;
-                    if (!ekfHomeInitialized || homeLat === null || isDefaultHome || distToHome > 2000) {
+
+                    const needsInitialLock = !ekfHomeInitialized || homeLat === null || isDefaultHome;
+                    const isRelocatedOnGround = !isAirborne && (typeof homeLat === 'number' && homeLat !== null && distToHome > 10000);
+
+                    if (needsInitialLock || isRelocatedOnGround) {
                         if (hasNedPos) {
                             const latRad = data.gps_lat * (Math.PI / 180.0);
                             const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
