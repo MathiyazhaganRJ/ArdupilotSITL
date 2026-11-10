@@ -391,6 +391,42 @@ class MissionHandler:
                         "count": len(valid_wps),
                         "current_seq": self.current_seq
                     }
+
+                # Fast graceful resolution for 1-item missions (Home seq 0 in ArduPilot)
+                if self.expected_count == 1 and missing == [0] and self.retries >= 2:
+                    if cached_home_position and 'lat' in cached_home_position:
+                        item = {
+                            "seq": 0, "command": 16, "frame": 0,
+                            "lat": cached_home_position['lat'], "lon": cached_home_position['lon'],
+                            "alt": cached_home_position.get('alt', 0.0),
+                            "param1": 0.0, "param2": 0.0, "param3": 0.0, "param4": 0.0,
+                            "current": 0, "autocontinue": 1
+                        }
+                        self._pending_waypoints[0] = item
+                        self.is_fetching = False
+                        # If disk cache already has a rich flight plan, retain it!
+                        if os.path.exists(self.cache_file):
+                            try:
+                                with open(self.cache_file, 'r', encoding='utf-8') as cf:
+                                    existing = json.load(cf)
+                                if isinstance(existing, list) and len(existing) > 1:
+                                    print(f"[Mission] Vehicle reported only home waypoint (seq 0). Retaining rich mission ({len(existing)} WPs) from disk cache.")
+                                    self.waypoints = existing
+                                    return {
+                                        "type": "MISSION_WAYPOINTS",
+                                        "waypoints": existing,
+                                        "count": len(existing),
+                                        "current_seq": self.current_seq
+                                    }
+                            except Exception: pass
+                        self.waypoints = [item]
+                        return {
+                            "type": "MISSION_WAYPOINTS",
+                            "waypoints": [item],
+                            "count": 1,
+                            "current_seq": self.current_seq
+                        }
+
                 if self.retries < self.max_retries:
                     self.retries += 1
                     self.next_req_seq = missing[0]
@@ -400,6 +436,29 @@ class MissionHandler:
                     print(f"[Mission] Timeout downloading mission items after {self.max_retries} retries (have {len(self._pending_waypoints) - len(missing)}/{self.expected_count})")
                     self.is_fetching = False
                     valid_wps = [w for w in self._pending_waypoints if w is not None]
+                    if valid_wps and len(valid_wps) > 1:
+                        self.waypoints = valid_wps
+                        return {
+                            "type": "MISSION_WAYPOINTS",
+                            "waypoints": valid_wps,
+                            "count": len(valid_wps),
+                            "current_seq": self.current_seq
+                        }
+                    elif os.path.exists(self.cache_file):
+                        # Preserve existing cached waypoints on disk
+                        try:
+                            with open(self.cache_file, 'r', encoding='utf-8') as cf:
+                                existing = json.load(cf)
+                            if isinstance(existing, list) and len(existing) > 1:
+                                print(f"[Mission] Retaining existing cached mission ({len(existing)} waypoints) from disk.")
+                                self.waypoints = existing
+                                return {
+                                    "type": "MISSION_WAYPOINTS",
+                                    "waypoints": existing,
+                                    "count": len(existing),
+                                    "current_seq": self.current_seq
+                                }
+                        except Exception: pass
                     if valid_wps:
                         self.waypoints = valid_wps
                         return {
@@ -1805,7 +1864,11 @@ def start_http_server():
                     preset = query_params.get('preset', [''])[0]
                     cleared_count = 0
 
-                    if preset and preset != 'all':
+                    if not preset:
+                        self.send_error(400, "Missing preset parameter")
+                        return
+
+                    if preset != 'all':
                         preset_folder = sanitize_preset_folder(preset)
                         target_dir = os.path.join(tile_cache_dir, preset_folder)
                         if os.path.exists(target_dir):
@@ -1913,9 +1976,20 @@ def start_http_server():
                                         # Count actual disk files to ensure metadata is dynamically truthful
                                         actual_t = len([f for f in os.listdir(item_path) if f.endswith('.jpg') or f.endswith('.png')])
                                         mdata['tiles_cached'] = actual_t
+                                        # Backfill waypoints from waypoints_cache.json if missing in corridor preset
+                                        is_corridor_folder = (mdata.get('type') == 'corridor') or ('corridor' in item.lower())
+                                        if is_corridor_folder and (not mdata.get('waypoints') or len(mdata.get('waypoints', [])) <= 1):
+                                            if os.path.exists(mission_handler.cache_file):
+                                                try:
+                                                    with open(mission_handler.cache_file, 'r', encoding='utf-8') as cf:
+                                                        disk_wps = json.load(cf)
+                                                    if isinstance(disk_wps, list) and len(disk_wps) > 1:
+                                                        mdata['waypoints'] = disk_wps
+                                                        mdata['type'] = 'corridor'
+                                                        with open(meta_file, 'w', encoding='utf-8') as mf:
+                                                            json.dump(mdata, mf, indent=2)
+                                                except Exception: pass
                                         preset_metadata_map[item] = mdata
-                                    except Exception:
-                                        pass
                                     except Exception:
                                         pass
                                 elif item == 'My_Home_Airfield':
