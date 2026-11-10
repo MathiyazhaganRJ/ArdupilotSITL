@@ -1,6 +1,9 @@
 # ArduPilot ChibiOS and PX4 Hardware Board Registry
 # Source: Tools/AP_Bootloader/board_types.txt
 import re
+import os
+import glob
+import time
 
 BOARD_ID_MAP = {
     3: "EXT_HW_RADIOLINK_MINI_PIX",
@@ -695,3 +698,161 @@ def resolve_board_name(board_version, vendor_id=0, product_id=0, is_network_sitl
         return 'SITL' if is_network_sitl else None
 
     return f"FC Board #{bid_high or bid_low}"
+
+
+def uid_to_usb_serial(uid_text):
+    """
+    Convert ArduPilot 96-bit STM32 Unique Device ID words (e.g. '003C0028 33334710 32393731')
+    to the USB Serial Number representation ('28003C001047333331373932') reported by Windows
+    and standard USB device descriptors.
+    """
+    if not uid_text:
+        return None
+    words = str(uid_text).strip().split()
+    if len(words) != 3:
+        return None
+    res = ''
+    try:
+        for w in words:
+            if len(w) == 8:
+                b = bytes.fromhex(w)
+                res += b[::-1].hex().upper()
+        return res if len(res) == 24 else None
+    except Exception:
+        return None
+
+
+def get_connected_ardupilot_usb_devices():
+    """
+    Scan local USB bus for connected ArduPilot / ChibiOS flight controllers.
+    Returns a list of dictionaries containing device name (e.g. 'COM6'), serial number,
+    hardware ID, description, and manufacturer.
+    """
+    devices = []
+    try:
+        import serial.tools.list_ports
+        for p in serial.tools.list_ports.comports():
+            hwid = str(getattr(p, 'hwid', '') or '')
+            desc = str(getattr(p, 'description', '') or '')
+            mfr = str(getattr(p, 'manufacturer', '') or '')
+            prod = str(getattr(p, 'product', '') or '')
+            dev = str(getattr(p, 'device', '') or '')
+            if (
+                '1209:5741' in hwid
+                or '26AC:' in hwid
+                or '3162:' in hwid
+                or 'ArduPilot' in desc
+                or 'ArduPilot' in mfr
+                or 'Cube' in desc
+            ):
+                m_ser = re.search(r'SER=([A-Fa-f0-9]+)', hwid)
+                ser = m_ser.group(1).upper() if m_ser else (getattr(p, 'serial_number', '') or '').upper()
+                devices.append({
+                    'device': dev,
+                    'serial_number': ser,
+                    'hwid': hwid,
+                    'description': desc,
+                    'manufacturer': mfr,
+                    'product': prod
+                })
+    except Exception:
+        pass
+    return devices
+
+
+def find_board_from_recent_tlogs(connected_usb_serials=None):
+    """
+    Search recent telemetry logs (.tlog) recorded by MAVProxy or Mission Planner on the host machine.
+    Immediately extracts the flight controller board name and boot banner without requiring a reboot.
+    """
+    candidate_dirs = [
+        os.getcwd(),
+        os.path.expanduser('~'),
+        r'C:\Users\KARSHAK_Tamal\Desktop\Git\ArdupilotSITL',
+        r'C:\Users\KARSHAK_Tamal\.gemini\antigravity-ide\scratch\ArdupilotLogViewer',
+        os.path.join(os.path.expanduser('~'), 'Documents', 'Mission Planner', 'logs'),
+    ]
+    seen_files = set()
+    candidate_files = []
+    now = time.time()
+
+    for d in candidate_dirs:
+        if not os.path.exists(d):
+            continue
+        patterns = ['mav.tlog', '*.tlog']
+        if 'Mission Planner' in d:
+            patterns = ['**/*.tlog', '*.tlog']
+        for pat in patterns:
+            try:
+                for f in glob.glob(os.path.join(d, pat), recursive=True):
+                    f_abs = os.path.abspath(f)
+                    if f_abs in seen_files:
+                        continue
+                    seen_files.add(f_abs)
+                    try:
+                        mtime = os.path.getmtime(f_abs)
+                        if now - mtime < 48 * 3600:
+                            candidate_files.append((mtime, f_abs))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+    candidate_files.sort(key=lambda x: x[0], reverse=True)
+
+    for mtime, fpath in candidate_files[:6]:
+        try:
+            from pymavlink import mavutil
+            mlog = mavutil.mavlink_connection(fpath)
+            for _ in range(400):
+                msg = mlog.recv_match(type=['STATUSTEXT', 'AUTOPILOT_VERSION'], blocking=False)
+                if msg is None:
+                    break
+                if msg.get_type() == 'STATUSTEXT':
+                    text = getattr(msg, 'text', '')
+                    board = resolve_board_from_text(text)
+                    if board and board.upper() != 'SITL':
+                        m_uid = re.search(r'([0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8})', text)
+                        if m_uid:
+                            uid_ser = uid_to_usb_serial(m_uid.group(1))
+                            if connected_usb_serials and uid_ser in connected_usb_serials:
+                                return board, f'matched USB serial {uid_ser}'
+                        return board, f'matched boot banner in {os.path.basename(fpath)}'
+                elif msg.get_type() == 'AUTOPILOT_VERSION':
+                    bv = getattr(msg, 'board_version', 0)
+                    resolved = resolve_board_name(bv)
+                    if resolved and resolved.upper() != 'SITL':
+                        return resolved, f'AUTOPILOT_VERSION {bv}'
+        except Exception:
+            pass
+    return None, None
+
+
+def resolve_fc_hardware_environment(is_network_sitl=False):
+    """
+    Resolve flight controller hardware identity using all available local telemetry logs,
+    connected USB hardware serials, and system descriptors.
+    """
+    if is_network_sitl:
+        return 'SITL', 'local SITL TCP link'
+
+    usb_devs = get_connected_ardupilot_usb_devices()
+
+    # 1. Check if any connected USB COM port directly identifies the board
+    for d in usb_devs:
+        for text_val in [d.get('description'), d.get('product'), d.get('hwid')]:
+            found = resolve_board_from_text(text_val)
+            if found and found.upper() != 'SITL':
+                return found, f"USB descriptor on {d.get('device')}"
+
+    # 2. Extract hardware identity from recent telemetry logs correlating with USB serials
+    usb_sers = [d['serial_number'] for d in usb_devs if d.get('serial_number')]
+    board_log, reason = find_board_from_recent_tlogs(usb_sers)
+    if board_log:
+        return board_log, reason
+
+    # 3. If a physical ArduPilot USB device is connected but specific board banner is absent
+    if usb_devs:
+        return 'ArduPilot Hardware FC', f"physical device on {usb_devs[0]['device']}"
+
+    return None, 'unresolved'

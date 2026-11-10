@@ -68,11 +68,19 @@ if _server_dir not in sys.path:
     sys.path.insert(0, _server_dir)
 
 try:
-    from board_types import resolve_board_name, format_fc_board_name, resolve_board_from_text
+    from board_types import (
+        resolve_board_name,
+        format_fc_board_name,
+        resolve_board_from_text,
+        resolve_fc_hardware_environment,
+        get_connected_ardupilot_usb_devices,
+    )
 except ImportError:
     def resolve_board_name(*args, **kwargs): return "SITL"
     def format_fc_board_name(name): return name
     def resolve_board_from_text(text): return None
+    def resolve_fc_hardware_environment(*args, **kwargs): return None, "unresolved"
+    def get_connected_ardupilot_usb_devices(): return []
 
 def check_port_listening(host, port, timeout=0.25):
     import socket
@@ -198,20 +206,20 @@ def parse_mavlink_target():
 def create_mavlink_connection(target, baud=115200):
     if target.startswith(('udp', 'tcp')):
         print(f"[MAVLink] Connecting via network: {target}")
-        return mavutil.mavlink_connection(target)
+        return mavutil.mavlink_connection(target, source_system=254, source_component=190)
     else:
         print(f"[MAVLink] Connecting to serial port {target} at {baud} baud...")
         try:
-            conn = mavutil.mavlink_connection(target, baud=baud)
+            conn = mavutil.mavlink_connection(target, baud=baud, source_system=254, source_component=190)
             print(f"[MAVLink] Successfully opened serial port {target}.")
             return conn
         except PermissionError:
             print(f"[MAVLink] WARNING: Serial port {target} is locked by another process (e.g. Mission Planner).")
             print(f"[MAVLink] Falling back to UDP receiver udpin:0.0.0.0:14550 to keep visualizer online.")
-            return mavutil.mavlink_connection('udpin:0.0.0.0:14550')
+            return mavutil.mavlink_connection('udpin:0.0.0.0:14550', source_system=254, source_component=190)
         except Exception as e:
             print(f"[MAVLink] WARNING: Could not open serial port {target}: {e}. Falling back to udpin:0.0.0.0:14550.")
-            return mavutil.mavlink_connection('udpin:0.0.0.0:14550')
+            return mavutil.mavlink_connection('udpin:0.0.0.0:14550', source_system=254, source_component=190)
 
 def is_ardupilot_sitl_target(dev_str):
     if not dev_str:
@@ -278,9 +286,9 @@ def switch_mavlink_target(raw_target, req_baud=115200):
     print(f"[MAVLink] Switching MAVLink connection to {new_dev} (baud={new_baud})...")
     try:
         if new_dev.startswith(('udp', 'tcp')):
-            new_conn = mavutil.mavlink_connection(new_dev)
+            new_conn = mavutil.mavlink_connection(new_dev, source_system=254, source_component=190)
         else:
-            new_conn = mavutil.mavlink_connection(new_dev, baud=new_baud)
+            new_conn = mavutil.mavlink_connection(new_dev, baud=new_baud, source_system=254, source_component=190)
 
         try:
             connection.close()
@@ -299,19 +307,12 @@ def switch_mavlink_target(raw_target, req_baud=115200):
         if is_network_sitl:
             detected_fc_hardware = "SITL"
         else:
-            detected_fc_hardware = "Detecting FC..."
-            if not new_dev.startswith(('udp', 'tcp')):
-                try:
-                    import serial.tools.list_ports
-                    for p in serial.tools.list_ports.comports():
-                        if p.device.upper() == new_dev.upper():
-                            found_name = resolve_board_from_text(p.description) or resolve_board_from_text(p.product) or resolve_board_from_text(p.manufacturer)
-                            if found_name:
-                                detected_fc_hardware = found_name
-                                print(f"[FC Info] Identified FC from USB descriptor: {detected_fc_hardware}")
-                            break
-                except Exception:
-                    pass
+            env_board, env_reason = resolve_fc_hardware_environment(is_network_sitl=is_network_sitl)
+            if env_board:
+                detected_fc_hardware = env_board
+                print(f"[FC Info] Hardware resolved from environment: {detected_fc_hardware} ({env_reason})")
+            else:
+                detected_fc_hardware = "Detecting FC..."
         print(f"[MAVLink] Successfully switched connection to {MAVLINK_URL}")
         return True, f"Connected to {MAVLINK_URL}"
     except Exception as e:
@@ -325,21 +326,16 @@ connection = create_mavlink_connection(MAVLINK_DEVICE, MAVLINK_BAUD)
 clients = set()
 heartbeat_received = False
 is_network_sitl = is_ardupilot_sitl_target(MAVLINK_DEVICE)
-detected_fc_hardware = "SITL" if is_network_sitl else "Detecting FC..."
+if is_network_sitl:
+    detected_fc_hardware = "SITL"
+else:
+    env_board, env_reason = resolve_fc_hardware_environment(is_network_sitl=is_network_sitl)
+    if env_board:
+        detected_fc_hardware = env_board
+        print(f"[FC Info] Hardware resolved from environment: {detected_fc_hardware} ({env_reason})")
+    else:
+        detected_fc_hardware = "Detecting FC..."
 detected_firmware = "ArduPlane"
-
-if not is_network_sitl and not MAVLINK_DEVICE.startswith(('udp', 'tcp')):
-    try:
-        import serial.tools.list_ports
-        for p in serial.tools.list_ports.comports():
-            if p.device.upper() == MAVLINK_DEVICE.upper():
-                found_name = resolve_board_from_text(p.description) or resolve_board_from_text(p.product) or resolve_board_from_text(p.manufacturer)
-                if found_name:
-                    detected_fc_hardware = found_name
-                    print(f"[FC Info] Identified FC from USB descriptor: {detected_fc_hardware}")
-                break
-    except Exception:
-        pass
 capabilities_requested = False
 last_version_req_time = 0
 
@@ -827,6 +823,11 @@ async def mavlink_listener():
                 if not heartbeat_received:
                     heartbeat_received = True
                     last_version_req_time = time.time()
+                    if detected_fc_hardware in ('Detecting...', 'Detecting FC...', 'Hardware FC', 'Unknown FC', 'UDP Mirror', 'Searching...') and not is_network_sitl:
+                        env_board, env_reason = resolve_fc_hardware_environment(is_network_sitl=is_network_sitl)
+                        if env_board:
+                            detected_fc_hardware = env_board
+                            print(f"[FC Info] Hardware resolved from environment: {detected_fc_hardware} ({env_reason})")
                     print(f"Autopilot Heartbeat received from Sys {msg.get_srcSystem()}:{msg.get_srcComponent()}! Connected to {detected_fc_hardware}.")
                     if clients:
                         stat_payload = json.dumps({
@@ -956,6 +957,24 @@ async def mavlink_listener():
                         now_t = time.time()
                         if now_t - last_version_req_time > 2.0:
                             last_version_req_time = now_t
+                            if not is_network_sitl:
+                                env_board, env_reason = resolve_fc_hardware_environment(is_network_sitl=is_network_sitl)
+                                if env_board:
+                                    detected_fc_hardware = env_board
+                                    print(f"[FC Info] Hardware resolved from environment: {detected_fc_hardware} ({env_reason})")
+                                    if cached_heartbeat:
+                                        cached_heartbeat['fc_hardware'] = detected_fc_hardware
+                                    if clients:
+                                        fc_json = json.dumps({
+                                            "type": "FC_INFO",
+                                            "fc_hardware": detected_fc_hardware,
+                                            "firmware": detected_firmware
+                                        })
+                                        for c in list(clients):
+                                            try:
+                                                asyncio.create_task(c.send(fc_json))
+                                            except Exception:
+                                                pass
                             send_hardware_identity_queries(connection)
 
             data = {"type": msg.get_type()}
