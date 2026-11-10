@@ -5441,20 +5441,24 @@
             return 'My_Home_Airfield';
         }
 
-        function saveOrUpdatePreset(id, name, lat, lon, radius, zoom, folder, provider = null) {
+        function saveOrUpdatePreset(id, name, lat, lon, radius, zoom, folder, provider = null, extra = null) {
             let presets = getSavedPresets();
             const cleanFolder = folder || sanitizePresetFolderName(name);
             const activeProv = provider || document.getElementById('sel-map-provider')?.value || 'esri';
             const idx = presets.findIndex(p => p.id === id || p.name.toLowerCase() === name.toLowerCase() || (p.folder && p.folder === cleanFolder));
+            const entry = {
+                id: (idx !== -1) ? presets[idx].id : (id || ('preset_' + Date.now())),
+                name, lat, lon, radius, zoom, folder: cleanFolder, provider: activeProv,
+                ...(extra || {})
+            };
             if (idx !== -1) {
-                presets[idx] = { id: presets[idx].id, name, lat, lon, radius, zoom, folder: cleanFolder, provider: activeProv };
+                presets[idx] = Object.assign({}, presets[idx], entry);
                 localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
                 return presets[idx].id;
             } else {
-                const newId = id || ('preset_' + Date.now());
-                presets.push({ id: newId, name, lat, lon, radius, zoom, folder: cleanFolder, provider: activeProv });
+                presets.push(entry);
                 localStorage.setItem('pilot_flight_presets', JSON.stringify(presets));
-                return newId;
+                return entry.id;
             }
         }
 
@@ -5594,10 +5598,40 @@
                     }
                     updateMapEstimate();
                     refreshCacheStatus();
+
+                    // If corridor preset has waypoints, sync with visualizer waypoints
+                    const isCorridor = (meta.type === 'corridor') || (Array.isArray(meta.waypoints) && meta.waypoints.length > 1);
+                    if (isCorridor && Array.isArray(meta.waypoints) && meta.waypoints.length > 1) {
+                        missionWaypoints = meta.waypoints;
+                        try {
+                            localStorage.setItem('sharkee_mission_waypoints', JSON.stringify(missionWaypoints));
+                        } catch(e) {}
+                        if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+                        const countEl = document.getElementById('mission-wpt-count-text');
+                        if (countEl) countEl.innerText = `${missionWaypoints.length} WP`;
+                    }
+
                     if (typeof updateMap === 'function') updateMap(meta.lat, meta.lon, true);
-                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(rad);
+
+                    // Camera framing: for corridors, frame entire route bounding span
+                    let camRad = rad;
+                    if (isCorridor && Array.isArray(meta.waypoints) && meta.waypoints.length > 1) {
+                        let maxDistKm = rad;
+                        meta.waypoints.forEach(w => {
+                            if (w && w.lat && w.lon) {
+                                const dLat = (w.lat - meta.lat) * 111.0;
+                                const dLon = (w.lon - meta.lon) * 111.0 * Math.cos(meta.lat * Math.PI / 180.0);
+                                const dKm = Math.hypot(dLat, dLon);
+                                if (dKm > maxDistKm) maxDistKm = dKm;
+                            }
+                        });
+                        camRad = Math.max(rad, maxDistKm * 1.15);
+                    }
+
+                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(camRad);
                     if (typeof showTacticalAlert === 'function') {
-                        showTacticalAlert(`AIRFIELD APPLIED: ${folder.replace(/_/g, ' ')} (${prov.toUpperCase()})`, 1600);
+                        const alertPrefix = isCorridor ? 'FLIGHT CORRIDOR APPLIED' : 'AIRFIELD APPLIED';
+                        showTacticalAlert(`${alertPrefix}: ${folder.replace(/_/g, ' ')} (${prov.toUpperCase()})`, 1800);
                     }
                 } else {
                     updateMapEstimate();
@@ -5627,10 +5661,39 @@
                     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
                     updateMapEstimate();
                     refreshCacheStatus();
+
+                    // If custom preset has corridor waypoints, sync with visualizer
+                    const isCorridor = (preset.type === 'corridor') || (Array.isArray(preset.waypoints) && preset.waypoints.length > 1);
+                    if (isCorridor && Array.isArray(preset.waypoints) && preset.waypoints.length > 1) {
+                        missionWaypoints = preset.waypoints;
+                        try {
+                            localStorage.setItem('sharkee_mission_waypoints', JSON.stringify(missionWaypoints));
+                        } catch(e) {}
+                        if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+                        const countEl = document.getElementById('mission-wpt-count-text');
+                        if (countEl) countEl.innerText = `${missionWaypoints.length} WP`;
+                    }
+
                     if (typeof updateMap === 'function') updateMap(preset.lat, preset.lon, true);
-                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(rad);
+
+                    let camRad = rad;
+                    if (isCorridor && Array.isArray(preset.waypoints) && preset.waypoints.length > 1) {
+                        let maxDistKm = rad;
+                        preset.waypoints.forEach(w => {
+                            if (w && w.lat && w.lon) {
+                                const dLat = (w.lat - preset.lat) * 111.0;
+                                const dLon = (w.lon - preset.lon) * 111.0 * Math.cos(preset.lat * Math.PI / 180.0);
+                                const dKm = Math.hypot(dLat, dLon);
+                                if (dKm > maxDistKm) maxDistKm = dKm;
+                            }
+                        });
+                        camRad = Math.max(rad, maxDistKm * 1.15);
+                    }
+
+                    if (typeof frameAirspaceCamera === 'function') frameAirspaceCamera(camRad);
                     if (typeof showTacticalAlert === 'function') {
-                        showTacticalAlert(`AIRFIELD APPLIED: ${preset.name}`, 1600);
+                        const alertPrefix = isCorridor ? 'FLIGHT CORRIDOR APPLIED' : 'AIRFIELD APPLIED';
+                        showTacticalAlert(`${alertPrefix}: ${preset.name}`, 1800);
                     }
                 }
             }
@@ -6008,7 +6071,8 @@
 
             // 1. Register / Save into Presets
             let presetId = 'preset_' + folderName;
-            saveOrUpdatePreset(presetId, enteredName, cfg.lat, cfg.lon, cfg.radiusKm, cfg.zooms[0], folderName, cfg.provider);
+            const extraData = cfg.waypoints ? { type: 'corridor', waypoints: cfg.waypoints, corridor_km: chosenCorridorKm } : { type: 'circular' };
+            saveOrUpdatePreset(presetId, enteredName, cfg.lat, cfg.lon, cfg.radiusKm, cfg.zooms[0], folderName, cfg.provider, extraData);
             populatePresetDropdown(presetId);
             const nameInput = document.getElementById('map-cache-name');
             if (nameInput) nameInput.value = enteredName;
@@ -8871,6 +8935,169 @@
         }
         window.createFlatTileMesh = createFlatTileMesh;
 
+        // Continuous Flight Plan Corridor Tile Calculator
+        function getCorridorTilesForWaypoints(wps, corridorKm, zoom) {
+            if (!Array.isArray(wps) || wps.length === 0) return [];
+            const validPts = [];
+            for (let i = 0; i < wps.length; i++) {
+                const w = wps[i];
+                if (w && typeof w.lat === 'number' && typeof w.lon === 'number' &&
+                    Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001) {
+                    validPts.push({ lat: w.lat, lon: w.lon });
+                }
+            }
+            if (validPts.length === 0) return [];
+
+            const cKm = Math.max(0.5, parseFloat(corridorKm) || 2.0);
+            const z = parseInt(zoom) || 17;
+
+            // Interpolate sample points along each waypoint segment
+            const samplePoints = [];
+            if (validPts.length === 1) {
+                samplePoints.push(validPts[0]);
+            } else {
+                for (let i = 0; i < validPts.length - 1; i++) {
+                    const p1 = validPts[i];
+                    const p2 = validPts[i + 1];
+                    samplePoints.push(p1);
+                    const dLat = p2.lat - p1.lat;
+                    const dLon = p2.lon - p1.lon;
+                    const midLat = (p1.lat + p2.lat) / 2.0;
+                    const segDist = Math.sqrt(Math.pow(dLat * 111.0, 2) + Math.pow(dLon * 111.0 * Math.cos(midLat * Math.PI / 180.0), 2));
+                    const stepKm = Math.max(0.5, Math.min(1.5, cKm * 0.5));
+                    const numSteps = Math.max(1, Math.ceil(segDist / stepKm));
+                    for (let s = 1; s < numSteps; s++) {
+                        const frac = s / numSteps;
+                        samplePoints.push({
+                            lat: p1.lat + dLat * frac,
+                            lon: p1.lon + dLon * frac
+                        });
+                    }
+                }
+                samplePoints.push(validPts[validPts.length - 1]);
+            }
+
+            const uniqueTiles = new Map();
+            const limitSq = Math.pow(cKm * 1.15, 2);
+
+            for (let i = 0; i < samplePoints.length; i++) {
+                const sLat = samplePoints[i].lat;
+                const sLon = samplePoints[i].lon;
+                const latDelta = (cKm / 6371.0) * (180.0 / Math.PI);
+                const lonDelta = (cKm / (6371.0 * Math.cos(sLat * Math.PI / 180.0))) * (180.0 / Math.PI);
+
+                const minX = Math.floor(lon2tileFloat(sLon - lonDelta, z));
+                const maxX = Math.floor(lon2tileFloat(sLon + lonDelta, z));
+                const minY = Math.floor(lat2tileFloat(sLat + latDelta, z));
+                const maxY = Math.floor(lat2tileFloat(sLat - latDelta, z));
+
+                const startX = Math.min(minX, maxX);
+                const endX = Math.max(minX, maxX);
+                const startY = Math.min(minY, maxY);
+                const endY = Math.max(minY, maxY);
+
+                for (let x = startX; x <= endX; x++) {
+                    for (let y = startY; y <= endY; y++) {
+                        const key = `${x}_${y}`;
+                        if (!uniqueTiles.has(key)) {
+                            // Compute distance from tile center to sample point
+                            const tLon = (x + 0.5) / Math.pow(2, z) * 360.0 - 180.0;
+                            const tLat = Math.atan(Math.sinh(Math.PI * (1.0 - 2.0 * (y + 0.5) / Math.pow(2, z)))) * (180.0 / Math.PI);
+                            const dLatKm = (tLat - sLat) * 111.0;
+                            const dLonKm = (tLon - sLon) * 111.0 * Math.cos(sLat * Math.PI / 180.0);
+                            if ((dLatKm * dLatKm + dLonKm * dLonKm) <= limitSq) {
+                                uniqueTiles.set(key, { x, y });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Array.from(uniqueTiles.values());
+        }
+        window.getCorridorTilesForWaypoints = getCorridorTilesForWaypoints;
+
+        let corridorChunkTimer = null;
+        function loadCorridorTiles(activeZoom, provider, activePreset, mapMode) {
+            if (terrain3DEnabled) return;
+            if (corridorChunkTimer) {
+                clearTimeout(corridorChunkTimer);
+                corridorChunkTimer = null;
+            }
+
+            const prov = provider || currentMapProvider || (localStorage.getItem('pilot_map_provider') || 'esri');
+            const preset = activePreset || ((typeof getActivePresetName === 'function') ? getActivePresetName() : 'default');
+            const mode = mapMode || currentMapMode || (localStorage.getItem('pilot_map_mode') || 'auto');
+            const z = activeZoom || currentMapZoom || 17;
+
+            // 1. Check if active preset has waypoints in metadata
+            let wps = [];
+            let corridorKm = 2.5;
+            if (window.diskPresetMetadata && window.diskPresetMetadata[preset]) {
+                const meta = window.diskPresetMetadata[preset];
+                if (Array.isArray(meta.waypoints) && meta.waypoints.length > 1) {
+                    wps = meta.waypoints;
+                }
+                if (meta.corridor_km) corridorKm = parseFloat(meta.corridor_km);
+            }
+
+            // 2. Fall back to current missionWaypoints if available
+            if ((!wps || wps.length <= 1) && Array.isArray(missionWaypoints) && missionWaypoints.length > 1) {
+                wps = missionWaypoints.filter(w => w && Math.abs(w.lat) > 0.001 && Math.abs(w.lon) > 0.001);
+            }
+
+            if (!wps || wps.length <= 1) return;
+
+            // 3. Compute corridor tiles
+            const corridorTiles = getCorridorTilesForWaypoints(wps, corridorKm, z);
+            if (!Array.isArray(corridorTiles) || corridorTiles.length === 0) return;
+
+            // 4. Center-Out Priority: sort corridor tiles by distance from active map center
+            const centerTx = Math.floor(homeTileXFloat);
+            const centerTy = Math.floor(homeTileYFloat);
+            corridorTiles.sort((a, b) => {
+                const da = Math.hypot(a.x - centerTx, a.y - centerTy);
+                const db = Math.hypot(b.x - centerTx, b.y - centerTy);
+                return da - db;
+            });
+
+            // 5. Chunked progressive loading: immediate batch of 250 tiles, then 150 every 35ms
+            const thisGen = mapGeneration;
+            let offset = 0;
+            const CHUNK_SIZE = 150;
+
+            function processNextChunk() {
+                if (mapGeneration !== thisGen) return;
+                const end = Math.min(offset + CHUNK_SIZE, corridorTiles.length);
+                for (let i = offset; i < end; i++) {
+                    const t = corridorTiles[i];
+                    const mesh = createFlatTileMesh(t.x, t.y, z, prov, preset, mode);
+                    if (mesh) {
+                        mesh.userData.isCorridor = true;
+                    }
+                }
+                offset = end;
+                if (offset < corridorTiles.length) {
+                    corridorChunkTimer = setTimeout(processNextChunk, 35);
+                }
+            }
+
+            // Initial immediate batch
+            const initCount = Math.min(250, corridorTiles.length);
+            for (let i = 0; i < initCount; i++) {
+                const t = corridorTiles[i];
+                const mesh = createFlatTileMesh(t.x, t.y, z, prov, preset, mode);
+                if (mesh) {
+                    mesh.userData.isCorridor = true;
+                }
+            }
+            offset = initCount;
+            if (offset < corridorTiles.length) {
+                corridorChunkTimer = setTimeout(processNextChunk, 35);
+            }
+        }
+        window.loadCorridorTiles = loadCorridorTiles;
+
         function updateMap(lat, lon, recenter = false) {
             if (!lat || !lon || Math.abs(lat) < 0.001) return;
 
@@ -9031,8 +9258,13 @@
                     reloadFlown2DTiles();
                 }
 
-                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles (up to 6000 tiles)
-                const MAX_SCENE_TILES = 6000;
+                // In 2D flat mode, ensure flight corridor tiles are loaded
+                if (typeof loadCorridorTiles === 'function') {
+                    loadCorridorTiles(activeZoom, provider, activePreset, mapMode);
+                }
+
+                // Persistent 2D Flight Map: Retain all past flown tiles and home airfield tiles (up to 10000 tiles)
+                const MAX_SCENE_TILES = 10000;
                 if (mapGroup.children.length > MAX_SCENE_TILES) {
                     const excess = mapGroup.children.length - MAX_SCENE_TILES;
                     const homeTx = Math.floor(homeTileXFloat);
@@ -9043,6 +9275,8 @@
                             const tileCoordKey = `${m.userData.zoom}_${m.userData.tx}_${m.userData.ty}`;
                             // Protect tiles under the flown track and survey coverage swath
                             if (typeof flownTileKeys !== 'undefined' && flownTileKeys.has(tileCoordKey)) return;
+                            // Protect flight corridor tiles
+                            if (m.userData.isCorridor) return;
 
                             const distToPlane = Math.hypot(m.userData.tx - currentTileX, m.userData.ty - currentTileY);
                             const distToHome = Math.hypot(m.userData.tx - homeTx, m.userData.ty - homeTy);

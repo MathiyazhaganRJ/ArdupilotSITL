@@ -1405,6 +1405,7 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
         "folder": preset_folder,
         "type": "corridor" if is_corridor else "circular",
         "waypoints_count": len(waypoints) if is_corridor else 0,
+        "waypoints": waypoints if is_corridor else [],
         "corridor_km": corridor_km if is_corridor else 0.0,
         "lat": lat,
         "lon": lon,
