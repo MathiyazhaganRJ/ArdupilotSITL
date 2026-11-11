@@ -1719,6 +1719,18 @@ def run_precache_worker(lat, lon, radius_km, zoom_levels, provider='esri', prese
                 if dem_bytes and len(dem_bytes) > 100:
                     with open(dem_file, 'wb') as df:
                         df.write(dem_bytes)
+            # Also ensure parent LOD 11 & 12 DEM tiles are cached for seamless regional fallback
+            for pz in (12, 11):
+                if pz < dem_z:
+                    p_dz = dem_z - pz
+                    p_x = dem_x >> p_dz
+                    p_y = dem_y >> p_dz
+                    p_file = os.path.join(dem_cache_dir, f"{pz}_{p_x}_{p_y}.png")
+                    if not os.path.exists(p_file):
+                        p_b = fetch_dem_tile(pz, p_x, p_y)
+                        if p_b and len(p_b) > 100:
+                            with open(p_file, 'wb') as pf:
+                                pf.write(p_b)
         except Exception:
             pass
 
@@ -1995,12 +2007,20 @@ def find_or_synthesize_dem(z, x, y, mode='auto'):
                 pass
             return data, 'image/png'
 
-    # 3. Dynamic LOD Parent DEM Synthesis
-    for pz in range(dem_z - 1, max(0, dem_z - 4), -1):
+    # 3. Dynamic LOD Parent DEM Synthesis (searches up to 6 zoom levels up)
+    for pz in range(dem_z - 1, max(0, dem_z - 6), -1):
         dz = dem_z - pz
         px = dem_x >> dz
         py = dem_y >> dz
         p_cand = os.path.join(dem_cache_dir, f"{pz}_{px}_{py}.png")
+        if not os.path.exists(p_cand) and mode != 'offline' and check_internet_reachability() and pz in (12, 11, 10):
+            try:
+                p_b = fetch_dem_tile(pz, px, py)
+                if p_b and len(p_b) > 100:
+                    with open(p_cand, 'wb') as pf:
+                        pf.write(p_b)
+            except Exception:
+                pass
         if os.path.exists(p_cand) and os.path.getsize(p_cand) > 100:
             try:
                 p_img = Image.open(p_cand)
