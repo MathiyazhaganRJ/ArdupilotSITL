@@ -9101,23 +9101,21 @@
                 ? Math.hypot((hLat - homeLat) * 111320, (hLon - homeLon) * 111320 * Math.cos(hLat * Math.PI / 180))
                 : 9999999;
 
-            // Strict Anti-Flashing Guard: If already anchored and stationary (< 50m displacement), ignore telemetry packets!
-            if (ekfHomeInitialized && homeLat !== null && distFromHome < 50.0 && !isUserCommand) {
-                return;
-            }
-
             const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
                                (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
 
-            // If we are already displaying this airfield (within 50m) and only initializing EKF lock without user command,
-            // lock coordinates without wiping active Three.js tile meshes!
-            const requiresMeshRebuild = isUserCommand || homeLat === null || distFromHome >= 50.0;
-
-            // Re-anchor EKF Home ONLY on explicit user command, initial calibration, or ground relocation > 10km
-            const needsRecenter = isUserCommand || !ekfHomeInitialized || homeLat === null || (!isAirborne && distFromHome > 10000);
-            if (!needsRecenter) {
-                return; // Keep locked to confirmed airfield Home during flight - prevent rebuild thrashing
+            // Strict In-Flight Lock: Once initialized, NEVER shift EKF origin while aircraft is flying!
+            if (ekfHomeInitialized && isAirborne && !isUserCommand) {
+                return;
             }
+
+            // Stationary Drift Filter: If already locked and displacement is negligible (< 1.5m), ignore packet noise!
+            if (ekfHomeInitialized && homeLat !== null && distFromHome < 1.5 && !isUserCommand) {
+                return;
+            }
+
+            // Only rebuild 3D meshes if explicit user command, uninitialized, or ground relocation > 10km
+            const requiresMeshRebuild = isUserCommand || homeLat === null || (!isAirborne && distFromHome > 10000);
 
             ekfHomeInitialized = true;
             initialGpsCalibrated = true;
@@ -9134,6 +9132,7 @@
             if (typeof updateMapEstimate === 'function') updateMapEstimate();
             if (typeof refreshCacheStatus === 'function') refreshCacheStatus();
 
+            // Re-render 3D waypoints so they snap to the newly calibrated EKF origin!
             if (typeof renderWaypoints3D === 'function') {
                 renderWaypoints3D();
             }
@@ -10877,23 +10876,16 @@
 
         // Convert Geodetic (Lat, Lon, Alt) into Three.js Hard-Anchored Local World Position
         function latLonToScene(lat, lon, alt = 30) {
-            if (missionAnchorLat === null) {
-                // Check if mission seq 0 (HOME) exists
-                const homeWp = (Array.isArray(missionWaypoints) ? missionWaypoints : []).find(w => w && w.seq === 0 && Math.abs(w.lat) > 0.001);
-                if (homeWp) {
-                    setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
-                } else if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
-                    setMissionAnchor(homeLat, homeLon, 0, 0);
-                } else if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
-                    setMissionAnchor(currentPlaneLat, currentPlaneLon, 0, 0);
-                } else {
-                    setMissionAnchor(8.30413, 77.30760, 0, 0);
-                }
-            }
+            const anchorLat = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001)
+                ? homeLat
+                : ((typeof missionAnchorLat === 'number' && missionAnchorLat !== null) ? missionAnchorLat : DEFAULT_PRESET.lat);
+            const anchorLon = (typeof homeLon === 'number' && homeLon !== null && Math.abs(homeLon) > 0.001)
+                ? homeLon
+                : ((typeof missionAnchorLon === 'number' && missionAnchorLon !== null) ? missionAnchorLon : DEFAULT_PRESET.lon);
 
-            const dLat = lat - missionAnchorLat;
-            const dLon = lon - missionAnchorLon;
-            const latRad = missionAnchorLat * (Math.PI / 180.0);
+            const dLat = lat - anchorLat;
+            const dLon = lon - anchorLon;
+            const latRad = anchorLat * (Math.PI / 180.0);
 
             // High-precision WGS-84 metric distance formulas matching ArduPilot EKF local NED
             const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
@@ -11073,18 +11065,16 @@
 
         // Default Corv-GCS Survey Flight Grid over Terrain
         function loadDefaultWaypoints() {
-            let anchorLat = 8.30413, anchorLon = 77.30760;
+            let anchorLat = (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) ? homeLat : DEFAULT_PRESET.lat;
+            let anchorLon = (typeof homeLon === 'number' && homeLon !== null && Math.abs(homeLon) > 0.001) ? homeLon : DEFAULT_PRESET.lon;
             if (typeof currentPlaneLat === 'number' && Math.abs(currentPlaneLat) > 0.001) {
                 anchorLat = currentPlaneLat;
                 anchorLon = currentPlaneLon;
-            } else if (typeof homeLat === 'number' && homeLat !== null && Math.abs(homeLat) > 0.001) {
-                anchorLat = homeLat;
-                anchorLon = homeLon;
             }
             setMissionAnchor(anchorLat, anchorLon, 0, 0);
 
-            const cLat = missionAnchorLat || 8.30413;
-            const cLon = missionAnchorLon || 77.30760;
+            const cLat = anchorLat;
+            const cLon = anchorLon;
 
             const wps = [];
             wps.push({ seq: 0, command: 16, lat: cLat, lon: cLon, alt: 0 }); // HOME
@@ -11599,17 +11589,17 @@
                     const needsInitialLock = !ekfHomeInitialized || homeLat === null;
                     const isRelocatedOnGround = !isAirborne && (typeof homeLat === 'number' && homeLat !== null && distToHome > 10000);
 
-                    if (needsInitialLock || isRelocatedOnGround) {
-                        if (hasNedPos) {
-                            const latRad = data.lat * (Math.PI / 180.0);
-                            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
-                            const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
-                            const calcHomeLat = data.lat - (latestNedX / mPerDegLat);
-                            const calcHomeLon = data.lon - (latestNedY / mPerDegLon);
-                            if (isOnlineMode) {
-                                initEkfHome(calcHomeLat, calcHomeLon, false, false);
-                            }
-                        } else if (isOnlineMode) {
+                    if (!isAirborne && hasNedPos) {
+                        const latRad = data.lat * (Math.PI / 180.0);
+                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                        const calcHomeLat = data.lat - (latestNedX / mPerDegLat);
+                        const calcHomeLon = data.lon - (latestNedY / mPerDegLon);
+                        if (isOnlineMode) {
+                            initEkfHome(calcHomeLat, calcHomeLon, false, false);
+                        }
+                    } else if (needsInitialLock || isRelocatedOnGround) {
+                        if (isOnlineMode) {
                             initEkfHome(data.lat, data.lon, false, false);
                         }
                     } else if (isOnlineMode) {
@@ -11780,12 +11770,7 @@
                     const modeEl = document.getElementById('sel-map-mode');
                     const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
                     if (mapMode !== 'offline') {
-                        const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
-                            ? Math.hypot((data.home_lat - homeLat) * 111320, (data.home_lon - homeLon) * 111320 * Math.cos(data.home_lat * Math.PI / 180))
-                            : 9999999;
-                        if (!ekfHomeInitialized || homeLat === null || distFromHome > 1000) {
-                            initEkfHome(data.home_lat, data.home_lon, false, false);
-                        }
+                        initEkfHome(data.home_lat, data.home_lon, false, false);
                     }
                 }
             }
@@ -11819,17 +11804,17 @@
                     const needsInitialLock = !ekfHomeInitialized || homeLat === null;
                     const isRelocatedOnGround = !isAirborne && (typeof homeLat === 'number' && homeLat !== null && distToHome > 10000);
 
-                    if (needsInitialLock || isRelocatedOnGround) {
-                        if (hasNedPos) {
-                            const latRad = data.gps_lat * (Math.PI / 180.0);
-                            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
-                            const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
-                            const calcHomeLat = data.gps_lat - (latestNedX / mPerDegLat);
-                            const calcHomeLon = data.gps_lon - (latestNedY / mPerDegLon);
-                            if (isOnlineMode) {
-                                initEkfHome(calcHomeLat, calcHomeLon, false, false);
-                            }
-                        } else if (isOnlineMode) {
+                    if (!isAirborne && hasNedPos) {
+                        const latRad = data.gps_lat * (Math.PI / 180.0);
+                        const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                        const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                        const calcHomeLat = data.gps_lat - (latestNedX / mPerDegLat);
+                        const calcHomeLon = data.gps_lon - (latestNedY / mPerDegLon);
+                        if (isOnlineMode) {
+                            initEkfHome(calcHomeLat, calcHomeLon, false, false);
+                        }
+                    } else if (needsInitialLock || isRelocatedOnGround) {
+                        if (isOnlineMode) {
                             initEkfHome(data.gps_lat, data.gps_lon, false, false);
                         }
                     }
@@ -11924,8 +11909,9 @@
                                 const distFromHome = (typeof homeLat === 'number' && homeLat !== null && typeof homeLon === 'number' && homeLon !== null)
                                     ? Math.hypot((targetWpLat - homeLat) * 111320, (targetWpLon - homeLon) * 111320 * Math.cos(targetWpLat * Math.PI / 180))
                                     : 9999999;
-                                if (!ekfHomeInitialized || homeLat === null || distFromHome > 500) {
-                                    if (homeWp) setMissionAnchor(homeWp.lat, homeWp.lon, 0, 0);
+                                const isAirborne = (typeof currentPlaneAltRel === 'number' && currentPlaneAltRel > 4.0) ||
+                                                   (typeof planeGroundSpd === 'number' && planeGroundSpd > 2.0);
+                                if (!isAirborne && (!ekfHomeInitialized || homeLat === null || distFromHome > 10.0)) {
                                     initEkfHome(targetWpLat, targetWpLon, false, false);
                                 }
                             }

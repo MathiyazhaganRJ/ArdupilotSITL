@@ -2033,17 +2033,13 @@ def find_or_synthesize_dem(z, x, y, mode='auto'):
                 pass
 
     # 4. Universal flat 0m sea-level Terrarium tile fallback (RGB 128, 0, 0 -> 0.0m MSL)
-    # Guarantees DEM requests never 404
+    # Guarantees DEM requests never 404 in memory, but NEVER writes flat synthetic fallback to disk
+    # so disk cache is never poisoned and real elevation can load on subsequent requests.
     try:
         flat_dem = Image.new('RGB', (256, 256), color=(128, 0, 0))
         out_io = io.BytesIO()
         flat_dem.save(out_io, format='PNG')
         flat_bytes = out_io.getvalue()
-        try:
-            with open(dem_file, 'wb') as df:
-                df.write(flat_bytes)
-        except Exception:
-            pass
         return flat_bytes, 'image/png'
     except Exception:
         return b'', 'image/png'
