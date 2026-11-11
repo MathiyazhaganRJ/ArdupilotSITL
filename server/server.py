@@ -211,9 +211,28 @@ def parse_mavlink_target():
     return target, baud, is_auto
 
 def create_mavlink_connection(target, baud=115200):
+    global MAVLINK_DEVICE, MAVLINK_URL
     if target.startswith(('udp', 'tcp')):
         print(f"[MAVLink] Connecting via network: {target}")
-        return mavutil.mavlink_connection(target, source_system=254, source_component=190)
+        try:
+            return mavutil.mavlink_connection(target, source_system=254, source_component=190)
+        except (PermissionError, OSError) as e:
+            print(f"[MAVLink] WARNING: Network target {target} failed to bind: {e}")
+            if '14550' in target:
+                print(f"[MAVLink] Port 14550 is exclusively locked by another application (e.g. QGroundControl, Mission Planner, or another terminal).")
+                for fallback_port in ('14551', '14552'):
+                    fallback_target = f'udpin:0.0.0.0:{fallback_port}'
+                    try:
+                        print(f"[MAVLink] Attempting fallback to {fallback_target}...")
+                        conn = mavutil.mavlink_connection(fallback_target, source_system=254, source_component=190)
+                        MAVLINK_DEVICE = fallback_target
+                        MAVLINK_URL = fallback_target
+                        print(f"[MAVLink] Successfully bound to fallback receiver {fallback_target}.")
+                        return conn
+                    except Exception as e_fb:
+                        print(f"[MAVLink] Fallback {fallback_target} unavailable: {e_fb}")
+            print(f"[MAVLink] WARNING: Could not bind network target {target}. Starting server in offline receiver mode.")
+            return None
     else:
         print(f"[MAVLink] Connecting to serial port {target} at {baud} baud...")
         try:
@@ -222,11 +241,11 @@ def create_mavlink_connection(target, baud=115200):
             return conn
         except PermissionError:
             print(f"[MAVLink] WARNING: Serial port {target} is locked by another process (e.g. Mission Planner).")
-            print(f"[MAVLink] Falling back to UDP receiver udpin:0.0.0.0:14550 to keep visualizer online.")
-            return mavutil.mavlink_connection('udpin:0.0.0.0:14550', source_system=254, source_component=190)
+            print(f"[MAVLink] Falling back to UDP receiver...")
+            return create_mavlink_connection('udpin:0.0.0.0:14550', baud)
         except Exception as e:
-            print(f"[MAVLink] WARNING: Could not open serial port {target}: {e}. Falling back to udpin:0.0.0.0:14550.")
-            return mavutil.mavlink_connection('udpin:0.0.0.0:14550', source_system=254, source_component=190)
+            print(f"[MAVLink] WARNING: Could not open serial port {target}: {e}. Falling back to UDP receiver...")
+            return create_mavlink_connection('udpin:0.0.0.0:14550', baud)
 
 def is_ardupilot_sitl_target(dev_str):
     if not dev_str:
@@ -744,6 +763,26 @@ async def mavlink_listener():
                         heartbeat_received = False
                     except Exception as e:
                         print(f"[MAVLink Auto-Discovery] Error connecting to tcp:127.0.0.1:{found_port}: {e}")
+
+        if not connection:
+            if is_auto_target:
+                for candidate in (5762, 5763, 5760):
+                    if check_port_listening('127.0.0.1', candidate):
+                        try:
+                            print(f"[MAVLink Auto-Discovery] Active SITL instance detected on tcp:127.0.0.1:{candidate}! Connecting...")
+                            new_conn = mavutil.mavlink_connection(f'tcp:127.0.0.1:{candidate}')
+                            connection = new_conn
+                            mission_handler.conn = connection
+                            MAVLINK_DEVICE = f'tcp:127.0.0.1:{candidate}'
+                            MAVLINK_URL = f'tcp:127.0.0.1:{candidate}'
+                            is_network_sitl = True
+                            detected_fc_hardware = "SITL"
+                            heartbeat_received = False
+                            break
+                        except Exception:
+                            pass
+            await asyncio.sleep(0.5)
+            continue
 
         try:
             msg = connection.recv_match(
