@@ -8314,6 +8314,35 @@
         let arduEkfHorizAccuracy = 0.0; // EKF 1-sigma horizontal position uncertainty from ESTIMATOR_STATUS (meters)
         let arduMeasuredDriftMeters = 0.0; // Distance between Actual truth (Blue) and Dead Reckoned position (Red)
         let arduMeasuredDriftBearing = 0.0; // Bearing of drift vector FROM Actual (Truth) TO Dead Reckoning (Red)
+        let smoothDriftMeters = 0.0;
+        let smoothDriftBearing = 0.0;
+        let lastDriftCard = 'E';
+        let lastDriftSide = 'R';
+        let lastNavTextUpdate = 0;
+        const rawTruthPos = new THREE.Vector3();
+        const simTruthTargetPos = new THREE.Vector3();
+        const simTruthCurrentPos = new THREE.Vector3();
+        let simTruthPosInitialized = false;
+
+        function getHysteresisCardinal(deg, lastCard) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const sectorSize = 22.5;
+            const normDeg = ((deg % 360) + 360) % 360;
+            const rawIndex = Math.floor((normDeg + 11.25) / sectorSize) % 16;
+            const candidateCard = directions[rawIndex];
+
+            if (!lastCard) return candidateCard;
+
+            const lastIndex = directions.indexOf(lastCard);
+            if (lastIndex !== -1 && lastIndex !== rawIndex) {
+                const boundary = rawIndex * sectorSize - 11.25;
+                const distToBoundary = Math.abs(((normDeg - boundary + 180) % 360) - 180);
+                if (distToBoundary < 2.5) {
+                    return lastCard; // Retain previous cardinal when near boundary to prevent flutter
+                }
+            }
+            return candidateCard;
+        }
 
         function calcGeodeticDistance(lat1, lon1, lat2, lon2) {
             if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
@@ -8342,6 +8371,7 @@
         function updateArduPilotDrift() {
             if (!isDeadReckoning) {
                 arduMeasuredDriftMeters = 0.0;
+                smoothDriftMeters = 0.0;
                 return;
             }
             // Priority for truth reference during dead reckoning:
@@ -8349,10 +8379,20 @@
             const refLon = (arduSimLon && Math.abs(arduSimLon) > 0.01) ? arduSimLon : (arduGpsLon && Math.abs(arduGpsLon) > 0.01 ? arduGpsLon : drLastGoodLon);
 
             if (currentPlaneLat && currentPlaneLon && refLat && refLon) {
-                arduMeasuredDriftMeters = calcGeodeticDistance(refLat, refLon, currentPlaneLat, currentPlaneLon);
-                // Vector strictly measured FROM Actual (Truth / Blue) TO Dead Reckoning (Red)
-                // Represents the exact drift of the Dead Reckoning position relative to ground truth
-                arduMeasuredDriftBearing = calcGeodeticBearing(refLat, refLon, currentPlaneLat, currentPlaneLon);
+                const rawMeters = calcGeodeticDistance(refLat, refLon, currentPlaneLat, currentPlaneLon);
+                const rawBearing = calcGeodeticBearing(refLat, refLon, currentPlaneLat, currentPlaneLon);
+                arduMeasuredDriftMeters = rawMeters;
+                arduMeasuredDriftBearing = rawBearing;
+
+                // 1st-Order Low-pass Filter on geodetic metrics to eliminate sub-meter sensor flutter
+                if (smoothDriftMeters === 0.0 || Math.abs(rawMeters - smoothDriftMeters) > 500) {
+                    smoothDriftMeters = rawMeters;
+                    smoothDriftBearing = rawBearing;
+                } else {
+                    smoothDriftMeters += (rawMeters - smoothDriftMeters) * 0.15;
+                    let diffAngle = ((rawBearing - smoothDriftBearing + 180) % 360 + 360) % 360 - 180;
+                    smoothDriftBearing = ((smoothDriftBearing + diffAngle * 0.15) % 360 + 360) % 360;
+                }
             }
         }
 
@@ -8443,12 +8483,10 @@
         // Vertical plumb line from aircraft down to ground uncertainty center
         const plumbLine = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
-            new THREE.LineDashedMaterial({
+            new THREE.LineBasicMaterial({
                 color: 0xff9f0a,
-                dashSize: 1.2,
-                gapSize: 0.8,
                 transparent: true,
-                opacity: 0.6
+                opacity: 0.65
             })
         );
         drGroup.add(plumbLine);
@@ -8478,28 +8516,24 @@
         );
         simTruthGroup.add(simTruthGroundMarker);
 
-        // Vertical drop plumb line from actual position down to terrain
+        // Vertical drop plumb line from actual position down to terrain (solid to avoid dash-stride flickering)
         const simTruthPlumbLine = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
-            new THREE.LineDashedMaterial({
+            new THREE.LineBasicMaterial({
                 color: 0x00e5ff,
-                dashSize: 1.5,
-                gapSize: 1.0,
                 transparent: true,
-                opacity: 0.75
+                opacity: 0.65
             })
         );
         simTruthGroup.add(simTruthPlumbLine);
 
-        // Direct drift line from True Position to Drifting Autopilot Aircraft
+        // Direct drift line from True Position to Drifting Autopilot Aircraft (solid high-contrast cyan vector)
         const simTruthDriftLine = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
-            new THREE.LineDashedMaterial({
+            new THREE.LineBasicMaterial({
                 color: 0x00e5ff,
-                dashSize: 2.0,
-                gapSize: 1.2,
                 transparent: true,
-                opacity: 0.95
+                opacity: 0.90
             })
         );
         simTruthGroup.add(simTruthDriftLine);
@@ -8596,7 +8630,7 @@
 
             if (isDeadReckoning === enable) {
                 if (reason) {
-                    if (navEl) navEl.innerText = reason;
+                    if (navEl && !isDeadReckoning) navEl.innerText = reason;
                     if (annunNav) {
                         annunNav.innerText = reason;
                         if (!enable) {
@@ -8614,6 +8648,7 @@
                 drGroup.visible = true;
                 drLastGoodLat = currentPlaneLat;
                 drLastGoodLon = currentPlaneLon;
+                simTruthPosInitialized = false;
 
                 // Fix coordinates at current plane position
                 lastFixPosition.copy(vtolGroup.position);
@@ -8643,6 +8678,8 @@
                 drGroup.visible = false;
                 if (typeof simTruthGroup !== 'undefined') simTruthGroup.visible = false;
                 arduMeasuredDriftMeters = 0.0;
+                smoothDriftMeters = 0.0;
+                simTruthPosInitialized = false;
                 if (drFlag) drFlag.style.display = 'none';
                 if (drBtn) {
                     drBtn.classList.remove('active');
@@ -8748,15 +8785,21 @@
                 const posAbsText = isDeadReckoning ? 'DENIED >' : 'VALID >';
 
                 let driftEst = '±0.0m';
-                if (arduMeasuredDriftMeters > 0.5) {
-                    const card = getCardinal(arduMeasuredDriftBearing);
-                    let relAngle = (arduMeasuredDriftBearing - planeHeading) % 360;
+                const displayDrift = (smoothDriftMeters > 0.5) ? smoothDriftMeters : arduMeasuredDriftMeters;
+                if (displayDrift > 0.5) {
+                    const card = getHysteresisCardinal(smoothDriftBearing, lastDriftCard);
+                    lastDriftCard = card;
+                    let relAngle = (smoothDriftBearing - planeHeading) % 360;
                     if (relAngle > 180) relAngle -= 360;
                     if (relAngle < -180) relAngle += 360;
-                    const side = relAngle > 0 ? 'R' : 'L';
-                    const distFormatted = arduMeasuredDriftMeters >= 1000 
-                        ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
-                        : `${arduMeasuredDriftMeters.toFixed(1)}m`;
+                    let side = lastDriftSide;
+                    if (relAngle > 2.0) side = 'R';
+                    else if (relAngle < -2.0) side = 'L';
+                    lastDriftSide = side;
+
+                    const distFormatted = displayDrift >= 1000 
+                        ? `${(displayDrift / 1000).toFixed(2)}km` 
+                        : `${displayDrift.toFixed(1)}m`;
                     driftEst = `${distFormatted} ${card} [${side}]`;
                 } else if (arduEkfHorizAccuracy > 0) {
                     driftEst = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
@@ -12260,8 +12303,9 @@
             // Animate Dead Reckoning 3D Visual Suite strictly during Dead Reckoning condition
             if (isDeadReckoning) {
                 let uncRadius = 4.0;
-                if (arduMeasuredDriftMeters > 0.5) {
-                    uncRadius = Math.max(4.0, Math.min(500.0, arduMeasuredDriftMeters));
+                const displayDrift = (smoothDriftMeters > 0.5) ? smoothDriftMeters : arduMeasuredDriftMeters;
+                if (displayDrift > 0.5) {
+                    uncRadius = Math.max(4.0, Math.min(500.0, displayDrift));
                 } else if (arduEkfHorizAccuracy > 0) {
                     uncRadius = Math.max(4.0, Math.min(500.0, arduEkfHorizAccuracy));
                 } else {
@@ -12277,81 +12321,111 @@
                 uncRingMesh.scale.set(uncRadius, uncRadius, uncRadius);
                 uncCrosshairs.scale.set(uncRadius, uncRadius, uncRadius);
 
-                // Rotate outer border and pulse inner disc
-                uncRingMesh.rotation.y += 0.01;
-                uncDiscMesh.material.opacity = 0.12 + 0.06 * Math.sin(now * 0.005);
+                // Calm, stable rotation without oscillating opacity flash
+                uncRingMesh.rotation.y += 0.005;
+                uncDiscMesh.material.opacity = 0.14;
 
-                // Spin diamond marker
-                lastFixDiamond.rotation.y += 0.02;
-                lastFixDiamond.rotation.x += 0.01;
+                // Single-axis calm diamond yaw spin
+                lastFixDiamond.rotation.y += 0.008;
 
                 // Tether line from Last Fix 3D position to current plane position
                 tetherLine.geometry.setFromPoints([lastFixPosition, vtolGroup.position]);
-                tetherLine.computeLineDistances();
 
                 // Plumb line dropping straight down from plane to uncertainty center
                 const planeGroundPt = new THREE.Vector3(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
                 plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
-                plumbLine.computeLineDistances();
 
-                // 4. Update Actual Model Position (SITL Ground Truth) in Dead Reckoning
+                // 4. Update Actual Model Position (SITL Ground Truth) in Dead Reckoning with 2nd-order smooth filter
                 if (arduSimLat && Math.abs(arduSimLat) > 0.01) {
                     simTruthGroup.visible = true;
                     const truthAlt = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.y : 30.0;
-                    const truthPos = latLonToScene(arduSimLat, arduSimLon, truthAlt);
-                    simTruthDot.position.copy(truthPos);
-                    simTruthRing.rotation.y += 0.02;
+                    const rawTruthPos = latLonToScene(arduSimLat, arduSimLon, truthAlt);
+
+                    if (!simTruthPosInitialized) {
+                        simTruthTargetPos.copy(rawTruthPos);
+                        simTruthCurrentPos.copy(rawTruthPos);
+                        simTruthPosInitialized = true;
+                    } else {
+                        simTruthTargetPos.lerp(rawTruthPos, lerpFactor);
+                        simTruthCurrentPos.lerp(simTruthTargetPos, lerpFactor);
+                    }
+
+                    simTruthDot.position.copy(simTruthCurrentPos);
+                    simTruthRing.rotation.y += 0.01;
 
                     const truthGroundY = (typeof getTerrainElevationAt === 'function') 
-                        ? getTerrainElevationAt(truthPos.x, truthPos.z) 
+                        ? getTerrainElevationAt(simTruthCurrentPos.x, simTruthCurrentPos.z) 
                         : (mapGroup.position.y + 0.1);
 
-                    simTruthGroundMarker.position.set(truthPos.x, truthGroundY + 0.05, truthPos.z);
+                    simTruthGroundMarker.position.set(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z);
 
-                    simTruthPlumbLine.geometry.setFromPoints([truthPos, new THREE.Vector3(truthPos.x, truthGroundY + 0.05, truthPos.z)]);
-                    simTruthPlumbLine.computeLineDistances();
+                    simTruthPlumbLine.geometry.setFromPoints([
+                        simTruthCurrentPos, 
+                        new THREE.Vector3(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z)
+                    ]);
 
-                    simTruthDriftLine.geometry.setFromPoints([truthPos, vtolGroup.position]);
-                    simTruthDriftLine.computeLineDistances();
+                    simTruthDriftLine.geometry.setFromPoints([simTruthCurrentPos, vtolGroup.position]);
 
-                    simTruthSprite.position.set(truthPos.x, truthPos.y + 2.8, truthPos.z);
+                    simTruthSprite.position.set(simTruthCurrentPos.x, simTruthCurrentPos.y + 2.8, simTruthCurrentPos.z);
                 } else {
                     simTruthGroup.visible = false;
+                    simTruthPosInitialized = false;
                 }
 
-                // Annunciator and telemetry badge updates strictly in Dead Reckoning
-                const navEl = document.getElementById('nav-fix-status');
-                if (navEl) {
-                    if (arduMeasuredDriftMeters > 0.5) {
-                        const card = getCardinal(arduMeasuredDriftBearing);
-                        let relAngle = (arduMeasuredDriftBearing - planeHeading) % 360;
-                        if (relAngle > 180) relAngle -= 360;
-                        if (relAngle < -180) relAngle += 360;
-                        const side = relAngle > 0 ? 'R' : 'L';
-                        const distFormatted = arduMeasuredDriftMeters >= 1000 
-                            ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
-                            : `${arduMeasuredDriftMeters.toFixed(1)}m`;
-                        navEl.innerText = `DR: ${distFormatted} ${card} [${side}]`;
-                    } else if (arduEkfHorizAccuracy > 0) {
-                        navEl.innerText = `EKF ACC: ±${arduEkfHorizAccuracy.toFixed(1)}m`;
-                    } else {
-                        const elapsedSec = (performance.now() - drStartTime) / 1000.0;
-                        navEl.innerText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                // Rate-limited annunciator and telemetry badge updates (5 Hz) with hysteresis to eliminate flicker
+                if (now - lastNavTextUpdate > 200) {
+                    lastNavTextUpdate = now;
+                    const navEl = document.getElementById('nav-fix-status');
+                    if (navEl) {
+                        const displayMeters = smoothDriftMeters > 0.5 ? smoothDriftMeters : arduMeasuredDriftMeters;
+                        if (displayMeters > 0.5) {
+                            const bearing = smoothDriftBearing;
+                            const card = getHysteresisCardinal(bearing, lastDriftCard);
+                            lastDriftCard = card;
+
+                            let relAngle = (bearing - planeHeading) % 360;
+                            if (relAngle > 180) relAngle -= 360;
+                            if (relAngle < -180) relAngle += 360;
+
+                            let side = lastDriftSide;
+                            if (relAngle > 2.0) side = 'R';
+                            else if (relAngle < -2.0) side = 'L';
+                            lastDriftSide = side;
+
+                            const distFormatted = displayMeters >= 1000 
+                                ? `${(displayMeters / 1000).toFixed(2)}km` 
+                                : `${displayMeters.toFixed(1)}m`;
+                            const newText = `DR: ${distFormatted} ${card} [${side}]`;
+                            if (navEl.innerText !== newText) {
+                                navEl.innerText = newText;
+                            }
+                        } else if (arduEkfHorizAccuracy > 0) {
+                            const newText = `EKF ACC: ±${arduEkfHorizAccuracy.toFixed(1)}m`;
+                            if (navEl.innerText !== newText) navEl.innerText = newText;
+                        } else {
+                            const elapsedSec = (performance.now() - drStartTime) / 1000.0;
+                            const newText = `DR · ±${uncRadius.toFixed(0)}m (${Math.floor(elapsedSec)}s)`;
+                            if (navEl.innerText !== newText) navEl.innerText = newText;
+                        }
+                        navEl.style.color = '#ff9f0a';
                     }
-                    navEl.style.color = '#ff9f0a';
-                }
-                const fmsDriftEl = document.getElementById('fms-stat-drift');
-                if (fmsDriftEl) {
-                    if (arduMeasuredDriftMeters > 0.5) {
-                        const card = getCardinal(arduMeasuredDriftBearing);
-                        const distFormatted = arduMeasuredDriftMeters >= 1000 
-                            ? `${(arduMeasuredDriftMeters / 1000).toFixed(2)}km` 
-                            : `${arduMeasuredDriftMeters.toFixed(1)}m`;
-                        fmsDriftEl.innerText = `${distFormatted} ${card}`;
-                    } else if (arduEkfHorizAccuracy > 0) {
-                        fmsDriftEl.innerText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
-                    } else {
-                        fmsDriftEl.innerText = `±${uncRadius.toFixed(1)}m`;
+
+                    const fmsDriftEl = document.getElementById('fms-stat-drift');
+                    if (fmsDriftEl) {
+                        const displayMeters = smoothDriftMeters > 0.5 ? smoothDriftMeters : arduMeasuredDriftMeters;
+                        if (displayMeters > 0.5) {
+                            const distFormatted = displayMeters >= 1000 
+                                ? `${(displayMeters / 1000).toFixed(2)}km` 
+                                : `${displayMeters.toFixed(1)}m`;
+                            const newText = `${distFormatted} ${lastDriftCard}`;
+                            if (fmsDriftEl.innerText !== newText) fmsDriftEl.innerText = newText;
+                        } else if (arduEkfHorizAccuracy > 0) {
+                            const newText = `±${arduEkfHorizAccuracy.toFixed(1)}m`;
+                            if (fmsDriftEl.innerText !== newText) fmsDriftEl.innerText = newText;
+                        } else {
+                            const newText = `±${uncRadius.toFixed(1)}m`;
+                            if (fmsDriftEl.innerText !== newText) fmsDriftEl.innerText = newText;
+                        }
                     }
                 }
             } else {
