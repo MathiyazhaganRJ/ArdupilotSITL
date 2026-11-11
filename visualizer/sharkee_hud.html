@@ -8453,6 +8453,85 @@
         );
         drGroup.add(plumbLine);
 
+        // 4. Actual Model Position (SITL Ground Truth Position Marker in DR)
+        const simTruthGroup = new THREE.Group();
+        simTruthGroup.visible = false;
+        drGroup.add(simTruthGroup);
+
+        // Actual position cyan 3D glowing sphere
+        const simTruthDotGeo = new THREE.SphereGeometry(0.8, 16, 16);
+        const simTruthDotMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        const simTruthDot = new THREE.Mesh(simTruthDotGeo, simTruthDotMat);
+        simTruthGroup.add(simTruthDot);
+
+        // Orbiting tactical ring around truth dot
+        const simTruthRing = new THREE.Mesh(
+            new THREE.RingGeometry(1.1, 1.4, 24).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+        );
+        simTruthDot.add(simTruthRing);
+
+        // Ground landing contact reticle on terrain
+        const simTruthGroundMarker = new THREE.Mesh(
+            new THREE.RingGeometry(0.8, 1.3, 24).rotateX(-Math.PI / 2),
+            new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
+        );
+        simTruthGroup.add(simTruthGroundMarker);
+
+        // Vertical drop plumb line from actual position down to terrain
+        const simTruthPlumbLine = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
+            new THREE.LineDashedMaterial({
+                color: 0x00e5ff,
+                dashSize: 1.5,
+                gapSize: 1.0,
+                transparent: true,
+                opacity: 0.75
+            })
+        );
+        simTruthGroup.add(simTruthPlumbLine);
+
+        // Direct drift line from True Position to Drifting Autopilot Aircraft
+        const simTruthDriftLine = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)]),
+            new THREE.LineDashedMaterial({
+                color: 0x00e5ff,
+                dashSize: 2.0,
+                gapSize: 1.2,
+                transparent: true,
+                opacity: 0.95
+            })
+        );
+        simTruthGroup.add(simTruthDriftLine);
+
+        // Billboard badge above actual position dot
+        const truthBadgeCvs = document.createElement('canvas');
+        truthBadgeCvs.width = 240; truthBadgeCvs.height = 60;
+        const tbCtx = truthBadgeCvs.getContext('2d');
+        tbCtx.fillStyle = 'rgba(8, 20, 32, 0.88)';
+        if (typeof tbCtx.roundRect === 'function') {
+            tbCtx.roundRect(4, 4, 232, 52, 8);
+        } else {
+            tbCtx.rect(4, 4, 232, 52);
+        }
+        tbCtx.fill();
+        tbCtx.lineWidth = 2.0; tbCtx.strokeStyle = '#00e5ff'; tbCtx.stroke();
+        tbCtx.font = 'bold 20px "B612 Mono", monospace';
+        tbCtx.fillStyle = '#00e5ff';
+        tbCtx.textAlign = 'center'; tbCtx.textBaseline = 'middle';
+        tbCtx.fillText('● ACTUAL (TRUTH)', 120, 30);
+
+        const truthBadgeTex = new THREE.CanvasTexture(truthBadgeCvs);
+        truthBadgeTex.minFilter = THREE.LinearFilter;
+        const simTruthSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: truthBadgeTex,
+            depthTest: false,
+            depthWrite: false
+        }));
+        simTruthSprite.scale.set(7.0, 2.0, 1.0);
+        simTruthSprite.renderOrder = 9999;
+        simTruthGroup.add(simTruthSprite);
+
         // State Machine Controller for Dead Reckoning (Gated by Vehicle Arm State)
         function evaluateDeadReckoning() {
             if (simulatedDR) {
@@ -8562,6 +8641,7 @@
                 updateArduPilotDrift();
             } else {
                 drGroup.visible = false;
+                if (typeof simTruthGroup !== 'undefined') simTruthGroup.visible = false;
                 arduMeasuredDriftMeters = 0.0;
                 if (drFlag) drFlag.style.display = 'none';
                 if (drBtn) {
@@ -12213,6 +12293,31 @@
                 const planeGroundPt = new THREE.Vector3(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
                 plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
                 plumbLine.computeLineDistances();
+
+                // 4. Update Actual Model Position (SITL Ground Truth) in Dead Reckoning
+                if (arduSimLat && Math.abs(arduSimLat) > 0.01) {
+                    simTruthGroup.visible = true;
+                    const truthAlt = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.y : 30.0;
+                    const truthPos = latLonToScene(arduSimLat, arduSimLon, truthAlt);
+                    simTruthDot.position.copy(truthPos);
+                    simTruthRing.rotation.y += 0.02;
+
+                    const truthGroundY = (typeof getTerrainElevationAt === 'function') 
+                        ? getTerrainElevationAt(truthPos.x, truthPos.z) 
+                        : (mapGroup.position.y + 0.1);
+
+                    simTruthGroundMarker.position.set(truthPos.x, truthGroundY + 0.05, truthPos.z);
+
+                    simTruthPlumbLine.geometry.setFromPoints([truthPos, new THREE.Vector3(truthPos.x, truthGroundY + 0.05, truthPos.z)]);
+                    simTruthPlumbLine.computeLineDistances();
+
+                    simTruthDriftLine.geometry.setFromPoints([truthPos, vtolGroup.position]);
+                    simTruthDriftLine.computeLineDistances();
+
+                    simTruthSprite.position.set(truthPos.x, truthPos.y + 2.8, truthPos.z);
+                } else {
+                    simTruthGroup.visible = false;
+                }
 
                 // Annunciator and telemetry badge updates strictly in Dead Reckoning
                 const navEl = document.getElementById('nav-fix-status');
