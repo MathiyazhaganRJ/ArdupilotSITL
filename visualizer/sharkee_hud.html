@@ -2036,7 +2036,7 @@
         .gi-track-green {
             position: absolute;
             height: 5px;
-            background: #00e676;
+            background: #00e600;
             border-radius: 1px;
         }
         .gi-track-yellow {
@@ -4140,9 +4140,8 @@
         <div class="gi-top-bar" id="gi-header">
             <span class="gi-inst-title">GI 275 EIS</span>
             <div class="gi-controls-row">
-                <button class="gi-mode-btn active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
-                <button class="gi-mode-btn" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
-                <button class="gi-mode-btn" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
+                <button class="gi-mode-btn active" id="eis-btn-page-p" onclick="setEisPage('P')" title="Power / Electrical Systems">P</button>
+                <button class="gi-mode-btn" id="eis-btn-page-e" onclick="setEisPage('E')" title="Engine / Propulsion Systems">E</button>
                 <button class="gi-btn-close" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
             </div>
         </div>
@@ -4165,7 +4164,7 @@
                     <line x1="63" y1="9" x2="63" y2="5" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
                     <line x1="106" y1="52" x2="110" y2="52" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
                     <!-- Green Operating Zone -->
-                    <path d="M 70 13 A 43 43 0 0 1 96 32" fill="none" stroke="#00e676" stroke-width="4.5"/>
+                    <path d="M 70 13 A 43 43 0 0 1 96 32" fill="none" stroke="#00e600" stroke-width="4.5"/>
                     <!-- Redline Zone at High RPM -->
                     <path d="M 96 32 A 43 43 0 0 1 103 44" fill="none" stroke="#ff3b30" stroke-width="4.5" stroke-linecap="round"/>
                     <!-- Crisp White Inverted Triangle Pointer pointing at Arc -->
@@ -7602,6 +7601,10 @@
         const vtolGroup = new THREE.Group();
         vtolGroup.rotation.order = 'YXZ';
         scene.add(vtolGroup);
+        window.vtolGroup = vtolGroup;
+        window.scene = scene;
+        window.camera = camera;
+        window.controls = controls;
 
         // ==========================================
         // CORV-GCS GROUND ALTITUDE LEAD LASER LINE & TARGET RING
@@ -9306,6 +9309,7 @@
                 }
             }
         }
+        window.setCameraMode = setCameraMode;
 
         if (btnCorvChase) btnCorvChase.onclick = () => setCameraMode('corv_chase');
         if (btnFollow) btnFollow.onclick = () => setCameraMode('follow');
@@ -10178,7 +10182,7 @@
                     // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
                     const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
                     const mat = new THREE.MeshLambertMaterial({
-                        color: terrainWireframeMode ? 0x00e676 : 0x1f2e24,
+                        color: terrainWireframeMode ? 0x00e600 : 0x1f2e24,
                         side: THREE.DoubleSide,
                         wireframe: terrainWireframeMode
                     });
@@ -11147,7 +11151,7 @@
                 if (mesh.material) {
                     mesh.material.wireframe = enabled;
                     if (enabled) {
-                        mesh.material.color = new THREE.Color(0x00e676);
+                        mesh.material.color = new THREE.Color(0x00e600);
                     } else {
                         mesh.material.color = new THREE.Color(0xffffff);
                     }
@@ -11159,7 +11163,7 @@
                     if (mesh.material) {
                         mesh.material.wireframe = enabled;
                         if (enabled) {
-                            mesh.material.color = new THREE.Color(0x00e676);
+                            mesh.material.color = new THREE.Color(0x00e600);
                         } else {
                             mesh.material.color = new THREE.Color(0xffffff);
                         }
@@ -11237,7 +11241,7 @@
             ctx.fillStyle = 'rgba(10, 16, 24, 0.90)';
             ctx.fill();
             ctx.lineWidth = 2.5;
-            const strokeColor = (seqNumber === 0) ? '#ffb300' : (isActive || isPast ? '#ff3b30' : '#00e676');
+            const strokeColor = (seqNumber === 0) ? '#ffb300' : (isActive || isPast ? '#ff3b30' : '#00e600');
             ctx.strokeStyle = strokeColor;
             ctx.stroke();
 
@@ -11294,7 +11298,7 @@
                 const isActive = (wp.seq === currentMissionSeq);
                 const isPast = (wp.seq < currentMissionSeq);
                 const isHome = (wp.seq === 0);
-                const colorHex = isHome ? 0xffb300 : ((isActive || isPast) ? 0xff3b30 : 0x00e676);
+                const colorHex = isHome ? 0xffb300 : ((isActive || isPast) ? 0xff3b30 : 0x00e600);
 
                 // 1. Precise 3D Terrain Ground Contact Point
                 const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(pos.x, pos.z) : 0.05;
@@ -11361,7 +11365,7 @@
                 const segGeo = new THREE.BufferGeometry().setFromPoints([allPts[i], allPts[i + 1]]);
                 const isLegActiveOrPast = (validWps[i + 1].seq <= currentMissionSeq);
                 const segMat = new THREE.LineBasicMaterial({
-                    color: isLegActiveOrPast ? 0xff3b30 : 0x00e676,
+                    color: isLegActiveOrPast ? 0xff3b30 : 0x00e600,
                     linewidth: isLegActiveOrPast ? 3 : 2,
                     transparent: true,
                     opacity: isLegActiveOrPast ? 0.95 : 0.85,
@@ -12884,10 +12888,39 @@
             if (btnToggleEis) btnToggleEis.classList.remove('active');
         }
 
+        let eisPageMode = localStorage.getItem('eis_page_mode') || 'P';
+
+        function setEisPage(page) {
+            eisPageMode = page;
+            try { localStorage.setItem('eis_page_mode', eisPageMode); } catch(e) {}
+            updateEisPageUI();
+            if (typeof updateEisInstrument === 'function') updateEisInstrument();
+        }
+        window.setEisPage = setEisPage;
+
+        function updateEisPageUI() {
+            const btnP = document.getElementById('eis-btn-page-p');
+            const btnE = document.getElementById('eis-btn-page-e');
+            if (btnP) btnP.classList.toggle('active', eisPageMode === 'P');
+            if (btnE) btnE.classList.toggle('active', eisPageMode === 'E');
+
+            const archLbl = document.querySelector('.gi-arch-lbl');
+            const tagBox2 = document.getElementById('gi-tag-box2');
+            if (eisPageMode === 'P') {
+                if (archLbl) archLbl.textContent = 'AMPS';
+                if (tagBox2) tagBox2.textContent = 'BATT TEMP';
+            } else {
+                if (archLbl) archLbl.textContent = 'RPM';
+                if (tagBox2) tagBox2.textContent = 'ESC TEMP';
+            }
+        }
+        window.updateEisPageUI = updateEisPageUI;
+
         function setEisEngineMode(mode) {
             eisEngineMode = mode;
             localStorage.setItem('eis_engine_mode', eisEngineMode);
             updateEisModeUI();
+        updateEisPageUI();
         }
 
         function updateEisModeUI() {
@@ -12929,7 +12962,7 @@
             if (!isTwin) {
                 if (lblBox1) lblBox1.textContent = 'AMPS';
                 if (unitBox1) unitBox1.textContent = 'A';
-                if (lblBox2) lblBox2.textContent = 'ESC TEMP';
+                if (lblBox2) lblBox2.textContent = (eisPageMode === 'P') ? 'BATT TEMP' : 'ESC TEMP';
                 if (unitBox2) unitBox2.innerHTML = '&deg;C';
                 if (lblBox3) lblBox3.textContent = 'POWER';
                 if (unitBox3) unitBox3.textContent = 'W';
@@ -12971,9 +13004,11 @@
                 localStorage.setItem('eis_twin_right_ch', eisTwinRightCh);
             }
             updateEisModeUI();
+        updateEisPageUI();
         }
 
         updateEisModeUI();
+        updateEisPageUI();
 
         if (eisWidget) {
             makeDraggable(eisWidget, document.getElementById('gi-header') || eisWidget);
@@ -13382,15 +13417,25 @@
                 totAmp = (genuineBattAmps > 0) ? genuineBattAmps : activeAmp1;
                 totWatt = packVolt * totAmp;
 
-                // Top Arch
+                // Top Arch (P Mode = AMPS arch & digits; E Mode = RPM arch & digits)
                 const valPwr = document.getElementById('gi-num-pwr');
                 const valRpm = document.getElementById('gi-digits-rpm');
                 const ptrRpm = document.getElementById('gi-ptr-rpm-polygon');
+                const archLbl = document.querySelector('.gi-arch-lbl');
 
                 if (valPwr) valPwr.textContent = `${throttlePercent}%`;
-                if (valRpm) valRpm.textContent = Math.round(activeRpm1);
-                const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
-                setGiArchPointer(ptrRpm, rpmNorm);
+
+                if (eisPageMode === 'P') {
+                    if (archLbl) archLbl.textContent = 'AMPS';
+                    if (valRpm) valRpm.textContent = activeAmp1.toFixed(1);
+                    const ampNorm = Math.max(0, Math.min(1, activeAmp1 / 28.0));
+                    setGiArchPointer(ptrRpm, (ampNorm > 0.02) ? ampNorm : Math.max(0.02, throttlePercent / 100.0));
+                } else {
+                    if (archLbl) archLbl.textContent = 'RPM';
+                    if (valRpm) valRpm.textContent = Math.round(activeRpm1);
+                    const rpmNorm = Math.max(0, Math.min(1, activeRpm1 / 9500.0));
+                    setGiArchPointer(ptrRpm, rpmNorm);
+                }
 
                 // Box 1: AMPS (Vibrant Green / Dynamic Cyan-Amber-Red)
                 const valBox1 = document.getElementById('gi-val-box1');
@@ -13403,23 +13448,40 @@
                         valBox1.style.color = '#ffd60a'; // Caution
                         valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
-                        valBox1.style.color = '#00e676'; // Cruise Green Operating Zone
-                        valBox1.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                        valBox1.style.color = '#00e600'; // Cruise Green Operating Zone
+                        valBox1.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
                     } else {
                         valBox1.style.color = '#38bdf8'; // Normal idle / light draw cyan
                         valBox1.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
                     }
                 }
 
-                // Box 2: ESC TEMP (Digital Readout + Physical Tape Slider Gauge)
+                // Box 2: BATT TEMP (in P mode) or ESC TEMP (in E mode) (Digital Readout + Physical Tape Slider Gauge)
+                const lblBox2 = document.getElementById('gi-tag-box2');
                 const valBox2 = document.getElementById('gi-val-box2');
                 const ptrBox2 = document.getElementById('gi-ptr-box2');
+
+                let displayedTemp = escTempMax;
+                if (eisPageMode === 'P') {
+                    if (lblBox2) lblBox2.textContent = 'BATT TEMP';
+                    if (typeof am32Telemetry.batt_temp === 'number' && am32Telemetry.batt_temp > 0) {
+                        displayedTemp = am32Telemetry.batt_temp;
+                    } else if (typeof latestBaroTemp === 'number' && latestBaroTemp > 0) {
+                        displayedTemp = latestBaroTemp;
+                    } else {
+                        displayedTemp = escTempMax || 41;
+                    }
+                } else {
+                    if (lblBox2) lblBox2.textContent = 'ESC TEMP';
+                    displayedTemp = escTempMax;
+                }
+
                 if (valBox2) {
-                    valBox2.textContent = Math.round(escTempMax);
-                    if (escTempMax > 80) {
+                    valBox2.textContent = Math.round(displayedTemp);
+                    if (displayedTemp > 80) {
                         valBox2.style.color = '#ff3b30';
                         valBox2.style.textShadow = '0 0 10px rgba(255,59,48,0.5)';
-                    } else if (escTempMax > 65) {
+                    } else if (displayedTemp > 65) {
                         valBox2.style.color = '#ffd60a';
                         valBox2.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else {
@@ -13531,8 +13593,8 @@
                         valBox1.style.color = '#ffd60a';
                         valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
-                        valBox1.style.color = '#00e676';
-                        valBox1.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                        valBox1.style.color = '#00e600';
+                        valBox1.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
                     } else {
                         valBox1.style.color = '#38bdf8';
                         valBox1.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -13550,8 +13612,8 @@
                         valBox2.style.color = '#ffd60a';
                         valBox2.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp2 >= 5.0 && activeAmp2 <= 12.0) {
-                        valBox2.style.color = '#00e676';
-                        valBox2.style.textShadow = '0 0 12px rgba(0,230,118,0.45)';
+                        valBox2.style.color = '#00e600';
+                        valBox2.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
                     } else {
                         valBox2.style.color = '#38bdf8';
                         valBox2.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -13601,7 +13663,7 @@
                 valRem.textContent = `${pct}%`;
                 if (pct <= 15) valRem.style.color = '#ff3b30';
                 else if (pct <= 30) valRem.style.color = '#ffd60a';
-                else valRem.style.color = '#00e676';
+                else valRem.style.color = '#00e600';
             }
             if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
 
@@ -13653,8 +13715,8 @@
                     voltColor = '#ffd60a'; // Caution amber (3.50V - 3.70V per cell)
                     voltShadow = '0 0 10px rgba(255,214,10,0.5)';
                 } else if (avgCellVolt >= 3.80) {
-                    voltColor = '#00e676'; // Healthy cruise / full green (>= 3.80V per cell)
-                    voltShadow = '0 0 10px rgba(0,230,118,0.4)';
+                    voltColor = '#00e600'; // Healthy cruise / full green (>= 3.80V per cell)
+                    voltShadow = '0 0 10px rgba(0,230,0,0.4)';
                 } else {
                     voltColor = '#38bdf8'; // Nominal cyan (3.70V - 3.80V per cell)
                     voltShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -14170,6 +14232,23 @@
         // =========================================================================
         window.isLogReplayActive = false;
 
+        function calcLogSceneCoordinates(lat, lng, rel_alt, alt) {
+            const anchorLat = window.logOriginLat || homeLat;
+            const anchorLon = window.logOriginLon || homeLon;
+            if (!anchorLat || !anchorLon) return { x: 0, y: 1.8, z: 0 };
+            const dLat = lat - anchorLat;
+            const dLon = lng - anchorLon;
+            const latRad = anchorLat * (Math.PI / 180.0);
+            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+            const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+
+            const sx = dLon * mPerDegLon;
+            const sz = -(dLat * mPerDegLat);
+            const sy = (typeof rel_alt === 'number') ? rel_alt : ((typeof alt === 'number') ? (alt - (window.logOriginAlt || homeAlt || 0)) : 1.8);
+            return { x: sx, y: sy, z: sz };
+        }
+        window.calcLogSceneCoordinates = calcLogSceneCoordinates;
+
         function renderLogFlightCorridor(traj) {
             if (window.logCorridorGroup) {
                 scene.remove(window.logCorridorGroup);
@@ -14183,63 +14262,70 @@
                 window.logCorridorGroup = null;
             }
 
-            if (!traj || traj.length < 2 || !homeLat || !homeLon) return;
+            if (!traj || traj.length < 2) return;
+
+            // Anchor home datum from first valid point if not already locked
+            const firstValid = traj.find(p => p.lat && p.lng && Math.abs(p.lat) > 0.001) || traj[0];
+            if (firstValid && firstValid.lat) {
+                if (!window.logOriginLat) {
+                    window.logOriginLat = firstValid.lat;
+                    window.logOriginLon = firstValid.lng;
+                    window.logOriginAlt = (typeof firstValid.field_elev === 'number' && firstValid.field_elev !== 0) ? firstValid.field_elev : (firstValid.alt || 0);
+                    homeLat = firstValid.lat;
+                    homeLon = firstValid.lng;
+                    homeAlt = window.logOriginAlt;
+                    window.homeLat = homeLat;
+                    window.homeLon = homeLon;
+                }
+            }
+
+            if (!homeLat || !homeLon) return;
 
             window.logCorridorGroup = new THREE.Group();
             window.logCorridorGroup.name = "FlightLogCorridor";
-
-            const latRad0 = homeLat * (Math.PI / 180.0);
-            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad0) + 1.175 * Math.cos(4 * latRad0);
-            const mPerDegLon = 111412.84 * Math.cos(latRad0) - 93.5 * Math.cos(3 * latRad0);
 
             const rawPoints = [];
             const pointModes = [];
             for (let i = 0; i < traj.length; i++) {
                 const p = traj[i];
                 if (!p.lat || !p.lng || Math.abs(p.lat) < 0.001) continue;
-                const dLat = p.lat - homeLat;
-                const dLon = p.lng - homeLon;
-                const sx = dLon * mPerDegLon;
-                const sz = -(dLat * mPerDegLat);
-                const relAlt = (typeof p.rel_alt === 'number') ? p.rel_alt : ((typeof p.alt === 'number') ? (p.alt - (homeAlt || 0)) : 2.0);
-                const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(sx, sz) : 0;
-                const sy = Math.max(groundY + 1.8, relAlt);
+                const pos = calcLogSceneCoordinates(p.lat, p.lng, p.rel_alt, p.alt);
 
                 if (rawPoints.length > 0) {
                     const prev = rawPoints[rawPoints.length - 1];
-                    const distSq = (sx - prev.x) * (sx - prev.x) + (sy - prev.y) * (sy - prev.y) + (sz - prev.z) * (sz - prev.z);
+                    const distSq = (pos.x - prev.x) * (pos.x - prev.x) + (pos.y - prev.y) * (pos.y - prev.y) + (pos.z - prev.z) * (pos.z - prev.z);
                     if (distSq < 0.04) continue;
                 }
-                rawPoints.push(new THREE.Vector3(sx, sy, sz));
+                rawPoints.push(new THREE.Vector3(pos.x, pos.y, pos.z));
                 pointModes.push(p.mode || 'MANUAL');
             }
             if (rawPoints.length < 2) return;
 
-            // Vibrant Neon Aeronautical Flight Mode Color Palette
+                        // Vibrant Neon Aeronautical Flight Mode Color Palette (Synced with Workstation)
             const MODE_THREE_COLORS = {
-                'MANUAL': new THREE.Color(0x94a3b8),
-                'STABILIZE': new THREE.Color(0xff7300),
-                'TRAINING': new THREE.Color(0xff9100),
-                'ACRO': new THREE.Color(0xffab00),
+                'MANUAL': new THREE.Color(0xef4444),
+                'STABILIZE': new THREE.Color(0xf59e0b),
+                'TRAINING': new THREE.Color(0xf97316),
+                'ACRO': new THREE.Color(0xec4899),
                 'FBWA': new THREE.Color(0x00d2ff),
                 'FBWB': new THREE.Color(0x2979ff),
-                'CRUISE': new THREE.Color(0x00e5ff),
+                'CRUISE': new THREE.Color(0xa855f7),
                 'AUTOTUNE': new THREE.Color(0x00b4d8),
-                'AUTO': new THREE.Color(0x00ff88),
-                'RTL': new THREE.Color(0xff2d87),
-                'LOITER': new THREE.Color(0xffcc00),
-                'TAKEOFF': new THREE.Color(0xa855f7),
+                'AUTO': new THREE.Color(0x00e600),
+                'RTL': new THREE.Color(0xf59e0b),
+                'LOITER': new THREE.Color(0x06b6d4),
+                'TAKEOFF': new THREE.Color(0x00e600),
                 'LAND': new THREE.Color(0xff3344),
-                'GUIDED': new THREE.Color(0xb5179e),
-                'QSTABILIZE': new THREE.Color(0xff7300),
-                'QHOVER': new THREE.Color(0x00f5d4),
-                'QLOITER': new THREE.Color(0xffcc00),
-                'QLAND': new THREE.Color(0xff2a4b),
-                'QRTL': new THREE.Color(0xff2d87),
+                'GUIDED': new THREE.Color(0x3b82f6),
+                'QSTABILIZE': new THREE.Color(0xf59e0b),
+                'QHOVER': new THREE.Color(0x14b8a6),
+                'QLOITER': new THREE.Color(0x38bdf8),
+                'QLAND': new THREE.Color(0xeab308),
+                'QRTL': new THREE.Color(0xf97316),
                 'QAUTOTUNE': new THREE.Color(0x00b4d8),
-                'QACRO': new THREE.Color(0xffab00)
+                'QACRO': new THREE.Color(0xec4899)
             };
-            const defaultModeColor = new THREE.Color(0x00d2ff);
+            const defaultModeColor = new THREE.Color(0x00e600);
 
             const N = rawPoints.length;
             const lineVertices = new Float32Array(N * 3);
@@ -14340,33 +14426,22 @@
                     homeAlt = (typeof pt.field_elev === 'number' && pt.field_elev !== 0) ? pt.field_elev : (pt.alt || 0);
                     window.homeLat = homeLat;
                     window.homeLon = homeLon;
+                    window.logOriginLat = homeLat;
+                    window.logOriginLon = homeLon;
+                    window.logOriginAlt = homeAlt;
                 }
 
-                const dLat = pt.lat - homeLat;
-                const dLon = pt.lng - homeLon;
-                const latRad = homeLat * (Math.PI / 180.0);
-                const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
-                const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+                const pos = calcLogSceneCoordinates(pt.lat, pt.lng, pt.rel_alt, pt.alt);
+                rawTargetPos.set(pos.x, pos.y, pos.z);
+                targetPos.copy(rawTargetPos);
 
-                const dEast = dLon * mPerDegLon;
-                const dNorth = dLat * mPerDegLat;
-                const relAlt = (typeof pt.rel_alt === 'number') ? pt.rel_alt : ((typeof pt.alt === 'number') ? (pt.alt - (homeAlt || 0)) : 2.0);
-                const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(dEast, -dNorth) : 0;
-                const sceneY = Math.max(groundY + 1.8, relAlt);
+                // Deterministic synchronization: Snap directly on every telemetry sample (zero spatial deviation)
+                vtolGroup.position.copy(rawTargetPos);
+                firstPos = true;
 
-                currentPlaneAltRel = relAlt;
+                currentPlaneAltRel = (typeof pt.rel_alt === 'number') ? pt.rel_alt : (pt.alt - (homeAlt || 0));
                 currentPlaneAltMSL = pt.alt;
                 planeClimbRate = pt.crt || 0;
-
-                rawTargetPos.set(dEast, sceneY, -dNorth);
-
-                // Deterministic synchronization during jump or first point
-                if (isJump || !firstPos) {
-                    targetPos.copy(rawTargetPos);
-                    vtolGroup.position.copy(rawTargetPos);
-                    vtolGroup.updateMatrixWorld(true);
-                    firstPos = true;
-                }
 
                 // Throttled map update: Stream tiles around vehicle once every 1.5s
                 const now = Date.now();
@@ -14391,13 +14466,10 @@
             const rollRad = rollDeg * (Math.PI / 180.0);
 
             rawTargetRot.set(pitchRad, -yawRad, -rollRad);
-
-            if (isJump || !firstPos) {
-                const qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-                targetRot.setFromQuaternion(qRaw);
-                vtolGroup.setRotationFromQuaternion(qRaw);
-                vtolGroup.updateMatrixWorld(true);
-            }
+            const qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+            targetRot.copy(rawTargetRot);
+            vtolGroup.setRotationFromQuaternion(qRaw);
+            vtolGroup.updateMatrixWorld(true);
 
             // 3. Synchronize Flight Log Wind Telemetry (Speed, Direction, Vectors)
             if (typeof pt.wind_spd === 'number' && typeof pt.wind_dir === 'number') {
@@ -14764,6 +14836,24 @@
         window.loadFlightLogTrajectory = function(traj) {
             window.isLogReplayActive = true;
             window.flightTrajectory = traj;
+            if (typeof waypointGroup !== 'undefined' && waypointGroup) waypointGroup.visible = false;
+            if (typeof flightCoverageGroup !== 'undefined' && flightCoverageGroup) flightCoverageGroup.visible = false;
+            if (typeof trailLine !== 'undefined' && trailLine) {
+                trailLine.visible = false;
+                trailCount = 0;
+                if (trailGeo) trailGeo.setDrawRange(0, 0);
+            }
+            const firstPt = (traj && traj.length > 0) ? (traj.find(p => p.lat && p.lng && Math.abs(p.lat) > 0.001) || traj[0]) : null;
+            if (firstPt && firstPt.lat) {
+                homeLat = firstPt.lat;
+                homeLon = firstPt.lng;
+                homeAlt = (typeof firstPt.field_elev === 'number' && firstPt.field_elev !== 0) ? firstPt.field_elev : (firstPt.alt || 0);
+                window.homeLat = homeLat;
+                window.homeLon = homeLon;
+                window.logOriginLat = homeLat;
+                window.logOriginLon = homeLon;
+                window.logOriginAlt = homeAlt;
+            }
             detectAirspeedAliveWindow(traj);
             renderLogFlightCorridor(traj);
             if (traj && traj.length > 0) {
@@ -14789,6 +14879,7 @@
             }
             if (typeof updateEisModeUI === 'function') {
                 updateEisModeUI();
+        updateEisPageUI();
             }
             if (typeof updateEisInstrument === 'function') {
                 updateEisInstrument();
@@ -14868,9 +14959,12 @@
                 if (firstPt && firstPt.lat) {
                     homeLat = firstPt.lat;
                     homeLon = firstPt.lng;
-                    homeAlt = (typeof firstPt.alt === 'number') ? firstPt.alt : 0;
+                    homeAlt = (typeof firstPt.field_elev === 'number' && firstPt.field_elev !== 0) ? firstPt.field_elev : (firstPt.alt || 0);
                     window.homeLat = homeLat;
                     window.homeLon = homeLon;
+                    window.logOriginLat = homeLat;
+                    window.logOriginLon = homeLon;
+                    window.logOriginAlt = homeAlt;
                     ekfHomeInitialized = true;
                     initialGpsCalibrated = true;
                     vehicleConnected = true;
