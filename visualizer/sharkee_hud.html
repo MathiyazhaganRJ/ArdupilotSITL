@@ -937,8 +937,8 @@
         /* LXNAV Circular Glass Cockpit MFD Widget (Classic Frosted White with Aviation B612) */
         #lxnav-mfd-widget {
             position: absolute;
-            bottom: 593px;
-            right: 58px;
+            bottom: 618px;
+            right: 20px;
             width: 244px;
             min-width: 244px;
             max-width: 244px;
@@ -1761,7 +1761,7 @@
         /* ========================================================= */
         #eis-widget {
             position: absolute;
-            bottom: 161px;
+            bottom: 190px;
             right: 20px;
             width: 320px;
             min-width: 320px;
@@ -1811,9 +1811,11 @@
             background: #0c1219;
             border: 1px solid #283648;
             border-radius: 3px;
-            padding: 1px 6px;
-            font-size: 8px;
-            font-weight: 700;
+            padding: 1px 8px;
+            min-width: 18px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 800;
             color: #9cb0c8;
             cursor: pointer;
             font-family: 'B612 Mono', monospace;
@@ -2521,16 +2523,26 @@
             letter-spacing: 0.5px;
         }
 
-        @media (max-height: 865px) {
+        @media (max-height: 920px) {
             #lxnav-mfd-widget {
-                bottom: 575px;
+                bottom: 615px;
+                transform: scale(0.92);
+                transform-origin: bottom right;
             }
             #eis-widget {
-                bottom: 148px;
+                bottom: 188px;
             }
-            #terrain-graph-container {
-                height: 120px !important;
-                bottom: 12px !important;
+        }
+        @media (max-height: 840px) {
+            #lxnav-mfd-widget {
+                bottom: 575px;
+                transform: scale(0.82);
+                transform-origin: bottom right;
+            }
+            #eis-widget {
+                bottom: 184px;
+                transform: scale(0.92);
+                transform-origin: bottom right;
             }
         }
 
@@ -3304,7 +3316,7 @@
         </footer>
     </div>
 
-    <!-- Floating Toolbar -->
+    <!-- Floating Toolbar (Green Marked Active Tools) -->
     <div class="floating-toolbar">
         <button class="toolbar-btn" id="btn-toggle-corv-mode" title="Toggle 2D Flat Satellite Map vs 3D Topography (Hotkey 'T' or 'V')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3326,13 +3338,6 @@
                 <line x1="12" y1="18" x2="12" y2="22"></line>
                 <line x1="2" y1="12" x2="6" y2="12"></line>
                 <line x1="18" y1="12" x2="22" y2="12"></line>
-            </svg>
-        </button>
-        <button class="toolbar-btn active" id="btn-toggle-eis" title="Toggle GI 275 EIS Engine & Power Monitor (Hotkey 'E')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
-                <path d="m4.93 4.93 2.12 2.12m9.9 9.9 2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9 2.12-2.12"></path>
             </svg>
         </button>
         <button class="toolbar-btn active" id="btn-toggle-compass" title="Toggle Avionics Compass Rose">
@@ -3361,22 +3366,18 @@
                 <line x1="12" y1="4" x2="12" y2="20"></line>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Terrain Profile">
+        <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Atmosphere & Environmental Telemetry">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
             </svg>
         </button>
-        <button class="toolbar-btn" id="btn-toggle-weather" title="Toggle Live Weather & Wind Simulation">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-toggle-fms" title="Toggle FMS Dead Reckoning & Navigation CDU">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+        <button class="toolbar-btn active" id="btn-toggle-eis" title="Toggle Engine & EIS Instrument (GI 275)" onclick="toggleEisWidget()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 7v5l3 3"></path>
+                <path d="M7 12h1"></path>
+                <path d="M16 12h1"></path>
             </svg>
         </button>
         <button class="toolbar-btn" id="btn-toggle-messages" title="Toggle Autopilot Messages Log (Hotkey 'M')">
@@ -3384,24 +3385,6 @@
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
             <span id="toolbar-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
-        </button>
-        <button class="toolbar-btn" id="btn-open-cesium" title="Open 3D Terrain Map (Cesium)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-        </button>
-        <button class="toolbar-btn" id="btn-open-atis-pdf" title="Open ATIS EKF3 Dead Reckoning & EW Parameter Manual (PDF)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
         </button>
     </div>
 
@@ -3414,17 +3397,10 @@
     <div id="ui-panel">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <img src="app_icon.png?v=4" alt="ArduPilot Mascot" onerror="this.onerror=null; this.src='favicon.png';" style="width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.18); object-fit: cover; flex-shrink: 0;">
-                <span class="panel-brand-title">ArduPilot SITL</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <span class="panel-brand-title" style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: #f1f5f9; text-transform: uppercase;">Flight Telemetry</span>
             </div>
             <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                <button id="btn-mavlink-link-hdr" class="icon-btn" title="MAVLink Connection Setup (UDP Mirror, SITL, COM)" onclick="openMavlinkModal()" style="width: 26px; height: 26px; font-size: 12px;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
-                </button>
                 <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="width: 26px; height: 26px; font-size: 12px; position: relative;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -3460,29 +3436,16 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
                 <span>AIRSPACE</span>
             </button>
-            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages & System Log (Hotkey 'M')">
+            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages Log (Hotkey 'M')">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 <span>MESSAGES</span>
                 <span id="tab-msg-count" class="tab-badge" style="display:none; margin-left: 2px;">0</span>
             </button>
         </div>
 
-        <!-- Tab 1: Live Flight Telemetry & Aircraft Config -->
+        <!-- Tab 1: Flight Telemetry Readouts -->
         <div id="panel-view-telemetry">
             <div class="data-card">
-                <div class="data-row" style="cursor: pointer;" onclick="openMavlinkModal()" title="Click to manage MAVLink connection (UDP, TCP, COM)">
-                    <span class="data-label">Link Status</span>
-                    <span id="status-wrap" style="display: inline-flex; align-items: center; gap: 5px;">
-                        <span id="status" class="data-val" style="color: var(--danger); font-family: 'B612 Mono', monospace; font-weight: 700;">Offline</span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity: 0.6;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    </span>
-                </div>
-                <div class="data-row" style="cursor: pointer;" onclick="openMavlinkModal()" title="Click to switch MAVLink target (UDP Mirror, SITL, COM)">
-                    <span class="data-label">MAVLink Port</span>
-                    <span id="mavlink-port-display" class="data-val" style="color: var(--accent); font-family: 'B612 Mono', monospace; font-size: 11px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">udpin:0.0.0.0:14550</span>
-                </div>
-                <div class="data-row"><span class="data-label">FC Hardware</span><span id="fc-hardware" class="data-val"
-                        style="color: #8b949e; font-family: 'B612 Mono', monospace; font-weight: 700;">Detecting...</span></div>
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
                         style="color: #f0f6fc; font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
@@ -3495,11 +3458,10 @@
                         style="color: var(--accent);">1013 hPa</span></div>
                 <div class="data-row"><span class="data-label">Nav Fix</span><span id="nav-fix-status" class="data-val"
                         style="color: var(--accent-yellow); font-weight: 700;">NO GPS</span></div>
-                <div class="data-row" id="row-mission-sync" style="cursor: pointer;" onclick="forceSyncWaypoints()" title="Click to refresh waypoints from flight controller">
+                <div class="data-row" id="row-mission-sync">
                     <span class="data-label">Mission WPT</span>
                     <span id="mission-wpt-status" class="data-val" style="color: var(--accent); display: inline-flex; align-items: center; gap: 4px;">
                         <span id="mission-wpt-count-text">0 WP</span>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     </span>
                 </div>
             </div>
@@ -4172,7 +4134,7 @@
     </div>
 
     
-    <!-- Garmin GI 275 EIS Aviation-Grade Engine Instrument -->
+    <!-- Garmin GI 275 EIS Aviation-Grade Instrument -->
     <div id="eis-widget">
         <!-- Minimal Top Bar with Controls -->
         <div class="gi-top-bar" id="gi-header">
@@ -4315,18 +4277,19 @@
             </div>
         </div>
 
-        <!-- Bottom Avionics Status Pill - Orderly 4-Segment Strip -->
+        <!-- Bottom Avionics Status Pill - Flight Time & mAh Consumed -->
         <div class="gi-bottom-status-pill" id="gi-bot-pill">
             <div class="gi-status-col">
-                <span class="gi-stat-lbl">REM CAPACITY</span>
-                <span class="gi-stat-val" id="gi-stat-rem">6000 mAh</span>
+                <span class="gi-stat-lbl">FLIGHT TIME</span>
+                <span class="gi-stat-val" id="gi-stat-flight-time">00:00</span>
             </div>
             <div class="gi-stat-divider"></div>
             <div class="gi-status-col">
-                <span class="gi-stat-lbl">EST ENDURANCE</span>
-                <span class="gi-stat-val" id="gi-stat-est">-- MIN</span>
+                <span class="gi-stat-lbl">MAH CONSUMED</span>
+                <span class="gi-stat-val" id="gi-stat-mah-consumed">0 mAh</span>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Live Weather Widget -->
@@ -4546,15 +4509,142 @@
         </div>
     </div>
 
-    <!-- Terrain Profile Graph -->
-    <div id="terrain-graph-container"
-        style="position: absolute; bottom: 14px; right: 20px; width: min(470px, calc(100vw - 360px)); height: 135px; box-sizing: border-box; overflow: hidden; background: rgba(10, 14, 20, 0.85); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: none;">
-        <div
-            style="color: #aaa; font-size: 11px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0;">
-            <span>Terrain & Flight Profile</span>
-            <span id="terrain-alt-text" style="color: #fff;">AGL: -- m</span>
+    <!-- Garmin Atmospheric & Environmental Telemetry Panel -->
+    <div id="terrain-graph-container" class="env-telemetry-panel"
+        style="position: absolute; bottom: 10px; right: 20px; width: min(580px, calc(100vw - 360px)); height: 172px; box-sizing: border-box; overflow: hidden; background: #000000; border-radius: 12px; border: 2px solid #1a2332; padding: 7px 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 16px 45px rgba(0, 0, 0, 0.95), inset 0 1px 2px rgba(255, 255, 255, 0.08); z-index: 90; pointer-events: auto; font-family: 'B612', 'B612 Mono', 'JetBrains Mono', monospace; user-select: none;">
+        
+        <!-- Garmin Top Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 2px 4px 2px; flex-shrink: 0; border-bottom: 1px solid #141c28;">
+            <div style="display: flex; align-items: center; gap: 7px; white-space: nowrap;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #00e5ff; box-shadow: 0 0 8px #00e5ff;"></span>
+                <span style="font-family: 'B612', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #8a9bb2; text-transform: uppercase;">ATMOSPHERE & ENVIRONMENT</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap;">
+                <!-- Field Elevation Badge -->
+                <div style="background: #0c1219; border: 1px solid #1f2b3c; border-radius: 4px; padding: 1px 7px; font-family: 'B612 Mono', monospace; font-size: 9.5px; font-weight: 700;">
+                    <span style="color: #8a9bb2; font-size: 8.5px; margin-right: 4px; letter-spacing: 0.5px;">ELEV</span>
+                    <span id="env-field-elev-val" style="color: #e2e8f0;">-- m</span>
+                </div>
+                <!-- AMSL Badge -->
+                <div style="background: #0c1219; border: 1px solid #1f2b3c; border-radius: 4px; padding: 1px 7px; font-family: 'B612 Mono', monospace; font-size: 9.5px; font-weight: 700;">
+                    <span style="color: #00e5ff; font-size: 8.5px; margin-right: 4px; letter-spacing: 0.5px;">AMSL</span>
+                    <span id="env-amsl-val" style="color: #ffffff;">-- m</span>
+                </div>
+                <!-- AGL Badge -->
+                <div style="background: #0c1219; border: 1px solid #1f2b3c; border-radius: 4px; padding: 1px 7px; font-family: 'B612 Mono', monospace; font-size: 9.5px; font-weight: 700;">
+                    <span style="color: #72e38c; font-size: 8.5px; margin-right: 4px; letter-spacing: 0.5px;">AGL</span>
+                    <span id="terrain-alt-text" style="color: #ffffff;">0.0 m</span>
+                </div>
+            </div>
         </div>
-        <canvas id="terrain-canvas" style="width: 100%; height: 100%; flex: 1; min-height: 0;"></canvas>
+
+        <!-- Garmin 6-Box Environmental Grid (3 Columns x 2 Rows) -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 1px; background: #141c28; border: 1px solid #1a2332; border-radius: 7px; overflow: hidden; flex: 1; margin-top: 5px;">
+            
+            <!-- Cell 1: BARO TEMP -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">BARO TEMP</span>
+                    <span style="font-family: 'B612 Mono', monospace; font-size: 8px; font-weight: 700; color: #55667a; text-transform: uppercase;">FC SENSOR</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
+                    <span id="env-baro-temp-val" style="color: #00e5ff; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #00e5ff; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">°C</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MIN</span> <b id="env-baro-min" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-baro-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-baro-avg" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+            <!-- Cell 2: ARSP TEMP -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">ARSP TEMP</span>
+                    <span style="font-family: 'B612 Mono', monospace; font-size: 8px; font-weight: 700; color: #55667a; text-transform: uppercase;">PITOT OAT</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
+                    <span id="env-arsp-temp-val" style="color: #00e5ff; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #00e5ff; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">°C</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MIN</span> <b id="env-arsp-min" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-arsp-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-arsp-avg" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+            <!-- Cell 3: QNH ALTIMETER -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">QNH BARO</span>
+                    <span style="font-family: 'B612 Mono', monospace; font-size: 8px; font-weight: 700; color: #55667a; text-transform: uppercase;">SEA LEVEL</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
+                    <span id="env-qnh-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">hPa</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MIN</span> <b id="env-qnh-min" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-qnh-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-qnh-avg" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+            <!-- Cell 4: STATION PRESS -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">STATION PRESS</span>
+                    <span style="font-family: 'B612 Mono', monospace; font-size: 8px; font-weight: 700; color: #55667a; text-transform: uppercase;">STATIC</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
+                    <span id="env-press-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">hPa</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MIN</span> <b id="env-press-min" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-press-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-press-avg" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+            <!-- Cell 5: AIR DENSITY (rho) -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">AIR DENSITY (ρ)</span>
+                    <span style="font-family: 'B612 Mono', monospace; font-size: 8px; font-weight: 700; color: #55667a; text-transform: uppercase;">P / RT</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
+                    <span id="env-density-val" style="color: #c084fc; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #c084fc; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace; white-space: nowrap;">kg/m³</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MIN</span> <b id="env-density-min" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-density-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-density-avg" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+            <!-- Cell 6: WIND VECTOR -->
+            <div style="background: #000000; padding: 5px 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">WIND VECTOR</span>
+                    <span id="env-wind-comps" style="color: #30d158; font-size: 8.5px; font-weight: 700; font-family: 'B612 Mono', monospace; white-space: nowrap;">HW: -- XW: --</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
+                    <span id="env-wind-val" style="color: #30d158; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
+                    <span style="color: #30d158; font-size: 9.5px; font-weight: 700; font-family: 'B612 Mono', monospace;">m/s</span>
+                    <span id="env-wind-dir" style="color: #72e38c; font-size: 12px; font-weight: 700; font-family: 'B612 Mono', monospace; margin-left: 2px;">--°</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #080d13; border: 1px solid #16202c; border-radius: 3px; padding: 2px 5px; font-family: 'B612 Mono', monospace; font-size: 8px; white-space: nowrap;">
+                    <span><span style="color: #55667a; font-weight: 700;">MAX</span> <b id="env-wind-max" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">AVG</span> <b id="env-wind-avg" style="color: #cbd5e1; font-weight: 700;">--</b></span>
+                    <span><span style="color: #55667a; font-weight: 700;">DIR</span> <b id="env-wind-main-dir" style="color: #ffffff; font-weight: 700;">--</b></span>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <!-- Urgent Message Toast Ticker -->
@@ -4769,15 +4859,17 @@
 
         // UI Panel Toggles
         const btnOpenCesium = document.getElementById('btn-open-cesium');
-        btnOpenCesium.onclick = () => {
-            if (window.pywebview) {
-                // If running in the Python Desktop App, tell Python to spawn a new native window
-                window.pywebview.api.open_cesium();
-            } else {
-                // If running in a normal web browser, open a new tab
-                window.open("cesium.html", "_blank");
-            }
-        };
+        if (btnOpenCesium) {
+            btnOpenCesium.onclick = () => {
+                if (window.pywebview) {
+                    // If running in the Python Desktop App, tell Python to spawn a new native window
+                    window.pywebview.api.open_cesium();
+                } else {
+                    // If running in a normal web browser, open a new tab
+                    window.open("cesium.html", "_blank");
+                }
+            };
+        }
 
         const btnToggleUi = document.getElementById('btn-toggle-ui');
         const uiPanel = document.getElementById('ui-panel');
@@ -5098,6 +5190,11 @@
         };
 
         function formatMsgTime(ts) {
+            if (typeof ts === 'number' && ts < 1000000) {
+                const mm = String(Math.floor(ts / 60)).padStart(2, '0');
+                const ss = String(Math.floor(ts % 60)).padStart(2, '0');
+                return `${mm}:${ss}`;
+            }
             const d = ts ? new Date(ts * 1000) : new Date();
             const hh = String(d.getHours()).padStart(2, '0');
             const mm = String(d.getMinutes()).padStart(2, '0');
@@ -5150,7 +5247,7 @@
             };
             messagesHistory.push(entry);
 
-            if (messagesHistory.length > 200) {
+            if (messagesHistory.length > 1000) {
                 messagesHistory.shift();
                 if (messagesList && messagesList.firstChild) {
                     messagesList.removeChild(messagesList.firstChild);
@@ -7175,9 +7272,9 @@
         function updateLxnavHUD() {
             if (!lxnavWidgetVisible) return;
 
-            // Pitch & Roll in Degrees
-            const currentPitchDeg = (typeof targetRot !== 'undefined') ? (targetRot.x * (180 / Math.PI)) : 0;
-            const currentRollDeg = (typeof targetRot !== 'undefined') ? (targetRot.z * (180 / Math.PI)) : 0;
+            // Genuine Pitch & Roll in Degrees
+            const pitchDeg = (typeof currentPitchDeg === 'number') ? currentPitchDeg : 0;
+            const rollDeg = (typeof currentRollDeg === 'number') ? currentRollDeg : 0;
 
             // Fallback: Calculate climb rate from altitude delta if telemetry climb is absent/stale
             const nowTime = performance.now();
@@ -7200,12 +7297,14 @@
             if (currentLxnavPage === 1) {
                 const horizonGrp = document.getElementById('lxnav-pfd-horizon-group');
                 if (horizonGrp) {
-                    const pitchOffset = Math.max(-80, Math.min(80, currentPitchDeg * 2.0)); // 2px per degree
-                    const rollDeg = -currentRollDeg;
-                    horizonGrp.style.transform = `rotate(${rollDeg}deg) translateY(${pitchOffset}px)`;
+                    const pitchOffset = Math.max(-80, Math.min(80, pitchDeg * 2.0)); // 2px per degree
+                    horizonGrp.style.transform = `rotate(${-rollDeg}deg) translateY(${pitchOffset}px)`;
                 }
                 const spdEl = document.getElementById('lxnav-pfd-speed');
-                if (spdEl) spdEl.textContent = Math.round(planeAirspeed * 3.6);
+                if (spdEl) {
+                    const spdVal = (typeof planeAirspeed === 'number') ? planeAirspeed : 0;
+                    spdEl.textContent = (spdVal >= 10 ? Math.round(spdVal) : spdVal.toFixed(1));
+                }
                 const altEl = document.getElementById('lxnav-pfd-alt');
                 if (altEl) altEl.textContent = Math.round(currentPlaneAltRel || 0);
                 updatePfdQnh();
@@ -9274,7 +9373,7 @@
 
             const modeEl = document.getElementById('sel-map-mode');
             const mapMode = modeEl ? modeEl.value : (localStorage.getItem('pilot_map_mode') || 'auto');
-            if (mapMode === 'offline') {
+            if (mapMode === 'offline' && !forceRecenter && !window.isLogReplayActive) {
                 return; // In offline mode, keep My Home Airfield / selected preset as default
             }
 
@@ -9287,12 +9386,12 @@
                                (typeof isArmed !== 'undefined' && isArmed);
 
             // Strict In-Flight Invariant Lock: Once initialized, NEVER shift EKF origin while aircraft is flying or armed!
-            if (ekfHomeInitialized && isAirborne) {
+            if (ekfHomeInitialized && isAirborne && !forceRecenter && !window.isLogReplayActive) {
                 return;
             }
 
             // Stationary Drift Filter: If already locked and displacement is negligible (< 1.5m), ignore packet noise!
-            if (ekfHomeInitialized && homeLat !== null && distFromHome < 1.5 && !isUserCommand) {
+            if (ekfHomeInitialized && homeLat !== null && distFromHome < 1.5 && !isUserCommand && !window.isLogReplayActive) {
                 return;
             }
 
@@ -9342,7 +9441,7 @@
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
         const horizonTiles = new Map();
-        let homeLat = null, homeLon = null, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
+        let homeLat = null, homeLon = null, homeAlt = 0, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
         let missionAnchorLat = null, missionAnchorLon = null, missionAnchorX = 0, missionAnchorZ = 0;
         window.homeLat = null;
         window.homeLon = null;
@@ -11337,6 +11436,7 @@
 
         function updateTerrainGraph() {
             const canvas = document.getElementById('terrain-canvas');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
             // Bulletproof High-DPI Canvas Scaling
@@ -11559,6 +11659,7 @@
         vehicleConnected = false;
 
         function scheduleWsReconnect() {
+            if (window.isLogReplayActive || (window.parent && window.parent !== window)) return;
             if (wsReconnectTimer) return;
             wsReconnectTimer = setTimeout(() => {
                 wsReconnectTimer = null;
@@ -11567,6 +11668,10 @@
         }
 
         function connectTelemetryWebSocket() {
+            if (window.isLogReplayActive || (window.parent && window.parent !== window)) {
+                console.log("Log Replay Mode Active: SITL WebSocket connection bypassed");
+                return;
+            }
             if (wsReconnectTimer) {
                 clearTimeout(wsReconnectTimer);
                 wsReconnectTimer = null;
@@ -11835,7 +11940,12 @@
                 hasTerrainData = true;
                 currentTerrainAltMSL = data.terrain_height;
                 currentAGL = data.current_height;
-                document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
+                const tAltEl = document.getElementById('terrain-alt-text');
+                if (tAltEl) tAltEl.innerText = `${currentAGL.toFixed(1)} m`;
+                const amslEl = document.getElementById('env-amsl-val');
+                if (amslEl) amslEl.innerText = `${((currentPlaneAltMSL || (currentTerrainAltMSL + currentAGL)) || 0).toFixed(1)} m`;
+                const elevEl = document.getElementById('env-field-elev-val');
+                if (elevEl) elevEl.innerText = `${((homeAlt || currentTerrainAltMSL) || 0).toFixed(1)} m`;
             } else if (data.type === 'WIND') {
                 // Direct ArduPlane MAVLink Telemetry (Exact Mission Planner readings)
                 if (data.wind_speed !== undefined && data.wind_direction !== undefined) {
@@ -11973,7 +12083,12 @@
                         plotPlane = data.z;
                         plotTerrain = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(rawTargetPos.x, rawTargetPos.z) : 0;
                         currentAGL = Math.max(0, plotPlane - plotTerrain);
-                        document.getElementById('terrain-alt-text').innerText = `AGL: ${currentAGL.toFixed(1)}m`;
+                        const tAltEl = document.getElementById('terrain-alt-text');
+                        if (tAltEl) tAltEl.innerText = `${currentAGL.toFixed(1)} m`;
+                        const amslEl = document.getElementById('env-amsl-val');
+                        if (amslEl) amslEl.innerText = `${(plotPlane || currentPlaneAltMSL || 0).toFixed(1)} m`;
+                        const elevEl = document.getElementById('env-field-elev-val');
+                        if (elevEl) elevEl.innerText = `${((homeAlt || plotTerrain) || 0).toFixed(1)} m`;
                     }
                     terrainHistory.push({ plane: plotPlane, terrain: plotTerrain });
                     if (terrainHistory.length > MAX_HISTORY) terrainHistory.shift();
@@ -12150,7 +12265,17 @@
         };
     }
 
-    connectTelemetryWebSocket();
+    if ((window.parent && window.parent !== window) || window.location.search.includes('replay=1') || window.location.search.includes('log=')) {
+        window.isLogReplayActive = true;
+        vehicleConnected = true;
+        const st = document.getElementById('status');
+        if (st) {
+            st.innerText = "Log Telemetry Engine Active";
+            st.style.color = "var(--accent-cyan, #00e5ff)";
+        }
+    } else {
+        connectTelemetryWebSocket();
+    }
 
         const clock = new THREE.Clock();
 
@@ -12192,19 +12317,30 @@
 
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
             const dt = Math.min(clock.getDelta(), 0.1);
-            const lerpFactor = 1.0 - Math.exp(-dt * 3.0);
 
-            // 2nd-Order Low-Pass Filter (Critically damped spring equivalent)
-            // This guarantees C1 continuity (smooth velocity), completely erasing 10Hz polygon corners
-            targetPos.lerp(rawTargetPos, lerpFactor);
-            vtolGroup.position.lerp(targetPos, lerpFactor);
+            if (window.isLogReplayActive) {
+                // Silky-smooth C1 continuous interpolation for log replay (25 Hz filter bandwidth eliminates 10 Hz GPS stepping)
+                const logFilterRate = 22.0;
+                const lerpFactor = 1.0 - Math.exp(-dt * logFilterRate);
+                vtolGroup.position.lerp(rawTargetPos, lerpFactor);
 
-            let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
-            let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
-            targetRot.setFromQuaternion(qTarget);
+                const qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                vtolGroup.quaternion.slerp(qRaw, lerpFactor);
+                vtolGroup.updateMatrixWorld(true);
+            } else {
+                // Live SITL 2nd-order critically damped filter (only for live 10Hz WebSocket streaming)
+                const filterRate = 3.0;
+                const lerpFactor = 1.0 - Math.exp(-dt * filterRate);
+                targetPos.lerp(rawTargetPos, lerpFactor);
+                vtolGroup.position.lerp(targetPos, lerpFactor);
 
-            let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
-            vtolGroup.setRotationFromQuaternion(qFinal);
+                let qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                let qTarget = new THREE.Quaternion().setFromEuler(targetRot).slerp(qRaw, lerpFactor);
+                targetRot.setFromQuaternion(qTarget);
+
+                let qFinal = new THREE.Quaternion().setFromEuler(vtolGroup.rotation).slerp(qTarget, lerpFactor);
+                vtolGroup.setRotationFromQuaternion(qFinal);
+            }
 
             // Dynamic Floor: Ensure map meshes stay anchored at true datum origin (y = 0.0)
             mapGroup.position.y = 0.0;
@@ -12237,14 +12373,18 @@
                 const camGroundElev = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(desiredX, desiredZ) : 0;
                 const safeDesiredY = Math.max(desiredY, camGroundElev + 3.5);
 
-                // Smoothly lerp camera position with zero snapping or jumping
-                camera.position.x += (desiredX - camera.position.x) * 0.12;
-                camera.position.y += (safeDesiredY - camera.position.y) * 0.12;
-                camera.position.z += (desiredZ - camera.position.z) * 0.12;
-
-                // Smoothly look at aircraft center
-                corvLookAtPos.lerp(vtolGroup.position, 0.15);
-                camera.lookAt(corvLookAtPos);
+                if (window.isLogReplayActive) {
+                    // Direct camera sync for zero-jitter, crystal-clear 60 FPS flight tracking
+                    camera.position.set(desiredX, safeDesiredY, desiredZ);
+                    camera.lookAt(vtolGroup.position);
+                } else {
+                    // Smoothly lerp camera position with zero snapping or jumping
+                    camera.position.x += (desiredX - camera.position.x) * 0.12;
+                    camera.position.y += (safeDesiredY - camera.position.y) * 0.12;
+                    camera.position.z += (desiredZ - camera.position.z) * 0.12;
+                    corvLookAtPos.lerp(vtolGroup.position, 0.15);
+                    camera.lookAt(corvLookAtPos);
+                }
             } else if (cameraMode === 'follow') {
                 const offset = camera.position.clone().sub(controls.target);
                 controls.target.copy(vtolGroup.position);
@@ -12257,9 +12397,8 @@
 
             trackPoint.getWorldPosition(currentTrackPos);
 
-            // Active Trail Tracking (High-Res): Records when focused!
-            // Reduced threshold from 10cm to 1cm to guarantee perfectly smooth curves (1 point per frame)
-            if (firstPos) {
+            // Active Trail Tracking & Swath: Live SITL only to save GPU bandwidth during Log Replay
+            if (!window.isLogReplayActive && firstPos) {
                 const activeColor = isDeadReckoning ? drTrackColor : normalTrackColor;
                 if (currentTrackPos.distanceTo(lastTrailAddPos) > 0.01) {
                     if (trailCount < maxTrailPoints - 1) {
@@ -12338,9 +12477,17 @@
             y3Props[2].rotation.y += Math.max(0, ((servoSpeeds[m_y3_r] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
 
             // Spin fixed-wing props
-            pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
-            twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
-            twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+            if (window.isLogReplayActive) {
+                // Continuous aerodynamic propeller motion during flight log replay
+                const spinRate = Math.max(0.35, (planeAirspeed / 12.0) * 1.5);
+                pusherProp.rotation.z += spinRate * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+                twinPropL.rotation.z += spinRate * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+                twinPropR.rotation.z += spinRate * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+            } else {
+                pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+                twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+                twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
+            }
 
             // Continuous 60FPS Compass Synchronization from 3D Model
             if (firstPos) {
@@ -12614,6 +12761,65 @@
             updateEisInstrument();
         }
 
+        // Flight Timer & Airspeed Alive State
+        let trajAirspeedAliveTime = null;
+        let trajAirspeedEndTime = null;
+        let currentFlightTimeSec = 0;
+        let liveAirspeedAliveStart = null;
+        let liveAirspeedAliveEnd = null;
+
+        function detectAirspeedAliveWindow(traj) {
+            if (!Array.isArray(traj) || traj.length < 5) {
+                trajAirspeedAliveTime = null;
+                trajAirspeedEndTime = null;
+                return;
+            }
+            trajAirspeedAliveTime = null;
+            trajAirspeedEndTime = null;
+            const homeA = (traj[0] && typeof traj[0].alt === 'number') ? traj[0].alt : 0;
+
+            // Find first sustained flight point: tas >= 7.0 & (gs >= 3.0 or deltaAlt >= 2.0) for >= 3 points
+            for (let i = 0; i < traj.length - 3; i++) {
+                if (traj[i].tas >= 7.0 && traj[i+1].tas >= 7.0 && traj[i+2].tas >= 7.0 &&
+                    (traj[i].gs >= 3.0 || Math.abs(traj[i].alt - homeA) >= 2.0)) {
+                    trajAirspeedAliveTime = traj[i].time;
+                    break;
+                }
+            }
+            // Fallback if strict criteria not met: simple tas >= 5.0
+            if (trajAirspeedAliveTime === null) {
+                for (let i = 0; i < traj.length - 2; i++) {
+                    if (traj[i].tas >= 5.0 && traj[i+1].tas >= 5.0) {
+                        trajAirspeedAliveTime = traj[i].time;
+                        break;
+                    }
+                }
+            }
+
+            // Find last sustained flight point (landing/touchdown)
+            for (let i = traj.length - 1; i >= 3; i--) {
+                if (traj[i].tas >= 7.0 && traj[i-1].tas >= 7.0 && traj[i-2].tas >= 7.0 &&
+                    (traj[i].gs >= 3.0 || Math.abs(traj[i].alt - homeA) >= 2.0)) {
+                    trajAirspeedEndTime = traj[i].time;
+                    break;
+                }
+            }
+            if (trajAirspeedEndTime === null && trajAirspeedAliveTime !== null) {
+                trajAirspeedEndTime = traj[traj.length - 1].time;
+            }
+        }
+
+        function formatFlightTimer(sec) {
+            const s = Math.max(0, Math.floor(sec || 0));
+            const hrs = Math.floor(s / 3600);
+            const mins = Math.floor((s % 3600) / 60);
+            const secs = s % 60;
+            if (hrs > 0) {
+                return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
         // AM32 ESC Telemetry State (Hardware buffers or Simulated)
         const am32Telemetry = {
             hasHardwareTelem: false,
@@ -12637,12 +12843,16 @@
         const eisBtnTwin = document.getElementById('eis-btn-twin');
         const eisBtnCh = document.getElementById('eis-btn-ch');
         var eisWidgetVisible = localStorage.getItem('eis_widget_visible') !== '0';
+        if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
+        if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
 
         function toggleEisWidget() {
             const isVisible = eisWidget && (eisWidget.style.display !== 'none' && window.getComputedStyle(eisWidget).display !== 'none');
             eisWidgetVisible = !isVisible;
             if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
             if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
+            const tabEngine = document.getElementById('tab-engine');
+            if (tabEngine) tabEngine.classList.toggle('active', eisWidgetVisible);
             localStorage.setItem('eis_widget_visible', eisWidgetVisible ? '1' : '0');
         }
         window.toggleEisWidget = toggleEisWidget;
@@ -13473,6 +13683,20 @@
 
             if (statRem) statRem.textContent = `${remMahTotal} mAh`;
             if (statEst) statEst.textContent = minsRem;
+
+            const elFlightTime = document.getElementById('gi-stat-flight-time');
+            const elMahConsumed = document.getElementById('gi-stat-mah-consumed');
+            const flightTimeStr = (typeof formatFlightTimer === 'function') ? formatFlightTimer(currentFlightTimeSec) : `${Math.floor(currentFlightTimeSec/60)}:${Math.floor(currentFlightTimeSec%60).toString().padStart(2,'0')}`;
+            const consumedMahVal = Math.round(am32Telemetry.consumed_mah || 0);
+
+            if (elFlightTime) {
+                elFlightTime.textContent = flightTimeStr;
+                elFlightTime.style.color = (currentFlightTimeSec > 0) ? '#38bdf8' : '#94a3b8';
+            }
+            if (elMahConsumed) {
+                elMahConsumed.textContent = `${consumedMahVal} mAh`;
+                elMahConsumed.style.color = '#22d3ee';
+            }
         }
 
         setInterval(updateEisInstrument, 60);
@@ -13940,6 +14164,769 @@
 
         // Initialize Corv 3D Map Controls
         initCorvControls();
+
+        // =========================================================================
+        // Standalone UAV Flight Log Replay Engine (Offline 3D Avionics & Digital Twin)
+        // =========================================================================
+        window.isLogReplayActive = false;
+
+        function renderLogFlightCorridor(traj) {
+            if (window.logCorridorGroup) {
+                scene.remove(window.logCorridorGroup);
+                window.logCorridorGroup.traverse(obj => {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                        else obj.material.dispose();
+                    }
+                });
+                window.logCorridorGroup = null;
+            }
+
+            if (!traj || traj.length < 2 || !homeLat || !homeLon) return;
+
+            window.logCorridorGroup = new THREE.Group();
+            window.logCorridorGroup.name = "FlightLogCorridor";
+
+            const latRad0 = homeLat * (Math.PI / 180.0);
+            const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad0) + 1.175 * Math.cos(4 * latRad0);
+            const mPerDegLon = 111412.84 * Math.cos(latRad0) - 93.5 * Math.cos(3 * latRad0);
+
+            const rawPoints = [];
+            const pointModes = [];
+            for (let i = 0; i < traj.length; i++) {
+                const p = traj[i];
+                if (!p.lat || !p.lng || Math.abs(p.lat) < 0.001) continue;
+                const dLat = p.lat - homeLat;
+                const dLon = p.lng - homeLon;
+                const sx = dLon * mPerDegLon;
+                const sz = -(dLat * mPerDegLat);
+                const relAlt = (typeof p.rel_alt === 'number') ? p.rel_alt : ((typeof p.alt === 'number') ? (p.alt - (homeAlt || 0)) : 2.0);
+                const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(sx, sz) : 0;
+                const sy = Math.max(groundY + 1.8, relAlt);
+
+                if (rawPoints.length > 0) {
+                    const prev = rawPoints[rawPoints.length - 1];
+                    const distSq = (sx - prev.x) * (sx - prev.x) + (sy - prev.y) * (sy - prev.y) + (sz - prev.z) * (sz - prev.z);
+                    if (distSq < 0.04) continue;
+                }
+                rawPoints.push(new THREE.Vector3(sx, sy, sz));
+                pointModes.push(p.mode || 'MANUAL');
+            }
+            if (rawPoints.length < 2) return;
+
+            // Vibrant Neon Aeronautical Flight Mode Color Palette
+            const MODE_THREE_COLORS = {
+                'MANUAL': new THREE.Color(0x94a3b8),
+                'STABILIZE': new THREE.Color(0xff7300),
+                'TRAINING': new THREE.Color(0xff9100),
+                'ACRO': new THREE.Color(0xffab00),
+                'FBWA': new THREE.Color(0x00d2ff),
+                'FBWB': new THREE.Color(0x2979ff),
+                'CRUISE': new THREE.Color(0x00e5ff),
+                'AUTOTUNE': new THREE.Color(0x00b4d8),
+                'AUTO': new THREE.Color(0x00ff88),
+                'RTL': new THREE.Color(0xff2d87),
+                'LOITER': new THREE.Color(0xffcc00),
+                'TAKEOFF': new THREE.Color(0xa855f7),
+                'LAND': new THREE.Color(0xff3344),
+                'GUIDED': new THREE.Color(0xb5179e),
+                'QSTABILIZE': new THREE.Color(0xff7300),
+                'QHOVER': new THREE.Color(0x00f5d4),
+                'QLOITER': new THREE.Color(0xffcc00),
+                'QLAND': new THREE.Color(0xff2a4b),
+                'QRTL': new THREE.Color(0xff2d87),
+                'QAUTOTUNE': new THREE.Color(0x00b4d8),
+                'QACRO': new THREE.Color(0xffab00)
+            };
+            const defaultModeColor = new THREE.Color(0x00d2ff);
+
+            const N = rawPoints.length;
+            const lineVertices = new Float32Array(N * 3);
+            const lineColors = new Float32Array(N * 3);
+
+            for (let i = 0; i < N; i++) {
+                const p = rawPoints[i];
+                const mode = pointModes[i] || 'MANUAL';
+                const col = MODE_THREE_COLORS[mode] || defaultModeColor;
+
+                lineVertices[i * 3] = p.x;
+                lineVertices[i * 3 + 1] = p.y;
+                lineVertices[i * 3 + 2] = p.z;
+                lineColors[i * 3] = col.r;
+                lineColors[i * 3 + 1] = col.g;
+                lineColors[i * 3 + 2] = col.b;
+            }
+
+            // 1. High-Visibility Flight Mode Color-Coded Path Line (Clean vector flight track)
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute('position', new THREE.BufferAttribute(lineVertices, 3));
+            lineGeo.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+            const lineMat = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.98,
+                depthTest: false,
+                depthWrite: false
+            });
+            const flightLine = new THREE.Line(lineGeo, lineMat);
+            flightLine.renderOrder = 8990;
+            flightLine.frustumCulled = false;
+            window.logCorridorGroup.add(flightLine);
+
+            // 3. Periodic vertical drop pins colored by active flight mode
+            const dropStep = Math.max(25, Math.floor(N / 50));
+            for (let i = 0; i < N; i += dropStep) {
+                const pt = rawPoints[i];
+                const m = pointModes[i] || 'MANUAL';
+                const c = MODE_THREE_COLORS[m] || defaultModeColor;
+
+                const dropGeo = new THREE.BufferGeometry().setFromPoints([
+                    pt,
+                    new THREE.Vector3(pt.x, 0.1, pt.z)
+                ]);
+                const dropMat = new THREE.LineDashedMaterial({
+                    color: c,
+                    dashSize: 3,
+                    gapSize: 2,
+                    transparent: true,
+                    opacity: 0.45,
+                    depthTest: false
+                });
+                const dropLine = new THREE.Line(dropGeo, dropMat);
+                dropLine.computeLineDistances();
+                dropLine.renderOrder = 8980;
+                dropLine.frustumCulled = false;
+                window.logCorridorGroup.add(dropLine);
+            }
+
+            // 4. Takeoff / Home marker
+            const homeGeo = new THREE.RingGeometry(2, 6, 32);
+            homeGeo.rotateX(-Math.PI / 2);
+            const homeMat = new THREE.MeshBasicMaterial({
+                color: 0xffb300,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.85
+            });
+            const homeMesh = new THREE.Mesh(homeGeo, homeMat);
+            homeMesh.position.set(rawPoints[0].x, 0.15, rawPoints[0].z);
+            window.logCorridorGroup.add(homeMesh);
+
+            scene.add(window.logCorridorGroup);
+        }
+
+        function applyFlightLogTelemetry(pt, isJump = false) {
+            if (!pt) return;
+            vehicleConnected = true;
+            initialGpsCalibrated = true;
+            ekfHomeInitialized = true;
+
+            planeAirspeed = pt.tas || 0;
+            planeGroundspeed = pt.gs || 0;
+            planeGroundSpd = pt.gs || 0;
+
+            // 1. Position in Three.js Coordinates
+            if (pt.lat && pt.lng && Math.abs(pt.lat) > 0.001) {
+                currentPlaneLat = pt.lat;
+                currentPlaneLon = pt.lng;
+                window.currentPlaneLat = pt.lat;
+                window.currentPlaneLon = pt.lng;
+
+                if (!homeLat || !homeLon) {
+                    homeLat = pt.lat;
+                    homeLon = pt.lng;
+                    homeAlt = (typeof pt.field_elev === 'number' && pt.field_elev !== 0) ? pt.field_elev : (pt.alt || 0);
+                    window.homeLat = homeLat;
+                    window.homeLon = homeLon;
+                }
+
+                const dLat = pt.lat - homeLat;
+                const dLon = pt.lng - homeLon;
+                const latRad = homeLat * (Math.PI / 180.0);
+                const mPerDegLat = 111132.954 - 559.822 * Math.cos(2 * latRad) + 1.175 * Math.cos(4 * latRad);
+                const mPerDegLon = 111412.84 * Math.cos(latRad) - 93.5 * Math.cos(3 * latRad);
+
+                const dEast = dLon * mPerDegLon;
+                const dNorth = dLat * mPerDegLat;
+                const relAlt = (typeof pt.rel_alt === 'number') ? pt.rel_alt : ((typeof pt.alt === 'number') ? (pt.alt - (homeAlt || 0)) : 2.0);
+                const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(dEast, -dNorth) : 0;
+                const sceneY = Math.max(groundY + 1.8, relAlt);
+
+                currentPlaneAltRel = relAlt;
+                currentPlaneAltMSL = pt.alt;
+                planeClimbRate = pt.crt || 0;
+
+                rawTargetPos.set(dEast, sceneY, -dNorth);
+
+                // Deterministic synchronization during jump or first point
+                if (isJump || !firstPos) {
+                    targetPos.copy(rawTargetPos);
+                    vtolGroup.position.copy(rawTargetPos);
+                    vtolGroup.updateMatrixWorld(true);
+                    firstPos = true;
+                }
+
+                // Throttled map update: Stream tiles around vehicle once every 1.5s
+                const now = Date.now();
+                if (typeof updateMap === 'function' && (!window._lastLogMapUpdate || now - window._lastLogMapUpdate > 1500)) {
+                    window._lastLogMapUpdate = now;
+                    updateMap(pt.lat, pt.lng, false);
+                }
+            }
+
+            // 2. Attitude & Orientation (Euler: Roll, Pitch, Yaw)
+            const pitchDeg = pt.pitch || 0;
+            const rollDeg = pt.roll || 0;
+            const yawDeg = pt.yaw || 0;
+
+            currentPitchDeg = pitchDeg;
+            currentRollDeg = rollDeg;
+            planeHeading = (yawDeg + 360) % 360;
+            planeGroundTrack = pt.gs > 0.5 ? planeHeading : null;
+
+            const pitchRad = pitchDeg * (Math.PI / 180.0);
+            const yawRad = yawDeg * (Math.PI / 180.0);
+            const rollRad = rollDeg * (Math.PI / 180.0);
+
+            rawTargetRot.set(pitchRad, -yawRad, -rollRad);
+
+            if (isJump || !firstPos) {
+                const qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
+                targetRot.setFromQuaternion(qRaw);
+                vtolGroup.setRotationFromQuaternion(qRaw);
+                vtolGroup.updateMatrixWorld(true);
+            }
+
+            // 3. Synchronize Flight Log Wind Telemetry (Speed, Direction, Vectors)
+            if (typeof pt.wind_spd === 'number' && typeof pt.wind_dir === 'number') {
+                hasPlaneWind = true;
+                planeWindSpd = Math.max(0, pt.wind_spd);
+                planeWindDir = ((pt.wind_dir % 360) + 360) % 360;
+                currentWindSpd = planeWindSpd;
+                currentWindDir = planeWindDir;
+                window.windSpeed = planeWindSpd;
+                window.windDirection = planeWindDir;
+            } else if (typeof pt.vwn === 'number' && typeof pt.vwe === 'number') {
+                const wspd = Math.sqrt(pt.vwn * pt.vwn + pt.vwe * pt.vwe);
+                const wdir = wspd > 0.05 ? ((Math.atan2(-pt.vwe, -pt.vwn) * (180.0 / Math.PI)) + 360.0) % 360.0 : 0.0;
+                hasPlaneWind = true;
+                planeWindSpd = Math.max(0, wspd);
+                planeWindDir = wdir;
+                currentWindSpd = planeWindSpd;
+                currentWindDir = planeWindDir;
+                window.windSpeed = planeWindSpd;
+                window.windDirection = planeWindDir;
+            }
+
+            const windBadge = document.getElementById('weather-wind-badge');
+            if (windBadge) {
+                windBadge.innerText = `Wind: ${planeWindSpd.toFixed(1)} m/s @ ${Math.round(planeWindDir)}°`;
+            }
+
+            // Update Compass Instrument with genuine log wind
+            if (typeof updateCompass === 'function') {
+                updateCompass();
+            }
+
+            // 4. Update Speed & Alt tapes & text
+            const aSpdEl = document.getElementById('a_spd');
+            if (aSpdEl) aSpdEl.innerText = (pt.tas || 0).toFixed(1) + " m/s";
+            const gSpdEl = document.getElementById('g_spd');
+            if (gSpdEl) gSpdEl.innerText = (pt.gs || 0).toFixed(1) + " m/s";
+            const altEl = document.getElementById('alt');
+            if (altEl) altEl.innerText = (pt.alt || 0).toFixed(1) + " m";
+
+            // 5. PFD Horizon & Tapes
+            const horizonGrp = document.getElementById('lxnav-pfd-horizon-group');
+            if (horizonGrp) {
+                const pitchOffset = Math.max(-80, Math.min(80, pitchDeg * 2.0));
+                horizonGrp.style.transform = `rotate(${-rollDeg}deg) translateY(${pitchOffset}px)`;
+            }
+            const pfdSpd = document.getElementById('lxnav-pfd-speed');
+            if (pfdSpd) {
+                const spdVal = (typeof pt.tas === 'number') ? pt.tas : 0;
+                pfdSpd.textContent = (spdVal >= 10 ? Math.round(spdVal) : spdVal.toFixed(1));
+            }
+            const pfdAlt = document.getElementById('lxnav-pfd-alt');
+            if (pfdAlt) pfdAlt.textContent = Math.round((typeof currentPlaneAltRel === 'number') ? currentPlaneAltRel : (pt.alt || 0));
+
+            // 6. Flight Mode
+            if (pt.mode) {
+                currentFlightMode = pt.mode;
+                const fModeEl = document.getElementById('f_mode');
+                if (fModeEl) fModeEl.innerText = pt.mode;
+                const annunMode = document.getElementById('annun-flight-mode');
+                if (annunMode) annunMode.innerText = pt.mode;
+                const lxnavMode = document.getElementById('lxnav-pfd-mode-text');
+                if (lxnavMode) lxnavMode.innerText = pt.mode;
+            }
+
+            // 8. 8-Channel Servo / Motor Actuation (MOTORS 1..8)
+            if (pt.servos && Array.isArray(pt.servos)) {
+                latestServos = pt.servos;
+                servoSpeeds = pt.servos;
+                for (let i = 0; i < 8; i++) {
+                    const pwm = Math.round(pt.servos[i] || 1000);
+                    if (uiPwms && uiPwms[i]) uiPwms[i].innerText = pwm;
+                    const percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000.0) * 100));
+                    if (uiFills && uiFills[i]) {
+                        uiFills[i].style.height = percent + '%';
+                        uiFills[i].style.background = (percent > 80) ? 'var(--danger)' : (percent > 10 ? 'var(--success)' : 'transparent');
+                    }
+                }
+            }
+
+            // 9. Nav Fix Status
+            const navFixEl = document.getElementById('nav-fix-status');
+            if (navFixEl && pt.lat) {
+                const hasFix = Math.abs(pt.lat) > 0.001;
+                navFixEl.innerText = hasFix ? "3D FIX" : "NO GPS";
+                navFixEl.style.color = hasFix ? "#30d158" : "var(--accent-yellow)";
+            }
+
+            // 10. Tactical Radar
+            if (typeof updateCorvMinimap === 'function') updateCorvMinimap();
+
+            // 11. GI 275 EIS Engine & Electrical Telemetry Synchronization
+            const voltVal = (typeof pt.volt === 'number' && pt.volt > 5.0) ? pt.volt : 24.0;
+            const currVal = (typeof pt.curr === 'number') ? Math.max(0, pt.curr) : 0.0;
+            const thoVal = (typeof pt.tho === 'number') ? pt.tho : 0.0;
+            const mahVal = (typeof pt.consumed_mah === 'number') ? pt.consumed_mah : (typeof pt.currtot === 'number' ? pt.currtot : 0.0);
+            const remVal = (typeof pt.rem_pct === 'number') ? pt.rem_pct : Math.max(0, Math.round(100 - (mahVal / 6000.0) * 100));
+            const tempVal = (typeof pt.temp === 'number') ? pt.temp : 32.0;
+
+            am32Telemetry.hasHardwareTelem = true;
+            am32Telemetry.lastTelemTime = performance.now();
+            am32Telemetry.pack_voltage = voltVal;
+            am32Telemetry.total_current = currVal;
+            am32Telemetry.battery_current = currVal;
+            am32Telemetry.throttle_pct = thoVal;
+            am32Telemetry.consumed_mah = mahVal;
+            am32Telemetry.battery_remaining_pct = remVal;
+
+            const motorRpm = (thoVal > 1.0) ? Math.round(400 * voltVal * (thoVal / 100.0) * 0.92) : 0;
+            for (let i = 0; i < 8; i++) {
+                am32Telemetry.rpm[i] = motorRpm;
+                am32Telemetry.current[i] = currVal; // Genuine battery monitor current (BAT.Curr), not halved
+                am32Telemetry.temperature[i] = tempVal;
+            }
+
+            // 12. Calculate Flight Time from Airspeed Alive
+            if (trajAirspeedAliveTime === null && Array.isArray(window.flightTrajectory) && window.flightTrajectory.length > 5) {
+                detectAirspeedAliveWindow(window.flightTrajectory);
+            }
+
+            if (typeof trajAirspeedAliveTime === 'number' && typeof pt.time === 'number') {
+                if (pt.time < trajAirspeedAliveTime) {
+                    currentFlightTimeSec = 0;
+                } else if (typeof trajAirspeedEndTime === 'number' && pt.time > trajAirspeedEndTime) {
+                    currentFlightTimeSec = Math.max(0, trajAirspeedEndTime - trajAirspeedAliveTime);
+                } else {
+                    currentFlightTimeSec = Math.max(0, pt.time - trajAirspeedAliveTime);
+                }
+            } else {
+                currentFlightTimeSec = 0;
+            }
+
+            if (typeof updateEisInstrument === 'function') {
+                updateEisInstrument();
+            }
+
+            // 13. Update Atmosphere & Environmental Telemetry Panel
+            if (typeof updateEnvironmentDisplay === 'function') {
+                updateEnvironmentDisplay(pt);
+            }
+        }
+
+        // =========================================================
+        // ATMOSPHERE & ENVIRONMENTAL TELEMETRY ENGINE
+        // Computes and renders QNH, Baro Temp, Airspeed Temp, Air Density (rho),
+        // Station Pressure, Airspeed (TAS), Wind Vector, and Min/Max/Avg Stats.
+        // =========================================================
+        window.envStats = {
+            baro_min: '--', baro_max: '--', baro_avg: '--',
+            arsp_min: '--', arsp_max: '--', arsp_avg: '--',
+            qnh_min: '--', qnh_max: '--', qnh_avg: '--',
+            press_min: '--', press_max: '--', press_avg: '--',
+            density_min: '--', density_max: '--', density_avg: '--',
+            wind_max: '--', wind_avg: '--', wind_main_dir: '--'
+        };
+
+        function computeEnvironmentStats(traj) {
+            if (!Array.isArray(traj) || traj.length === 0) return;
+            const baroVals = [];
+            const arspVals = [];
+            const qnhVals = [];
+            const pressVals = [];
+            const densVals = [];
+            const windVals = [];
+            const windDirs = [];
+
+            window._hasArspInLog = traj.some(p => (p.has_arsp === true) || (typeof p.tas === 'number' && p.tas > 1.0) || (typeof p.arsp_temp === 'number' && Math.abs(p.arsp_temp) > 0.05));
+
+            for (let i = 0; i < traj.length; i++) {
+                const pt = traj[i];
+                if (typeof pt.baro_temp === 'number' && pt.baro_temp > -40 && pt.baro_temp < 100) {
+                    baroVals.push(pt.baro_temp);
+                } else if (typeof pt.temp === 'number' && pt.temp > -40 && pt.temp < 100) {
+                    baroVals.push(pt.temp);
+                }
+
+                if (window._hasArspInLog) {
+                    const at = (typeof pt.arsp_temp === 'number' && Math.abs(pt.arsp_temp) > 0.05) ? pt.arsp_temp : pt.baro_temp;
+                    if (typeof at === 'number' && at > -40 && at < 100) {
+                        arspVals.push(at);
+                    }
+                }
+
+                if (typeof pt.qnh_hpa === 'number' && pt.qnh_hpa > 800) {
+                    qnhVals.push(pt.qnh_hpa);
+                } else if (typeof pt.press_hpa === 'number' && pt.press_hpa > 300) {
+                    const qnh = pt.press_hpa * (Math.max(0.001, 1.0 - ((pt.alt || 0) / 44330.77)) ** -5.25588);
+                    qnhVals.push(qnh);
+                }
+
+                if (typeof pt.press_hpa === 'number' && pt.press_hpa > 300) {
+                    pressVals.push(pt.press_hpa);
+                } else if (typeof pt.press === 'number') {
+                    pressVals.push(pt.press > 2000 ? pt.press / 100.0 : pt.press);
+                }
+
+                if (typeof pt.density === 'number' && pt.density > 0.5 && pt.density < 2.0) {
+                    densVals.push(pt.density);
+                }
+
+                if (typeof pt.wind_spd === 'number' && pt.wind_spd >= 0) {
+                    windVals.push(pt.wind_spd);
+                    if (typeof pt.wind_dir === 'number') windDirs.push(pt.wind_dir);
+                }
+            }
+
+            const calcStats = (arr) => {
+                if (arr.length === 0) return { min: '--', max: '--', avg: '--' };
+                let min = arr[0], max = arr[0], sum = 0;
+                for (let v of arr) {
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                    sum += v;
+                }
+                return { min: min, max: max, avg: sum / arr.length };
+            };
+
+            const bStats = calcStats(baroVals);
+            const aStats = (window._hasArspInLog && arspVals.length > 0) ? calcStats(arspVals) : { min: '--', max: '--', avg: '--' };
+            const qStats = calcStats(qnhVals);
+            const pStats = calcStats(pressVals);
+            const dStats = calcStats(densVals);
+            const wStats = calcStats(windVals);
+
+            // Compute circular mean for wind direction
+            let avgWindDir = '--';
+            if (windDirs.length > 0) {
+                let sumSin = 0, sumCos = 0;
+                for (let d of windDirs) {
+                    const r = d * (Math.PI / 180.0);
+                    sumSin += Math.sin(r);
+                    sumCos += Math.cos(r);
+                }
+                const meanDeg = (Math.atan2(sumSin, sumCos) * (180.0 / Math.PI) + 360.0) % 360.0;
+                avgWindDir = Math.round(meanDeg) + '°';
+            }
+
+            window.envStats = {
+                baro_min: bStats.min !== '--' ? bStats.min.toFixed(1) : '--',
+                baro_max: bStats.max !== '--' ? bStats.max.toFixed(1) : '--',
+                baro_avg: bStats.avg !== '--' ? bStats.avg.toFixed(1) : '--',
+                arsp_min: aStats.min !== '--' ? aStats.min.toFixed(1) : '--',
+                arsp_max: aStats.max !== '--' ? aStats.max.toFixed(1) : '--',
+                arsp_avg: aStats.avg !== '--' ? aStats.avg.toFixed(1) : '--',
+                qnh_min: qStats.min !== '--' ? qStats.min.toFixed(1) : '--',
+                qnh_max: qStats.max !== '--' ? qStats.max.toFixed(1) : '--',
+                qnh_avg: qStats.avg !== '--' ? qStats.avg.toFixed(1) : '--',
+                press_min: pStats.min !== '--' ? pStats.min.toFixed(1) : '--',
+                press_max: pStats.max !== '--' ? pStats.max.toFixed(1) : '--',
+                press_avg: pStats.avg !== '--' ? pStats.avg.toFixed(1) : '--',
+                density_min: dStats.min !== '--' ? dStats.min.toFixed(3) : '--',
+                density_max: dStats.max !== '--' ? dStats.max.toFixed(3) : '--',
+                density_avg: dStats.avg !== '--' ? dStats.avg.toFixed(3) : '--',
+                wind_max: wStats.max !== '--' ? wStats.max.toFixed(1) : '--',
+                wind_avg: wStats.avg !== '--' ? wStats.avg.toFixed(1) : '--',
+                wind_main_dir: avgWindDir
+            };
+
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setTxt('env-baro-min', window.envStats.baro_min);
+            setTxt('env-baro-max', window.envStats.baro_max);
+            setTxt('env-baro-avg', window.envStats.baro_avg);
+
+            setTxt('env-arsp-min', window.envStats.arsp_min);
+            setTxt('env-arsp-max', window.envStats.arsp_max);
+            setTxt('env-arsp-avg', window.envStats.arsp_avg);
+
+            setTxt('env-qnh-min', window.envStats.qnh_min);
+            setTxt('env-qnh-max', window.envStats.qnh_max);
+            setTxt('env-qnh-avg', window.envStats.qnh_avg);
+
+            setTxt('env-press-min', window.envStats.press_min);
+            setTxt('env-press-max', window.envStats.press_max);
+            setTxt('env-press-avg', window.envStats.press_avg);
+
+            setTxt('env-density-min', window.envStats.density_min);
+            setTxt('env-density-max', window.envStats.density_max);
+            setTxt('env-density-avg', window.envStats.density_avg);
+
+            setTxt('env-wind-max', window.envStats.wind_max);
+            setTxt('env-wind-avg', window.envStats.wind_avg);
+            setTxt('env-wind-main-dir', window.envStats.wind_main_dir);
+        }
+
+        function updateEnvironmentDisplay(pt) {
+            if (!pt) return;
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+            // 1. QNH & Altitude Triad (Field Elevation, AMSL, AGL)
+            const qnhVal = (typeof pt.qnh_hpa === 'number') ? pt.qnh_hpa.toFixed(1) : (typeof pt.press_hpa === 'number' ? (pt.press_hpa * (Math.max(0.001, 1.0 - ((pt.alt || 0) / 44330.77)) ** -5.25588)).toFixed(1) : '1013.2');
+            setTxt('env-qnh-val', qnhVal);
+
+            // Field Elevation (takeoff ground level above sea level)
+            let fieldElev = 0.0;
+            if (typeof pt.field_elev === 'number' && pt.field_elev !== 0) {
+                fieldElev = pt.field_elev;
+            } else if (typeof homeAlt === 'number' && homeAlt !== 0) {
+                fieldElev = homeAlt;
+            } else if (typeof homeElevationMSL === 'number' && homeElevationMSL !== null && homeElevationMSL !== 0) {
+                fieldElev = homeElevationMSL;
+            } else if (Array.isArray(window.flightTrajectory) && window.flightTrajectory[0] && typeof window.flightTrajectory[0].alt === 'number') {
+                fieldElev = window.flightTrajectory[0].alt;
+            }
+
+            // Current AMSL (Absolute altitude above Mean Sea Level)
+            const amsl = (typeof pt.alt === 'number') ? pt.alt : (typeof currentPlaneAltMSL === 'number' && currentPlaneAltMSL !== 0 ? currentPlaneAltMSL : fieldElev);
+
+            // Current AGL (Height above ground level)
+            const agl = (typeof currentAGL === 'number' && currentAGL > 0) ? currentAGL : (typeof pt.rel_alt === 'number' ? Math.max(0, pt.rel_alt) : (typeof currentPlaneAltRel === 'number' ? Math.max(0, currentPlaneAltRel) : Math.max(0, amsl - fieldElev)));
+
+            setTxt('env-field-elev-val', `${fieldElev.toFixed(1)} m`);
+            setTxt('env-amsl-val', `${amsl.toFixed(1)} m`);
+            setTxt('terrain-alt-text', `${agl.toFixed(1)} m`);
+
+            // 2. Baro Temp
+            const bTemp = (typeof pt.baro_temp === 'number') ? pt.baro_temp : (typeof pt.temp === 'number' ? pt.temp : null);
+            setTxt('env-baro-temp-val', bTemp !== null ? bTemp.toFixed(1) : '--');
+
+            // 3. Station Pressure
+            const pressHpa = (typeof pt.press_hpa === 'number') ? pt.press_hpa : ((typeof pt.press === 'number') ? (pt.press > 2000 ? pt.press / 100.0 : pt.press) : null);
+            setTxt('env-press-val', pressHpa !== null ? pressHpa.toFixed(1) : '--');
+
+            // 4. Airspeed / Pitot Temp (keep 0.0 if no airspeed sensor data available)
+            let aTemp = 0.0;
+            if (window._hasArspInLog || pt.has_arsp === true || (typeof pt.tas === 'number' && pt.tas > 1.0)) {
+                if (typeof pt.arsp_temp === 'number' && Math.abs(pt.arsp_temp) > 0.05) {
+                    aTemp = pt.arsp_temp;
+                } else if (typeof pt.baro_temp === 'number' && Math.abs(pt.baro_temp) > 0.05) {
+                    aTemp = pt.baro_temp;
+                } else if (typeof pt.temp === 'number') {
+                    aTemp = pt.temp;
+                }
+            }
+            setTxt('env-arsp-temp-val', aTemp > 0 ? aTemp.toFixed(1) : '0.0');
+
+            // 5. Air Density (rho)
+            let rhoVal = pt.density;
+            if (typeof rhoVal !== 'number' && pressHpa && (aTemp !== null || bTemp !== null)) {
+                const tk = (aTemp !== null ? aTemp : bTemp) + 273.15;
+                rhoVal = (pressHpa * 100.0) / (287.05 * tk);
+            }
+            setTxt('env-density-val', typeof rhoVal === 'number' ? rhoVal.toFixed(3) : '--');
+
+            // 6. Wind Vector & Headwind / Crosswind components
+            const wSpd = (typeof pt.wind_spd === 'number') ? pt.wind_spd : 0.0;
+            const wDir = (typeof pt.wind_dir === 'number') ? ((pt.wind_dir % 360) + 360) % 360 : 0.0;
+            setTxt('env-wind-val', wSpd.toFixed(1));
+            setTxt('env-wind-dir', '@ ' + Math.round(wDir) + '°');
+
+            const headingRad = (planeHeading || 0) * (Math.PI / 180.0);
+            const windRad = wDir * (Math.PI / 180.0);
+            const relWindAngle = windRad - headingRad;
+            const hw = wSpd * Math.cos(relWindAngle);
+            const xw = wSpd * Math.sin(relWindAngle);
+            const hwStr = (hw >= 0 ? '+' : '-') + Math.abs(hw).toFixed(1);
+            const xwStr = (xw >= 0 ? 'R' : 'L') + Math.abs(xw).toFixed(1);
+            setTxt('env-wind-comps', `HW:${hwStr} XW:${xwStr}`);
+        }
+
+        window.renderLogFlightCorridor = renderLogFlightCorridor;
+        window.applyFlightLogTelemetry = applyFlightLogTelemetry;
+        window.computeEnvironmentStats = computeEnvironmentStats;
+        window.updateEnvironmentDisplay = updateEnvironmentDisplay;
+        window.loadFlightLogTrajectory = function(traj) {
+            window.isLogReplayActive = true;
+            window.flightTrajectory = traj;
+            detectAirspeedAliveWindow(traj);
+            renderLogFlightCorridor(traj);
+            if (traj && traj.length > 0) {
+                const firstPt = traj.find(p => typeof p.wind_spd === 'number') || traj[0];
+                if (firstPt && typeof firstPt.wind_spd === 'number') {
+                    hasPlaneWind = true;
+                    planeWindSpd = Math.max(0, firstPt.wind_spd);
+                    planeWindDir = ((firstPt.wind_dir % 360) + 360) % 360;
+                    currentWindSpd = planeWindSpd;
+                    currentWindDir = planeWindDir;
+                    window.windSpeed = planeWindSpd;
+                    window.windDirection = planeWindDir;
+                }
+            }
+            if (typeof computeEnvironmentStats === 'function') {
+                computeEnvironmentStats(traj);
+            }
+            if (traj && traj.length > 0 && typeof updateEnvironmentDisplay === 'function') {
+                updateEnvironmentDisplay(traj[0]);
+            }
+            if (typeof updateCompass === 'function') {
+                updateCompass();
+            }
+            if (typeof updateEisModeUI === 'function') {
+                updateEisModeUI();
+            }
+            if (typeof updateEisInstrument === 'function') {
+                updateEisInstrument();
+            }
+        };
+        window.loadFlightLogMessages = function(msgs) {
+            if (!Array.isArray(msgs) || msgs.length === 0) return;
+            messagesHistory.length = 0;
+            const listEl = document.getElementById('messages-list');
+            if (listEl) listEl.innerHTML = '';
+            for (const m of msgs) {
+                addAutopilotMessage({
+                    text: m.text,
+                    severity: m.severity || 6,
+                    timestamp: m.time || 0
+                }, true);
+            }
+            const tabMsgCount = document.getElementById('tab-msg-count');
+            if (tabMsgCount) {
+                tabMsgCount.textContent = msgs.length;
+                tabMsgCount.style.display = 'inline-block';
+            }
+            const toolbarMsgDot = document.getElementById('toolbar-msg-dot');
+            if (toolbarMsgDot) toolbarMsgDot.style.display = 'inline-block';
+            const hdrMsgDot = document.getElementById('hdr-msg-dot');
+            if (hdrMsgDot) hdrMsgDot.style.display = 'inline-block';
+            const msgCountLabel = document.getElementById('msg-count-label');
+            if (msgCountLabel) msgCountLabel.textContent = `${msgs.length} MSGS`;
+        };
+
+        window.addEventListener('message', (event) => {
+            if (!event.data) return;
+            if (event.data.type === 'LOAD_FLIGHT_LOG') {
+                window.isLogReplayActive = true;
+                if (ws) {
+                    try { ws.close(); } catch(e) {}
+                    ws = null;
+                }
+                if (wsReconnectTimer) {
+                    clearTimeout(wsReconnectTimer);
+                    wsReconnectTimer = null;
+                }
+
+                // Hide default survey grid lines and coverage swath so only real log trajectory is displayed
+                if (typeof waypointGroup !== 'undefined' && waypointGroup) waypointGroup.visible = false;
+                if (typeof flightCoverageGroup !== 'undefined' && flightCoverageGroup) flightCoverageGroup.visible = false;
+                if (typeof trailLine !== 'undefined' && trailLine) trailLine.visible = false;
+
+                const traj = event.data.trajectory;
+                if (!traj || traj.length === 0) return;
+                window.flightTrajectory = traj;
+                detectAirspeedAliveWindow(traj);
+
+                // Populate Autopilot Messages Log if available in flight log
+                const msgs = event.data.messages || [];
+                if (Array.isArray(msgs) && msgs.length > 0) {
+                    messagesHistory.length = 0;
+                    if (messagesList) messagesList.innerHTML = '';
+                    for (const m of msgs) {
+                        addAutopilotMessage({
+                            text: m.text,
+                            severity: m.severity || 6,
+                            timestamp: m.time || 0
+                        }, true);
+                    }
+                    if (tabMsgCount) {
+                        tabMsgCount.textContent = msgs.length;
+                        tabMsgCount.style.display = 'inline-block';
+                    }
+                    if (toolbarMsgDot) toolbarMsgDot.style.display = 'inline-block';
+                    if (hdrMsgDot) hdrMsgDot.style.display = 'inline-block';
+                    if (msgCountLabel) msgCountLabel.textContent = `${msgs.length} MSGS`;
+                }
+
+                // Find first valid GPS coordinate to anchor scene
+                const firstPt = traj.find(p => p.lat && p.lng && Math.abs(p.lat) > 0.001) || traj[0];
+                if (firstPt && firstPt.lat) {
+                    homeLat = firstPt.lat;
+                    homeLon = firstPt.lng;
+                    homeAlt = (typeof firstPt.alt === 'number') ? firstPt.alt : 0;
+                    window.homeLat = homeLat;
+                    window.homeLon = homeLon;
+                    ekfHomeInitialized = true;
+                    initialGpsCalibrated = true;
+                    vehicleConnected = true;
+                    isArmed = true;
+
+                    // Rebuild map meshes centered on the log flight origin
+                    if (typeof updateMap === 'function') {
+                        updateMap(homeLat, homeLon, true);
+                    }
+                }
+
+                // Render 3D Flight Corridor Ribbon across the sky
+                renderLogFlightCorridor(traj);
+
+                // Compute atmospheric and environmental flight statistics
+                if (typeof computeEnvironmentStats === 'function') {
+                    computeEnvironmentStats(traj);
+                }
+                if (traj && traj.length > 0) {
+                    const firstPt = traj.find(p => typeof p.wind_spd === 'number') || traj[0];
+                    if (firstPt && typeof firstPt.wind_spd === 'number') {
+                        hasPlaneWind = true;
+                        planeWindSpd = Math.max(0, firstPt.wind_spd);
+                        planeWindDir = ((firstPt.wind_dir % 360) + 360) % 360;
+                        currentWindSpd = planeWindSpd;
+                        currentWindDir = planeWindDir;
+                        window.windSpeed = planeWindSpd;
+                        window.windDirection = planeWindDir;
+                    }
+                    if (typeof updateEnvironmentDisplay === 'function') {
+                        updateEnvironmentDisplay(traj[0]);
+                    }
+                    if (typeof updateCompass === 'function') {
+                        updateCompass();
+                    }
+                }
+
+                // Set camera to follow the Shark Hawk in 3D chase mode
+                if (typeof setCameraMode === 'function') {
+                    setCameraMode('corv_chase');
+                }
+                corvChaseTargetDist = 40.0;
+                corvChaseDist = 40.0;
+
+                // Update status display
+                const st = document.getElementById('status');
+                if (st) {
+                    st.innerText = `Flight Log Replay (${traj.length} pts)`;
+                    st.style.color = "#00e5ff";
+                }
+            } else if (event.data.type === 'SYNC_TELEMETRY') {
+                const pt = event.data.telemetry;
+                if (!pt) return;
+                applyFlightLogTelemetry(pt, event.data.isJump || false);
+            }
+        });
 
         // Start animation loop after all avionics instruments and handlers are loaded
         animate();
