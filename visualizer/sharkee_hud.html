@@ -2036,7 +2036,7 @@
         .gi-track-green {
             position: absolute;
             height: 5px;
-            background: #00e600;
+            background: #30d158;
             border-radius: 1px;
         }
         .gi-track-yellow {
@@ -4164,7 +4164,7 @@
                     <line x1="63" y1="9" x2="63" y2="5" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
                     <line x1="106" y1="52" x2="110" y2="52" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
                     <!-- Green Operating Zone -->
-                    <path d="M 70 13 A 43 43 0 0 1 96 32" fill="none" stroke="#00e600" stroke-width="4.5"/>
+                    <path d="M 70 13 A 43 43 0 0 1 96 32" fill="none" stroke="#30d158" stroke-width="4.5"/>
                     <!-- Redline Zone at High RPM -->
                     <path d="M 96 32 A 43 43 0 0 1 103 44" fill="none" stroke="#ff3b30" stroke-width="4.5" stroke-linecap="round"/>
                     <!-- Crisp White Inverted Triangle Pointer pointing at Arc -->
@@ -7575,6 +7575,7 @@
         renderer.outputEncoding = THREE.sRGBEncoding; // Ensures CAD colors aren't overly vibrant
         document.getElementById('canvas-container').appendChild(renderer.domElement);
         THREE.Cache.enabled = true;
+        window.renderer = renderer;
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -7689,7 +7690,7 @@
             tiltHoverPwm: 1500, // PWM when motor points straight UP (Use 1500 for 180-degree vectoring servos, 1000 for 90-degree servos)
             tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
 
-            trackColor: 0xdda14, // Color of the GPS trail line
+            trackColor: 0x30d158, // Color of the GPS trail line (Apple aviation status green)
             trackOrigin: { x: 1, y: 0, z: 0 }, // Placed perfectly at CG to eliminate tail-wag yaw oscillations
 
             // =========================================================================
@@ -10182,7 +10183,7 @@
                     // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
                     const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
                     const mat = new THREE.MeshLambertMaterial({
-                        color: terrainWireframeMode ? 0x00e600 : 0x1f2e24,
+                        color: terrainWireframeMode ? 0x30d158 : 0x1f2e24,
                         side: THREE.DoubleSide,
                         wireframe: terrainWireframeMode
                     });
@@ -11151,7 +11152,7 @@
                 if (mesh.material) {
                     mesh.material.wireframe = enabled;
                     if (enabled) {
-                        mesh.material.color = new THREE.Color(0x00e600);
+                        mesh.material.color = new THREE.Color(0x30d158);
                     } else {
                         mesh.material.color = new THREE.Color(0xffffff);
                     }
@@ -11163,7 +11164,7 @@
                     if (mesh.material) {
                         mesh.material.wireframe = enabled;
                         if (enabled) {
-                            mesh.material.color = new THREE.Color(0x00e600);
+                            mesh.material.color = new THREE.Color(0x30d158);
                         } else {
                             mesh.material.color = new THREE.Color(0xffffff);
                         }
@@ -11241,7 +11242,7 @@
             ctx.fillStyle = 'rgba(10, 16, 24, 0.90)';
             ctx.fill();
             ctx.lineWidth = 2.5;
-            const strokeColor = (seqNumber === 0) ? '#ffb300' : (isActive || isPast ? '#ff3b30' : '#00e600');
+            const strokeColor = (seqNumber === 0) ? '#ffb300' : (isActive || isPast ? '#ff3b30' : '#30d158');
             ctx.strokeStyle = strokeColor;
             ctx.stroke();
 
@@ -11298,7 +11299,7 @@
                 const isActive = (wp.seq === currentMissionSeq);
                 const isPast = (wp.seq < currentMissionSeq);
                 const isHome = (wp.seq === 0);
-                const colorHex = isHome ? 0xffb300 : ((isActive || isPast) ? 0xff3b30 : 0x00e600);
+                const colorHex = isHome ? 0xffb300 : ((isActive || isPast) ? 0xff3b30 : 0x30d158);
 
                 // 1. Precise 3D Terrain Ground Contact Point
                 const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(pos.x, pos.z) : 0.05;
@@ -11365,7 +11366,7 @@
                 const segGeo = new THREE.BufferGeometry().setFromPoints([allPts[i], allPts[i + 1]]);
                 const isLegActiveOrPast = (validWps[i + 1].seq <= currentMissionSeq);
                 const segMat = new THREE.LineBasicMaterial({
-                    color: isLegActiveOrPast ? 0xff3b30 : 0x00e600,
+                    color: isLegActiveOrPast ? 0xff3b30 : 0x30d158,
                     linewidth: isLegActiveOrPast ? 3 : 2,
                     transparent: true,
                     opacity: isLegActiveOrPast ? 0.95 : 0.85,
@@ -13448,8 +13449,8 @@
                         valBox1.style.color = '#ffd60a'; // Caution
                         valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
-                        valBox1.style.color = '#00e600'; // Cruise Green Operating Zone
-                        valBox1.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
+                        valBox1.style.color = '#30d158'; // Cruise Green Operating Zone
+                        valBox1.style.textShadow = '0 0 12px rgba(48,209,88,0.45)';
                     } else {
                         valBox1.style.color = '#38bdf8'; // Normal idle / light draw cyan
                         valBox1.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -13593,7 +13594,7 @@
                         valBox1.style.color = '#ffd60a';
                         valBox1.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp1 >= 5.0 && activeAmp1 <= 12.0) {
-                        valBox1.style.color = '#00e600';
+                        valBox1.style.color = '#30d158';
                         valBox1.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
                     } else {
                         valBox1.style.color = '#38bdf8';
@@ -13612,8 +13613,8 @@
                         valBox2.style.color = '#ffd60a';
                         valBox2.style.textShadow = '0 0 10px rgba(255,214,10,0.5)';
                     } else if (activeAmp2 >= 5.0 && activeAmp2 <= 12.0) {
-                        valBox2.style.color = '#00e600';
-                        valBox2.style.textShadow = '0 0 12px rgba(0,230,0,0.45)';
+                        valBox2.style.color = '#30d158';
+                        valBox2.style.textShadow = '0 0 12px rgba(48,209,88,0.45)';
                     } else {
                         valBox2.style.color = '#38bdf8';
                         valBox2.style.textShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -13663,7 +13664,7 @@
                 valRem.textContent = `${pct}%`;
                 if (pct <= 15) valRem.style.color = '#ff3b30';
                 else if (pct <= 30) valRem.style.color = '#ffd60a';
-                else valRem.style.color = '#00e600';
+                else valRem.style.color = '#30d158';
             }
             if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
 
@@ -13715,8 +13716,8 @@
                     voltColor = '#ffd60a'; // Caution amber (3.50V - 3.70V per cell)
                     voltShadow = '0 0 10px rgba(255,214,10,0.5)';
                 } else if (avgCellVolt >= 3.80) {
-                    voltColor = '#00e600'; // Healthy cruise / full green (>= 3.80V per cell)
-                    voltShadow = '0 0 10px rgba(0,230,0,0.4)';
+                    voltColor = '#30d158'; // Healthy cruise / full green (>= 3.80V per cell)
+                    voltShadow = '0 0 10px rgba(48,209,88,0.4)';
                 } else {
                     voltColor = '#38bdf8'; // Nominal cyan (3.70V - 3.80V per cell)
                     voltShadow = '0 0 8px rgba(56,189,248,0.3)';
@@ -14311,10 +14312,10 @@
                 'FBWB': new THREE.Color(0x2979ff),
                 'CRUISE': new THREE.Color(0xa855f7),
                 'AUTOTUNE': new THREE.Color(0x00b4d8),
-                'AUTO': new THREE.Color(0x00e600),
+                'AUTO': new THREE.Color(0x30d158).convertSRGBToLinear(),
                 'RTL': new THREE.Color(0xf59e0b),
                 'LOITER': new THREE.Color(0x06b6d4),
-                'TAKEOFF': new THREE.Color(0x00e600),
+                'TAKEOFF': new THREE.Color(0x30d158).convertSRGBToLinear(),
                 'LAND': new THREE.Color(0xff3344),
                 'GUIDED': new THREE.Color(0x3b82f6),
                 'QSTABILIZE': new THREE.Color(0xf59e0b),
@@ -14325,7 +14326,7 @@
                 'QAUTOTUNE': new THREE.Color(0x00b4d8),
                 'QACRO': new THREE.Color(0xec4899)
             };
-            const defaultModeColor = new THREE.Color(0x00e600);
+            const defaultModeColor = new THREE.Color(0x30d158).convertSRGBToLinear();
 
             const N = rawPoints.length;
             const lineVertices = new Float32Array(N * 3);
