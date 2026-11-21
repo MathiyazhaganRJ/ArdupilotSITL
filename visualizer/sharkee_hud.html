@@ -166,158 +166,6 @@ body.dark-mode .mp-cell-volt-label {
 }
 
 /* ========================================================================== */
-/* 3. ATMOSPHERE & ENVIRONMENT TAB (LIGHT & DARK THEMES)                      */
-/* ========================================================================== */
-#terrain-graph-container {
-    background: #000000;
-    border: 2px solid #1a2332;
-    border-radius: 12px;
-    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.95), inset 0 1px 2px rgba(255, 255, 255, 0.08);
-}
-.env-top-bar {
-    border-bottom: 1px solid #141c28;
-}
-.env-title {
-    color: #8a9bb2;
-}
-.env-badge {
-    background: #0c1219;
-    border: 1px solid #1f2b3c;
-    border-radius: 4px;
-    padding: 1px 7px;
-    font-family: 'B612 Mono', monospace;
-    font-size: 9.5px;
-    font-weight: 700;
-}
-.env-badge-lbl {
-    color: #8a9bb2;
-    font-size: 8.5px;
-    margin-right: 4px;
-    letter-spacing: 0.5px;
-}
-.env-badge-val {
-    color: #e2e8f0;
-}
-.env-grid {
-    background: #141c28;
-    border: 1px solid #1a2332;
-    border-radius: 7px;
-    overflow: hidden;
-}
-.env-grid-cell {
-    background: #000000;
-    padding: 5px 8px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.env-cell-title {
-    font-family: 'B612', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    color: #8a9bb2;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-}
-.env-cell-sub {
-    font-family: 'B612 Mono', monospace;
-    font-size: 8px;
-    font-weight: 700;
-    color: #55667a;
-    text-transform: uppercase;
-}
-.env-stat-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #080d13;
-    border: 1px solid #16202c;
-    border-radius: 3px;
-    padding: 2px 5px;
-    font-family: 'B612 Mono', monospace;
-    font-size: 8px;
-    white-space: nowrap;
-}
-.env-stat-tag {
-    color: #55667a;
-    font-weight: 700;
-}
-.env-stat-num {
-    color: #cbd5e1;
-    font-weight: 700;
-}
-
-body:not(.dark-mode) #terrain-graph-container {
-    background: var(--panel-bg) !important;
-    border-color: var(--border-color) !important;
-    box-shadow: var(--shadow) !important;
-    color: var(--text-primary) !important;
-}
-body:not(.dark-mode) .env-top-bar {
-    border-bottom: 1px solid var(--border-color) !important;
-}
-body:not(.dark-mode) .env-title {
-    color: var(--text-primary) !important;
-}
-body:not(.dark-mode) .env-badge {
-    background: rgba(15, 23, 42, 0.05) !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
-}
-body:not(.dark-mode) .env-badge-lbl {
-    color: var(--text-secondary) !important;
-}
-body:not(.dark-mode) .env-badge-val {
-    color: var(--text-primary) !important;
-}
-body:not(.dark-mode) .env-grid {
-    background: rgba(0, 0, 0, 0.06) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-}
-body:not(.dark-mode) .env-grid-cell {
-    background: rgba(255, 255, 255, 0.88) !important;
-}
-body:not(.dark-mode) .env-cell-title {
-    color: #334155 !important;
-}
-body:not(.dark-mode) .env-cell-sub {
-    color: #64748b !important;
-}
-body:not(.dark-mode) .env-stat-bar {
-    background: rgba(15, 23, 42, 0.04) !important;
-    border-color: rgba(0, 0, 0, 0.07) !important;
-}
-body:not(.dark-mode) .env-stat-tag {
-    color: #475569 !important;
-}
-body:not(.dark-mode) .env-stat-num {
-    color: #0f172a !important;
-}
-body:not(.dark-mode) #env-baro-temp-val,
-body:not(.dark-mode) #env-arsp-temp-val {
-    color: #0369a1 !important; /* Deep Aviation Blue */
-}
-body:not(.dark-mode) #env-qnh-val,
-body:not(.dark-mode) #env-press-val {
-    color: #b45309 !important; /* Deep Aviation Amber */
-}
-body:not(.dark-mode) #env-density-val {
-    color: #6b21a8 !important; /* Deep Aviation Purple */
-}
-body:not(.dark-mode) #env-wind-val,
-body:not(.dark-mode) #env-wind-comps,
-body:not(.dark-mode) #env-wind-dir {
-    color: #30d158 !important; /* Vivid Green */
-}
-body:not(.dark-mode) #env-baro-avg,
-body:not(.dark-mode) #env-arsp-avg,
-body:not(.dark-mode) #env-qnh-avg,
-body:not(.dark-mode) #env-press-avg,
-body:not(.dark-mode) #env-density-avg,
-body:not(.dark-mode) #env-wind-main-dir {
-    color: #0f172a !important;
-}
-
-/* ========================================================================== */
 /* 4. ACTUATOR & SERVO OUTPUTS MATRIX (LIGHT & DARK THEMES)                   */
 /* ========================================================================== */
 body:not(.dark-mode) #actuators-panel-container {
@@ -353,122 +201,6 @@ body:not(.dark-mode) .actuator-ch-lbl {
 body:not(.dark-mode) .actuator-fn-lbl {
     color: #0f172a;
     font-weight: 700;
-}
-
-/* ========================================================================== */
-/* 5. GARMIN GI 275 EIS TAB (LIGHT & DARK THEMES)                             */
-/* ========================================================================== */
-body:not(.dark-mode) #eis-widget {
-    background: var(--panel-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--border-color);
-    border-radius: 18px;
-    box-shadow: var(--shadow);
-    color: var(--text-primary);
-}
-body:not(.dark-mode) .gi-top-bar {
-    border-bottom: 1px solid var(--border-color);
-}
-body:not(.dark-mode) .gi-inst-title {
-    color: var(--text-primary);
-}
-body:not(.dark-mode) .gi-mode-btn {
-    background: rgba(15, 23, 42, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: var(--text-secondary);
-}
-body:not(.dark-mode) .gi-mode-btn:hover {
-    background: rgba(15, 23, 42, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-    color: var(--text-primary);
-}
-body:not(.dark-mode) .gi-mode-btn.active {
-    background: #0a84ff;
-    border-color: #0a84ff;
-    color: #ffffff;
-}
-body:not(.dark-mode) .gi-rpm-capsule {
-    background: rgba(15, 23, 42, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-body:not(.dark-mode) .gi-capsule-num {
-    color: #0f172a;
-}
-body:not(.dark-mode) .gi-capsule-sub {
-    color: #475569;
-}
-body:not(.dark-mode) .gi-arch-svg path[stroke="rgba(255,255,255,0.3)"] {
-    stroke: rgba(0, 0, 0, 0.2);
-}
-body:not(.dark-mode) .gi-arch-svg line[stroke="rgba(255,255,255,0.5)"] {
-    stroke: rgba(0, 0, 0, 0.4);
-}
-body:not(.dark-mode) #gi-ptr-rpm-polygon {
-    fill: #0f172a;
-}
-body:not(.dark-mode) .gi-arch-lbl {
-    color: #475569;
-}
-body:not(.dark-mode) .gi-arch-rpm-digits {
-    color: #0f172a;
-}
-body:not(.dark-mode) .gi-engine-grid {
-    background: rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-}
-body:not(.dark-mode) .gi-grid-cell {
-    background: rgba(255, 255, 255, 0.88);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-body:not(.dark-mode) .gi-grid-cell:nth-child(odd) {
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
-}
-body:not(.dark-mode) .gi-cell-tag {
-    color: #475569;
-}
-body:not(.dark-mode) .gi-cell-unit {
-    color: #64748b;
-}
-body:not(.dark-mode) .gi-cell-val {
-    color: #0f172a;
-}
-body:not(.dark-mode) .gi-track-line {
-    background: rgba(0, 0, 0, 0.2);
-}
-body:not(.dark-mode) .gi-track-cap-l,
-body:not(.dark-mode) .gi-track-cap-r {
-    background: rgba(0, 0, 0, 0.4);
-}
-body:not(.dark-mode) .gi-track-pointer-down {
-    border-top-color: #0f172a;
-}
-body:not(.dark-mode) .gi-elec-label {
-    color: #475569;
-}
-body:not(.dark-mode) .gi-elec-val {
-    color: #0f172a;
-}
-body.dark-mode .gi-elec-val {
-    color: #ffffff;
-}
-body:not(.dark-mode) .gi-elec-unit {
-    color: #64748b;
-}
-body:not(.dark-mode) .gi-bottom-status-pill {
-    background: rgba(15, 23, 42, 0.04);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-body:not(.dark-mode) .gi-stat-lbl {
-    color: #475569;
-}
-body:not(.dark-mode) .gi-stat-val {
-    color: #0f172a;
-}
-body:not(.dark-mode) .gi-stat-divider {
-    background: rgba(0, 0, 0, 0.12);
 }
 
 /* ========================================================================== */
@@ -2429,11 +2161,13 @@ body:not(.dark-mode) .msg-toast-ticker {
             max-width: 320px;
             height: 420px;
             box-sizing: border-box;
-            background: #000000;
-            border: 2px solid #1a2230;
-            border-radius: 14px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
             padding: 8px 10px;
-            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.95), inset 0 1px 2px rgba(255, 255, 255, 0.08), inset 0 -2px 4px rgba(0, 0, 0, 0.9);
+            box-shadow: var(--shadow);
             z-index: 100;
             user-select: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
@@ -2441,7 +2175,25 @@ body:not(.dark-mode) .msg-toast-ticker {
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            font-family: 'B612', 'B612 Mono', monospace;
+            font-family: var(--font-mono);
+        }
+
+        #eis-widget,
+        #eis-widget *,
+        .gi-capsule-num,
+        .gi-capsule-sub,
+        .gi-cell-val,
+        .gi-elec-val,
+        .gi-arch-rpm-digits,
+        .gi-stat-val,
+        .gi-inst-title,
+        .gi-arch-lbl,
+        .gi-cell-tag,
+        .gi-cell-unit,
+        .gi-elec-label,
+        .gi-elec-unit,
+        .gi-stat-lbl {
+            text-shadow: none !important;
         }
 
         /* Subtle Top Avionics Header with Minimalist Controls */
@@ -2449,18 +2201,19 @@ body:not(.dark-mode) .msg-toast-ticker {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 4px 3px 4px;
+            padding: 0 4px 5px 4px;
             flex-shrink: 0;
+            border-bottom: 1px solid #1e2026;
             cursor: grab;
         }
         .gi-top-bar:active { cursor: grabbing; }
 
         .gi-inst-title {
-            font-family: 'B612', 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 9.5px;
             font-weight: 700;
             letter-spacing: 1.5px;
-            color: #8a9bb2;
+            color: #cbd5e1;
             text-transform: uppercase;
         }
         .gi-controls-row {
@@ -2469,45 +2222,36 @@ body:not(.dark-mode) .msg-toast-ticker {
             gap: 4px;
         }
         .gi-mode-btn {
-            background: #0c1219;
-            border: 1px solid #283648;
-            border-radius: 3px;
+            background: #181c25;
+            border: 1px solid #282e3c;
+            border-radius: 4px;
             padding: 1px 8px;
             min-width: 18px;
             text-align: center;
             font-size: 9px;
             font-weight: 800;
-            color: #9cb0c8;
+            color: #94a3b8;
             cursor: pointer;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             transition: all 0.15s ease;
         }
         .gi-mode-btn:hover {
-            border-color: #00e5ff;
+            border-color: #3b4559;
             color: #ffffff;
+            background: #222734;
         }
         .gi-mode-btn.active {
-            background: rgba(0, 229, 255, 0.2);
-            border-color: #00e5ff;
-            color: #00e5ff;
+            background: #242936;
+            border-color: #384255;
+            color: #f8fafc;
         }
-        .gi-btn-close {
-            background: transparent;
-            border: none;
-            color: #5c6c80;
-            font-size: 15px;
-            cursor: pointer;
-            padding: 0 2px;
-            line-height: 1;
-            transition: color 0.15s;
-        }
-        .gi-btn-close:hover { color: #ff3b30; }
+
 
         /* Top RPM Arch Box (Authentic Garmin Arch Capsule) */
         .gi-rpm-capsule {
-            border: 1px solid #1a2332;
+            border: 1px solid #282e3c;
             border-radius: 8px;
-            background: #05080c;
+            background: #181c25;
             padding: 3px 8px;
             display: flex;
             align-items: center;
@@ -2515,7 +2259,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             height: 70px;
             box-sizing: border-box;
             flex-shrink: 0;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
         }
         .gi-capsule-side {
             display: flex;
@@ -2526,16 +2270,16 @@ body:not(.dark-mode) .msg-toast-ticker {
         .gi-capsule-num {
             font-size: 17px;
             font-weight: 700;
-            color: #ffffff;
+            color: #f8fafc;
             line-height: 1.1;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             letter-spacing: -0.5px;
         }
         .gi-capsule-sub {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 7.5px;
             font-weight: 700;
-            color: #8a9bb2;
+            color: #94a3b8;
             letter-spacing: 0.6px;
             text-transform: uppercase;
             text-align: center;
@@ -2570,16 +2314,16 @@ body:not(.dark-mode) .msg-toast-ticker {
         .gi-arch-lbl {
             font-size: 9px;
             font-weight: 700;
-            color: #ffffff;
+            color: #94a3b8;
             letter-spacing: 1px;
             line-height: 1;
         }
         .gi-arch-rpm-digits {
             font-size: 21px;
             font-weight: 700;
-            color: #ffffff;
+            color: #f8fafc;
             line-height: 1.1;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             letter-spacing: -0.5px;
         }
 
@@ -2588,9 +2332,10 @@ body:not(.dark-mode) .msg-toast-ticker {
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
-            border: 1px solid #1a2332;
+            border: 1px solid #282e3c;
             border-radius: 8px;
-            background: #000000;
+            background: #181c25;
+            gap: 1px;
             overflow: hidden;
             flex: 1;
             margin: 4px 0;
@@ -2601,11 +2346,11 @@ body:not(.dark-mode) .msg-toast-ticker {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border-bottom: 1px solid #141c28;
-            background: #000000;
+            border-bottom: 1px solid #1e232e;
+            background: #141720;
         }
         .gi-grid-cell:nth-child(odd) {
-            border-right: 1px solid #141c28;
+            border-right: 1px solid #1e232e;
         }
         .gi-grid-cell:nth-child(5), .gi-grid-cell:nth-child(6) {
             border-bottom: none;
@@ -2619,7 +2364,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             width: 100%;
         }
         .gi-cell-tag {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 9.5px;
             font-weight: 700;
             color: #8a9bb2;
@@ -2632,7 +2377,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             color: #55667a;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         /* Large Centered Number for Pure Digital Readout */
@@ -2647,7 +2392,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             font-size: 26px;
             font-weight: 700;
             color: #ffffff;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             letter-spacing: -0.5px;
             line-height: 1;
             transition: color 0.15s ease;
@@ -2724,7 +2469,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             transform: translateX(-50%);
             transition: left 0.15s ease;
             z-index: 5;
-            filter: drop-shadow(0 0 1px #ffffff);
+            filter: none !important;
         }
 
 
@@ -2739,6 +2484,22 @@ body:not(.dark-mode) .msg-toast-ticker {
             color: #38bdf8 !important;
             opacity: 1 !important;
         }
+        .gi-sub-efficiency {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8.5px;
+            font-family: var(--font-mono);
+            color: #8e8e93;
+            line-height: 1;
+            padding-top: 1px;
+            letter-spacing: -0.2px;
+            user-select: none;
+            width: 100%;
+        }
+        body:not(.dark-mode) .gi-sub-efficiency {
+            color: #64748b;
+        }
         .gi-electrical-box {
             display: flex;
             flex-direction: column;
@@ -2752,7 +2513,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             align-items: baseline;
         }
         .gi-elec-label {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 10px;
             font-weight: 700;
             color: #8a9bb2;
@@ -2768,7 +2529,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             font-size: 18px;
             font-weight: 700;
             color: #38bdf8;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             line-height: 1;
             transition: color 0.15s ease;
         }
@@ -2776,21 +2537,21 @@ body:not(.dark-mode) .msg-toast-ticker {
             font-size: 10px;
             font-weight: 700;
             color: #64748b;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         /* Bottom Avionics Status Strip - Discrete Structured Multi-Column Layout */
         .gi-bottom-status-pill {
-            background: #05080c;
-            border: 1px solid #1a2332;
+            background: #141519;
+            border: 1px solid #24262c;
             border-radius: 8px;
             padding: 5px 14px;
             display: flex;
             align-items: center;
             justify-content: space-around;
             flex-shrink: 0;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
-            font-family: 'B612 Mono', monospace;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            font-family: var(--font-mono);
         }
         .gi-status-col {
             display: flex;
@@ -2798,25 +2559,330 @@ body:not(.dark-mode) .msg-toast-ticker {
             gap: 4px;
         }
         .gi-stat-lbl {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 8px;
             font-weight: 700;
-            color: #64748b;
+            color: #94a3b8;
             letter-spacing: 0.6px;
             text-transform: uppercase;
         }
         .gi-stat-val {
             font-size: 10px;
             font-weight: 700;
-            color: #ffffff;
+            color: #f8fafc;
             letter-spacing: 0.2px;
         }
         .gi-stat-divider {
             width: 1px;
             height: 12px;
-            background: #1e293b;
+            background: #282e3c;
         }
-    
+
+        /* ========================================================= */
+        /* ATMOSPHERE & ENVIRONMENT TELEMETRY PANEL                  */
+        /* ========================================================= */
+        #terrain-graph-container {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 7px 10px;
+            box-shadow: var(--shadow);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .env-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2px 4px 2px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #222734;
+            cursor: grab;
+        }
+        .env-top-bar:active { cursor: grabbing; }
+
+        .env-title {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #cbd5e1;
+            text-transform: uppercase;
+        }
+
+        .env-badge {
+            background: #181c25;
+            border: 1px solid #282e3c;
+            border-radius: 4px;
+            padding: 1px 7px;
+            font-family: var(--font-mono);
+            font-size: 9.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+        }
+        .env-badge-lbl {
+            color: #94a3b8;
+            font-size: 8.5px;
+            margin-right: 4px;
+            letter-spacing: 0.5px;
+        }
+        .env-badge-val {
+            color: #f8fafc;
+        }
+
+        .env-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 1px;
+            background: #181c25;
+            border: 1px solid #262b37;
+            border-radius: 8px;
+            overflow: hidden;
+            flex: 1;
+            margin-top: 5px;
+        }
+
+        .env-grid-cell {
+            background: #141720;
+            padding: 5px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .env-cell-title {
+            font-family: var(--font-sans);
+            font-size: 9px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+        .env-cell-sub {
+            font-family: var(--font-mono);
+            font-size: 8px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .env-stat-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1e28;
+            border: 1px solid #242936;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-family: var(--font-mono);
+            font-size: 8px;
+            white-space: nowrap;
+        }
+        .env-stat-tag {
+            color: #64748b;
+            font-weight: 700;
+        }
+        .env-stat-num {
+            color: #cbd5e1;
+            font-weight: 700;
+        }
+
+        /* Light Theme for Atmosphere & Environment */
+        body:not(.dark-mode) #terrain-graph-container {
+            background: var(--panel-bg);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .env-top-bar {
+            border-bottom: 1px solid var(--border-color);
+        }
+        body:not(.dark-mode) .env-title {
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .env-badge {
+            background: rgba(15, 23, 42, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        body:not(.dark-mode) .env-badge-lbl {
+            color: var(--text-secondary);
+        }
+        body:not(.dark-mode) .env-badge-val {
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .env-grid {
+            background: rgba(0, 0, 0, 0.06);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        body:not(.dark-mode) .env-grid-cell {
+            background: rgba(255, 255, 255, 0.88);
+        }
+        body:not(.dark-mode) .env-cell-title {
+            color: #334155;
+        }
+        body:not(.dark-mode) .env-cell-sub {
+            color: #64748b;
+        }
+        body:not(.dark-mode) .env-stat-bar {
+            background: rgba(15, 23, 42, 0.04);
+            border-color: rgba(0, 0, 0, 0.07);
+        }
+        body:not(.dark-mode) .env-stat-tag {
+            color: #475569;
+        }
+        body:not(.dark-mode) .env-stat-num {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) #env-baro-temp-val,
+        body:not(.dark-mode) #env-arsp-temp-val,
+        body:not(.dark-mode) .env-grid-cell:nth-child(1) .env-cell-unit,
+        body:not(.dark-mode) .env-grid-cell:nth-child(2) .env-cell-unit {
+            color: #0369a1 !important; /* Deep Aviation Sky Blue */
+        }
+        body:not(.dark-mode) #env-qnh-val,
+        body:not(.dark-mode) #env-press-val,
+        body:not(.dark-mode) .env-grid-cell:nth-child(3) .env-cell-unit,
+        body:not(.dark-mode) .env-grid-cell:nth-child(4) .env-cell-unit {
+            color: #b45309 !important; /* Deep Aviation Amber / Bronze */
+        }
+        body:not(.dark-mode) #env-density-val,
+        body:not(.dark-mode) .env-grid-cell:nth-child(5) .env-cell-unit {
+            color: #6b21a8 !important; /* Deep Aviation Purple */
+        }
+        body:not(.dark-mode) #env-wind-val,
+        body:not(.dark-mode) #env-wind-comps,
+        body:not(.dark-mode) #env-wind-dir,
+        body:not(.dark-mode) .env-grid-cell:nth-child(6) .env-cell-unit {
+            color: #30d158 !important; /* Old Vivid Green */
+        }
+        body:not(.dark-mode) #env-baro-avg,
+        body:not(.dark-mode) #env-arsp-avg,
+        body:not(.dark-mode) #env-qnh-avg,
+        body:not(.dark-mode) #env-press-avg,
+        body:not(.dark-mode) #env-density-avg,
+        body:not(.dark-mode) #env-wind-main-dir {
+            color: #0f172a !important;
+        }
+
+        /* ========================================================= */
+        /* GI 275 EIS - LIGHT THEME INTEGRATION                      */
+        /* ========================================================= */
+        body:not(.dark-mode) #eis-widget {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .gi-top-bar {
+            border-bottom: 1px solid var(--border-color);
+        }
+        body:not(.dark-mode) .gi-inst-title {
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .gi-mode-btn {
+            background: rgba(15, 23, 42, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text-secondary);
+        }
+        body:not(.dark-mode) .gi-mode-btn:hover {
+            background: rgba(15, 23, 42, 0.1);
+            border-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .gi-mode-btn.active {
+            background: #0a84ff;
+            border-color: #0a84ff;
+            color: #ffffff;
+        }
+        body:not(.dark-mode) .gi-rpm-capsule {
+            background: rgba(15, 23, 42, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        body:not(.dark-mode) .gi-capsule-num {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .gi-capsule-sub {
+            color: #475569;
+        }
+        body:not(.dark-mode) .gi-arch-svg path[stroke="rgba(255,255,255,0.3)"] {
+            stroke: rgba(0, 0, 0, 0.2);
+        }
+        body:not(.dark-mode) .gi-arch-svg line[stroke="rgba(255,255,255,0.5)"] {
+            stroke: rgba(0, 0, 0, 0.4);
+        }
+        body:not(.dark-mode) #gi-ptr-rpm-polygon {
+            fill: #0f172a;
+        }
+        body:not(.dark-mode) .gi-arch-lbl {
+            color: #475569;
+        }
+        body:not(.dark-mode) .gi-arch-rpm-digits {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .gi-engine-grid {
+            background: rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        body:not(.dark-mode) .gi-grid-cell {
+            background: rgba(255, 255, 255, 0.88);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        body:not(.dark-mode) .gi-grid-cell:nth-child(odd) {
+            border-right: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        body:not(.dark-mode) .gi-cell-tag {
+            color: #475569;
+        }
+        body:not(.dark-mode) .gi-cell-unit {
+            color: #64748b;
+        }
+        body:not(.dark-mode) .gi-cell-val {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .gi-track-line {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        body:not(.dark-mode) .gi-track-cap-l,
+        body:not(.dark-mode) .gi-track-cap-r {
+            background: rgba(0, 0, 0, 0.4);
+        }
+        body:not(.dark-mode) .gi-track-pointer-down {
+            border-top-color: #0f172a;
+        }
+        body:not(.dark-mode) .gi-elec-label {
+            color: #475569;
+        }
+        body:not(.dark-mode) .gi-elec-val {
+            color: #0f172a;
+        }
+        body.dark-mode .gi-elec-val {
+            color: #ffffff;
+        }
+        body:not(.dark-mode) .gi-elec-unit {
+            color: #64748b;
+        }
+        body:not(.dark-mode) .gi-bottom-status-pill {
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        body:not(.dark-mode) .gi-stat-lbl {
+            color: #475569;
+        }
+        body:not(.dark-mode) .gi-stat-val {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .gi-stat-divider {
+            background: rgba(0, 0, 0, 0.12);
+        }
+
         /* ========================================================= */
         /* CLASSIC AVIATION SIX-PACK INSTRUMENT COCKPIT PANEL        */
         /* Authentic Steam & Analog Flight Panel with Engine Stack   */
@@ -4939,14 +5005,14 @@ body:not(.dark-mode) .msg-toast-ticker {
 
     
     <!-- Garmin GI 275 EIS Aviation-Grade Instrument -->
-    <div id="eis-widget">
+    <div id="eis-widget" >
         <!-- Minimal Top Bar with Controls -->
         <div class="gi-top-bar" id="gi-header">
             <span class="gi-inst-title">GI 275 EIS</span>
             <div class="gi-controls-row">
                 <button class="gi-mode-btn active" id="eis-btn-page-p" onclick="setEisPage('P')" title="Power / Electrical Systems">P</button>
                 <button class="gi-mode-btn" id="eis-btn-page-e" onclick="setEisPage('E')" title="Engine / Propulsion Systems">E</button>
-                <button class="gi-btn-close" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
+                <button class="gi-btn-close avionics-close-dot" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
             </div>
         </div>
 
@@ -4974,7 +5040,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     <!-- Crisp White Inverted Triangle Pointer pointing at Arc -->
                     <polygon id="gi-ptr-rpm-polygon" points="63,9 58.5,1 67.5,1" fill="#ffffff"/>
                     <!-- Second pointer for Twin Engine Mode -->
-                    <polygon id="gi-ptr-rpm2-polygon" points="63,9 58.5,1 67.5,1" fill="#ffd60a" style="display: none;"/>
+                    <polygon id="gi-ptr-rpm2-polygon" points="63,9 58.5,1 67.5,1" fill="#ffd60a" />
                 </svg>
                 <div class="gi-arch-text-wrap">
                     <span class="gi-arch-lbl">RPM</span>
@@ -5314,35 +5380,37 @@ body:not(.dark-mode) .msg-toast-ticker {
 
     <!-- Garmin Atmospheric & Environmental Telemetry Panel -->
     <div id="terrain-graph-container" class="env-telemetry-panel"
-        style="position: absolute; bottom: 10px; right: 20px; width: min(580px, calc(100vw - 360px)); height: 172px; box-sizing: border-box; overflow: hidden; border-radius: 12px; padding: 7px 10px; display: flex; flex-direction: column; justify-content: space-between; z-index: 90; pointer-events: auto; font-family: 'B612', 'B612 Mono', 'JetBrains Mono', monospace; user-select: none;">
+        style="position: absolute; bottom: 10px; right: 20px; width: min(580px, calc(100vw - 360px)); height: 172px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; z-index: 90; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
         
         <!-- Garmin Top Bar -->
-        <div class="env-top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 0 2px 4px 2px; flex-shrink: 0;">
+        <div class="env-top-bar">
             <div style="display: flex; align-items: center; gap: 7px; white-space: nowrap;">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background: #00e5ff; box-shadow: 0 0 8px #00e5ff;"></span>
-                <span class="env-title" style="font-family: 'B612', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">ATMOSPHERE & ENVIRONMENT</span>
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);"></span>
+                <span class="env-title">ATMOSPHERE & ENVIRONMENT</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap;">
                 <!-- Field Elevation Badge -->
                 <div class="env-badge">
                     <span class="env-badge-lbl">ELEV</span>
-                    <span class="env-badge-val" id="env-field-elev-val">-- m</span>
+                    <span id="env-field-elev-val" class="env-badge-val">-- m</span>
                 </div>
                 <!-- AMSL Badge -->
                 <div class="env-badge">
-                    <span class="env-badge-lbl" style="color: #00e5ff;">AMSL</span>
-                    <span class="env-badge-val" id="env-amsl-val">-- m</span>
+                    <span class="env-badge-lbl">AMSL</span>
+                    <span id="env-amsl-val" class="env-badge-val">-- m</span>
                 </div>
                 <!-- AGL Badge -->
                 <div class="env-badge">
-                    <span class="env-badge-lbl" style="color: #72e38c;">AGL</span>
-                    <span class="env-badge-val" id="terrain-alt-text">0.0 m</span>
+                    <span class="env-badge-lbl">AGL</span>
+                    <span id="terrain-alt-text" class="env-badge-val">0.0 m</span>
                 </div>
+                <!-- Atmosphere & Environment Close Button -->
+                <button class="env-btn-close avionics-close-dot" onclick="toggleEnvPanel()" title="Close Atmosphere & Environment Panel">&times;</button>
             </div>
         </div>
 
         <!-- Garmin 6-Box Environmental Grid (3 Columns x 2 Rows) -->
-        <div class="env-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 1px; flex: 1; margin-top: 5px;">
+        <div class="env-grid">
             
             <!-- Cell 1: BARO TEMP -->
             <div class="env-grid-cell">
@@ -5351,13 +5419,13 @@ body:not(.dark-mode) .msg-toast-ticker {
                     <span class="env-cell-sub">FC SENSOR</span>
                 </div>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-baro-temp-val" style="color: #00e5ff; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #00e5ff; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">°C</span>
+                    <span id="env-baro-temp-val" class="env-cell-val" style="color: #38bdf8; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #38bdf8; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">°C</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b class="env-stat-num" id="env-baro-min">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-baro-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-baro-avg">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-baro-min" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">MAX</span> <b id="env-baro-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-baro-avg" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
@@ -5368,13 +5436,13 @@ body:not(.dark-mode) .msg-toast-ticker {
                     <span class="env-cell-sub">PITOT OAT</span>
                 </div>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-arsp-temp-val" style="color: #00e5ff; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #00e5ff; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">°C</span>
+                    <span id="env-arsp-temp-val" class="env-cell-val" style="color: #38bdf8; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #38bdf8; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">°C</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b class="env-stat-num" id="env-arsp-min">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-arsp-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-arsp-avg">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-arsp-min" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">MAX</span> <b id="env-arsp-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-arsp-avg" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
@@ -5385,13 +5453,13 @@ body:not(.dark-mode) .msg-toast-ticker {
                     <span class="env-cell-sub">SEA LEVEL</span>
                 </div>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-qnh-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">hPa</span>
+                    <span id="env-qnh-val" class="env-cell-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">hPa</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b class="env-stat-num" id="env-qnh-min">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-qnh-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-qnh-avg">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-qnh-min" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">MAX</span> <b id="env-qnh-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-qnh-avg" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
@@ -5402,30 +5470,30 @@ body:not(.dark-mode) .msg-toast-ticker {
                     <span class="env-cell-sub">STATIC</span>
                 </div>
                 <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-press-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace;">hPa</span>
+                    <span id="env-press-val" class="env-cell-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">hPa</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b class="env-stat-num" id="env-press-min">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-press-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-press-avg">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-press-min" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">MAX</span> <b id="env-press-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-press-avg" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
             <!-- Cell 5: AIR DENSITY (rho) -->
             <div class="env-grid-cell">
                 <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span style="font-family: 'B612', sans-serif; font-size: 9px; font-weight: 700; color: #8a9bb2; letter-spacing: 0.8px; text-transform: uppercase;">AIR DENSITY (ρ)</span>
+                    <span class="env-cell-title">AIR DENSITY (ρ)</span>
                     <span class="env-cell-sub">P / RT</span>
                 </div>
                 <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
-                    <span id="env-density-val" style="color: #c084fc; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #c084fc; font-size: 10px; font-weight: 700; font-family: 'B612 Mono', monospace; white-space: nowrap;">kg/m³</span>
+                    <span id="env-density-val" class="env-cell-val" style="color: #c084fc; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #c084fc; font-size: 10px; font-weight: 700; font-family: var(--font-mono); white-space: nowrap;">kg/m³</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b class="env-stat-num" id="env-density-min">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-density-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-density-avg">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-density-min" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">MAX</span> <b id="env-density-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-density-avg" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
@@ -5433,17 +5501,17 @@ body:not(.dark-mode) .msg-toast-ticker {
             <div class="env-grid-cell">
                 <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
                     <span class="env-cell-title">WIND VECTOR</span>
-                    <span id="env-wind-comps" style="color: #30d158; font-size: 8.5px; font-weight: 700; font-family: 'B612 Mono', monospace; white-space: nowrap;">HW: -- XW: --</span>
+                    <span id="env-wind-comps" style="color: #30d158; font-size: 8.5px; font-weight: 700; font-family: var(--font-mono); white-space: nowrap;">HW: -- XW: --</span>
                 </div>
                 <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
-                    <span id="env-wind-val" style="color: #30d158; font-size: 18px; font-weight: 700; font-family: 'B612 Mono', monospace; letter-spacing: -0.5px;">--</span>
-                    <span style="color: #30d158; font-size: 9.5px; font-weight: 700; font-family: 'B612 Mono', monospace;">m/s</span>
-                    <span id="env-wind-dir" style="color: #72e38c; font-size: 12px; font-weight: 700; font-family: 'B612 Mono', monospace; margin-left: 2px;">--°</span>
+                    <span id="env-wind-val" class="env-cell-val" style="color: #30d158; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
+                    <span class="env-cell-unit" style="color: #30d158; font-size: 9.5px; font-weight: 700; font-family: var(--font-mono);">m/s</span>
+                    <span id="env-wind-dir" style="color: #72e38c; font-size: 12px; font-weight: 700; font-family: var(--font-mono); margin-left: 2px;">--°</span>
                 </div>
                 <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MAX</span> <b class="env-stat-num" id="env-wind-max">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b class="env-stat-num" id="env-wind-avg">--</b></span>
-                    <span><span class="env-stat-tag">DIR</span> <b class="env-stat-num" id="env-wind-main-dir">--</b></span>
+                    <span><span class="env-stat-tag">MIN</span> <b id="env-wind-max" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">AVG</span> <b id="env-wind-avg" class="env-stat-num">--</b></span>
+                    <span><span class="env-stat-tag">DIR</span> <b id="env-wind-main-dir" class="env-stat-num">--</b></span>
                 </div>
             </div>
 
@@ -5707,11 +5775,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
         const graphContainer = document.getElementById('terrain-graph-container');
-        btnToggleGraph.onclick = () => {
-            const isVisible = graphContainer && (graphContainer.style.display !== 'none' && window.getComputedStyle(graphContainer).display !== 'none');
-            graphContainer.style.display = isVisible ? 'none' : 'flex';
-            btnToggleGraph.classList.toggle('active', !isVisible);
-        };
+        if (btnToggleGraph) btnToggleGraph.onclick = () => toggleEnvPanel();
 
         const btnToggleTrace = document.getElementById('btn-toggle-trace');
         btnToggleTrace.onclick = () => {
@@ -14175,6 +14239,16 @@ body:not(.dark-mode) .msg-toast-ticker {
         var eisWidgetVisible = localStorage.getItem('eis_widget_visible') !== '0';
         if (eisWidget) eisWidget.style.display = eisWidgetVisible ? 'flex' : 'none';
         if (btnToggleEis) btnToggleEis.classList.toggle('active', eisWidgetVisible);
+
+        function toggleEnvPanel(forceState) {
+            const w = document.getElementById('terrain-graph-container');
+            const btn = document.getElementById('btn-toggle-graph');
+            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
+            const shouldOpen = (forceState !== undefined) ? forceState : !isVisible;
+            if (w) w.style.display = shouldOpen ? 'flex' : 'none';
+            if (btn) btn.classList.toggle('active', shouldOpen);
+        }
+        window.toggleEnvPanel = toggleEnvPanel;
 
         function toggleEisWidget() {
             const isVisible = eisWidget && (eisWidget.style.display !== 'none' && window.getComputedStyle(eisWidget).display !== 'none');
