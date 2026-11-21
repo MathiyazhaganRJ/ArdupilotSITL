@@ -5848,6 +5848,16 @@ body:not(.dark-mode) .msg-toast-ticker {
         var livePrevLat = null;
         var livePrevLng = null;
         var latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
+        var servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
+        window.servoSpeeds = servoSpeeds;
+        var currentVehicleParameters = {};
+        window.currentVehicleParameters = currentVehicleParameters;
+        var actuatorFilterMode = 'assigned';
+        window.actuatorFilterMode = actuatorFilterMode;
+        var actuatorsPanelVisible = false;
+        window.actuatorsPanelVisible = actuatorsPanelVisible;
+        var actuatorMatrixCols = [];
+        window.actuatorMatrixCols = actuatorMatrixCols;
         var latestFcVcc = 5.44;
         window.latestFcVcc = 5.44;
         var currentPlaneLat = null;
@@ -10549,9 +10559,9 @@ body:not(.dark-mode) .msg-toast-ticker {
         // ============================================================
         // 16-CHANNEL ACTUATOR & SERVO OUTPUTS MATRIX ARCHITECTURE
         // ============================================================
-        let currentVehicleParameters = {};
-        let actuatorFilterMode = 'assigned'; // Only keep assigned outputs
-        let actuatorsPanelVisible = false;
+        currentVehicleParameters = currentVehicleParameters || {};
+        actuatorFilterMode = actuatorFilterMode || 'assigned'; // Only keep assigned outputs
+        actuatorsPanelVisible = actuatorsPanelVisible || false;
 
         const ARDUPILOT_SERVO_FUNCTIONS = {
             0: 'Disabled', 1: 'RCPassThru', 2: 'Flap', 3: 'Flaperon', 4: 'Aileron',
@@ -10656,7 +10666,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             return { code, name, category, color, isAssigned: true };
         }
 
-        const actuatorMatrixCols = [];
+        if (!Array.isArray(actuatorMatrixCols)) actuatorMatrixCols = [];
 
         function buildActuatorOutputsGrid() {
             const grid = document.getElementById('actuators-matrix-grid');
@@ -10926,7 +10936,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             }
         });
 
-        let servoSpeeds = [0, 0, 0, 0, 0, 0, 0, 0];
+        servoSpeeds = servoSpeeds || [0, 0, 0, 0, 0, 0, 0, 0];
         latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
         let rawTargetPos = new THREE.Vector3(), targetPos = new THREE.Vector3();
         let rawTargetRot = new THREE.Euler(0, 0, 0, 'YXZ'), targetRot = new THREE.Euler(0, 0, 0, 'YXZ');
