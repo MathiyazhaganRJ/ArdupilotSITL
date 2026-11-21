@@ -20,22 +20,25 @@
 /* 1. ROOT & THEME COLOR SYSTEM                                               */
 /* ========================================================================== */
 :root {
-    --bg-color: #f0f2f5;
-    --panel-bg: rgba(255, 255, 255, 0.95);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
+    --bg-color: #f5f5f7;
+    --panel-bg: rgba(255, 255, 255, 0.94);
     --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --border-color: #e2e8f0;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    --accent: #0a84ff;
+    --text-secondary: #334155;
+    --border-color: rgba(0, 0, 0, 0.14);
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    --accent: #0284c7;
     --accent-cyan: #0284c7;
     --accent-green: #30d158;
     --accent-yellow: #d97706;
     --accent-red: #dc2626;
-    --wind-color: #0284c7;
-    --wind-arrow-color: #0284c7;
-    --motor-bg: #f1f5f9;
-    --btn-bg: rgba(0, 0, 0, 0.05);
-    --btn-hover: rgba(0, 0, 0, 0.1);
+    --wind-color: #0284c7; /* High-contrast aviation cyan-blue for light mode */
+    --wind-arrow-color: #0284c7; /* High-contrast wind arrow on dial */
+    --motor-bg: #e2e8f0;
+    --btn-bg: rgba(15, 23, 42, 0.07);
+    --btn-hover: rgba(15, 23, 42, 0.14);
     --danger: #dc2626;
     --success: #30d158;
     --option-bg: #ffffff;
@@ -108,6 +111,95 @@ body.dark-mode .mode-btn.btn-active {
     background: #242936;
     color: #f8fafc;
     border: 1px solid #3b4559;
+}
+
+
+/* Light Theme Cockpit Avionics Surface Tuning & Typography */
+body:not(.dark-mode) #ui-panel,
+body:not(.dark-mode) #compass-widget,
+body:not(.dark-mode) #lxnav-mfd-widget,
+body:not(.dark-mode) #terrain-graph-container,
+body:not(.dark-mode) #actuators-panel-container,
+body:not(.dark-mode) #eis-widget,
+body:not(.dark-mode) #weather-widget {
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+}
+
+body:not(.dark-mode) .data-card {
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark-mode) .data-label {
+    color: var(--text-secondary);
+}
+
+body:not(.dark-mode) .data-val {
+    color: var(--text-primary);
+}
+
+body:not(.dark-mode) .panel-brand-title {
+    color: var(--text-primary);
+}
+
+body:not(.dark-mode) .section-title {
+    color: var(--text-primary);
+}
+
+body:not(.dark-mode) select {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #0f172a;
+}
+
+body:not(.dark-mode) input[type="text"],
+body:not(.dark-mode) input[type="number"] {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #0f172a;
+}
+
+body:not(.dark-mode) .btn-group {
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark-mode) .mode-btn {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark-mode) .mode-btn.btn-active {
+    background: #0284c7;
+    color: #ffffff;
+    border: 1px solid #0284c7;
+}
+
+body:not(.dark-mode) .btn-refresh {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #0f172a;
+}
+
+body:not(.dark-mode) .btn-refresh:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+}
+
+body:not(.dark-mode) .icon-btn {
+    background: var(--btn-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+body:not(.dark-mode) .icon-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
 }
 
 /* Mission Planner Battery Backdrop */
@@ -4101,7 +4193,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 <line x1="17" y1="9" x2="17" y2="15"></line>
             </svg>
         </button>
-        <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Atmosphere & Environmental Telemetry">
+        <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Terrain Profile Graph">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -4133,7 +4225,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         <div class="header">
             <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span class="panel-brand-title" style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: #f1f5f9; text-transform: uppercase;">Flight Telemetry</span>
+                <span class="panel-brand-title" style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Flight Telemetry</span>
             </div>
             <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                 <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="width: 26px; height: 26px; font-size: 12px; position: relative;">
@@ -4186,7 +4278,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         <div id="panel-view-telemetry">
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                        style="color: #f0f6fc; font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
+                        style="font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
                         style="color: var(--accent);">UNKNOWN</span></div>
                 <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
@@ -5009,10 +5101,11 @@ body:not(.dark-mode) .msg-toast-ticker {
         <!-- Minimal Top Bar with Controls -->
         <div class="gi-top-bar" id="gi-header">
             <span class="gi-inst-title">GI 275 EIS</span>
-            <div class="gi-controls-row">
-                <button class="gi-mode-btn active" id="eis-btn-page-p" onclick="setEisPage('P')" title="Power / Electrical Systems">P</button>
-                <button class="gi-mode-btn" id="eis-btn-page-e" onclick="setEisPage('E')" title="Engine / Propulsion Systems">E</button>
-                <button class="gi-btn-close avionics-close-dot" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
+                        <div class="gi-controls-row">
+                <button class="gi-mode-btn active" id="eis-btn-single" onclick="setEisEngineMode('single')">1 ENG</button>
+                <button class="gi-mode-btn" id="eis-btn-twin" onclick="setEisEngineMode('twin')">2 ENG</button>
+                <button class="gi-mode-btn" id="eis-btn-ch" onclick="cycleEisChannels()" title="Change ESC Channel Mapping">CH: ESC 1</button>
+                <button class="gi-btn-close" onclick="toggleEisWidget()" title="Close EIS">&times;</button>
             </div>
         </div>
 
@@ -5379,143 +5472,15 @@ body:not(.dark-mode) .msg-toast-ticker {
     </div>
 
     <!-- Garmin Atmospheric & Environmental Telemetry Panel -->
-    <div id="terrain-graph-container" class="env-telemetry-panel"
-        style="position: absolute; bottom: 10px; right: 20px; width: min(580px, calc(100vw - 360px)); height: 172px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; z-index: 90; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
-        
-        <!-- Garmin Top Bar -->
-        <div class="env-top-bar">
-            <div style="display: flex; align-items: center; gap: 7px; white-space: nowrap;">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);"></span>
-                <span class="env-title">ATMOSPHERE & ENVIRONMENT</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap;">
-                <!-- Field Elevation Badge -->
-                <div class="env-badge">
-                    <span class="env-badge-lbl">ELEV</span>
-                    <span id="env-field-elev-val" class="env-badge-val">-- m</span>
-                </div>
-                <!-- AMSL Badge -->
-                <div class="env-badge">
-                    <span class="env-badge-lbl">AMSL</span>
-                    <span id="env-amsl-val" class="env-badge-val">-- m</span>
-                </div>
-                <!-- AGL Badge -->
-                <div class="env-badge">
-                    <span class="env-badge-lbl">AGL</span>
-                    <span id="terrain-alt-text" class="env-badge-val">0.0 m</span>
-                </div>
-                <!-- Atmosphere & Environment Close Button -->
-                <button class="env-btn-close avionics-close-dot" onclick="toggleEnvPanel()" title="Close Atmosphere & Environment Panel">&times;</button>
-            </div>
+    <!-- Terrain Profile Graph -->
+    <div id="terrain-graph-container"
+        style="position: absolute; bottom: 18px; right: 20px; width: min(470px, calc(100vw - 360px)); height: 112px; box-sizing: border-box; overflow: hidden; background: var(--panel-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: auto;">
+        <div
+            style="color: var(--text-secondary); font-size: 11px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0;">
+            <span style="font-family: var(--font-sans); letter-spacing: 0.5px;">Terrain & Flight Profile</span>
+            <span id="terrain-alt-text" style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 700;">AGL: -- m</span>
         </div>
-
-        <!-- Garmin 6-Box Environmental Grid (3 Columns x 2 Rows) -->
-        <div class="env-grid">
-            
-            <!-- Cell 1: BARO TEMP -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">BARO TEMP</span>
-                    <span class="env-cell-sub">FC SENSOR</span>
-                </div>
-                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-baro-temp-val" class="env-cell-val" style="color: #38bdf8; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #38bdf8; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">°C</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-baro-min" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b id="env-baro-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-baro-avg" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-            <!-- Cell 2: ARSP TEMP -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">ARSP TEMP</span>
-                    <span class="env-cell-sub">PITOT OAT</span>
-                </div>
-                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-arsp-temp-val" class="env-cell-val" style="color: #38bdf8; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #38bdf8; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">°C</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-arsp-min" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b id="env-arsp-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-arsp-avg" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-            <!-- Cell 3: QNH ALTIMETER -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">QNH BARO</span>
-                    <span class="env-cell-sub">SEA LEVEL</span>
-                </div>
-                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-qnh-val" class="env-cell-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">hPa</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-qnh-min" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b id="env-qnh-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-qnh-avg" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-            <!-- Cell 4: STATION PRESS -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">STATION PRESS</span>
-                    <span class="env-cell-sub">STATIC</span>
-                </div>
-                <div style="display: flex; align-items: baseline; justify-content: space-between; margin: 0; white-space: nowrap;">
-                    <span id="env-press-val" class="env-cell-val" style="color: #ffb300; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #ffb300; font-size: 10px; font-weight: 700; font-family: var(--font-mono);">hPa</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-press-min" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b id="env-press-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-press-avg" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-            <!-- Cell 5: AIR DENSITY (rho) -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">AIR DENSITY (ρ)</span>
-                    <span class="env-cell-sub">P / RT</span>
-                </div>
-                <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
-                    <span id="env-density-val" class="env-cell-val" style="color: #c084fc; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #c084fc; font-size: 10px; font-weight: 700; font-family: var(--font-mono); white-space: nowrap;">kg/m³</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-density-min" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">MAX</span> <b id="env-density-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-density-avg" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-            <!-- Cell 6: WIND VECTOR -->
-            <div class="env-grid-cell">
-                <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
-                    <span class="env-cell-title">WIND VECTOR</span>
-                    <span id="env-wind-comps" style="color: #30d158; font-size: 8.5px; font-weight: 700; font-family: var(--font-mono); white-space: nowrap;">HW: -- XW: --</span>
-                </div>
-                <div style="display: flex; align-items: baseline; gap: 4px; margin: 0; white-space: nowrap;">
-                    <span id="env-wind-val" class="env-cell-val" style="color: #30d158; font-size: 18px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px;">--</span>
-                    <span class="env-cell-unit" style="color: #30d158; font-size: 9.5px; font-weight: 700; font-family: var(--font-mono);">m/s</span>
-                    <span id="env-wind-dir" style="color: #72e38c; font-size: 12px; font-weight: 700; font-family: var(--font-mono); margin-left: 2px;">--°</span>
-                </div>
-                <div class="env-stat-bar">
-                    <span><span class="env-stat-tag">MIN</span> <b id="env-wind-max" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">AVG</span> <b id="env-wind-avg" class="env-stat-num">--</b></span>
-                    <span><span class="env-stat-tag">DIR</span> <b id="env-wind-main-dir" class="env-stat-num">--</b></span>
-                </div>
-            </div>
-
-        </div>
+        <canvas id="terrain-canvas" style="width: 100%; height: 100%; flex: 1; min-height: 0;"></canvas>
     </div>
 
     <!-- Urgent Message Toast Ticker -->
@@ -5775,21 +5740,14 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         const btnToggleGraph = document.getElementById('btn-toggle-graph');
         const graphContainer = document.getElementById('terrain-graph-container');
-        if (btnToggleGraph) btnToggleGraph.onclick = () => toggleEnvPanel();
-
-        const btnToggleTrace = document.getElementById('btn-toggle-trace');
-        btnToggleTrace.onclick = () => {
-            if (trailLine) {
-                trailLine.visible = !trailLine.visible;
-                btnToggleTrace.classList.toggle('active', trailLine.visible);
-                const eye = btnToggleTrace.querySelector('svg');
-                if (trailLine.visible) {
-                    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-                } else {
-                    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-                }
-            }
-        };
+        if (btnToggleGraph && graphContainer) {
+            btnToggleGraph.onclick = () => {
+                const isVisible = (graphContainer.style.display !== 'none' && window.getComputedStyle(graphContainer).display !== 'none');
+                graphContainer.style.display = isVisible ? 'none' : 'flex';
+                btnToggleGraph.classList.toggle('active', !isVisible);
+                localStorage.setItem('terrain_graph_visible', !isVisible ? '1' : '0');
+            };
+        }
 
         const btnClearCoverage = document.getElementById('btn-clear-coverage');
         if (btnClearCoverage) {
@@ -12787,21 +12745,24 @@ body:not(.dark-mode) .msg-toast-ticker {
             const canvas = document.getElementById('terrain-canvas');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
 
             // Bulletproof High-DPI Canvas Scaling
             const cssWidth = canvas.clientWidth || 445;
             const cssHeight = canvas.clientHeight || 75;
             const dpr = window.devicePixelRatio || 1;
 
-            if (canvas.width !== cssWidth * dpr) {
+            if (canvas.width !== cssWidth * dpr || canvas.height !== cssHeight * dpr) {
                 canvas.width = cssWidth * dpr;
                 canvas.height = cssHeight * dpr;
-                ctx.scale(dpr, dpr); // Scale context so drawing commands use CSS pixels
+                ctx.scale(dpr, dpr);
             }
 
             ctx.clearRect(0, 0, cssWidth, cssHeight);
 
             if (terrainHistory.length < 2) return;
+
+            const isDark = document.body.classList.contains('dark-mode');
 
             let minAlt = Infinity, maxAlt = -Infinity;
             for (let pt of terrainHistory) {
@@ -12818,7 +12779,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             const stepX = cssWidth / (MAX_HISTORY - 1);
 
             // 1. Draw Professional Background Grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
             ctx.setLineDash([2, 2]); // Dashed grid
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -12845,9 +12806,9 @@ body:not(.dark-mode) .msg-toast-ticker {
             ctx.lineTo((terrainHistory.length - 1) * stepX, cssHeight);
             ctx.closePath();
 
-            ctx.fillStyle = 'rgba(76, 175, 80, 0.2)'; // Translucent green
+            ctx.fillStyle = isDark ? 'rgba(76, 175, 80, 0.25)' : 'rgba(46, 125, 50, 0.2)';
             ctx.fill();
-            ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)'; // Solid border
+            ctx.strokeStyle = isDark ? 'rgba(76, 175, 80, 0.85)' : 'rgba(46, 125, 50, 0.85)';
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
@@ -12860,7 +12821,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 else ctx.lineTo(x, y);
             }
 
-            ctx.strokeStyle = '#2196F3'; // Telemetry Blue
+            ctx.strokeStyle = isDark ? '#00e5ff' : '#0284c7';
             ctx.lineWidth = 2;
             ctx.stroke();
 
@@ -12871,9 +12832,9 @@ body:not(.dark-mode) .msg-toast-ticker {
 
             ctx.beginPath();
             ctx.arc(finalX, finalY, 3, 0, Math.PI * 2);
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
             ctx.fill();
-            ctx.strokeStyle = '#2196F3';
+            ctx.strokeStyle = isDark ? '#00e5ff' : '#0284c7';
             ctx.lineWidth = 1.5;
             ctx.stroke();
         }
@@ -12999,7 +12960,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             const fwEl = document.getElementById('firmware');
             if (!fwEl || !firmwareStr || firmwareStr.startsWith('Type ') || firmwareStr === '---') return;
             fwEl.innerText = firmwareStr;
-            fwEl.style.color = '#f0f6fc'; // High-contrast Aviation White
+            fwEl.style.color = document.body.classList.contains('dark-mode') ? '#f8fafc' : '#0f172a';
             fwEl.style.fontFamily = "'B612 Mono', monospace";
             fwEl.style.fontWeight = "700";
         }
