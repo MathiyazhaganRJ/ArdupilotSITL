@@ -676,6 +676,238 @@
             font-weight: 700;
         }
 
+        body:not(.dark-mode) .mp-battery-backdrop {
+            background: rgba(15, 23, 42, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        /* High-Contrast Mission Planner Battery Readouts */
+        .mp-fc-vcc-val,
+        .mp-batt-line-val,
+        #mp-card-fc-vcc,
+        #mp-card-batt-line,
+        #mp-view-fc-vcc,
+        #mp-view-batt-line {
+            color: var(--text-primary);
+        }
+        .mp-vcc-sub {
+            color: var(--text-secondary);
+        }
+        body:not(.dark-mode) .mp-fc-vcc-val,
+        body:not(.dark-mode) .mp-batt-line-val,
+        body:not(.dark-mode) #mp-card-fc-vcc,
+        body:not(.dark-mode) #mp-card-batt-line,
+        body:not(.dark-mode) #mp-view-fc-vcc,
+        body:not(.dark-mode) #mp-view-batt-line {
+            color: #0f172a !important;
+        }
+        body:not(.dark-mode) .mp-vcc-sub {
+            color: #475569 !important;
+        }
+        body.dark-mode .mp-fc-vcc-val,
+        body.dark-mode .mp-batt-line-val,
+        body.dark-mode #mp-card-fc-vcc,
+        body.dark-mode #mp-card-batt-line,
+        body.dark-mode #mp-view-fc-vcc,
+        body.dark-mode #mp-view-batt-line {
+            color: #f8fafc !important;
+        }
+        body.dark-mode .mp-vcc-sub {
+            color: #94a3b8 !important;
+        }
+
+        /* Per-Cell Balance Breakdown Typography */
+        .mp-cell-idx {
+            color: var(--text-secondary);
+        }
+        .mp-cell-track {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        body:not(.dark-mode) .mp-cell-idx {
+            color: #475569 !important;
+        }
+        body:not(.dark-mode) .mp-cell-track {
+            background: rgba(15, 23, 42, 0.1) !important;
+        }
+        .mp-cell-volt-label {
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .mp-cell-volt-label {
+            color: #0f172a !important;
+        }
+        body.dark-mode .mp-cell-volt-label {
+            color: #f8fafc !important;
+        }
+
+        /* ========================================================= */
+        /* ASSIGNED ACTUATOR & SERVO OUTPUTS MATRIX                  */
+        /* ========================================================= */
+        #actuators-panel-container {
+            position: absolute;
+            bottom: 20px;
+            left: 345px;
+            width: fit-content;
+            min-width: 360px;
+            max-width: min(780px, calc(100vw - 370px));
+            height: 234px;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 8px 10px 10px 10px;
+            display: none;
+            flex-direction: column;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            pointer-events: auto;
+            font-family: var(--font-mono);
+            user-select: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .actuators-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2px 6px 2px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #222734;
+            cursor: grab;
+        }
+        .actuators-header:active { cursor: grabbing; }
+
+        .actuators-title {
+            font-family: var(--font-sans);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #cbd5e1;
+            text-transform: uppercase;
+        }
+
+        .actuator-matrix-col {
+            flex: 1;
+            min-width: 52px;
+            max-width: 82px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            background: #181c25;
+            border: 1px solid #262b37;
+            border-radius: 8px;
+            padding: 6px 4px 5px 4px;
+            transition: all 0.15s ease;
+            box-sizing: border-box;
+        }
+
+        .actuator-pwm-val {
+            font-family: var(--font-mono);
+            font-size: 10.5px;
+            font-weight: 700;
+            font-feature-settings: 'tnum';
+            color: #f8fafc;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .actuator-bar-bg {
+            width: 14px;
+            height: 110px;
+            background: #12151c;
+            border-radius: 7px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #222733;
+            display: flex;
+            flex-direction: column-reverse;
+            margin: 3px auto;
+            flex-shrink: 0;
+        }
+
+        .actuator-bar-fill {
+            width: 100%;
+            height: 0%;
+            background: #30d158;
+            border-radius: 7px;
+            transition: height 0.08s ease, background 0.12s ease;
+        }
+
+        .actuator-bar-mid-tick {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.16);
+            pointer-events: none;
+        }
+
+        .actuator-ch-lbl {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 3px;
+        }
+
+        .actuator-fn-lbl {
+            font-family: var(--font-sans);
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #cbd5e1;
+            text-align: center;
+            line-height: 1.15;
+            word-break: break-word;
+            min-height: 22px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: -0.1px;
+            margin-top: 2px;
+        }
+
+        /* Light Theme for Actuators Panel */
+        body:not(.dark-mode) #actuators-panel-container {
+            background: var(--panel-bg);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .actuators-header {
+            border-bottom: 1px solid var(--border-color);
+        }
+        body:not(.dark-mode) .actuators-title {
+            color: var(--text-primary);
+        }
+        body:not(.dark-mode) .actuator-matrix-col {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        body:not(.dark-mode) .actuator-pwm-val {
+            color: #0f172a;
+        }
+        body:not(.dark-mode) .actuator-bar-bg {
+            background: rgba(15, 23, 42, 0.08);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        body:not(.dark-mode) .actuator-bar-mid-tick {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        body:not(.dark-mode) .actuator-ch-lbl {
+            color: #475569;
+        }
+        body:not(.dark-mode) .actuator-fn-lbl {
+            color: #0f172a;
+        }
+
+
         .btn-group {
             display: flex;
             gap: 8px;
@@ -3366,6 +3598,14 @@
                 <line x1="12" y1="4" x2="12" y2="20"></line>
             </svg>
         </button>
+        <button class="toolbar-btn" id="btn-toggle-actuators" title="Toggle Outputs Panel [Hotkey 'O']" onclick="toggleActuatorsPanel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+                <line x1="7" y1="9" x2="7" y2="15"></line>
+                <line x1="17" y1="9" x2="17" y2="15"></line>
+            </svg>
+        </button>
         <button class="toolbar-btn active" id="btn-toggle-graph" title="Toggle Atmosphere & Environmental Telemetry">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -3428,9 +3668,13 @@
         </div>
 
         <div class="panel-nav-tabs">
-            <button id="tab-telemetry" class="panel-nav-tab active">
+            <button id="tab-telemetry" class="panel-nav-tab active" title="Flight Telemetry Readouts">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                 <span>TELEMETRY</span>
+            </button>
+            <button id="tab-battery" class="panel-nav-tab" title="Mission Planner Battery & Power System">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+                <span>BATTERY</span>
             </button>
             <button id="tab-airspace" class="panel-nav-tab">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
@@ -3513,8 +3757,42 @@
                 </div>
             </div>
 
-            <div class="section-title">Motors</div>
-            <div class="motor-bar-container" id="motor-bars"></div>
+            <!-- Battery Card matching exact layout of Motor Mapping & Data Cards -->
+            <div id="mp-battery-card" class="data-card" style="margin-top: 10px; cursor: pointer;" onclick="switchPanelTab('battery')" title="Open Battery & Power Details">
+                <div style="margin-bottom: 8px;">
+                    <h3 style="margin: 0; font-family: var(--font-sans); font-size: 11.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-primary);">BATTERY &amp; POWER</h3>
+                </div>
+
+                <!-- Sunken Matte Backdrop Box for Battery Symbol & HUD Metrics -->
+                <div class="mp-battery-backdrop" style="display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 6px; margin-bottom: 7px;">
+                    <!-- Vertical Battery Symbol -->
+                    <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 22px;">
+                        <div style="width: 8px; height: 2px; background: #e2e8f0; border-radius: 1px 1px 0 0; margin-bottom: 1px;"></div>
+                        <div style="width: 22px; height: 38px; border: 2px solid #e2e8f0; border-radius: 3px; padding: 2px; display: flex; flex-direction: column; justify-content: space-between; background: rgba(0, 0, 0, 0.6); box-sizing: border-box;">
+                            <div id="mp-card-bar-4" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-card-bar-3" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-card-bar-2" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-card-bar-1" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mission Planner HUD Text Lines -->
+                    <div style="display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; flex: 1;">
+                        <div style="display: flex; align-items: baseline; gap: 6px;">
+                            <span id="mp-card-fc-vcc" class="mp-fc-vcc-val" style="font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; letter-spacing: 0.2px;">5.44v</span>
+                            <span class="mp-vcc-sub" style="font-size: 9px; font-family: var(--font-sans); font-weight: 600;">FC VCC</span>
+                        </div>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span id="mp-card-batt-line" class="mp-batt-line-val" style="font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; letter-spacing: 0.3px;">21.75v 20.2 A 94%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary Row (High Visibility Used mAh and Watts) -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 1px;">
+                    <span id="mp-card-sub-info" style="font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.3px;">Used: 0 / 6000 mAh | 0 W</span>
+                </div>
+            </div>
 
             <div style="margin-top: 24px; text-align: center; font-size: 10px; color: var(--text-secondary); opacity: 0.6; font-family: 'B612', sans-serif; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;">
                 Designed by RJ
@@ -3524,6 +3802,81 @@
                 <button id="btn-corv-chase" class="mode-btn" title="Corv-GCS 3D Chase Camera">3P Chase</button>
                 <button id="btn-follow" class="mode-btn btn-active" title="Orbit Vehicle">Orbit</button>
                 <button id="btn-free" class="mode-btn" title="Free Camera">Free</button>
+            </div>
+        </div>
+
+        <!-- Tab 2: Dedicated Battery & Power System View -->
+        <div id="panel-view-battery" style="display: none;">
+            <!-- Mission Planner Hero HUD Box -->
+            <div class="data-card" style="margin-bottom: 10px;">
+                <div style="margin-bottom: 8px;">
+                    <h3 style="margin: 0; font-family: var(--font-sans); font-size: 11.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-primary);">BATTERY &amp; POWER</h3>
+                </div>
+
+                <!-- Sunken Matte Backdrop Box for Battery Symbol & HUD Metrics -->
+                <div class="mp-battery-backdrop" style="display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 6px; margin-bottom: 7px;">
+                    <!-- Vertical Battery Symbol -->
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 22px; flex-shrink: 0;">
+                        <div style="width: 8px; height: 2px; background: #e2e8f0; border-radius: 1px 1px 0 0; margin-bottom: 1px;"></div>
+                        <div style="width: 22px; height: 38px; border: 2px solid #e2e8f0; border-radius: 3px; padding: 2px; display: flex; flex-direction: column; justify-content: space-between; background: rgba(0, 0, 0, 0.6); box-sizing: border-box;">
+                            <div id="mp-view-bar-4" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-view-bar-3" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-view-bar-2" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                            <div id="mp-view-bar-1" style="height: 6px; width: 100%; background: #00ff00; border-radius: 1px; transition: background 0.2s;"></div>
+                        </div>
+                    </div>
+                    <!-- Right HUD Readouts -->
+                    <div style="display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; flex: 1;">
+                        <div style="display: flex; align-items: baseline; gap: 6px;">
+                            <span id="mp-view-fc-vcc" class="mp-fc-vcc-val" style="font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; letter-spacing: 0.2px;">5.44v</span>
+                            <span class="mp-vcc-sub" style="font-size: 9px; font-family: var(--font-sans); font-weight: 600;">FC VCC</span>
+                        </div>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span id="mp-view-batt-line" class="mp-batt-line-val" style="font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; letter-spacing: 0.3px;">21.75v 20.2 A 94%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary Row (High Visibility Used mAh and Watts) -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 1px;">
+                    <span id="mp-view-sub-info" style="font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.3px;">Used: 0 / 6000 mAh | 0 W</span>
+                </div>
+            </div>
+
+            <!-- Electrical Metrics Grid as standard data-rows -->
+            <div class="data-card" style="margin-bottom: 10px;">
+                <h3 style="margin: 0 0 10px 0; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary);">ELECTRICAL PARAMETERS</h3>
+                <div class="data-row"><span class="data-label">Pack Voltage</span><span id="mp-stat-pack-volts" class="data-val">21.75 V</span></div>
+                <div class="data-row"><span class="data-label">Cell Config</span><span id="mp-stat-cell-config" class="data-val">6S (3.63 V/cell)</span></div>
+                <div class="data-row"><span class="data-label">Current Draw</span><span id="mp-stat-pack-amps" class="data-val">20.2 A</span></div>
+                <div class="data-row"><span class="data-label">Instant Power</span><span id="mp-stat-power-watts" class="data-val">439 W</span></div>
+                <div class="data-row"><span class="data-label">Consumed</span><span id="mp-stat-consumed-mah" class="data-val">1710 mAh</span></div>
+                <div class="data-row"><span class="data-label">Pack Capacity</span><span id="mp-stat-capacity-total" class="data-val">6000 mAh</span></div>
+                <div class="data-row"><span class="data-label">Remaining</span><span id="mp-stat-remaining-pct" class="data-val" style="color: var(--accent);">94%</span></div>
+                <div class="data-row" style="margin-bottom: 0;"><span class="data-label">Endurance</span><span id="mp-stat-endurance-est" class="data-val">Est. 18 min</span></div>
+            </div>
+
+            <!-- Per-Cell Balance Breakdown Matrix -->
+            <div class="data-card" style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary);">CELL BALANCE</h3>
+                    <span id="mp-cell-delta-badge" class="data-val" style="font-size: 10px; color: var(--text-secondary);">Δ 0.02 V</span>
+                </div>
+                <div id="mp-cell-bars-container" style="display: flex; flex-direction: column; gap: 6px;">
+                    <!-- Dynamically rendered per-cell bars (C1 - C6) -->
+                </div>
+            </div>
+
+            <!-- Controls: Capacity Config & EIS Sync -->
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-refresh" style="flex: 1; justify-content: center; padding: 7px 8px; font-weight: 700; font-size: 11px;" onclick="configureBatteryCapacityPrompt()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    SET PACK MAH
+                </button>
+                <button class="btn-refresh" style="flex: 1; justify-content: center; padding: 7px 8px; font-weight: 700; font-size: 11px;" onclick="toggleEisWidget(true)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                    OPEN EIS HUD
+                </button>
             </div>
         </div>
 
@@ -3848,6 +4201,28 @@
         </div>
 
     </div>
+    <!-- Assigned Actuator & Servo Outputs Matrix (ArduPilot Canonical Mapping) -->
+    <div id="actuators-panel-container" class="actuators-matrix-panel"
+        style="position: absolute; bottom: 20px; left: 345px; width: fit-content; min-width: 360px; max-width: min(780px, calc(100vw - 370px)); height: 234px; box-sizing: border-box; overflow: hidden; display: none; flex-direction: column; z-index: 1000; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
+        
+        <!-- Top Header Bar -->
+        <div class="actuators-header">
+            <div style="display: flex; align-items: center; white-space: nowrap;">
+                <span class="actuators-title">OUTPUTS</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <!-- Close Button -->
+                <button class="avionics-close-dot" onclick="toggleActuatorsPanel(false)" title="Close Outputs Panel (Hotkey 'O')">&times;</button>
+            </div>
+        </div>
+
+        <!-- Assigned Channels Grid Container -->
+        <div id="actuators-matrix-grid" style="display: flex; gap: 8px; flex: 1; align-items: stretch; justify-content: flex-start; padding-top: 8px; overflow-x: auto; min-height: 0;">
+            <!-- Dynamically populated assigned channel columns -->
+        </div>
+    </div>
+
 
     <!-- Avionics Grade Compass Rose Widget -->
     <div id="compass-widget">
@@ -4240,11 +4615,11 @@
                 </div>
             </div>
 
-            <!-- Box 5: mAH / KM (Cruise Energy Efficiency) -->
-            <div class="gi-grid-cell">
+            <!-- Box 5: Flight Average Efficiency (mAH / KM) -->
+            <div class="gi-grid-cell" id="gi-cell-box5" title="Flight Average Efficiency: Consumed mAh / Cumulative Distance (mAH/KM)">
                 <div class="gi-cell-title-row">
                     <span class="gi-cell-tag" id="gi-tag-box5">EFFICIENCY</span>
-                    <span class="gi-cell-unit" id="gi-unit-box5">mAH/KM</span>
+                    <span class="gi-cell-unit" id="gi-unit-box5">FLT AVG</span>
                 </div>
                 <div class="gi-cell-val-wrap">
                     <span class="gi-cell-val" id="gi-val-box5">---</span>
@@ -4825,6 +5200,13 @@
         var planeGroundspeed = 0.0;
         var planeGroundSpd = 0.0;
         var planeAirspeed = 0.0;
+        var currentFlightDistKm = 0.0;
+        var liveCumulativeDistKm = 0.0;
+        var livePrevLat = null;
+        var livePrevLng = null;
+        var latestServos = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
+        var latestFcVcc = 5.44;
+        window.latestFcVcc = 5.44;
         var currentPlaneLat = null;
         var currentPlaneLon = null;
         var vehicleConnected = false;
@@ -5008,10 +5390,12 @@
 
         // Panel View Tab Navigation (Telemetry vs Airspace vs Messages)
         const tabTelemetry = document.getElementById('tab-telemetry');
+        const tabBattery = document.getElementById('tab-battery');
         const tabAirspace = document.getElementById('tab-airspace');
         const tabMessages = document.getElementById('tab-messages');
         const tabMsgCount = document.getElementById('tab-msg-count');
         const viewTelemetry = document.getElementById('panel-view-telemetry');
+        const viewBattery = document.getElementById('panel-view-battery');
         const viewAirspace = document.getElementById('panel-view-airspace');
         const viewMessages = document.getElementById('panel-view-messages');
         const btnOfflineMapHdr = document.getElementById('btn-offline-map-hdr');
@@ -5025,13 +5409,16 @@
             window.switchPanelTab = switchPanelTab;
             const isAirspace = tabName === 'airspace';
             const isMessages = tabName === 'messages';
-            const isTelemetry = !isAirspace && !isMessages;
+            const isBattery = tabName === 'battery' || tabName === 'actuators';
+            const isTelemetry = !isAirspace && !isMessages && !isBattery;
 
             if (tabTelemetry) tabTelemetry.classList.toggle('active', isTelemetry);
+            if (tabBattery) tabBattery.classList.toggle('active', isBattery);
             if (tabAirspace) tabAirspace.classList.toggle('active', isAirspace);
             if (tabMessages) tabMessages.classList.toggle('active', isMessages);
 
             if (viewTelemetry) viewTelemetry.style.display = isTelemetry ? 'block' : 'none';
+            if (viewBattery) viewBattery.style.display = isBattery ? 'block' : 'none';
             if (viewAirspace) viewAirspace.style.display = isAirspace ? 'block' : 'none';
             if (viewMessages) viewMessages.style.display = isMessages ? 'block' : 'none';
 
@@ -5068,6 +5455,10 @@
                 refreshCacheStatus();
                 updateMapEstimate();
                 populatePresetDropdown();
+            } else if (isBattery) {
+                if (typeof updateMissionPlannerBatteryUI === 'function') {
+                    updateMissionPlannerBatteryUI();
+                }
             } else if (isTelemetry) {
                 if (typeof cameraMode !== 'undefined' && cameraMode === 'follow' && typeof controls !== 'undefined' && typeof vtolGroup !== 'undefined') {
                     controls.target.copy(vtolGroup.position);
@@ -5087,6 +5478,231 @@
                 switchPanelTab('telemetry');
             }
         };
+        if (tabBattery) tabBattery.onclick = () => {
+            const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
+            const isBattActive = tabBattery.classList.contains('active');
+            if (isVisible && isBattActive) {
+                toggleUiPanel();
+            } else {
+                if (!isVisible) toggleUiPanel();
+                switchPanelTab('battery');
+            }
+        };
+
+        // =========================================================
+        // MISSION PLANNER FLIGHT DATA HUD BATTERY & POWER TELEMETRY
+        // =========================================================
+        function setBatteryPackCapacity(val, fromParent) {
+            val = parseInt(val, 10);
+            if (isNaN(val) || val < 100 || val > 100000) return;
+            batteryCapacityMah = val;
+            try { localStorage.setItem('eis_battery_cap', val); } catch(e) {}
+            const valSubBatt = document.getElementById('gi-sub-batt');
+            if (valSubBatt) valSubBatt.textContent = `${batteryCapacityMah} mAh`;
+            const unitBox4 = document.getElementById('gi-unit-box4');
+            if (unitBox4 && typeof eisEngineMode !== 'undefined' && eisEngineMode === 'single') unitBox4.textContent = `/ ${batteryCapacityMah}`;
+            if (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.consumed_mah === 'number') {
+                am32Telemetry.battery_remaining_pct = Math.max(0, Math.min(100, Math.round(((batteryCapacityMah - am32Telemetry.consumed_mah) / batteryCapacityMah) * 100)));
+            }
+            if (typeof updateMissionPlannerBatteryUI === 'function') {
+                updateMissionPlannerBatteryUI();
+            }
+            if (typeof updateEisInstrument === 'function') {
+                updateEisInstrument();
+            }
+        }
+        window.setBatteryPackCapacity = setBatteryPackCapacity;
+
+        function configureBatteryCapacityPrompt() {
+            const currentCap = (typeof batteryCapacityMah === 'number') ? batteryCapacityMah : 6000;
+            const input = prompt("Set Battery Pack Capacity (mAh):", currentCap);
+            if (input !== null) {
+                const val = parseInt(input.trim(), 10);
+                if (!isNaN(val) && val >= 100 && val <= 100000) {
+                    setBatteryPackCapacity(val, false);
+                    if (typeof addAutopilotMessage === 'function') {
+                        addAutopilotMessage({ text: `Battery Pack Capacity configured to ${val} mAh`, severity: 6 });
+                    }
+                }
+            }
+        }
+        window.configureBatteryCapacityPrompt = configureBatteryCapacityPrompt;
+
+        function updateMissionPlannerBatteryUI() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const packVolt = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.pack_voltage === 'number' && am32Telemetry.pack_voltage > 3.0) 
+                ? am32Telemetry.pack_voltage 
+                : 21.75;
+            
+            const battAmps = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.battery_current === 'number') 
+                ? am32Telemetry.battery_current 
+                : ((typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.total_current === 'number') ? am32Telemetry.total_current : 0.0);
+            
+            const remPct = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.battery_remaining_pct === 'number' && am32Telemetry.battery_remaining_pct >= 0)
+                ? am32Telemetry.battery_remaining_pct
+                : 94;
+            
+            const consumedMah = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.consumed_mah === 'number')
+                ? am32Telemetry.consumed_mah
+                : 0;
+
+            const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
+            const fcVcc = (typeof window.latestFcVcc === 'number' && window.latestFcVcc > 0) ? window.latestFcVcc : 5.44;
+            const cellCount = (typeof getBatteryCellCount === 'function') ? getBatteryCellCount(packVolt) : 6;
+            const avgCellVolt = (cellCount > 0) ? (packVolt / cellCount) : 3.63;
+            const watts = packVolt * battAmps;
+
+            // 1. Calculate active 4-segment bar count (0 to 4) and HUD color
+            let activeBars = 0;
+            if (remPct >= 75) activeBars = 4;
+            else if (remPct >= 50) activeBars = 3;
+            else if (remPct >= 25) activeBars = 2;
+            else if (remPct > 0) activeBars = 1;
+
+            let barColor = '#00ff00'; // Mission Planner old vivid green
+            if (remPct < 15) barColor = isDark ? '#ef4444' : '#b91c1c'; // Red alert
+            else if (remPct < 25) barColor = isDark ? '#facc15' : '#b45309'; // Yellow caution
+
+            const inactiveBarColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.08)';
+
+            // Update Card Bars (Tab 1) & View Bars (Tab 2)
+            for (let b = 1; b <= 4; b++) {
+                const elCard = document.getElementById(`mp-card-bar-${b}`);
+                if (elCard) {
+                    elCard.style.background = (b <= activeBars) ? barColor : inactiveBarColor;
+                }
+                const elView = document.getElementById(`mp-view-bar-${b}`);
+                if (elView) {
+                    elView.style.background = (b <= activeBars) ? barColor : inactiveBarColor;
+                }
+            }
+
+            // Mission Planner Exact HUD Format: 5.44v 
+ 21.75v 20.2 A 94%
+            const vccText = `${fcVcc.toFixed(2)}v`;
+            const hudLineText = `${packVolt.toFixed(2)}v ${battAmps.toFixed(1)} A ${Math.round(remPct)}%`;
+
+            const elCardVcc = document.getElementById('mp-card-fc-vcc');
+            if (elCardVcc) elCardVcc.textContent = vccText;
+
+            const elCardLine = document.getElementById('mp-card-batt-line');
+            if (elCardLine) elCardLine.textContent = hudLineText;
+
+            const subLabelColor = isDark ? 'var(--text-secondary)' : '#475569';
+            const subValColor = isDark ? 'var(--text-primary)' : '#0f172a';
+            const wattColor = isDark ? 'var(--accent-cyan)' : '#0284c7';
+            const formattedSubInfo = `<span style="color: ${subLabelColor}; font-weight: 600;">Used:</span> <span style="font-family: var(--font-mono); color: ${subValColor}; font-weight: 700;">${Math.round(consumedMah)} / ${Math.round(packCap)} mAh</span> <span style="color: ${subLabelColor}; opacity: 0.6; margin: 0 4px;">|</span> <span style="font-family: var(--font-mono); color: ${wattColor}; font-weight: 700;">${Math.round(watts)} W</span>`;
+
+            const elCardSub = document.getElementById('mp-card-sub-info');
+            if (elCardSub) elCardSub.innerHTML = formattedSubInfo;
+
+            // Update Tab 2 (Dedicated Battery View)
+            const elViewVcc = document.getElementById('mp-view-fc-vcc');
+            if (elViewVcc) elViewVcc.textContent = vccText;
+
+            const elViewLine = document.getElementById('mp-view-batt-line');
+            if (elViewLine) elViewLine.textContent = hudLineText;
+
+            const elViewSub = document.getElementById('mp-view-sub-info');
+            if (elViewSub) elViewSub.innerHTML = formattedSubInfo;
+
+            const elPackVolts = document.getElementById('mp-stat-pack-volts');
+            if (elPackVolts) elPackVolts.textContent = `${packVolt.toFixed(2)} V`;
+
+            const elCellConfig = document.getElementById('mp-stat-cell-config');
+            if (elCellConfig) elCellConfig.textContent = `${cellCount}S (${avgCellVolt.toFixed(2)} V/cell)`;
+
+            const elPackAmps = document.getElementById('mp-stat-pack-amps');
+            if (elPackAmps) elPackAmps.textContent = `${battAmps.toFixed(1)} A`;
+
+            const elPowerWatts = document.getElementById('mp-stat-power-watts');
+            if (elPowerWatts) elPowerWatts.textContent = `${Math.round(watts)} W`;
+
+            const elConsumed = document.getElementById('mp-stat-consumed-mah');
+            if (elConsumed) elConsumed.textContent = `${Math.round(consumedMah)} mAh`;
+
+            const elCapacity = document.getElementById('mp-stat-capacity-total');
+            if (elCapacity) elCapacity.textContent = `${Math.round(packCap)} mAh`;
+
+            const elRemPct = document.getElementById('mp-stat-remaining-pct');
+            if (elRemPct) {
+                elRemPct.textContent = `${Math.round(remPct)}%`;
+                const remPctCol = (remPct < 15) ? (isDark ? '#ef4444' : '#b91c1c') : ((remPct < 25) ? (isDark ? '#facc15' : '#b45309') : '#22c55e');
+                elRemPct.style.color = remPctCol;
+            }
+
+            const elEndurance = document.getElementById('mp-stat-endurance-est');
+            if (elEndurance) {
+                if (battAmps > 0.4) {
+                    const remainingMah = Math.max(0, (packCap * (remPct / 100.0)));
+                    const remainingHours = (remainingMah / 1000.0) / battAmps;
+                    const remainingMins = Math.round(remainingHours * 60);
+                    elEndurance.textContent = (remainingMins > 60) 
+                        ? `Est. ${Math.floor(remainingMins / 60)}h ${remainingMins % 60}m` 
+                        : `Est. ${remainingMins} min`;
+                } else {
+                    elEndurance.textContent = 'Standby';
+                }
+            }
+
+            // Per-Cell Balance Matrix
+            const cellContainer = document.getElementById('mp-cell-bars-container');
+            if (cellContainer) {
+                if (cellContainer.dataset.cells !== String(cellCount)) {
+                    cellContainer.dataset.cells = String(cellCount);
+                    cellContainer.innerHTML = '';
+                    for (let c = 1; c <= cellCount; c++) {
+                        const cellRow = document.createElement('div');
+                        cellRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 10px;';
+                        cellRow.innerHTML = `
+                            <span class="mp-cell-idx" style="width: 22px; font-weight: 700;">C${c}</span>
+                            <div class="mp-cell-track" style="flex: 1; height: 6px; border-radius: 3px; overflow: hidden; position: relative;">
+                                <div id="mp-cell-fill-${c}" style="height: 100%; width: 0%; border-radius: 3px; transition: width 0.1s;"></div>
+                            </div>
+                            <span id="mp-cell-volt-${c}" class="mp-cell-volt-label" style="width: 48px; text-align: right; font-weight: 700;">0.00 V</span>
+                        `;
+                        cellContainer.appendChild(cellRow);
+                    }
+                }
+
+                let minCv = 99.0, maxCv = 0.0;
+                for (let c = 1; c <= cellCount; c++) {
+                    let cv = avgCellVolt;
+                    if (typeof am32Telemetry !== 'undefined' && Array.isArray(am32Telemetry.cell_voltages) && am32Telemetry.cell_voltages.length >= c && am32Telemetry.cell_voltages[c-1] > 2.0) {
+                        cv = am32Telemetry.cell_voltages[c-1];
+                    } else {
+                        const offset = ((c % 2 === 0 ? 1 : -1) * 0.008) * Math.sin(c + (packVolt * 10));
+                        cv = Math.max(2.8, avgCellVolt + offset);
+                    }
+                    minCv = Math.min(minCv, cv);
+                    maxCv = Math.max(maxCv, cv);
+
+                    const elVolt = document.getElementById(`mp-cell-volt-${c}`);
+                    if (elVolt) elVolt.textContent = `${cv.toFixed(2)} V`;
+
+                    const elFill = document.getElementById(`mp-cell-fill-${c}`);
+                    if (elFill) {
+                        const pct = Math.max(0, Math.min(100, ((cv - 3.2) / (4.2 - 3.2)) * 100));
+                        elFill.style.width = `${pct}%`;
+                        const greenCol = '#22c55e'; // Old vivid green
+                        const yellowCol = isDark ? '#facc15' : '#b45309';
+                        const redCol = isDark ? '#ef4444' : '#b91c1c';
+                        elFill.style.background = (cv >= 3.7) ? greenCol : (cv >= 3.5 ? yellowCol : redCol);
+                    }
+                }
+
+                const elDelta = document.getElementById('mp-cell-delta-badge');
+                if (elDelta) {
+                    const delta = Math.max(0, maxCv - minCv);
+                    elDelta.textContent = `Δ ${delta.toFixed(2)} V`;
+                    const deltaGreen = '#22c55e'; // Old vivid green
+                    const deltaYellow = isDark ? '#facc15' : '#b45309';
+                    const deltaRed = isDark ? '#ef4444' : '#b91c1c';
+                    elDelta.style.color = (delta <= 0.05) ? deltaGreen : (delta <= 0.10 ? deltaYellow : deltaRed);
+                }
+            }
+        }
+        window.updateMissionPlannerBatteryUI = updateMissionPlannerBatteryUI;
         if (tabAirspace) tabAirspace.onclick = () => {
             const isVisible = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none');
             const isAirActive = tabAirspace.classList.contains('active');
@@ -6796,46 +7412,74 @@
             if (btnToggleWeather) btnToggleWeather.classList.remove('active');
         }
 
-        // Draggable Floating Panels
+        // Universal Draggable Floating Panels Engine
         function makeDraggable(element, handle) {
-            if (!element || !handle) return;
-            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-            handle.style.cursor = 'grab';
+            if (!element) return;
+            const targetHandle = handle || element;
+            targetHandle.style.cursor = 'grab';
 
-            handle.onmousedown = (e) => {
-                if (e.target.closest('button, input, select, textarea, .compass-badge, .icon-btn, .gi-btn-close, .sixpack-btn-close, .lxnav-knob-btn, .btn-refresh, [onclick]')) return;
+            targetHandle.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button, input, select, textarea, .compass-badge, .icon-btn, .gi-btn-close, .sixpack-btn-close, .compass-btn-close, .lxnav-btn-close, .lxnav-knob-btn, .btn-refresh, .actuator-filter-btn, .gi-mode-btn, .avionics-close-dot, [onclick]')) return;
                 e.preventDefault();
-                handle.style.cursor = 'grabbing';
-                p3 = e.clientX;
-                p4 = e.clientY;
-                document.onmouseup = () => {
-                    handle.style.cursor = 'grab';
-                    document.onmouseup = null;
-                    document.onmousemove = null;
-                };
-                document.onmousemove = (ev) => {
+                e.stopPropagation();
+                targetHandle.style.cursor = 'grabbing';
+                const savedTransition = element.style.transition;
+                element.style.transition = 'none';
+
+                const rect = element.getBoundingClientRect();
+                element.style.left = rect.left + 'px';
+                element.style.top = rect.top + 'px';
+                element.style.bottom = 'auto';
+                element.style.right = 'auto';
+
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const initialLeft = rect.left;
+                const initialTop = rect.top;
+
+                const onMouseMove = (ev) => {
                     ev.preventDefault();
+                    ev.stopPropagation();
                     element.dataset.userDragged = 'true';
-                    p1 = p3 - ev.clientX;
-                    p2 = p4 - ev.clientY;
-                    p3 = ev.clientX;
-                    p4 = ev.clientY;
-                    element.style.bottom = 'auto';
-                    element.style.right = 'auto';
-                    element.style.top = Math.max(10, Math.min(window.innerHeight - 80, element.offsetTop - p2)) + 'px';
-                    element.style.left = Math.max(10, Math.min(window.innerWidth - 80, element.offsetLeft - p1)) + 'px';
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    const newLeft = Math.max(5, Math.min(window.innerWidth - 60, initialLeft + dx));
+                    const newTop = Math.max(5, Math.min(window.innerHeight - 40, initialTop + dy));
+                    element.style.left = newLeft + 'px';
+                    element.style.top = newTop + 'px';
                 };
-            };
+
+                const onMouseUp = () => {
+                    targetHandle.style.cursor = 'grab';
+                    element.style.transition = savedTransition;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
         }
-        if (compassWidget && compassWidget.querySelector('.compass-header')) {
-            makeDraggable(compassWidget, compassWidget.querySelector('.compass-header'));
+        if (compassWidget) {
+            makeDraggable(compassWidget, compassWidget);
         }
-        if (weatherWidget && weatherWidget.querySelector('.weather-header')) {
-            makeDraggable(weatherWidget, weatherWidget.querySelector('.weather-header'));
+        if (weatherWidget) {
+            makeDraggable(weatherWidget, weatherWidget);
         }
         const lxnavMfdEl = document.getElementById('lxnav-mfd-widget');
-        if (lxnavMfdEl && lxnavMfdEl.querySelector('.lxnav-header')) {
-            makeDraggable(lxnavMfdEl, lxnavMfdEl.querySelector('.lxnav-header'));
+        if (lxnavMfdEl) {
+            makeDraggable(lxnavMfdEl, lxnavMfdEl);
+        }
+        if (graphContainer) {
+            makeDraggable(graphContainer, graphContainer);
+        }
+        const actuatorsPanelEl = document.getElementById('actuators-panel-container');
+        if (actuatorsPanelEl) {
+            makeDraggable(actuatorsPanelEl, actuatorsPanelEl);
+        }
+        const eisWidgetEl = document.getElementById('eis-widget');
+        if (eisWidgetEl) {
+            makeDraggable(eisWidgetEl, eisWidgetEl);
         }
 
         // FMS CDU Navigation Panel Toggle
@@ -9235,6 +9879,8 @@
                 toggleLxnavWidget();
             } else if (e.key === 'e' || e.key === 'E') {
                 toggleEisWidget();
+            } else if (e.key === 'o' || e.key === 'O') {
+                toggleActuatorsPanel();
             } else if (e.key === '[' || e.key === '{') {
                 prevLxnavPage();
             } else if (e.key === ']' || e.key === '}') {
@@ -9251,19 +9897,225 @@
         let lastRenderTime = Date.now();
         let lastPeriodicMapUpdate = 0;
 
+        // ============================================================
+        // 16-CHANNEL ACTUATOR & SERVO OUTPUTS MATRIX ARCHITECTURE
+        // ============================================================
+        let currentVehicleParameters = {};
+        let actuatorFilterMode = 'assigned'; // Only keep assigned outputs
+        let actuatorsPanelVisible = false;
+
+        const ARDUPILOT_SERVO_FUNCTIONS = {
+            0: 'Disabled', 1: 'RCPassThru', 2: 'Flap', 3: 'Flaperon', 4: 'Aileron',
+            6: 'mount_pan', 7: 'mount_tilt', 8: 'mount_roll', 9: 'camera_trigger', 10: 'camera_release',
+            12: 'mount2_pan', 13: 'mount2_tilt', 14: 'mount2_roll', 16: 'DiffSpoiler 1', 17: 'DiffSpoiler 2',
+            18: 'Elevon Left', 19: 'Elevator', 20: 'Elevon Right', 21: 'Rudder', 22: 'DiffSpoiler 1',
+            23: 'DiffSpoiler 2', 24: 'Flaperon Left', 25: 'Flaperon Right', 26: 'Ground Steering',
+            27: 'Parachute', 28: 'Gripper', 29: 'Landing Gear', 30: 'Engine Run/Stop', 31: 'HeliRSC',
+            32: 'HeliTailRSC', 33: 'Motor 1', 34: 'Motor 2', 35: 'Motor 3', 36: 'Motor 4',
+            37: 'Motor 5', 38: 'Motor 6', 39: 'Motor 7', 40: 'Motor 8', 41: 'Motor Tilt',
+            51: 'RCIN 1', 52: 'RCIN 2', 53: 'RCIN 3', 54: 'RCIN 4', 55: 'RCIN 5', 56: 'RCIN 6',
+            57: 'RCIN 7', 58: 'RCIN 8', 59: 'RCIN 9', 60: 'RCIN 10', 61: 'RCIN 11', 62: 'RCIN 12',
+            63: 'RCIN 13', 64: 'RCIN 14', 65: 'RCIN 15', 66: 'RCIN 16', 70: 'Throttle',
+            73: 'Throttle Left', 74: 'Throttle Right', 75: 'TiltMotor Left', 76: 'TiltMotor Right',
+            77: 'Elevon Left', 78: 'Elevon Right', 79: 'V-Tail Left', 80: 'V-Tail Right',
+            81: 'Motor 9', 82: 'Motor 10', 83: 'Motor 11', 84: 'Motor 12', 85: 'Motor 13',
+            86: 'Motor 14', 87: 'Motor 15', 88: 'Motor 16', 89: 'Airbrakes', 94: 'Scripting 1',
+            95: 'Scripting 2', 96: 'Scripting 3'
+        };
+
+        function getServoFunctionInfo(chNum) {
+            const p = currentVehicleParameters || {};
+            const key = `SERVO${chNum}_FUNCTION`;
+            const altKey = `RC${chNum}_FUNCTION`;
+            let code = undefined;
+            if (p[key] !== undefined) code = parseInt(p[key], 10);
+            else if (p[altKey] !== undefined) code = parseInt(p[altKey], 10);
+
+            // If parameters haven't loaded yet, provide canonical QuadPlane / VTOL assigned mapping
+            if (code === undefined || isNaN(code)) {
+                if (Object.keys(p).length === 0) {
+                    const defaultVtolMap = {
+                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        3: { code: 70, name: 'Cruise Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        5: { code: 33, name: 'Motor 1 (FR)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        6: { code: 34, name: 'Motor 2 (BL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        7: { code: 35, name: 'Motor 3 (FL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        8: { code: 36, name: 'Motor 4 (BR)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        9: { code: 41, name: 'Tilt Servo', category: 'TILT', color: '#bf5af2', isAssigned: true }
+                    };
+                    if (defaultVtolMap[chNum]) return defaultVtolMap[chNum];
+                }
+                return { code: -1, name: 'Unassigned', category: 'OFF', color: '#64748b', isAssigned: false };
+            }
+            if (code === 0) {
+                return { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false };
+            }
+            const name = ARDUPILOT_SERVO_FUNCTIONS[code] || `Fn ${code}`;
+            let category = 'AUX', color = '#94a3b8';
+            if ((code >= 33 && code <= 40) || code === 70 || code === 73 || code === 74 || (code >= 81 && code <= 88)) {
+                category = 'PROP'; color = '#ff9f0a';
+            } else if (code === 41 || code === 75 || code === 76) {
+                category = 'TILT'; color = '#bf5af2';
+            } else if ([2, 3, 4, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 77, 78, 79, 80, 89].includes(code)) {
+                category = 'AERO'; color = '#00d2ff';
+            } else if (code === 1 || (code >= 51 && code <= 66)) {
+                category = 'RC'; color = '#30d158';
+            }
+            return { code, name, category, color, isAssigned: true };
+        }
+
+        const actuatorMatrixCols = [];
+
+        function buildActuatorOutputsGrid() {
+            const grid = document.getElementById('actuators-matrix-grid');
+            if (grid) grid.innerHTML = '';
+            actuatorMatrixCols.length = 0;
+
+            for (let ch = 1; ch <= 16; ch++) {
+                const info = getServoFunctionInfo(ch);
+
+                if (grid) {
+                    const col = document.createElement('div');
+                    col.className = 'actuator-matrix-col';
+                    col.dataset.ch = ch;
+
+                    const pwmEl = document.createElement('div');
+                    pwmEl.className = 'actuator-pwm-val';
+                    pwmEl.textContent = '1000';
+
+                    const barBg = document.createElement('div');
+                    barBg.className = 'actuator-bar-bg';
+
+                    const barFill = document.createElement('div');
+                    barFill.className = 'actuator-bar-fill';
+                    barBg.appendChild(barFill);
+
+                    const midTick = document.createElement('div');
+                    midTick.className = 'actuator-bar-mid-tick';
+                    barBg.appendChild(midTick);
+
+                    const chLabel = document.createElement('div');
+                    chLabel.className = 'actuator-ch-lbl';
+                    chLabel.textContent = `C${ch}`;
+
+                    const fnLabel = document.createElement('div');
+                    fnLabel.className = 'actuator-fn-lbl';
+                    fnLabel.textContent = info.name;
+                    fnLabel.title = `CH ${ch}: ${info.name}`;
+
+                    col.appendChild(pwmEl);
+                    col.appendChild(barBg);
+                    col.appendChild(chLabel);
+                    col.appendChild(fnLabel);
+                    grid.appendChild(col);
+
+                    actuatorMatrixCols.push({ colEl: col, pwmEl, fillEl: barFill, fnEl: fnLabel });
+                }
+            }
+            updateActuatorLabelsFromParameters();
+        }
+
+        function updateActuatorOutputsUI(servos) {
+            if (!servos || !Array.isArray(servos)) return;
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#f8fafc' : '#0f172a';
+
+            for (let i = 0; i < 16; i++) {
+                const ch = i + 1;
+                const pwm = (typeof servos[i] === 'number') ? Math.round(servos[i]) : 1000;
+                const pct = Math.max(0, Math.min(100, ((pwm - 1000) / 1000.0) * 100));
+
+                let fillColor = '#30d158'; // Vivid green
+                if (pct > 85) fillColor = isDark ? '#ef4444' : '#b91c1c';
+                else if (pct > 65) fillColor = isDark ? '#f59e0b' : '#d97706';
+
+                if (actuatorMatrixCols[i]) {
+                    actuatorMatrixCols[i].pwmEl.textContent = pwm;
+                    actuatorMatrixCols[i].pwmEl.style.color = textColor;
+                    actuatorMatrixCols[i].fillEl.style.height = (pwm <= 1000) ? '0%' : (pct + '%');
+                    actuatorMatrixCols[i].fillEl.style.background = fillColor;
+                }
+            }
+        }
+
+        function updateActuatorLabelsFromParameters() {
+            for (let ch = 1; ch <= 16; ch++) {
+                const info = getServoFunctionInfo(ch);
+                const isVisible = (actuatorFilterMode === 'all') ? true : info.isAssigned;
+
+                if (actuatorMatrixCols[ch - 1]) {
+                    const c = actuatorMatrixCols[ch - 1];
+                    c.fnEl.textContent = info.name;
+                    c.fnEl.title = `CH ${ch}: ${info.name} (Code ${info.code})`;
+                    c.colEl.style.display = isVisible ? 'flex' : 'none';
+                }
+            }
+        }
+
+        function resetActuatorsDefaultPosition(force) {
+            const w = document.getElementById('actuators-panel-container');
+            if (!w) return;
+            if (w.dataset.userDragged && !force) return;
+            delete w.dataset.userDragged;
+            w.style.top = '';
+            w.style.right = '';
+            w.style.bottom = '20px';
+            const uiPanel = document.getElementById('ui-panel');
+            const isPanelOpen = uiPanel && (uiPanel.style.display !== 'none' && window.getComputedStyle(uiPanel).display !== 'none') && !uiPanel.classList.contains('collapsed');
+            w.style.left = isPanelOpen ? '345px' : '20px';
+        }
+        window.resetActuatorsDefaultPosition = resetActuatorsDefaultPosition;
+
+        function toggleActuatorsPanel(forceState) {
+            const w = document.getElementById('actuators-panel-container');
+            const btn = document.getElementById('btn-toggle-actuators');
+            const isVisible = w && (w.style.display !== 'none' && window.getComputedStyle(w).display !== 'none');
+            const shouldOpen = (forceState !== undefined) ? forceState : !isVisible;
+            actuatorsPanelVisible = shouldOpen;
+            if (shouldOpen) {
+                resetActuatorsDefaultPosition();
+                if (typeof latestServos !== 'undefined' && Array.isArray(latestServos)) {
+                    updateActuatorOutputsUI(latestServos);
+                }
+            }
+            if (w) w.style.display = shouldOpen ? 'flex' : 'none';
+            if (btn) btn.classList.toggle('active', shouldOpen);
+            localStorage.setItem('actuators_panel_visible', shouldOpen ? '1' : '0');
+        }
+        window.toggleActuatorsPanel = toggleActuatorsPanel;
+
+        function loadFlightLogParameters(params) {
+            if (!params) return;
+            currentVehicleParameters = params;
+            updateActuatorLabelsFromParameters();
+
+            const battCap = params['BATT_CAPACITY'] || params['BATT_CAPACITY_1'] || params['BATT_ARM_MAH'];
+            if (typeof battCap === 'number' && battCap >= 100 && battCap <= 100000) {
+                setBatteryPackCapacity(battCap, true);
+            }
+        }
+        window.loadFlightLogParameters = loadFlightLogParameters;
+
+        // Initialize 16-channel Actuators Matrix UI
+        buildActuatorOutputsGrid();
+
         const motorBarsContainer = document.getElementById('motor-bars');
         const uiFills = [], uiPwms = [];
-        for (let i = 0; i < 8; i++) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'motor-bar-wrapper';
-            const pwmVal = document.createElement('div'); pwmVal.className = 'pwm-label'; pwmVal.innerText = '1000';
-            const bg = document.createElement('div'); bg.className = 'motor-bar-bg';
-            const fill = document.createElement('div'); fill.className = 'motor-bar-fill'; fill.style.height = '0%';
-            bg.appendChild(fill);
-            const lbl = document.createElement('div'); lbl.innerText = i + 1; lbl.className = 'motor-label';
-            wrapper.appendChild(pwmVal); wrapper.appendChild(bg); wrapper.appendChild(lbl);
-            motorBarsContainer.appendChild(wrapper);
-            uiFills.push(fill); uiPwms.push(pwmVal);
+        if (motorBarsContainer) {
+            for (let i = 0; i < 8; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'motor-bar-wrapper';
+                const pwmVal = document.createElement('div'); pwmVal.className = 'pwm-label'; pwmVal.innerText = '1000';
+                const bg = document.createElement('div'); bg.className = 'motor-bar-bg';
+                const fill = document.createElement('div'); fill.className = 'motor-bar-fill'; fill.style.height = '0%';
+                bg.appendChild(fill);
+                const lbl = document.createElement('div'); lbl.innerText = i + 1; lbl.className = 'motor-label';
+                wrapper.appendChild(pwmVal); wrapper.appendChild(bg); wrapper.appendChild(lbl);
+                motorBarsContainer.appendChild(wrapper);
+                uiFills.push(fill); uiPwms.push(pwmVal);
+            }
         }
 
         let cameraMode = 'follow', lastPlanePos = new THREE.Vector3(), lastTrailAddPos = new THREE.Vector3();
@@ -11778,9 +12630,14 @@
                 addAutopilotMessage({ text: "Connected to MAVLink Telemetry Gateway (Port 8766)", severity: 6 });
             }
             if (data.type === 'PARAM_VALUE') {
+                if (data.param_id) {
+                    currentVehicleParameters[data.param_id] = data.param_value;
+                    if (data.param_id.startsWith('SERVO') || data.param_id.startsWith('RC')) {
+                        updateActuatorLabelsFromParameters();
+                    }
+                }
                 if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
-                    batteryCapacityMah = Math.round(data.param_value);
-                    localStorage.setItem('eis_battery_cap', batteryCapacityMah);
+                    setBatteryPackCapacity(Math.round(data.param_value), true);
                 } else if ((data.param_id === 'BATT_SER_CELLS' || data.param_id === 'BATT_CELLS') && data.param_value > 0) {
                     am32Telemetry.cell_count = Math.round(data.param_value);
                 }
@@ -11893,6 +12750,23 @@
                     currentPlaneLon = data.lon;
                     window.currentPlaneLat = data.lat;
                     window.currentPlaneLon = data.lon;
+
+                    // Track Cumulative Flight Distance
+                    if (typeof livePrevLat === 'number' && typeof livePrevLng === 'number') {
+                        const dLat = (data.lat - livePrevLat) * (Math.PI / 180.0);
+                        const dLng = (data.lon - livePrevLng) * (Math.PI / 180.0);
+                        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                                  Math.cos(livePrevLat * (Math.PI / 180.0)) * Math.cos(data.lat * (Math.PI / 180.0)) *
+                                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                        const dKm = 6371.0 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                        if (dKm > 0.0005 && (typeof planeGroundSpd === 'number' ? planeGroundSpd : 0) > 0.8) {
+                            liveCumulativeDistKm += dKm;
+                        }
+                    }
+                    livePrevLat = data.lat;
+                    livePrevLng = data.lon;
+                    currentFlightDistKm = liveCumulativeDistKm;
+
                     updateArduPilotDrift();
                     const coordsBadge = document.getElementById('weather-coords-badge');
                     if (coordsBadge) coordsBadge.innerText = `GPS: ${data.lat.toFixed(4)}°, ${data.lon.toFixed(4)}°`;
@@ -11990,12 +12864,14 @@
                 if (data.current_consumed !== undefined) am32Telemetry.consumed_mah = data.current_consumed;
                 if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
                 if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
+                if (typeof updateMissionPlannerBatteryUI === 'function') updateMissionPlannerBatteryUI();
             } else if (data.type === 'SYS_STATUS') {
                 am32Telemetry.hasHardwareTelem = true;
                 am32Telemetry.lastTelemTime = performance.now();
                 if (data.voltage_battery !== undefined && data.voltage_battery > 0) am32Telemetry.pack_voltage = data.voltage_battery;
                 if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
                 if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                if (typeof updateMissionPlannerBatteryUI === 'function') updateMissionPlannerBatteryUI();
     
             } else if (data.type === 'LOCAL_POSITION_NED') {
                 latestNedX = data.x;
@@ -12203,6 +13079,9 @@
             else if (data.type === 'SERVO_OUTPUT_RAW') {
                 servoSpeeds = data.servos;
                 latestServos = data.servos;
+                if (typeof updateActuatorOutputsUI === 'function') {
+                    updateActuatorOutputsUI(latestServos);
+                }
                 for (let i = 0; i < 8; i++) {
                     let pwm = servoSpeeds[i]; uiPwms[i].innerText = pwm;
                     let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
@@ -12470,29 +13349,37 @@
                 tiltAssemblies[1].rotation.x = -(CONFIG.tiltMaxAngle * Math.PI / 180) * quadTiltLPercent; // FL
             }
 
+            // Precise motor spin physics: strictly obey servo channel PWM
+            function getMotorSpinRate(channelIdx) {
+                if (typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds) && typeof servoSpeeds[channelIdx] === 'number') {
+                    const pwm = servoSpeeds[channelIdx];
+                    // Any PWM <= 1000 corresponds to zero throttle / motor stopped / disarmed
+                    if (pwm <= 1000) return 0;
+                    const pct = Math.min(1.0, Math.max(0, (pwm - 1000) / 1000.0));
+                    return (0.15 + pct * 1.35) * visSpeed;
+                }
+                // Fallback if log lacks individual servo channels
+                if (window.isLogReplayActive && typeof am32Telemetry !== 'undefined' && am32Telemetry.throttle_pct > 1.0) {
+                    return (0.15 + (am32Telemetry.throttle_pct / 100.0) * 1.35) * visSpeed;
+                }
+                return 0;
+            }
+
             // Spin Quad Props
-            props[0].rotation.y += Math.max(0, ((servoSpeeds[m_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
-            props[1].rotation.y += Math.max(0, ((servoSpeeds[m_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
-            props[2].rotation.y += Math.max(0, ((servoSpeeds[m_br] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
-            props[3].rotation.y += Math.max(0, ((servoSpeeds[m_bl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
+            props[0].rotation.y += getMotorSpinRate(m_fr) * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            props[1].rotation.y += getMotorSpinRate(m_fl) * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            props[2].rotation.y += getMotorSpinRate(m_br) * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+            props[3].rotation.y += getMotorSpinRate(m_bl) * (CONFIG.vtolPropDir[3] === 0 ? -1 : 1);
 
             // Spin Y3 Props
-            y3Props[0].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
-            y3Props[1].rotation.y += Math.max(0, ((servoSpeeds[m_y3_fl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
-            y3Props[2].rotation.y += Math.max(0, ((servoSpeeds[m_y3_r] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
+            y3Props[0].rotation.y += getMotorSpinRate(m_y3_fr) * (CONFIG.vtolPropDir[0] === 0 ? -1 : 1);
+            y3Props[1].rotation.y += getMotorSpinRate(m_y3_fl) * (CONFIG.vtolPropDir[1] === 0 ? -1 : 1);
+            y3Props[2].rotation.y += getMotorSpinRate(m_y3_r) * (CONFIG.vtolPropDir[2] === 0 ? -1 : 1);
 
             // Spin fixed-wing props
-            if (window.isLogReplayActive) {
-                // Continuous aerodynamic propeller motion during flight log replay
-                const spinRate = Math.max(0.35, (planeAirspeed / 12.0) * 1.5);
-                pusherProp.rotation.z += spinRate * (CONFIG.cruisePropDir === 0 ? -1 : 1);
-                twinPropL.rotation.z += spinRate * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
-                twinPropR.rotation.z += spinRate * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
-            } else {
-                pusherProp.rotation.z += Math.max(0, ((servoSpeeds[m_push] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.cruisePropDir === 0 ? -1 : 1);
-                twinPropL.rotation.z += Math.max(0, ((servoSpeeds[m_tl] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
-                twinPropR.rotation.z += Math.max(0, ((servoSpeeds[m_tr] || 1000) - 1000) / 1000) * visSpeed * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
-            }
+            pusherProp.rotation.z += getMotorSpinRate(m_push) * (CONFIG.cruisePropDir === 0 ? -1 : 1);
+            twinPropL.rotation.z += getMotorSpinRate(m_tl) * (CONFIG.twinPropDir[0] === 0 ? -1 : 1);
+            twinPropR.rotation.z += getMotorSpinRate(m_tr) * (CONFIG.twinPropDir[1] === 0 ? -1 : 1);
 
             // Continuous 60FPS Compass Synchronization from 3D Model
             if (firstPos) {
@@ -12970,7 +13857,10 @@
                 if (lblBox4) lblBox4.textContent = 'mAH USED';
                 if (unitBox4) unitBox4.textContent = `/ ${batteryCapacityMah}`;
                 if (lblBox5) lblBox5.textContent = 'EFFICIENCY';
-                if (unitBox5) unitBox5.textContent = 'mAH/KM';
+                if (unitBox5) {
+                    unitBox5.textContent = 'FLT AVG';
+                    unitBox5.title = 'Flight Average Efficiency: Consumed mAh / Cumulative Distance (mAH/KM)';
+                }
             } else {
                 if (lblBox1) lblBox1.textContent = `L AMPS (E${eisTwinLeftCh})`;
                 if (unitBox1) unitBox1.textContent = 'A';
@@ -12981,7 +13871,10 @@
                 if (lblBox4) lblBox4.textContent = `R ESC TEMP`;
                 if (unitBox4) unitBox4.innerHTML = '&deg;C';
                 if (lblBox5) lblBox5.textContent = 'EFFICIENCY';
-                if (unitBox5) unitBox5.textContent = 'mAH/KM';
+                if (unitBox5) {
+                    unitBox5.textContent = 'FLT AVG';
+                    unitBox5.title = 'Flight Average Efficiency: Consumed mAh / Cumulative Distance (mAH/KM)';
+                }
             }
         }
 
@@ -13309,28 +14202,71 @@
 
             const now = performance.now();
 
-            // 1. Resolve live Throttle Percentage (0 - 100%)
-            let throttlePercent = 0;
-            // A. Direct from autopilot VFR_HUD telemetry
-            if (typeof am32Telemetry.throttle_pct === 'number' && am32Telemetry.throttle_pct > 0) {
-                throttlePercent = Math.round(am32Telemetry.throttle_pct);
-            }
-            // B. Or from active motor channel PWM in SERVO_OUTPUT_RAW
-            const targetChIdx = (eisEngineMode === 'single') ? Math.max(0, eisSingleChannel - 1) : Math.max(0, eisTwinLeftCh - 1);
-            let activeChPwm = 1000;
+            // 1. Resolve live Throttle Percentage (0 - 100%) and genuine propulsion channels
             const servosArr = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.length > 0) 
                 ? latestServos 
                 : ((typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds)) ? servoSpeeds : []);
 
-            if (servosArr.length > targetChIdx && servosArr[targetChIdx] >= 900) {
-                activeChPwm = servosArr[targetChIdx];
-            } else if (servosArr.length >= 3 && servosArr[2] >= 900) {
-                activeChPwm = servosArr[2]; // Fallback to Servo 3 (Throttle)
+            // Identify genuine propulsion / throttle channels from ArduPilot parameters or vehicle model
+            const detectedThrottleChs = [];
+            if (typeof getServoFunctionInfo === 'function') {
+                for (let ch = 1; ch <= 16; ch++) {
+                    const info = getServoFunctionInfo(ch);
+                    // 70: Throttle, 73: ThrottleLeft, 74: ThrottleRight, 33..40: Motor 1..8
+                    if (info.code === 70 || info.code === 73 || info.code === 74 || (info.code >= 33 && info.code <= 40)) {
+                        detectedThrottleChs.push(ch);
+                    }
+                }
+            }
+            if (detectedThrottleChs.length === 0) {
+                const vType = document.getElementById('v_type')?.value;
+                if (vType === 'twin') {
+                    const elL = document.getElementById('m_tl');
+                    const elR = document.getElementById('m_tr');
+                    if (elL && elL.value !== '') detectedThrottleChs.push(parseInt(elL.value, 10) + 1);
+                    if (elR && elR.value !== '') detectedThrottleChs.push(parseInt(elR.value, 10) + 1);
+                } else if (vType === 'plane') {
+                    const elPush = document.getElementById('m_push');
+                    if (elPush && elPush.value !== '') detectedThrottleChs.push(parseInt(elPush.value, 10) + 1);
+                }
+            }
+            if (detectedThrottleChs.length === 0) {
+                detectedThrottleChs.push(3);
             }
 
-            if (activeChPwm > 1050) {
-                const pwmPct = Math.round(((activeChPwm - 1000) / 1000.0) * 100);
-                if (throttlePercent === 0 || pwmPct > 0) {
+            if (!localStorage.getItem('eis_channel_manually_set')) {
+                if (detectedThrottleChs.length >= 2) {
+                    eisTwinLeftCh = detectedThrottleChs[0];
+                    eisTwinRightCh = detectedThrottleChs[1];
+                }
+                if (detectedThrottleChs.length >= 1) {
+                    const ch1Info = (typeof getServoFunctionInfo === 'function') ? getServoFunctionInfo(1) : null;
+                    if (eisSingleChannel === 1 && ch1Info && ch1Info.code !== 70 && ch1Info.code !== 73 && ch1Info.code !== 74 && (ch1Info.code < 33 || ch1Info.code > 40)) {
+                        eisSingleChannel = detectedThrottleChs[0];
+                    }
+                }
+            }
+
+            // Determine active throttle PWM across all detected throttle channels
+            let maxThrottlePwm = 0;
+            let validPwmCount = 0;
+            for (const ch of detectedThrottleChs) {
+                const idx = ch - 1;
+                if (servosArr.length > idx && typeof servosArr[idx] === 'number') {
+                    maxThrottlePwm = Math.max(maxThrottlePwm, servosArr[idx]);
+                    validPwmCount++;
+                }
+            }
+
+            // Check if motor PWM indicates idle / disarmed (PWM <= 1050, such as 800, 900, 1000)
+            let throttlePercent = 0;
+            if (validPwmCount > 0 && maxThrottlePwm <= 1050) {
+                throttlePercent = 0;
+            } else {
+                if (typeof am32Telemetry.throttle_pct === 'number' && !isNaN(am32Telemetry.throttle_pct) && am32Telemetry.throttle_pct >= 0) {
+                    throttlePercent = Math.round(am32Telemetry.throttle_pct);
+                } else if (validPwmCount > 0 && maxThrottlePwm > 1050) {
+                    const pwmPct = Math.round(((maxThrottlePwm - 1000) / 1000.0) * 100);
                     throttlePercent = Math.max(0, Math.min(100, pwmPct));
                 }
             }
@@ -13387,6 +14323,17 @@
             }
 
             // Extract metrics based on mode
+            const isDark = document.body.classList.contains('dark-mode');
+            const colGreen = '#30d158'; // Old vivid green
+            const colLime = '#a3e635';  // Old vivid aerospace lime green
+            const colCyan = isDark ? '#38bdf8' : '#0369a1';  // Deep aviation cobalt in light mode
+            const colCyanBright = isDark ? '#22d3ee' : '#0284c7'; // Vivid cyan in dark / rich sky blue in light
+            const colAmber = isDark ? '#ffd60a' : '#b45309'; // Deep bronze amber in light mode
+            const colGold = isDark ? '#ff9f0a' : '#c2410c';  // Warm electric burnt orange
+            const colRed = isDark ? '#ff3b30' : '#b91c1c';   // Deep crimson red
+            const colMuted = isDark ? '#64748b' : '#475569';
+            const colText = isDark ? '#f8fafc' : '#0f172a';
+
             let activeRpm1 = 0, activeRpm2 = 0;
             let activeAmp1 = 0, activeAmp2 = 0;
             let activeTemp1 = 0, activeTemp2 = 0;
@@ -13532,23 +14479,29 @@
                 }
                 if (unitBox4) unitBox4.textContent = `/ ${batteryCapacityMah}`;
 
-                // Box 5: mAH / KM (Cruise Energy Efficiency - Aerospace Lime Green)
-                let mahPerKmVal = '---';
-                if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
-                    const gndSpdKmH = planeGroundspeed * 3.6;
-                    const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
-                    if (isFinite(mahPerKm) && mahPerKm > 0) {
-                        mahPerKmVal = Math.round(mahPerKm);
+                // Box 5: Flight Average Efficiency (Consumed mAh / Distance in km)
+                let avgMahPerKm = '---';
+                const curConsumedMah = (typeof am32Telemetry.consumed_mah === 'number') ? am32Telemetry.consumed_mah : 0;
+                if (currentFlightDistKm > 0.05 && curConsumedMah > 1.0) {
+                    const avgVal = curConsumedMah / currentFlightDistKm;
+                    if (isFinite(avgVal) && avgVal > 0 && avgVal < 5000) {
+                        avgMahPerKm = Math.round(avgVal);
                     }
                 }
+
                 const valBox5 = document.getElementById('gi-val-box5');
+                const unitBox5 = document.getElementById('gi-unit-box5');
+                if (unitBox5) {
+                    unitBox5.textContent = 'FLT AVG';
+                }
+
                 if (valBox5) {
-                    valBox5.textContent = mahPerKmVal;
-                    if (mahPerKmVal !== '---') {
-                        valBox5.style.color = '#a3e635'; // Vibrant Aerospace Lime Green
-                        valBox5.style.textShadow = '0 0 10px rgba(163,230,53,0.4)';
+                    valBox5.textContent = avgMahPerKm;
+                    if (avgMahPerKm !== '---') {
+                        valBox5.style.color = colGreen; // Old vivid green (#30d158) in both light and dark mode
+                        valBox5.style.textShadow = 'none';
                     } else {
-                        valBox5.style.color = '#64748b'; // Muted dashes
+                        valBox5.style.color = colMuted; // Muted dashes
                         valBox5.style.textShadow = 'none';
                     }
                 }
@@ -13639,20 +14592,31 @@
                     else valBox4.style.color = '#ffffff';
                 }
 
-                // Box 5: mAH / KM (Cruise Energy Efficiency)
-                let mahPerKmVal = '---';
-                if (typeof planeGroundspeed === 'number' && planeGroundspeed > 1.0 && totAmp > 0.1) {
-                    const gndSpdKmH = planeGroundspeed * 3.6;
-                    const mahPerKm = (totAmp * 1000.0) / gndSpdKmH;
-                    if (isFinite(mahPerKm) && mahPerKm > 0) {
-                        mahPerKmVal = Math.round(mahPerKm);
+                // Box 5: Flight Average Efficiency (Consumed mAh / Distance in km)
+                let avgMahPerKm = '---';
+                const curConsumedMah = (typeof am32Telemetry.consumed_mah === 'number') ? am32Telemetry.consumed_mah : 0;
+                if (currentFlightDistKm > 0.05 && curConsumedMah > 1.0) {
+                    const avgVal = curConsumedMah / currentFlightDistKm;
+                    if (isFinite(avgVal) && avgVal > 0 && avgVal < 5000) {
+                        avgMahPerKm = Math.round(avgVal);
                     }
                 }
+
                 const valBox5 = document.getElementById('gi-val-box5');
+                const unitBox5 = document.getElementById('gi-unit-box5');
+                if (unitBox5) {
+                    unitBox5.textContent = 'FLT AVG';
+                }
+
                 if (valBox5) {
-                    valBox5.textContent = mahPerKmVal;
-                    if (mahPerKmVal !== '---') valBox5.style.color = '#00e5ff';
-                    else valBox5.style.color = '#55667a';
+                    valBox5.textContent = avgMahPerKm;
+                    if (avgMahPerKm !== '---') {
+                        valBox5.style.color = colGreen; // Old vivid green (#30d158) in both light and dark mode
+                        valBox5.style.textShadow = 'none';
+                    } else {
+                        valBox5.style.color = colMuted; // Muted dashes
+                        valBox5.style.textShadow = 'none';
+                    }
                 }
             }
 
@@ -13705,32 +14669,30 @@
             }
 
             // Universal per-cell health color coding (accurate across 1S to 12S packs)
-            let voltColor = '#38bdf8';
+            // Volt & Cell values in dark black for white mode, in white for dark mode; Efficiency in green
+            let voltColor = isDark ? '#ffffff' : '#0f172a';
             let voltShadow = 'none';
 
             if (avgCellVolt > 0) {
                 if (avgCellVolt < 3.50) {
-                    voltColor = '#ff3b30'; // Critical red alert (< 3.50V per cell)
-                    voltShadow = '0 0 10px rgba(255,59,48,0.5)';
+                    voltColor = colRed; // Critical red alert (< 3.50V per cell)
+                    voltShadow = 'none';
                 } else if (avgCellVolt < 3.70) {
-                    voltColor = '#ffd60a'; // Caution amber (3.50V - 3.70V per cell)
-                    voltShadow = '0 0 10px rgba(255,214,10,0.5)';
-                } else if (avgCellVolt >= 3.80) {
-                    voltColor = '#30d158'; // Healthy cruise / full green (>= 3.80V per cell)
-                    voltShadow = '0 0 10px rgba(48,209,88,0.4)';
+                    voltColor = colAmber; // Caution amber (3.50V - 3.70V per cell)
+                    voltShadow = 'none';
                 } else {
-                    voltColor = '#38bdf8'; // Nominal cyan (3.70V - 3.80V per cell)
-                    voltShadow = '0 0 8px rgba(56,189,248,0.3)';
+                    voltColor = isDark ? '#ffffff' : '#0f172a'; // Dark black in white mode, white in dark mode
+                    voltShadow = 'none';
                 }
             }
 
             if (valBattVolts) {
                 valBattVolts.style.color = voltColor;
-                valBattVolts.style.textShadow = voltShadow;
+                valBattVolts.style.textShadow = 'none';
             }
             if (valBattCell) {
                 valBattCell.style.color = voltColor;
-                valBattCell.style.textShadow = voltShadow;
+                valBattCell.style.textShadow = 'none';
             }
 
             // Bottom Status Strip: OAT & Battery Endurance in Orderly Columns
