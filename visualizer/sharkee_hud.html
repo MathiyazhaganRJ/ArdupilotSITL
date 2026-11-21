@@ -1066,7 +1066,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         .actuator-bar-bg {
             width: 14px;
-            height: 110px;
+            height: 98px;
             background: #12151c;
             border-radius: 7px;
             position: relative;
@@ -1074,7 +1074,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border: 1px solid #222733;
             display: flex;
             flex-direction: column-reverse;
-            margin: 3px auto;
+            margin: 2px auto;
             flex-shrink: 0;
         }
 
@@ -3941,7 +3941,129 @@ body:not(.dark-mode) .msg-toast-ticker {
             border-color: rgba(0, 113, 227, 0.65);
             transform: translateY(-1px);
         }
-    </style>
+    
+        /* Universal Precision Avionics Close Buttons */
+        .avionics-close-dot,
+        .compass-btn-close,
+        .lxnav-btn-close,
+        .gi-btn-close,
+        .env-btn-close,
+        .panel-btn-close {
+            width: 26px !important;
+            height: 26px !important;
+            min-width: 26px !important;
+            min-height: 26px !important;
+            border-radius: 50% !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            background: var(--btn-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            outline: none !important;
+            transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* Top header close button on ui-panel */
+        .panel-btn-close {
+            width: 26px !important;
+            height: 26px !important;
+            min-width: 26px !important;
+            min-height: 26px !important;
+            border-radius: 50% !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            background: var(--btn-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            outline: none !important;
+            transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* Floating widget close buttons */
+        .compass-btn-close,
+        .lxnav-btn-close,
+        .gi-btn-close,
+        .env-btn-close,
+        .actuators-header .avionics-close-dot {
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px !important;
+            min-height: 20px !important;
+            background: var(--btn-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        body.dark-mode .avionics-close-dot,
+        body.dark-mode .panel-btn-close,
+        body.dark-mode .env-btn-close,
+        body.dark-mode .compass-btn-close,
+        body.dark-mode .gi-btn-close,
+        body.dark-mode .lxnav-btn-close {
+            background: #181c25 !important;
+            border: 1px solid #282e3c !important;
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .avionics-close-dot:hover,
+        body.dark-mode .panel-btn-close:hover,
+        body.dark-mode .env-btn-close:hover,
+        body.dark-mode .compass-btn-close:hover,
+        body.dark-mode .gi-btn-close:hover,
+        body.dark-mode .lxnav-btn-close:hover {
+            background: rgba(239, 68, 68, 0.25) !important;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            color: #ff5f56 !important;
+        }
+
+        body:not(.dark-mode) .avionics-close-dot,
+        body:not(.dark-mode) .panel-btn-close,
+        body:not(.dark-mode) .env-btn-close,
+        body:not(.dark-mode) .compass-btn-close,
+        body:not(.dark-mode) .gi-btn-close,
+        body:not(.dark-mode) .lxnav-btn-close {
+            background: rgba(15, 23, 42, 0.06) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            color: #475569 !important;
+        }
+
+        body:not(.dark-mode) .avionics-close-dot:hover,
+        body:not(.dark-mode) .panel-btn-close:hover,
+        body:not(.dark-mode) .env-btn-close:hover,
+        body:not(.dark-mode) .compass-btn-close:hover,
+        body:not(.dark-mode) .gi-btn-close:hover,
+        body:not(.dark-mode) .lxnav-btn-close:hover {
+            background: rgba(239, 68, 68, 0.15) !important;
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            color: #dc2626 !important;
+        }
+
+        /* Strict No-Scrollbar Enforcement for Outputs Panel */
+        #actuators-panel-container,
+        #actuators-matrix-grid {
+            overflow: hidden !important;
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        #actuators-panel-container::-webkit-scrollbar,
+        #actuators-matrix-grid::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+</style>
     <script src="libs/three.min.js"></script>
     <script>if (typeof THREE === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
     <script src="libs/OrbitControls.js"></script>
@@ -4773,7 +4895,7 @@ body:not(.dark-mode) .msg-toast-ticker {
     </div>
     <!-- Assigned Actuator & Servo Outputs Matrix (ArduPilot Canonical Mapping) -->
     <div id="actuators-panel-container" class="actuators-matrix-panel"
-        style="position: absolute; bottom: 20px; left: 345px; width: fit-content; min-width: 360px; max-width: min(780px, calc(100vw - 370px)); height: 234px; box-sizing: border-box; overflow: hidden; display: none; flex-direction: column; z-index: 1000; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
+        style="position: absolute; bottom: 20px; left: 345px; width: fit-content; min-width: 320px; max-width: min(780px, calc(100vw - 370px)); height: 238px; box-sizing: border-box; overflow: hidden !important; display: none; flex-direction: column; z-index: 1000; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
         
         <!-- Top Header Bar -->
         <div class="actuators-header">
@@ -4788,7 +4910,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         </div>
 
         <!-- Assigned Channels Grid Container -->
-        <div id="actuators-matrix-grid" style="display: flex; gap: 8px; flex: 1; align-items: stretch; justify-content: flex-start; padding-top: 8px; overflow-x: auto; min-height: 0;">
+        <div id="actuators-matrix-grid" style="display: flex; gap: 8px; flex: 1; align-items: stretch; justify-content: flex-start; padding-top: 6px; overflow: hidden !important; min-height: 0;">
             <!-- Dynamically populated assigned channel columns -->
         </div>
     </div>
@@ -5641,6 +5763,51 @@ body:not(.dark-mode) .msg-toast-ticker {
         var currentPlaneAltMSL = 0.0;
         var currentTerrainAltMSL = 0.0;
         var currentAGL = 0.0;
+        var am32Telemetry = {
+            hasHardwareTelem: false,
+            lastTelemTime: 0,
+            rpm: [0, 0, 0, 0, 0, 0, 0, 0],
+            voltage: [25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2],
+            current: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            temperature: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0],
+            total_current: 0.0,
+            battery_current: 0.0,
+            pack_voltage: 25.2,
+            consumed_mah: 0,
+            battery_remaining_pct: 100,
+            throttle_pct: 0,
+            cell_count: 0
+        };
+        window.am32Telemetry = am32Telemetry;
+        var batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
+        var manualCellCount = parseInt(localStorage.getItem('eis_battery_cells') || '0', 10);
+        function getBatteryCellCount(packVolt) {
+            if (typeof manualCellCount === 'number' && manualCellCount > 0) return manualCellCount;
+            const t = window.am32Telemetry || (typeof am32Telemetry !== 'undefined' ? am32Telemetry : {});
+            if (t.cell_count > 0) return t.cell_count;
+            if (Array.isArray(t.cell_voltages)) {
+                const subCells = t.cell_voltages.filter(v => typeof v === 'number' && v >= 2.5 && v <= 4.5);
+                if (subCells.length > 1) return subCells.length;
+            }
+            if (typeof packVolt === 'number' && packVolt > 3.0) {
+                const candidates = [1, 2, 3, 4, 6, 8, 12];
+                let bestN = 3;
+                let bestDist = 999.0;
+                for (const n of candidates) {
+                    const cv = packVolt / n;
+                    if (cv >= 3.10 && cv <= 4.28) {
+                        const dist = Math.abs(cv - 3.85);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestN = n;
+                        }
+                    }
+                }
+                return bestN;
+            }
+            return 3;
+        }
+        window.getBatteryCellCount = getBatteryCellCount;
         var planeGroundspeed = 0.0;
         var planeGroundSpd = 0.0;
         var planeAirspeed = 0.0;
@@ -5880,9 +6047,9 @@ body:not(.dark-mode) .msg-toast-ticker {
                 scrollMessagesToBottom();
             }
 
-            if (typeof airspaceRingGroup !== 'undefined') {
+            if (window.airspaceRingGroup) {
                 const mapVisChecked = chkToggleMapVis ? chkToggleMapVis.checked : true;
-                airspaceRingGroup.visible = isAirspace && mapVisChecked;
+                window.airspaceRingGroup.visible = isAirspace && mapVisChecked;
             }
             if (isAirspace) {
                 refreshCacheStatus();
@@ -5963,20 +6130,21 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         function updateMissionPlannerBatteryUI() {
             const isDark = document.body.classList.contains('dark-mode');
-            const packVolt = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.pack_voltage === 'number' && am32Telemetry.pack_voltage > 3.0) 
-                ? am32Telemetry.pack_voltage 
+            const t = window.am32Telemetry || (typeof am32Telemetry !== 'undefined' ? am32Telemetry : {});
+            const packVolt = (typeof t.pack_voltage === 'number' && t.pack_voltage > 3.0) 
+                ? t.pack_voltage 
                 : 21.75;
             
-            const battAmps = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.battery_current === 'number') 
-                ? am32Telemetry.battery_current 
-                : ((typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.total_current === 'number') ? am32Telemetry.total_current : 0.0);
+            const battAmps = (typeof t.battery_current === 'number') 
+                ? t.battery_current 
+                : ((typeof t.total_current === 'number') ? t.total_current : 0.0);
             
-            const remPct = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.battery_remaining_pct === 'number' && am32Telemetry.battery_remaining_pct >= 0)
-                ? am32Telemetry.battery_remaining_pct
+            const remPct = (typeof t.battery_remaining_pct === 'number' && t.battery_remaining_pct >= 0)
+                ? t.battery_remaining_pct
                 : 94;
             
-            const consumedMah = (typeof am32Telemetry !== 'undefined' && typeof am32Telemetry.consumed_mah === 'number')
-                ? am32Telemetry.consumed_mah
+            const consumedMah = (typeof t.consumed_mah === 'number')
+                ? t.consumed_mah
                 : 0;
 
             const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
@@ -6097,14 +6265,19 @@ body:not(.dark-mode) .msg-toast-ticker {
                     }
                 }
 
+                // Strictly filter genuine per-cell voltages between 2.5V and 4.5V (never allow pack voltage >4.5V into single cell)
+                const validCells = (Array.isArray(t.cell_voltages))
+                    ? t.cell_voltages.filter(v => typeof v === 'number' && v >= 2.5 && v <= 4.5)
+                    : [];
+
                 let minCv = 99.0, maxCv = 0.0;
                 for (let c = 1; c <= cellCount; c++) {
                     let cv = avgCellVolt;
-                    if (typeof am32Telemetry !== 'undefined' && Array.isArray(am32Telemetry.cell_voltages) && am32Telemetry.cell_voltages.length >= c && am32Telemetry.cell_voltages[c-1] > 2.0) {
-                        cv = am32Telemetry.cell_voltages[c-1];
+                    if (validCells.length >= cellCount && validCells[c - 1] >= 2.5 && validCells[c - 1] <= 4.5) {
+                        cv = validCells[c - 1];
                     } else {
                         const offset = ((c % 2 === 0 ? 1 : -1) * 0.008) * Math.sin(c + (packVolt * 10));
-                        cv = Math.max(2.8, avgCellVolt + offset);
+                        cv = Math.max(2.8, Math.min(4.35, avgCellVolt + offset));
                     }
                     minCv = Math.min(minCv, cv);
                     maxCv = Math.max(maxCv, cv);
@@ -6508,7 +6681,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const isVis = e.target.checked;
                 mapGroup.visible = isVis;
                 const isAirspaceActive = tabAirspace && tabAirspace.classList.contains('active');
-                if (typeof airspaceRingGroup !== 'undefined') airspaceRingGroup.visible = isVis && isAirspaceActive;
+                if (window.airspaceRingGroup) window.airspaceRingGroup.visible = isVis && isAirspaceActive;
                 if (mapVisStatus) {
                     mapVisStatus.innerText = isVis ? 'ACTIVE' : 'HIDDEN';
                     mapVisStatus.style.color = isVis ? 'var(--success)' : 'var(--text-secondary)';
@@ -9018,6 +9191,18 @@ body:not(.dark-mode) .msg-toast-ticker {
             document.querySelectorAll('.quad-tilt-ui').forEach(el => el.style.display = 'none');
         }
 
+                const vTypeSelect = document.getElementById('v_type');
+        if (vTypeSelect) {
+            const origVTypeChange = vTypeSelect.onchange;
+            vTypeSelect.addEventListener('change', () => {
+                if (typeof updateActuatorLabelsFromParameters === 'function') {
+                    updateActuatorLabelsFromParameters();
+                }
+                if (typeof latestServos !== 'undefined' && Array.isArray(latestServos)) {
+                    updateActuatorOutputsUI(latestServos);
+                }
+            });
+        }
         document.getElementById('v_type').onchange = (e) => {
             const type = e.target.value;
             aeroGroup.visible = (type === 'vtol' || type === 'plane' || type === 'twin' || type === 'y3');
@@ -10363,10 +10548,52 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (p[key] !== undefined) code = parseInt(p[key], 10);
             else if (p[altKey] !== undefined) code = parseInt(p[altKey], 10);
 
-            // If parameters haven't loaded yet, provide canonical QuadPlane / VTOL assigned mapping
+            // If parameters haven't loaded yet, determine assignment from Vehicle Type and active config
             if (code === undefined || isNaN(code)) {
-                if (Object.keys(p).length === 0) {
-                    const defaultVtolMap = {
+                const vTypeEl = document.getElementById('v_type');
+                const vType = vTypeEl ? vTypeEl.value : 'vtol';
+
+                if (vType === 'plane') {
+                    // Standard Fixed Wing Plane: strictly 4 primary channels
+                    const planeMap = {
+                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true }
+                    };
+                    if (planeMap[chNum]) return planeMap[chNum];
+                } else if (vType === 'quad') {
+                    const quadMap = {
+                        1: { code: 33, name: 'Motor 1', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        2: { code: 34, name: 'Motor 2', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        3: { code: 35, name: 'Motor 3', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        4: { code: 36, name: 'Motor 4', category: 'PROP', color: '#ff9f0a', isAssigned: true }
+                    };
+                    if (quadMap[chNum]) return quadMap[chNum];
+                } else if (vType === 'twin') {
+                    const twinMap = {
+                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        3: { code: 70, name: 'Left Cruise', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        4: { code: 70, name: 'Right Cruise', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        5: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true }
+                    };
+                    if (twinMap[chNum]) return twinMap[chNum];
+                } else if (vType === 'y3') {
+                    const y3Map = {
+                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                        5: { code: 33, name: 'Front Left', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        6: { code: 34, name: 'Front Right', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        7: { code: 35, name: 'Rear Motor', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                        8: { code: 41, name: 'Tilt Servo', category: 'TILT', color: '#bf5af2', isAssigned: true }
+                    };
+                    if (y3Map[chNum]) return y3Map[chNum];
+                } else {
+                    // QuadPlane (VTOL): Channels 1-4 are aero/cruise, 5-8 are VTOL lift motors
+                    const vtolMap = {
                         1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
                         2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
                         3: { code: 70, name: 'Cruise Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
@@ -10374,10 +10601,9 @@ body:not(.dark-mode) .msg-toast-ticker {
                         5: { code: 33, name: 'Motor 1 (FR)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
                         6: { code: 34, name: 'Motor 2 (BL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
                         7: { code: 35, name: 'Motor 3 (FL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        8: { code: 36, name: 'Motor 4 (BR)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        9: { code: 41, name: 'Tilt Servo', category: 'TILT', color: '#bf5af2', isAssigned: true }
+                        8: { code: 36, name: 'Motor 4 (BR)', category: 'PROP', color: '#ff9f0a', isAssigned: true }
                     };
-                    if (defaultVtolMap[chNum]) return defaultVtolMap[chNum];
+                    if (vtolMap[chNum]) return vtolMap[chNum];
                 }
                 return { code: -1, name: 'Unassigned', category: 'OFF', color: '#64748b', isAssigned: false };
             }
@@ -10412,6 +10638,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     const col = document.createElement('div');
                     col.className = 'actuator-matrix-col';
                     col.dataset.ch = ch;
+                    col.style.display = info.isAssigned ? 'flex' : 'none';
 
                     const pwmEl = document.createElement('div');
                     pwmEl.className = 'actuator-pwm-val';
@@ -10461,16 +10688,23 @@ body:not(.dark-mode) .msg-toast-ticker {
 
             for (let i = 0; i < 16; i++) {
                 const ch = i + 1;
-                const pwm = (typeof servos[i] === 'number') ? Math.round(servos[i]) : 1000;
+                const pwm = (typeof servos[i] === 'number') ? Math.round(servos[i]) : 0;
                 const pct = Math.max(0, Math.min(100, ((pwm - 1000) / 1000.0) * 100));
 
                 let fillColor = '#30d158'; // Vivid green
                 if (pct > 85) fillColor = isDark ? '#ef4444' : '#b91c1c';
                 else if (pct > 65) fillColor = isDark ? '#f59e0b' : '#d97706';
 
+                const info = getServoFunctionInfo(ch);
+                // Channel is genuinely active/assigned if:
+                // 1. Explicit parameter function code > 0 (or fallback assigned)
+                // 2. AND live telemetry pwm > 0 (0 means unassigned / inactive on flight controller)
+                const isLiveAssigned = (info.code > 0) ? (pwm > 0) : (info.isAssigned && pwm > 0);
+
                 if (actuatorMatrixCols[i]) {
+                    actuatorMatrixCols[i].colEl.style.display = (actuatorFilterMode === 'all' || isLiveAssigned) ? 'flex' : 'none';
                     actuatorMatrixCols[i].pwmEl.textContent = pwm;
-                    actuatorMatrixCols[i].pwmEl.style.color = textColor;
+                    actuatorMatrixCols[i].pwmEl.style.color = (pwm <= 1000) ? (isDark ? '#94a3b8' : '#64748b') : textColor;
                     actuatorMatrixCols[i].fillEl.style.height = (pwm <= 1000) ? '0%' : (pct + '%');
                     actuatorMatrixCols[i].fillEl.style.background = fillColor;
                 }
@@ -10478,9 +10712,17 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         function updateActuatorLabelsFromParameters() {
+            const hasTelemetry = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.some(p => p > 0)) ||
+                                 (typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds) && servoSpeeds.some(p => p > 0));
+
             for (let ch = 1; ch <= 16; ch++) {
                 const info = getServoFunctionInfo(ch);
-                const isVisible = (actuatorFilterMode === 'all') ? true : info.isAssigned;
+                const pwm = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && typeof latestServos[ch - 1] === 'number')
+                    ? latestServos[ch - 1]
+                    : ((typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds) && typeof servoSpeeds[ch - 1] === 'number') ? servoSpeeds[ch - 1] : 0);
+
+                const isLiveAssigned = (info.code > 0) ? (pwm > 0) : (info.isAssigned && pwm > 0);
+                const isVisible = (actuatorFilterMode === 'all') ? true : (hasTelemetry ? isLiveAssigned : info.isAssigned);
 
                 if (actuatorMatrixCols[ch - 1]) {
                     const c = actuatorMatrixCols[ch - 1];
@@ -10730,7 +10972,8 @@ body:not(.dark-mode) .msg-toast-ticker {
         scene.add(horizonGroup);
 
         // Ground underlay removed to allow 100% full-radius 2D satellite map rendering
-        const airspaceRingGroup = new THREE.Group();
+        var airspaceRingGroup = new THREE.Group();
+        window.airspaceRingGroup = airspaceRingGroup;
         airspaceRingGroup.visible = false; // Only visible while AIRSPACE & MAP tab is active
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
@@ -14061,35 +14304,11 @@ body:not(.dark-mode) .msg-toast-ticker {
         let eisSingleChannel = parseInt(eisUrlParams.get('esc') || localStorage.getItem('eis_single_ch') || '1', 10);
         let eisTwinLeftCh = parseInt(eisUrlParams.get('left') || localStorage.getItem('eis_twin_left_ch') || '1', 10);
         let eisTwinRightCh = parseInt(eisUrlParams.get('right') || localStorage.getItem('eis_twin_right_ch') || '2', 10);
-        let batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
+        batteryCapacityMah = parseInt(localStorage.getItem('eis_battery_cap') || '6000', 10);
         const urlCells = parseInt(eisUrlParams.get('cells') || '0', 10);
-        let manualCellCount = (urlCells > 0) ? urlCells : parseInt(localStorage.getItem('eis_battery_cells') || '0', 10);
+        manualCellCount = (urlCells > 0) ? urlCells : parseInt(localStorage.getItem('eis_battery_cells') || '0', 10);
 
-        function getBatteryCellCount(packVolt) {
-            if (manualCellCount > 0) return manualCellCount;
-            if (am32Telemetry.cell_count > 0) return am32Telemetry.cell_count;
-            if (Array.isArray(am32Telemetry.cell_voltages)) {
-                const subCells = am32Telemetry.cell_voltages.filter(v => v >= 2.5 && v <= 4.5);
-                if (subCells.length > 1) return subCells.length;
-            }
-            if (typeof packVolt === 'number' && packVolt > 3.0) {
-                const candidates = [1, 2, 3, 4, 6, 8, 12];
-                let bestN = 3;
-                let bestDist = 999.0;
-                for (const n of candidates) {
-                    const cv = packVolt / n;
-                    if (cv >= 3.10 && cv <= 4.28) {
-                        const dist = Math.abs(cv - 3.85);
-                        if (dist < bestDist) {
-                            bestDist = dist;
-                            bestN = n;
-                        }
-                    }
-                }
-                return bestN;
-            }
-            return 3;
-        }
+// getBatteryCellCount hoisted at top of script
 
         function cycleBatteryCellCount() {
             const counts = [0, 3, 4, 6, 8];
@@ -14163,21 +14382,8 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         // AM32 ESC Telemetry State (Hardware buffers or Simulated)
-        const am32Telemetry = {
-            hasHardwareTelem: false,
-            lastTelemTime: 0,
-            rpm: [0, 0, 0, 0, 0, 0, 0, 0],
-            voltage: [25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2, 25.2],
-            current: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            temperature: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0],
-            total_current: 0.0,
-            battery_current: 0.0,
-            pack_voltage: 25.2,
-            consumed_mah: 0,
-            battery_remaining_pct: 100,
-            throttle_pct: 0,
-            cell_count: 0
-        };
+        var am32Telemetry = window.am32Telemetry || am32Telemetry;
+        window.am32Telemetry = am32Telemetry;
 
         const eisWidget = document.getElementById('eis-widget');
         const btnToggleEis = document.getElementById('btn-toggle-eis');
