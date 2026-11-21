@@ -13,8 +13,8 @@
     <link rel="apple-touch-icon" href="app_icon.png?v=4">
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=B612+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&family=B612+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Share+Tech+Mono&display=swap"></noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"></noscript>
     <style>
         /* ========================================================================== */
 /* 1. ROOT & THEME COLOR SYSTEM                                               */
@@ -352,7 +352,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             box-shadow: var(--shadow);
             z-index: 10;
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
         }
 
         #ui-panel.collapsed {
@@ -402,39 +402,36 @@ body:not(.dark-mode) .msg-toast-ticker {
             background: var(--btn-bg);
             border-radius: 9px;
             padding: 3px;
-            gap: 3px;
+            gap: 4px;
             margin-bottom: 10px;
             border: 1px solid var(--border-color);
         }
 
         .panel-nav-tab {
             flex: 1;
-            padding: 7px 4px;
+            height: 32px;
+            padding: 0;
             border: none;
             border-radius: 6px;
             background: transparent;
             color: var(--text-secondary);
-            font-family: 'B612', sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            position: relative;
             transition: all 0.15s ease;
-            white-space: nowrap;
         }
 
         .panel-nav-tab:hover {
             color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .panel-nav-tab.active {
             background: var(--panel-bg);
             color: var(--accent);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
         }
 
         .tab-badge {
@@ -575,7 +572,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             max-height: 340px;
             overflow-y: auto;
             overflow-x: hidden;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10px;
             display: flex;
             flex-direction: column;
@@ -741,7 +738,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         .toast-hint {
@@ -759,7 +756,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             margin-bottom: 12px;
         }
         .panel-brand-title {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 700;
             font-size: 13px;
             letter-spacing: 0.3px;
@@ -769,7 +766,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         h3 {
             margin: 0;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 700;
             font-size: 14px;
             letter-spacing: 0.3px;
@@ -799,7 +796,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border-radius: 12px;
             padding: 10px 12px;
             margin-bottom: 10px;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
         }
 
         .data-row {
@@ -817,7 +814,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         .data-label {
             color: var(--text-secondary);
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 11.5px;
             font-weight: 700;
             letter-spacing: 0.4px;
@@ -826,7 +823,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .data-val {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.2px;
@@ -836,7 +833,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .section-title {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 700;
             font-size: 11px;
             color: var(--text-secondary);
@@ -851,7 +848,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 5px 8px;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 12px;
             font-weight: 600;
             outline: none;
@@ -861,7 +858,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         option {
             background-color: var(--option-bg);
             color: var(--option-text);
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 600;
         }
 
@@ -870,13 +867,13 @@ body:not(.dark-mode) .msg-toast-ticker {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 12px;
             font-weight: 600;
         }
 
         .map-row select {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 11.5px;
             font-weight: 700;
             letter-spacing: 0.3px;
@@ -897,7 +894,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .pwm-label {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 9px;
             color: var(--text-secondary);
             font-weight: 700;
@@ -923,7 +920,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .motor-label {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10.5px;
             color: var(--text-secondary);
             font-weight: 700;
@@ -1176,7 +1173,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-weight: 700;
             font-size: 12px;
             letter-spacing: 0.5px;
@@ -1419,7 +1416,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         /* Waypoint toggle uses unified .toolbar-btn.active */
 
-        /* LXNAV Circular Glass Cockpit MFD Widget (Classic Frosted White with Aviation B612) */
+        /* LXNAV Circular Glass Cockpit MFD Widget (Classic Precision Cockpit with JetBrains Mono & Inter) */
         #lxnav-mfd-widget {
             position: absolute;
             bottom: 618px;
@@ -1445,7 +1442,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            font-family: 'B612', 'B612 Mono', monospace;
+            font-family: var(--font-mono);
         }
 
         .lxnav-header {
@@ -1476,7 +1473,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             letter-spacing: 0.05em;
             text-transform: uppercase;
             color: var(--text-secondary);
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1521,7 +1518,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             color: var(--accent);
             cursor: pointer;
             letter-spacing: 0.03em;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             white-space: nowrap;
             flex-shrink: 0;
             display: inline-flex;
@@ -1819,7 +1816,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             padding: 12px 10px 14px 10px;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -2px 4px rgba(0, 0, 0, 0.8);
             z-index: 155;
-            font-family: 'B612 Mono', 'SF Mono', Consolas, monospace;
+            font-family: var(--font-mono);
             color: #d1d7e0;
             user-select: none;
             box-sizing: border-box;
@@ -2994,7 +2991,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             display: flex;
             flex-direction: column;
             user-select: none;
-            font-family: 'B612', -apple-system, sans-serif;
+            font-family: var(--font-sans);
             color: #ffffff;
             overflow: hidden;
             transition: opacity 0.2s ease, transform 0.2s ease;
@@ -3218,7 +3215,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         .sp-vbar-val {
             font-size: 10px;
             font-weight: 700;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             color: #ffffff;
         }
 
@@ -3230,7 +3227,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             font-size: 11px;
             font-weight: 800;
             color: #ffd60a;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             background: rgba(255, 214, 10, 0.08);
             margin-bottom: 2px;
         }
@@ -3238,7 +3235,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         .sp-flaps-ticks {
             font-size: 8px;
             color: #64748b;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             display: flex;
             flex-direction: column;
             gap: 1px;
@@ -3281,7 +3278,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 0.8px;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             text-transform: uppercase;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3336,7 +3333,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             padding: 5px 8px;
             font-size: 10px;
             font-weight: 700;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             color: #e2e8f0;
             text-align: center;
             letter-spacing: 0.5px;
@@ -3389,7 +3386,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             height: 100vh;
             pointer-events: none;
             z-index: 990;
-            font-family: 'B612', 'Share Tech Mono', sans-serif;
+            font-family: var(--font-sans);
             user-select: none;
         }
 
@@ -3416,7 +3413,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-brand-title {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 14px;
             font-weight: 800;
             color: #00e5ff;
@@ -3434,7 +3431,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             background: transparent;
             border: none;
             color: #8e9ca8;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 1px;
@@ -3462,7 +3459,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 3px;
             color: #d1d8e0;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10px;
             font-weight: 700;
             padding: 3px 8px;
@@ -3497,7 +3494,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-fps-badge {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10.5px;
             font-weight: 700;
             color: #8e9ca8;
@@ -3517,7 +3514,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-metric-label {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 1.5px;
@@ -3527,7 +3524,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-metric-primary {
-            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-family: var(--font-sans);
             font-size: 38px;
             font-weight: 800;
             color: #ffffff;
@@ -3556,7 +3553,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-metric-label-sub {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 9.5px;
             font-weight: 700;
             letter-spacing: 1.2px;
@@ -3566,7 +3563,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-metric-secondary {
-            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-family: var(--font-sans);
             font-size: 22px;
             font-weight: 700;
             color: #ffffff;
@@ -3581,7 +3578,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-metric-gload {
-            font-family: 'B612', 'B612 Mono', sans-serif;
+            font-family: var(--font-sans);
             font-size: 19px;
             font-weight: 800;
             color: #30d158;
@@ -3599,7 +3596,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         .corv-lq-meta {
             display: flex;
             flex-direction: column;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             line-height: 1.1;
         }
 
@@ -3629,7 +3626,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-batt-label {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 11.5px;
             font-weight: 800;
             color: #ffd60a;
@@ -3656,7 +3653,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-rotor-label {
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 9.5px;
             font-weight: 700;
             letter-spacing: 1.5px;
@@ -3665,7 +3662,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         .corv-throttle-center-text {
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 14px;
             font-weight: 800;
             fill: #ff9f0a;
@@ -3695,7 +3692,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             display: flex;
             justify-content: space-between;
             gap: 16px;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 11px;
             line-height: 1.4;
         }
@@ -3723,7 +3720,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         .corv-traffic-tbl {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10.5px;
         }
 
@@ -3767,7 +3764,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             align-items: center;
             justify-content: space-between;
             padding: 0 6px;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 9px;
             font-weight: 700;
             color: #00e5ff;
@@ -3822,7 +3819,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             padding: 0 16px;
             pointer-events: auto;
             z-index: 10;
-            font-family: 'B612 Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 11px;
         }
 
@@ -3872,7 +3869,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 3px;
             color: #ffffff;
-            font-family: 'B612', sans-serif;
+            font-family: var(--font-sans);
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.5px;
@@ -4224,23 +4221,12 @@ body:not(.dark-mode) .msg-toast-ticker {
     <div id="ui-panel">
         <div class="header">
             <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span class="panel-brand-title" style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Flight Telemetry</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <span class="panel-brand-title" style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: var(--text-primary); text-transform: uppercase;">Flight Telemetry</span>
             </div>
-            <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                <button id="btn-messages-hdr" class="icon-btn" title="Toggle Autopilot Messages Log (Hotkey 'M')" style="width: 26px; height: 26px; font-size: 12px; position: relative;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span id="hdr-msg-dot" class="toolbar-dot-badge" style="display:none;"></span>
-                </button>
-                <button id="btn-offline-map-hdr" class="icon-btn" title="Offline Map & Airspace Presets" style="width: 26px; height: 26px; font-size: 12px;">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                        <line x1="8" y1="2" x2="8" y2="18"></line>
-                        <line x1="16" y1="6" x2="16" y2="22"></line>
-                    </svg>
-                </button>
+            <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                <span id="btn-messages-hdr" style="display:none;"><span id="hdr-msg-dot"></span></span>
+                <span id="btn-offline-map-hdr" style="display:none;"></span>
                 <button id="theme-toggle" class="icon-btn" title="Toggle Theme" style="width: 26px; height: 26px; font-size: 12px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -4251,26 +4237,23 @@ body:not(.dark-mode) .msg-toast-ticker {
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                 </button>
+                <button class="panel-btn-close avionics-close-dot" onclick="toggleUiPanel()" title="Close Flight Telemetry Panel (Hotkey 'U')">&times;</button>
             </div>
         </div>
 
         <div class="panel-nav-tabs">
             <button id="tab-telemetry" class="panel-nav-tab active" title="Flight Telemetry Readouts">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                <span>TELEMETRY</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </button>
             <button id="tab-battery" class="panel-nav-tab" title="Mission Planner Battery & Power System">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
-                <span>BATTERY</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
             </button>
-            <button id="tab-airspace" class="panel-nav-tab">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-                <span>AIRSPACE</span>
+            <button id="tab-airspace" class="panel-nav-tab" title="Airspace & Offline Maps">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             </button>
-            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages Log (Hotkey 'M')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <span>MESSAGES</span>
-                <span id="tab-msg-count" class="tab-badge" style="display:none; margin-left: 2px;">0</span>
+            <button id="tab-messages" class="panel-nav-tab" title="Autopilot Messages Log (Hotkey 'M')" style="position: relative;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span id="tab-msg-count" class="tab-badge" style="display:none;">0</span>
             </button>
         </div>
 
@@ -4278,7 +4261,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         <div id="panel-view-telemetry">
             <div class="data-card">
                 <div class="data-row"><span class="data-label">Firmware</span><span id="firmware" class="data-val"
-                        style="font-family: 'B612 Mono', monospace; font-weight: 700;">ArduPlane</span></div>
+                        style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 700;">ArduPlane</span></div>
                 <div class="data-row"><span class="data-label">Flight Mode</span><span id="f_mode" class="data-val"
                         style="color: var(--accent);">UNKNOWN</span></div>
                 <div class="data-row"><span class="data-label">Altitude</span><span id="alt" class="data-val">0.0 m</span>
@@ -4316,12 +4299,12 @@ body:not(.dark-mode) .msg-toast-ticker {
                 <div class="map-row" style="margin: 0;">
                     <span>Model Scale</span>
                     <input type="number" id="scale_input" value="1.0" step="0.1"
-                        style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: 'B612 Mono', monospace; font-weight: 700; outline: none; text-align: center;">
+                        style="width: 60px; background: var(--panel-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 12px; font-family: var(--font-mono); font-weight: 700; outline: none; text-align: center;">
                 </div>
             </div>
 
             <div class="data-card">
-                <h3 style="margin: 0 0 10px 0; font-family: 'B612', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary);">Motor Mapping</h3>
+                <h3 style="margin: 0 0 10px 0; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-secondary);">Motor Mapping</h3>
                 <div id="map-vtol">
                     <div class="map-row">Motor 1 (FR) <select id="m_fr"></select></div>
                     <div class="map-row">Motor 2 (BL) <select id="m_bl"></select></div>
@@ -4381,7 +4364,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 </div>
             </div>
 
-            <div style="margin-top: 24px; text-align: center; font-size: 10px; color: var(--text-secondary); opacity: 0.6; font-family: 'B612', sans-serif; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;">
+            <div style="margin-top: 24px; text-align: center; font-size: 10px; color: var(--text-secondary); opacity: 0.6; font-family: var(--font-sans); font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;">
                 Designed by RJ
             </div>
 
@@ -4777,7 +4760,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
             <!-- Console Footer -->
             <div class="msg-footer-bar">
-                <div id="msg-count-label" style="font-size: 9.5px; color: var(--text-secondary); font-family: 'B612 Mono', monospace;">
+                <div id="msg-count-label" style="font-size: 9.5px; color: var(--text-secondary); font-family: var(--font-mono);">
                     0 msgs
                 </div>
                 <label style="display: flex; align-items: center; gap: 4px; font-size: 9.5px; cursor: pointer; color: var(--text-secondary);">
@@ -4992,32 +4975,32 @@ body:not(.dark-mode) .msg-toast-ticker {
                         <rect x="-100" y="-150" width="400" height="250" fill="#389bd8" />
                         <rect x="-100" y="100" width="400" height="250" fill="#8a4819" />
                         <line x1="-100" y1="100" x2="300" y2="100" stroke="#ffffff" stroke-width="1.8" />
-                        <!-- Pitch ladder (Airbus B612 Aviation Font) -->
+                        <!-- Pitch ladder (JetBrains Mono Avionics) -->
                         <line x1="82" y1="40" x2="118" y2="40" stroke="#ffffff" stroke-width="1.4" />
-                        <text x="76" y="43" fill="#ffffff" font-family="'B612', monospace" font-size="8" text-anchor="end">30</text>
-                        <text x="124" y="43" fill="#ffffff" font-family="'B612', monospace" font-size="8">30</text>
+                        <text x="76" y="43" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" text-anchor="end">30</text>
+                        <text x="124" y="43" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8">30</text>
                         <line x1="78" y1="60" x2="122" y2="60" stroke="#ffffff" stroke-width="1.4" />
-                        <text x="72" y="63" fill="#ffffff" font-family="'B612', monospace" font-size="8" text-anchor="end">20</text>
-                        <text x="128" y="63" fill="#ffffff" font-family="'B612', monospace" font-size="8">20</text>
+                        <text x="72" y="63" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" text-anchor="end">20</text>
+                        <text x="128" y="63" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8">20</text>
                         <line x1="84" y1="80" x2="116" y2="80" stroke="#ffffff" stroke-width="1.4" />
-                        <text x="78" y="83" fill="#ffffff" font-family="'B612', monospace" font-size="8" text-anchor="end">10</text>
-                        <text x="122" y="83" fill="#ffffff" font-family="'B612', monospace" font-size="8">10</text>
+                        <text x="78" y="83" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" text-anchor="end">10</text>
+                        <text x="122" y="83" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8">10</text>
                         <!-- Ground ladder -->
                         <line x1="84" y1="120" x2="116" y2="120" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4,3" />
-                        <text x="78" y="123" fill="#ffffff" font-family="'B612', monospace" font-size="8" text-anchor="end">10</text>
-                        <text x="122" y="123" fill="#ffffff" font-family="'B612', monospace" font-size="8">10</text>
+                        <text x="78" y="123" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" text-anchor="end">10</text>
+                        <text x="122" y="123" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8">10</text>
                         <line x1="78" y1="140" x2="122" y2="140" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4,3" />
-                        <text x="72" y="143" fill="#ffffff" font-family="'B612', monospace" font-size="8" text-anchor="end">20</text>
-                        <text x="128" y="143" fill="#ffffff" font-family="'B612', monospace" font-size="8">20</text>
+                        <text x="72" y="143" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" text-anchor="end">20</text>
+                        <text x="128" y="143" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8">20</text>
                     </g>
 
                     <!-- Roll Bank Arc -->
                     <path d="M40,55 A80,80 0 0,1 160,55" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" />
                     <polygon points="100,22 96,28 104,28" fill="#ffffff" />
                     <line x1="58" y1="36" x2="62" y2="42" stroke="#ffffff" stroke-width="2" />
-                    <text x="54" y="32" fill="#ffffff" font-family="'B612', monospace" font-size="8" font-weight="700">30°</text>
+                    <text x="54" y="32" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700">30°</text>
                     <line x1="142" y1="36" x2="138" y2="42" stroke="#ffffff" stroke-width="2" />
-                    <text x="146" y="32" fill="#ffffff" font-family="'B612', monospace" font-size="8" font-weight="700">30°</text>
+                    <text x="146" y="32" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700">30°</text>
 
                     <!-- Aircraft Reference Reticle -->
                     <circle cx="100" cy="100" r="3.5" fill="#ffcc00" />
@@ -5026,21 +5009,21 @@ body:not(.dark-mode) .msg-toast-ticker {
 
                     <!-- Speed & Altitude Boxes -->
                     <rect x="4" y="86" width="32" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-                    <text id="lxnav-pfd-speed" x="20" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="12" font-weight="700" text-anchor="middle">0</text>
+                    <text id="lxnav-pfd-speed" x="20" y="104" fill="#ffffff" font-family="var(--font-mono)" font-size="12" font-weight="700" text-anchor="middle">0</text>
                     <rect x="158" y="86" width="38" height="28" rx="3" fill="#000000" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-                    <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="'B612 Mono', monospace" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
+                    <text id="lxnav-pfd-alt" x="177" y="104" fill="#ffffff" font-family="var(--font-mono)" font-size="11.5" font-weight="700" text-anchor="middle">0</text>
 
                     <!-- QNH Barometric Altimeter Setting -->
                     <g id="lxnav-pfd-qnh-box" style="cursor: pointer;" onclick="togglePfdQnhUnit(event)" title="Barometric QNH Setting (Click to toggle hPa / inHg)">
                         <rect x="146" y="117" width="38" height="17" rx="3" fill="#06090e" stroke="rgba(0, 229, 255, 0.55)" stroke-width="1" />
-                        <text id="lxnav-pfd-qnh-lbl" x="165" y="123.5" fill="#8a9bb2" font-family="'B612', sans-serif" font-size="5.5" font-weight="700" letter-spacing="0.5" text-anchor="middle">QNH</text>
-                        <text id="lxnav-pfd-qnh" x="165" y="131" fill="#00e5ff" font-family="'B612 Mono', monospace" font-size="7.5" font-weight="700" text-anchor="middle">1013</text>
+                        <text id="lxnav-pfd-qnh-lbl" x="165" y="123.5" fill="#8a9bb2" font-family="var(--font-sans)" font-size="5.5" font-weight="700" letter-spacing="0.5" text-anchor="middle">QNH</text>
+                        <text id="lxnav-pfd-qnh" x="165" y="131" fill="#00e5ff" font-family="var(--font-mono)" font-size="7.5" font-weight="700" text-anchor="middle">1013</text>
                     </g>
                     
                     <!-- Bottom Status Tag (Flight Mode / HUD Annunciator in Aviation Green) -->
                     <g transform="translate(64, 168)">
                         <rect id="lxnav-pfd-mode-box" x="0" y="0" width="72" height="18" rx="4" fill="#0d1410" stroke="rgba(48, 209, 88, 0.65)" stroke-width="1.3" />
-                        <text id="lxnav-pfd-mode-text" x="36" y="12.5" fill="#30d158" font-family="'B612 Mono', monospace" font-size="9.5" font-weight="700" text-anchor="middle">AUTO</text>
+                        <text id="lxnav-pfd-mode-text" x="36" y="12.5" fill="#30d158" font-family="var(--font-mono)" font-size="9.5" font-weight="700" text-anchor="middle">AUTO</text>
                     </g>
                 </g>
 
@@ -5067,14 +5050,14 @@ body:not(.dark-mode) .msg-toast-ticker {
                     </g>
 
                     <!-- Top Wind Readout -->
-                    <text id="lxnav-vario-wind" x="100" y="48" fill="#ff9500" font-family="'B612 Mono', monospace" font-size="9" font-weight="700" text-anchor="middle">---° / 0km/h</text>
+                    <text id="lxnav-vario-wind" x="100" y="48" fill="#ff9500" font-family="var(--font-mono)" font-size="9" font-weight="700" text-anchor="middle">---° / 0km/h</text>
 
                     <!-- Center Bold Netto Readout -->
-                    <text id="lxnav-vario-netto" x="100" y="86" fill="#30d158" font-family="'B612 Mono', monospace" font-size="24" font-weight="700" text-anchor="middle">+0.0</text>
+                    <text id="lxnav-vario-netto" x="100" y="86" fill="#30d158" font-family="var(--font-mono)" font-size="24" font-weight="700" text-anchor="middle">+0.0</text>
                     <text x="100" y="98" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">Netto m/s</text>
 
                     <!-- Secondary Vario Readout -->
-                    <text id="lxnav-vario-vera" x="100" y="128" fill="#30d158" font-family="'B612 Mono', monospace" font-size="18" font-weight="700" text-anchor="middle">+0.0</text>
+                    <text id="lxnav-vario-vera" x="100" y="128" fill="#30d158" font-family="var(--font-mono)" font-size="18" font-weight="700" text-anchor="middle">+0.0</text>
                     <text x="100" y="138" fill="#8e9297" font-family="'Inter', sans-serif" font-size="8" font-weight="600" text-anchor="middle">VarA m/s</text>
 
                     <!-- Pointer Needle -->
@@ -5474,10 +5457,9 @@ body:not(.dark-mode) .msg-toast-ticker {
     <!-- Garmin Atmospheric & Environmental Telemetry Panel -->
     <!-- Terrain Profile Graph -->
     <div id="terrain-graph-container"
-        style="position: absolute; bottom: 18px; right: 20px; width: min(470px, calc(100vw - 360px)); height: 112px; box-sizing: border-box; overflow: hidden; background: var(--panel-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: auto;">
-        <div
-            style="color: var(--text-secondary); font-size: 11px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0;">
-            <span style="font-family: var(--font-sans); letter-spacing: 0.5px;">Terrain & Flight Profile</span>
+        style="position: absolute; bottom: 10px; right: 20px; width: min(580px, calc(100vw - 360px)); height: 172px; box-sizing: border-box; overflow: hidden; background: var(--panel-bg); border-radius: 14px; border: 1px solid var(--border-color); padding: 10px 14px; display: flex; flex-direction: column; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); z-index: 90; pointer-events: auto;">
+        <div style="color: var(--text-secondary); font-size: 11px; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; text-transform: uppercase; flex-shrink: 0; font-family: var(--font-sans); letter-spacing: 0.5px;">
+            <span>Terrain & Flight Profile</span>
             <span id="terrain-alt-text" style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 700;">AGL: -- m</span>
         </div>
         <canvas id="terrain-canvas" style="width: 100%; height: 100%; flex: 1; min-height: 0;"></canvas>
@@ -9805,7 +9787,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
         tbCtx.fill();
         tbCtx.lineWidth = 2.0; tbCtx.strokeStyle = '#00e5ff'; tbCtx.stroke();
-        tbCtx.font = 'bold 20px "B612 Mono", monospace';
+        tbCtx.font = 'bold 20px var(--font-mono)';
         tbCtx.fillStyle = '#00e5ff';
         tbCtx.textAlign = 'center'; tbCtx.textBaseline = 'middle';
         tbCtx.fillText('● ACTUAL (TRUTH)', 120, 30);
@@ -10465,6 +10447,11 @@ body:not(.dark-mode) .msg-toast-ticker {
                 }
             }
             updateActuatorLabelsFromParameters();
+            if (typeof latestServos !== 'undefined' && Array.isArray(latestServos)) {
+                updateActuatorOutputsUI(latestServos);
+            } else if (typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds)) {
+                updateActuatorOutputsUI(servoSpeeds);
+            }
         }
 
         function updateActuatorOutputsUI(servos) {
@@ -12548,7 +12535,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             ctx.strokeStyle = strokeColor;
             ctx.stroke();
 
-            ctx.font = 'bold 22px "B612 Mono", monospace';
+            ctx.font = 'bold 22px var(--font-mono)';
             ctx.fillStyle = strokeColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -12945,7 +12932,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             const formatted = formatFcBoardName(hardwareName);
             currentFcHardwareName = formatted;
             fcEl.innerText = formatted;
-            fcEl.style.fontFamily = "'B612 Mono', monospace";
+            fcEl.style.fontFamily = "var(--font-mono)";
             fcEl.style.fontWeight = "700";
             if (formatted.toUpperCase() === 'SITL') {
                 fcEl.style.color = '#00e5ff'; // Aviation Cyan for SITL
@@ -12960,8 +12947,8 @@ body:not(.dark-mode) .msg-toast-ticker {
             const fwEl = document.getElementById('firmware');
             if (!fwEl || !firmwareStr || firmwareStr.startsWith('Type ') || firmwareStr === '---') return;
             fwEl.innerText = firmwareStr;
-            fwEl.style.color = document.body.classList.contains('dark-mode') ? '#f8fafc' : '#0f172a';
-            fwEl.style.fontFamily = "'B612 Mono', monospace";
+            fwEl.style.color = 'var(--text-primary)';
+            fwEl.style.fontFamily = "var(--font-mono)";
             fwEl.style.fontWeight = "700";
         }
 
