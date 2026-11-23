@@ -12894,7 +12894,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (seqNumber === 0) {
                 strokeColor = '#ffb300'; // Home Waypoint: Gold
             } else if (isPast) {
-                strokeColor = '#ff9f0a'; // Completed Waypoint: Aeronautical Orange
+                strokeColor = '#ff6600'; // Completed Waypoint: Bright Vivid Orange
             } else if (isActive) {
                 strokeColor = '#00e5ff'; // Active Target Waypoint: Electric Cyan
             }
@@ -12958,7 +12958,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const isActive = (wp.seq === currentMissionSeq);
                 const isPast = (wp.seq < currentMissionSeq);
                 const isHome = (wp.seq === 0);
-                const colorHex = isHome ? 0xffb300 : (isPast ? 0xff9f0a : (isActive ? 0x00e5ff : 0x30d158));
+                const colorHex = isHome ? 0xffb300 : (isPast ? 0xff6600 : (isActive ? 0x00e5ff : 0x30d158));
 
                 // 1. Precise 3D Terrain Ground Contact Point
                 const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(pos.x, pos.z) : 0.05;
@@ -12971,7 +12971,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     dashSize: 2.0,
                     gapSize: 1.2,
                     transparent: true,
-                    opacity: isActive ? 0.95 : (isPast ? 0.85 : 0.75),
+                    opacity: isActive ? 0.95 : (isPast ? 0.95 : 0.75),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -12987,7 +12987,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     color: colorHex,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: isActive ? 0.85 : (isPast ? 0.65 : 0.50),
+                    opacity: isActive ? 0.85 : (isPast ? 0.75 : 0.50),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -13004,7 +13004,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     color: colorHex,
                     wireframe: !isActive,
                     transparent: true,
-                    opacity: isActive ? 0.98 : (isPast ? 0.90 : 0.85),
+                    opacity: isActive ? 0.98 : (isPast ? 0.95 : 0.85),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -13031,9 +13031,9 @@ body:not(.dark-mode) .msg-toast-ticker {
                 let segLinewidth = 2;
 
                 if (toSeq < currentMissionSeq) {
-                    segColor = 0xff9f0a; // Completed Leg: Aeronautical Orange
-                    segOpacity = 0.85;
-                    segLinewidth = 2.5;
+                    segColor = 0xff6600; // Completed Leg: Bright Vivid Orange
+                    segOpacity = 1.0;
+                    segLinewidth = 3;
                 } else if (toSeq === currentMissionSeq) {
                     segColor = 0x00e5ff; // Active Leg: Electric Cyan
                     segOpacity = 0.98;
@@ -13052,6 +13052,26 @@ body:not(.dark-mode) .msg-toast-ticker {
                 segLine.renderOrder = 8920;
                 segLine.frustumCulled = false;
                 waypointGroup.add(segLine);
+
+                // For completed legs, add micro-offset reinforcing line for high-contrast bright pop
+                if (toSeq < currentMissionSeq) {
+                    const offsetGeo = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(allPts[i].x, allPts[i].y + 0.15, allPts[i].z),
+                        new THREE.Vector3(allPts[i + 1].x, allPts[i + 1].y + 0.15, allPts[i + 1].z)
+                    ]);
+                    const offsetMat = new THREE.LineBasicMaterial({
+                        color: 0xff6600,
+                        linewidth: 2,
+                        transparent: true,
+                        opacity: 0.90,
+                        depthTest: false,
+                        depthWrite: false
+                    });
+                    const offsetLine = new THREE.Line(offsetGeo, offsetMat);
+                    offsetLine.renderOrder = 8921;
+                    offsetLine.frustumCulled = false;
+                    waypointGroup.add(offsetLine);
+                }
             }
         }
 
