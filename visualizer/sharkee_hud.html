@@ -6181,15 +6181,25 @@ body:not(.dark-mode) .msg-toast-ticker {
                 ? t.battery_current 
                 : ((typeof t.total_current === 'number') ? t.total_current : 0.0);
             
-            const remPct = (typeof t.battery_remaining_pct === 'number' && t.battery_remaining_pct >= 0)
-                ? t.battery_remaining_pct
-                : 94;
-            
             const consumedMah = (typeof t.consumed_mah === 'number')
                 ? t.consumed_mah
                 : 0;
 
             const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
+            
+            // Prioritize calculating remaining percentage based on input pack capacity (packCap) and consumed mAh
+            let remPct = 100;
+            if (packCap > 0 && typeof t.consumed_mah === 'number' && t.consumed_mah >= 0) {
+                remPct = Math.max(0, Math.min(100, ((packCap - consumedMah) / packCap) * 100));
+            } else if (typeof t.battery_remaining_pct === 'number' && t.battery_remaining_pct > 0) {
+                remPct = t.battery_remaining_pct;
+            } else if (typeof t.battery_remaining_pct === 'number' && t.battery_remaining_pct >= 0 && packCap <= 0) {
+                remPct = t.battery_remaining_pct;
+            } else {
+                remPct = 100;
+            }
+            t.battery_remaining_pct = Math.round(remPct);
+
             const fcVcc = (typeof window.latestFcVcc === 'number' && window.latestFcVcc > 0) ? window.latestFcVcc : 5.44;
             const cellCount = (typeof getBatteryCellCount === 'function') ? getBatteryCellCount(packVolt) : 6;
             const avgCellVolt = (cellCount > 0) ? (packVolt / cellCount) : 3.63;
@@ -6202,7 +6212,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             else if (remPct >= 25) activeBars = 2;
             else if (remPct > 0) activeBars = 1;
 
-            let barColor = '#00ff00'; // Mission Planner old vivid green
+            let barColor = '#30d158'; // Classic vivid green
             if (remPct < 15) barColor = isDark ? '#ef4444' : '#b91c1c'; // Red alert
             else if (remPct < 25) barColor = isDark ? '#facc15' : '#b45309'; // Yellow caution
 
@@ -8987,7 +8997,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             tiltHoverPwm: 1500, // PWM when motor points straight UP (Use 1500 for 180-degree vectoring servos, 1000 for 90-degree servos)
             tiltMaxPwm: 2000, // PWM when motor points fully FORWARD (Cruise)
 
-            trackColor: 0x30d158, // Color of the GPS trail line (Apple aviation status green)
+            trackColor: 0x0dda14, // Color of the GPS trail line (Classic bright green)
             trackOrigin: { x: 1, y: 0, z: 0 }, // Placed perfectly at CG to eliminate tail-wag yaw oscillations
 
             // =========================================================================
@@ -12936,7 +12946,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const isActive = (wp.seq === currentMissionSeq);
                 const isPast = (wp.seq < currentMissionSeq);
                 const isHome = (wp.seq === 0);
-                const colorHex = isHome ? 0xffb300 : ((isActive || isPast) ? 0xff3b30 : 0x30d158);
+                const colorHex = isHome ? 0xffb300 : (isActive ? 0x00e5ff : 0x30d158);
 
                 // 1. Precise 3D Terrain Ground Contact Point
                 const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(pos.x, pos.z) : 0.05;
@@ -12998,15 +13008,14 @@ body:not(.dark-mode) .msg-toast-ticker {
                 waypointGroup.add(sprite);
             });
 
-            // 6. Split Survey Grid Lines: Red for Completed/Active legs, Neon Green for Future legs!
+            // 6. Survey Grid / Mission Flight Path Lines (Classic High-Visibility Green)
             for (let i = 0; i < allPts.length - 1; i++) {
                 const segGeo = new THREE.BufferGeometry().setFromPoints([allPts[i], allPts[i + 1]]);
-                const isLegActiveOrPast = (validWps[i + 1].seq <= currentMissionSeq);
                 const segMat = new THREE.LineBasicMaterial({
-                    color: isLegActiveOrPast ? 0xff3b30 : 0x30d158,
-                    linewidth: isLegActiveOrPast ? 3 : 2,
+                    color: 0x30d158, // Classic Flight Path Green
+                    linewidth: 2,
                     transparent: true,
-                    opacity: isLegActiveOrPast ? 0.95 : 0.85,
+                    opacity: 0.90,
                     depthTest: false,
                     depthWrite: false
                 });
@@ -13653,8 +13662,15 @@ body:not(.dark-mode) .msg-toast-ticker {
                 am32Telemetry.hasHardwareTelem = true;
                 am32Telemetry.lastTelemTime = performance.now();
                 if (data.cell_voltages && data.cell_voltages.length > 0) am32Telemetry.cell_voltages = data.cell_voltages;
-                if (data.current_consumed !== undefined) am32Telemetry.consumed_mah = data.current_consumed;
-                if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                if (data.current_consumed !== undefined && data.current_consumed >= 0) am32Telemetry.consumed_mah = data.current_consumed;
+                
+                const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
+                if (typeof am32Telemetry.consumed_mah === 'number' && am32Telemetry.consumed_mah >= 0 && packCap > 0) {
+                    am32Telemetry.battery_remaining_pct = Math.max(0, Math.min(100, Math.round(((packCap - am32Telemetry.consumed_mah) / packCap) * 100)));
+                } else if (data.battery_remaining !== undefined && data.battery_remaining > 0) {
+                    am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                }
+                
                 if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
                 if (typeof updateMissionPlannerBatteryUI === 'function') updateMissionPlannerBatteryUI();
             } else if (data.type === 'SYS_STATUS') {
@@ -13662,7 +13678,13 @@ body:not(.dark-mode) .msg-toast-ticker {
                 am32Telemetry.lastTelemTime = performance.now();
                 if (data.voltage_battery !== undefined && data.voltage_battery > 0) am32Telemetry.pack_voltage = data.voltage_battery;
                 if (data.current_battery !== undefined && data.current_battery >= 0) am32Telemetry.battery_current = data.current_battery;
-                if (data.battery_remaining !== undefined && data.battery_remaining >= 0) am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                
+                const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
+                if (typeof am32Telemetry.consumed_mah === 'number' && am32Telemetry.consumed_mah >= 0 && packCap > 0) {
+                    am32Telemetry.battery_remaining_pct = Math.max(0, Math.min(100, Math.round(((packCap - am32Telemetry.consumed_mah) / packCap) * 100)));
+                } else if (data.battery_remaining !== undefined && data.battery_remaining > 0) {
+                    am32Telemetry.battery_remaining_pct = data.battery_remaining;
+                }
                 if (typeof updateMissionPlannerBatteryUI === 'function') updateMissionPlannerBatteryUI();
     
             } else if (data.type === 'LOCAL_POSITION_NED') {
@@ -14592,8 +14614,9 @@ body:not(.dark-mode) .msg-toast-ticker {
         function setEisEngineMode(mode) {
             eisEngineMode = mode;
             localStorage.setItem('eis_engine_mode', eisEngineMode);
+            localStorage.setItem('eis_channel_manually_set', 'true');
             updateEisModeUI();
-        updateEisPageUI();
+            updateEisPageUI();
         }
 
         function updateEisModeUI() {
@@ -14664,26 +14687,30 @@ body:not(.dark-mode) .msg-toast-ticker {
         }
 
         function cycleEisChannels() {
+            localStorage.setItem('eis_channel_manually_set', 'true');
             if (eisEngineMode === 'single') {
-                // Support ESC outputs 1 through 8 (e.g. SERVO3 for plane throttle, SERVO5, etc.)
+                // Support ESC outputs 1 through 8 strictly sequential (1, 2, 3, 4, 5, 6, 7, 8)
                 eisSingleChannel = (eisSingleChannel % 8) + 1;
                 localStorage.setItem('eis_single_ch', eisSingleChannel);
             } else {
-                // Support common fixed-wing twin plane channel pairs
-                if (eisTwinLeftCh === 5 && eisTwinRightCh === 6) {
-                    eisTwinLeftCh = 1; eisTwinRightCh = 2;
-                } else if (eisTwinLeftCh === 1 && eisTwinRightCh === 2) {
+                // Support all twin plane channel pairs without skipping any ESC:
+                // (1,2) -> (2,3) -> (3,4) -> (5,6) -> (7,8) -> (1,2)
+                if (eisTwinLeftCh === 1 && eisTwinRightCh === 2) {
+                    eisTwinLeftCh = 2; eisTwinRightCh = 3;
+                } else if (eisTwinLeftCh === 2 && eisTwinRightCh === 3) {
                     eisTwinLeftCh = 3; eisTwinRightCh = 4;
                 } else if (eisTwinLeftCh === 3 && eisTwinRightCh === 4) {
+                    eisTwinLeftCh = 5; eisTwinRightCh = 6;
+                } else if (eisTwinLeftCh === 5 && eisTwinRightCh === 6) {
                     eisTwinLeftCh = 7; eisTwinRightCh = 8;
                 } else {
-                    eisTwinLeftCh = 5; eisTwinRightCh = 6;
+                    eisTwinLeftCh = 1; eisTwinRightCh = 2;
                 }
                 localStorage.setItem('eis_twin_left_ch', eisTwinLeftCh);
                 localStorage.setItem('eis_twin_right_ch', eisTwinRightCh);
             }
             updateEisModeUI();
-        updateEisPageUI();
+            updateEisPageUI();
         }
 
         updateEisModeUI();
@@ -15017,19 +15044,6 @@ body:not(.dark-mode) .msg-toast-ticker {
             }
             if (detectedThrottleChs.length === 0) {
                 detectedThrottleChs.push(3);
-            }
-
-            if (!localStorage.getItem('eis_channel_manually_set')) {
-                if (detectedThrottleChs.length >= 2) {
-                    eisTwinLeftCh = detectedThrottleChs[0];
-                    eisTwinRightCh = detectedThrottleChs[1];
-                }
-                if (detectedThrottleChs.length >= 1) {
-                    const ch1Info = (typeof getServoFunctionInfo === 'function') ? getServoFunctionInfo(1) : null;
-                    if (eisSingleChannel === 1 && ch1Info && ch1Info.code !== 70 && ch1Info.code !== 73 && ch1Info.code !== 74 && (ch1Info.code < 33 || ch1Info.code > 40)) {
-                        eisSingleChannel = detectedThrottleChs[0];
-                    }
-                }
             }
 
             // Determine active throttle PWM across all detected throttle channels
@@ -15406,7 +15420,16 @@ body:not(.dark-mode) .msg-toast-ticker {
             }
 
             // Top Arch Right: Battery Remaining % & Total Pack Capacity
-            const pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
+            const packCap = (typeof batteryCapacityMah === 'number' && batteryCapacityMah > 0) ? batteryCapacityMah : 6000;
+            const consumedMah = (typeof am32Telemetry.consumed_mah === 'number') ? am32Telemetry.consumed_mah : 0;
+            let pct = 100;
+            if (packCap > 0 && typeof am32Telemetry.consumed_mah === 'number' && am32Telemetry.consumed_mah >= 0) {
+                pct = Math.max(0, Math.min(100, Math.round(((packCap - consumedMah) / packCap) * 100)));
+            } else if (typeof am32Telemetry.battery_remaining_pct === 'number' && am32Telemetry.battery_remaining_pct >= 0) {
+                pct = Math.max(0, Math.min(100, am32Telemetry.battery_remaining_pct));
+            }
+            am32Telemetry.battery_remaining_pct = pct;
+
             const valRem = document.getElementById('gi-num-batt');
             const valSubBatt = document.getElementById('gi-sub-batt');
             if (valRem) {
