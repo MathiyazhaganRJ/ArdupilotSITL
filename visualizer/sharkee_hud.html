@@ -12889,7 +12889,16 @@ body:not(.dark-mode) .msg-toast-ticker {
             ctx.fillStyle = 'rgba(10, 16, 24, 0.90)';
             ctx.fill();
             ctx.lineWidth = 2.5;
-            const strokeColor = (seqNumber === 0) ? '#ffb300' : (isActive || isPast ? '#ff3b30' : '#30d158');
+
+            let strokeColor = '#30d158'; // Classic Flight Path Green (Pending / Future)
+            if (seqNumber === 0) {
+                strokeColor = '#ffb300'; // Home Waypoint: Gold
+            } else if (isPast) {
+                strokeColor = '#ff9f0a'; // Completed Waypoint: Aeronautical Orange
+            } else if (isActive) {
+                strokeColor = '#00e5ff'; // Active Target Waypoint: Electric Cyan
+            }
+
             ctx.strokeStyle = strokeColor;
             ctx.stroke();
 
@@ -12920,6 +12929,9 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         // Render all 3D Waypoints in Corv-GCS High-Visibility Survey Aesthetic
         function renderWaypoints3D() {
+            window.currentMissionSeq = currentMissionSeq;
+            window.renderWaypoints3D = renderWaypoints3D;
+
             const toRemove = [...waypointGroup.children];
             toRemove.forEach(c => {
                 if (c.geometry) c.geometry.dispose();
@@ -12946,7 +12958,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const isActive = (wp.seq === currentMissionSeq);
                 const isPast = (wp.seq < currentMissionSeq);
                 const isHome = (wp.seq === 0);
-                const colorHex = isHome ? 0xffb300 : (isActive ? 0x00e5ff : 0x30d158);
+                const colorHex = isHome ? 0xffb300 : (isPast ? 0xff9f0a : (isActive ? 0x00e5ff : 0x30d158));
 
                 // 1. Precise 3D Terrain Ground Contact Point
                 const groundY = (typeof getTerrainElevationAt === 'function') ? getTerrainElevationAt(pos.x, pos.z) : 0.05;
@@ -12959,7 +12971,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     dashSize: 2.0,
                     gapSize: 1.2,
                     transparent: true,
-                    opacity: isActive ? 0.95 : 0.75,
+                    opacity: isActive ? 0.95 : (isPast ? 0.85 : 0.75),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -12975,7 +12987,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     color: colorHex,
                     side: THREE.DoubleSide,
                     transparent: true,
-                    opacity: isActive ? 0.85 : 0.50,
+                    opacity: isActive ? 0.85 : (isPast ? 0.65 : 0.50),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -12992,7 +13004,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     color: colorHex,
                     wireframe: !isActive,
                     transparent: true,
-                    opacity: 0.95,
+                    opacity: isActive ? 0.98 : (isPast ? 0.90 : 0.85),
                     depthTest: false,
                     depthWrite: false
                 });
@@ -13008,14 +13020,31 @@ body:not(.dark-mode) .msg-toast-ticker {
                 waypointGroup.add(sprite);
             });
 
-            // 6. Survey Grid / Mission Flight Path Lines (Classic High-Visibility Green)
+            // 6. Survey Grid / Mission Flight Path Lines with Waypoint Completion Logic
             for (let i = 0; i < allPts.length - 1; i++) {
                 const segGeo = new THREE.BufferGeometry().setFromPoints([allPts[i], allPts[i + 1]]);
+                const toWp = validWps[i + 1];
+                const toSeq = (toWp && typeof toWp.seq === 'number') ? toWp.seq : (i + 1);
+
+                let segColor = 0x30d158; // Future Leg: Classic Flight Path Green
+                let segOpacity = 0.90;
+                let segLinewidth = 2;
+
+                if (toSeq < currentMissionSeq) {
+                    segColor = 0xff9f0a; // Completed Leg: Aeronautical Orange
+                    segOpacity = 0.85;
+                    segLinewidth = 2.5;
+                } else if (toSeq === currentMissionSeq) {
+                    segColor = 0x00e5ff; // Active Leg: Electric Cyan
+                    segOpacity = 0.98;
+                    segLinewidth = 3;
+                }
+
                 const segMat = new THREE.LineBasicMaterial({
-                    color: 0x30d158, // Classic Flight Path Green
-                    linewidth: 2,
+                    color: segColor,
+                    linewidth: segLinewidth,
                     transparent: true,
-                    opacity: 0.90,
+                    opacity: segOpacity,
                     depthTest: false,
                     depthWrite: false
                 });
@@ -13025,6 +13054,13 @@ body:not(.dark-mode) .msg-toast-ticker {
                 waypointGroup.add(segLine);
             }
         }
+
+        function setMissionSeq(seq) {
+            currentMissionSeq = Number(seq) || 0;
+            window.currentMissionSeq = currentMissionSeq;
+            if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+        }
+        window.setMissionSeq = setMissionSeq;
 
         // Safe stub
         function updateActiveLeg3D() {}
@@ -13959,7 +13995,14 @@ body:not(.dark-mode) .msg-toast-ticker {
             else if (data.type === 'MISSION_CURRENT') {
                 if (data.seq !== undefined && data.seq !== currentMissionSeq) {
                     currentMissionSeq = data.seq;
+                    window.currentMissionSeq = currentMissionSeq;
                     addAutopilotMessage({ text: `Mission Current: Waypoint #${data.seq}`, severity: 5 });
+                    if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
+                }
+            }
+            else if (data.type === 'MISSION_ITEM_REACHED') {
+                if (data.seq !== undefined) {
+                    addAutopilotMessage({ text: `Reached Waypoint #${data.seq}`, severity: 6 });
                     if (typeof renderWaypoints3D === 'function') renderWaypoints3D();
                 }
             }
