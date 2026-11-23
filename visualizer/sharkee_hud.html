@@ -8563,8 +8563,12 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (!lxnavWidgetVisible) return;
 
             // Genuine Pitch & Roll in Degrees
-            const pitchDeg = (typeof currentPitchDeg === 'number') ? currentPitchDeg : 0;
-            const rollDeg = (typeof currentRollDeg === 'number') ? currentRollDeg : 0;
+            const pitchDeg = (typeof currentPitchDeg === 'number' && !isNaN(currentPitchDeg)) 
+                ? currentPitchDeg 
+                : ((typeof rawTargetRot !== 'undefined') ? (rawTargetRot.x * 180.0 / Math.PI) : 0);
+            const rollDeg = (typeof currentRollDeg === 'number' && !isNaN(currentRollDeg)) 
+                ? currentRollDeg 
+                : ((typeof rawTargetRot !== 'undefined') ? (-rawTargetRot.z * 180.0 / Math.PI) : 0);
 
             // Fallback: Calculate climb rate from altitude delta if telemetry climb is absent/stale
             const nowTime = performance.now();
@@ -8588,15 +8592,17 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const horizonGrp = document.getElementById('lxnav-pfd-horizon-group');
                 if (horizonGrp) {
                     const pitchOffset = Math.max(-80, Math.min(80, pitchDeg * 2.0)); // 2px per degree
+                    horizonGrp.setAttribute('transform', `rotate(${-rollDeg} 100 100) translate(0 ${pitchOffset})`);
                     horizonGrp.style.transform = `rotate(${-rollDeg}deg) translateY(${pitchOffset}px)`;
+                    horizonGrp.style.transformOrigin = '100px 100px';
                 }
                 const spdEl = document.getElementById('lxnav-pfd-speed');
                 if (spdEl) {
-                    const spdVal = (typeof planeAirspeed === 'number') ? planeAirspeed : 0;
+                    const spdVal = (typeof planeAirspeed === 'number' && planeAirspeed > 0) ? planeAirspeed : ((typeof planeGroundspeed === 'number') ? planeGroundspeed : 0);
                     spdEl.textContent = (spdVal >= 10 ? Math.round(spdVal) : spdVal.toFixed(1));
                 }
                 const altEl = document.getElementById('lxnav-pfd-alt');
-                if (altEl) altEl.textContent = Math.round(currentPlaneAltRel || 0);
+                if (altEl) altEl.textContent = Math.round((typeof currentPlaneAltRel === 'number') ? currentPlaneAltRel : (currentPlaneAltMSL || 0));
                 updatePfdQnh();
 
                 // Update bottom flight mode / annunciator badge (Aviation Emerald Green)
@@ -10579,7 +10585,8 @@ body:not(.dark-mode) .msg-toast-ticker {
             77: 'Elevon Left', 78: 'Elevon Right', 79: 'V-Tail Left', 80: 'V-Tail Right',
             81: 'Motor 9', 82: 'Motor 10', 83: 'Motor 11', 84: 'Motor 12', 85: 'Motor 13',
             86: 'Motor 14', 87: 'Motor 15', 88: 'Motor 16', 89: 'Airbrakes', 94: 'Scripting 1',
-            95: 'Scripting 2', 96: 'Scripting 3'
+            95: 'Scripting 2', 96: 'Scripting 3', 120: 'Scripting 1', 121: 'Scripting 2',
+            122: 'Scripting 3', 123: 'Scripting 4', 126: 'Scripting 5'
         };
 
         function getServoFunctionInfo(chNum) {
@@ -10590,69 +10597,29 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (p[key] !== undefined) code = parseInt(p[key], 10);
             else if (p[altKey] !== undefined) code = parseInt(p[altKey], 10);
 
-            // If parameters haven't loaded yet, determine assignment from Vehicle Type and active config
+            // Canonical fallback if vehicle parameters have not arrived yet
             if (code === undefined || isNaN(code)) {
-                const vTypeEl = document.getElementById('v_type');
-                const vType = vTypeEl ? vTypeEl.value : 'vtol';
-
-                if (vType === 'plane') {
-                    // Standard Fixed Wing Plane: strictly 4 primary channels
-                    const planeMap = {
-                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true }
-                    };
-                    if (planeMap[chNum]) return planeMap[chNum];
-                } else if (vType === 'quad') {
-                    const quadMap = {
-                        1: { code: 33, name: 'Motor 1', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        2: { code: 34, name: 'Motor 2', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        3: { code: 35, name: 'Motor 3', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        4: { code: 36, name: 'Motor 4', category: 'PROP', color: '#ff9f0a', isAssigned: true }
-                    };
-                    if (quadMap[chNum]) return quadMap[chNum];
-                } else if (vType === 'twin') {
-                    const twinMap = {
-                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        3: { code: 70, name: 'Left Cruise', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        4: { code: 70, name: 'Right Cruise', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        5: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true }
-                    };
-                    if (twinMap[chNum]) return twinMap[chNum];
-                } else if (vType === 'y3') {
-                    const y3Map = {
-                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        5: { code: 33, name: 'Front Left', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        6: { code: 34, name: 'Front Right', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        7: { code: 35, name: 'Rear Motor', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        8: { code: 41, name: 'Tilt Servo', category: 'TILT', color: '#bf5af2', isAssigned: true }
-                    };
-                    if (y3Map[chNum]) return y3Map[chNum];
-                } else {
-                    // QuadPlane (VTOL): Channels 1-4 are aero/cruise, 5-8 are VTOL lift motors
-                    const vtolMap = {
-                        1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        3: { code: 70, name: 'Cruise Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                        5: { code: 33, name: 'Motor 1 (FR)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        6: { code: 34, name: 'Motor 2 (BL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        7: { code: 35, name: 'Motor 3 (FL)', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                        8: { code: 36, name: 'Motor 4 (BR)', category: 'PROP', color: '#ff9f0a', isAssigned: true }
-                    };
-                    if (vtolMap[chNum]) return vtolMap[chNum];
-                }
+                const defaultArduPilotMap = {
+                    1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                    2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                    3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                    4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
+                    5: { code: 33, name: 'Motor 1', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                    6: { code: 34, name: 'Motor 2', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                    7: { code: 35, name: 'Motor 3', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                    8: { code: 36, name: 'Motor 4', category: 'PROP', color: '#ff9f0a', isAssigned: true },
+                    9: { code: 41, name: 'Motor Tilt', category: 'TILT', color: '#bf5af2', isAssigned: true },
+                    10: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false },
+                    11: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false },
+                    12: { code: 120, name: 'Scripting 1', category: 'AUX', color: '#94a3b8', isAssigned: true }
+                };
+                if (defaultArduPilotMap[chNum]) return defaultArduPilotMap[chNum];
                 return { code: -1, name: 'Unassigned', category: 'OFF', color: '#64748b', isAssigned: false };
             }
             if (code === 0) {
                 return { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false };
             }
-            const name = ARDUPILOT_SERVO_FUNCTIONS[code] || `Fn ${code}`;
+            const name = ARDUPILOT_SERVO_FUNCTIONS[code] || `Servo ${code}`;
             let category = 'AUX', color = '#94a3b8';
             if ((code >= 33 && code <= 40) || code === 70 || code === 73 || code === 74 || (code >= 81 && code <= 88)) {
                 category = 'PROP'; color = '#ff9f0a';
@@ -10821,6 +10788,42 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         // Initialize 16-channel Actuators Matrix UI
         buildActuatorOutputsGrid();
+
+        // Asynchronously load ArduPilot parameters from SITL / server mav.parm if available
+        async function loadArduPilotParameters() {
+            try {
+                let resp = await fetch('mav.parm');
+                if (!resp || !resp.ok) resp = await fetch('/mav.parm');
+                if (!resp || !resp.ok) return;
+                const text = await resp.text();
+                const lines = text.split('\n');
+                let count = 0;
+                for (const line of lines) {
+                    const clean = line.trim();
+                    if (!clean || clean.startsWith('#')) continue;
+                    const parts = clean.split(/\s+/);
+                    if (parts.length >= 2) {
+                        const name = parts[0].toUpperCase();
+                        const val = parseFloat(parts[1]);
+                        if (!isNaN(val)) {
+                            currentVehicleParameters[name] = val;
+                            count++;
+                        }
+                    }
+                }
+                if (count > 0) {
+                    if (typeof updateActuatorLabelsFromParameters === 'function') {
+                        updateActuatorLabelsFromParameters();
+                    }
+                    if (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && typeof updateActuatorOutputsUI === 'function') {
+                        updateActuatorOutputsUI(latestServos);
+                    }
+                }
+            } catch(e) {}
+        }
+        if (typeof window !== 'undefined') {
+            loadArduPilotParameters();
+        }
 
         const motorBarsContainer = document.getElementById('motor-bars');
         const uiFills = [], uiPwms = [];
@@ -11020,6 +11023,8 @@ body:not(.dark-mode) .msg-toast-ticker {
         scene.add(airspaceRingGroup);
         const mapTiles = new Map();
         const horizonTiles = new Map();
+        const sharedTextureLoader = new THREE.TextureLoader();
+        sharedTextureLoader.setCrossOrigin('anonymous');
         let homeLat = null, homeLon = null, homeAlt = 0, tileSize = 0, homeTileXFloat = 0, homeTileYFloat = 0;
         let missionAnchorLat = null, missionAnchorLon = null, missionAnchorX = 0, missionAnchorZ = 0;
         window.homeLat = null;
@@ -11218,10 +11223,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                 mat.needsUpdate = true;
             }
 
-            const loader = new THREE.TextureLoader();
-            loader.setCrossOrigin('anonymous');
-
-            loader.load(
+            sharedTextureLoader.load(
                 localUrl,
                 (texture) => applyFlatTexture(texture),
                 undefined,
@@ -11229,7 +11231,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     if (mode !== 'offline') {
                         setTimeout(() => {
                             if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
-                                loader.load(
+                                sharedTextureLoader.load(
                                     localUrl,
                                     (texture) => applyFlatTexture(texture),
                                     undefined,
@@ -11623,7 +11625,17 @@ body:not(.dark-mode) .msg-toast-ticker {
                 }
             }
 
-            const radMeters = effectiveRadiusKm * 1000;
+            // High-resolution visual radius scaling (prevents thousands of tile meshes freezing browser at zoom 18/19)
+            let effectiveVisualRadiusM = effectiveRadiusKm * 1000;
+            if (activeZoom >= 19) {
+                effectiveVisualRadiusM = Math.min(effectiveVisualRadiusM, 900); // ~250 tiles ultra-high detail
+            } else if (activeZoom >= 18) {
+                effectiveVisualRadiusM = Math.min(effectiveVisualRadiusM, 1600); // ~300 tiles high detail
+            } else if (activeZoom >= 17) {
+                effectiveVisualRadiusM = Math.min(effectiveVisualRadiusM, 3200); // ~350 tiles
+            }
+
+            const radMeters = effectiveVisualRadiusM;
             const homeSpan = Math.ceil((radiusKm * 1000) / tileSize) + 1; // Always preserve full terminal airfield base
 
             // ==========================================
@@ -11649,10 +11661,27 @@ body:not(.dark-mode) .msg-toast-ticker {
                 // Center-Out Radial Priority: Load tiles under aircraft first, radiating outward
                 flatOffsets.sort((a, b) => a.distSq - b.distSq);
 
-                for (const { dx, dy } of flatOffsets) {
-                    const tx = currentTileX + dx;
-                    const ty = currentTileY + dy;
-                    createFlatTileMesh(tx, ty, activeZoom, provider, activePreset, mapMode);
+                const immediateFlatCount = Math.min(36, flatOffsets.length);
+                for (let i = 0; i < immediateFlatCount; i++) {
+                    const { dx, dy } = flatOffsets[i];
+                    createFlatTileMesh(currentTileX + dx, currentTileY + dy, activeZoom, provider, activePreset, mapMode);
+                }
+
+                if (flatOffsets.length > immediateFlatCount) {
+                    let fIdx = immediateFlatCount;
+                    const thisGen = mapGeneration;
+                    const processNextFlatBatch = () => {
+                        if (mapGeneration !== thisGen) return;
+                        const end = Math.min(fIdx + 24, flatOffsets.length);
+                        for (; fIdx < end; fIdx++) {
+                            const { dx, dy } = flatOffsets[fIdx];
+                            createFlatTileMesh(currentTileX + dx, currentTileY + dy, activeZoom, provider, activePreset, mapMode);
+                        }
+                        if (fIdx < flatOffsets.length) {
+                            setTimeout(processNextFlatBatch, 10);
+                        }
+                    };
+                    setTimeout(processNextFlatBatch, 10);
                 }
 
                 // In 2D flat mode, ensure all flown route tiles remain loaded
@@ -11712,8 +11741,8 @@ body:not(.dark-mode) .msg-toast-ticker {
             // Stable Rotation-Invariant 3D Circular Terrain Grid
             // Guarantees zero corner jumping during turns, orbits, and loitering!
             const radMeters3D = isTransitZone && corridorSetting !== 'full'
-                ? Math.max(1200, effectiveRadiusKm * 1000)
-                : Math.max(3000, radiusKm * 1000);
+                ? Math.max(1200, effectiveVisualRadiusM)
+                : (activeZoom >= 18 ? effectiveVisualRadiusM : Math.max(2400, effectiveVisualRadiusM));
             const gridSpan = Math.ceil(radMeters3D / tileSize) + 1;
             const maxDistSq = Math.pow(radMeters3D + (tileSize * 0.8), 2);
 
@@ -11735,7 +11764,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                         // Forward alignment: +1 for directly ahead, -1 for directly behind
                         const fwdAlignment = dist > 0 ? ((dx * forwardX + dy * forwardY) / (dist / tileSize)) : 0;
                         // Prioritize tiles directly under aircraft and along the forward flight cone
-                        const priorityScore = distSq - (2.5 * tileSize * radMeters * Math.max(0, fwdAlignment));
+                        const priorityScore = distSq - (2.5 * tileSize * radMeters3D * Math.max(0, fwdAlignment));
                         terrainOffsets.push({ dx, dy, distSq, priorityScore });
                     }
                 }
@@ -11743,179 +11772,191 @@ body:not(.dark-mode) .msg-toast-ticker {
             // Flight-vector prioritized: tiles in flight direction load first!
             terrainOffsets.sort((a, b) => a.priorityScore - b.priorityScore);
 
-            for (const { dx, dy } of terrainOffsets) {
-                const tx = currentTileX + dx;
-                const ty = currentTileY + dy;
+            const create3DTileMesh = (tx, ty) => {
                 const key = `${activeZoom}_${tx}_${ty}_${provider}_${activePreset}`;
+                if (mapTiles.has(key)) return;
+                mapTiles.set(key, true);
 
-                if (!mapTiles.has(key)) {
-                    mapTiles.set(key, true);
+                const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
 
-                    const mt = Math.abs(tx + ty) % 4;
-                    const localUrl = `/tiles/${activeZoom}/${tx}/${ty}.jpg?mode=${mapMode}&provider=${provider}&preset=${encodeURIComponent(activePreset)}&lyrs=s`;
+                // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
+                const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
+                const mat = new THREE.MeshLambertMaterial({
+                    color: terrainWireframeMode ? 0x30d158 : 0x1f2e24,
+                    side: THREE.DoubleSide,
+                    wireframe: terrainWireframeMode
+                });
 
-                    // 1. Instantiate 3D terrain mesh IMMEDIATELY so the user never sees a black screen!
-                    const geo = new THREE.PlaneGeometry(tileSize, tileSize, TILE_SEGS, TILE_SEGS);
-                    const mat = new THREE.MeshLambertMaterial({
-                        color: terrainWireframeMode ? 0x30d158 : 0x1f2e24,
-                        side: THREE.DoubleSide,
-                        wireframe: terrainWireframeMode
-                    });
+                // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
+                mat.onBeforeCompile = (shader) => {
+                    mat.userData.shader = shader;
+                    const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
 
-                    // Inject Corv-GCS Low-Angle Sun & Dramatic Mountain Shadow Equation
-                    mat.onBeforeCompile = (shader) => {
-                        mat.userData.shader = shader;
-                        const activeSun = corvSunSettings.modes[corvSunSettings.modeIndex];
+                    shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
+                    shader.uniforms.uSunlightOn = { value: 1.0 };
+                    shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
+                    shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
+                    shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
+                    shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
+                    shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
 
-                        shader.uniforms.uSunDir = { value: activeSun.sunDir.clone() };
-                        shader.uniforms.uSunlightOn = { value: 1.0 };
-                        shader.uniforms.uSunColor = { value: activeSun.sunColor.clone() };
-                        shader.uniforms.uShadowColor = { value: activeSun.shadowColor.clone() };
-                        shader.uniforms.uShadowThreshold = { value: activeSun.shadowThreshold };
-                        shader.uniforms.uShadowExponent = { value: activeSun.shadowExponent };
-                        shader.uniforms.uSunBoost = { value: activeSun.sunBoost };
+                    shader.vertexShader = shader.vertexShader.replace(
+                        '#include <common>',
+                        `#include <common>
+                        varying vec3 vTerrainWorldNormal;
+                        varying vec3 vTerrainWorldPos;`
+                    ).replace(
+                        '#include <beginnormal_vertex>',
+                        `#include <beginnormal_vertex>
+                        vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
+                    ).replace(
+                        '#include <begin_vertex>',
+                        `#include <begin_vertex>
+                        vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+                    );
 
-                        shader.vertexShader = shader.vertexShader.replace(
-                            '#include <common>',
-                            `#include <common>
-                            varying vec3 vTerrainWorldNormal;
-                            varying vec3 vTerrainWorldPos;`
-                        ).replace(
-                            '#include <beginnormal_vertex>',
-                            `#include <beginnormal_vertex>
-                            vTerrainWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`
-                        ).replace(
-                            '#include <begin_vertex>',
-                            `#include <begin_vertex>
-                            vTerrainWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
-                        );
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <common>',
+                        `#include <common>
+                        uniform vec3 uSunDir;
+                        uniform float uSunlightOn;
+                        uniform vec3 uSunColor;
+                        uniform vec3 uShadowColor;
+                        uniform float uShadowThreshold;
+                        uniform float uShadowExponent;
+                        uniform float uSunBoost;
+                        varying vec3 vTerrainWorldNormal;
+                        varying vec3 vTerrainWorldPos;`
+                    ).replace(
+                        '#include <lights_fragment_end>',
+                        `#include <lights_fragment_end>
+                        if (uSunlightOn > 0.5) {
+                            vec3 n = normalize(vTerrainWorldNormal);
+                            vec3 l = normalize(uSunDir);
+                            float NdotL = dot(n, l);
 
-                        shader.fragmentShader = shader.fragmentShader.replace(
-                            '#include <common>',
-                            `#include <common>
-                            uniform vec3 uSunDir;
-                            uniform float uSunlightOn;
-                            uniform vec3 uSunColor;
-                            uniform vec3 uShadowColor;
-                            uniform float uShadowThreshold;
-                            uniform float uShadowExponent;
-                            uniform float uSunBoost;
-                            varying vec3 vTerrainWorldNormal;
-                            varying vec3 vTerrainWorldPos;`
-                        ).replace(
-                            '#include <lights_fragment_end>',
-                            `#include <lights_fragment_end>
-                            if (uSunlightOn > 0.5) {
-                                vec3 n = normalize(vTerrainWorldNormal);
-                                vec3 l = normalize(uSunDir);
-                                float NdotL = dot(n, l);
+                            // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
+                            float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
+                            shadow = pow(shadow, uShadowExponent);
 
-                                // Corv-GCS High-Contrast Hillshading & Dramatic Cast Ridge Shadows
-                                float shadow = smoothstep(uShadowThreshold - 0.10, uShadowThreshold + 0.16, NdotL);
-                                shadow = pow(shadow, uShadowExponent);
+                            vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
+                            vec3 shadowed = diffuseColor.rgb * uShadowColor;
 
-                                vec3 sunlit = diffuseColor.rgb * uSunColor * (1.0 + uSunBoost * max(0.0, NdotL));
-                                vec3 shadowed = diffuseColor.rgb * uShadowColor;
+                            vec3 terrainLit = mix(shadowed, sunlit, shadow);
 
-                                vec3 terrainLit = mix(shadowed, sunlit, shadow);
+                            // Atmospheric Ridge Rim Highlighting
+                            vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
+                            float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
+                            terrainLit += uSunColor * rim * 0.18;
 
-                                // Atmospheric Ridge Rim Highlighting
-                                vec3 viewDir = normalize(cameraPosition - vTerrainWorldPos);
-                                float rim = pow(clamp(1.0 - max(0.0, dot(viewDir, n)), 0.0, 1.0), 3.0) * max(0.0, NdotL);
-                                terrainLit += uSunColor * rim * 0.18;
+                            reflectedLight.directDiffuse = vec3(0.0);
+                            reflectedLight.indirectDiffuse = terrainLit;
+                        }`
+                    );
+                };
 
-                                reflectedLight.directDiffuse = vec3(0.0);
-                                reflectedLight.indirectDiffuse = terrainLit;
-                            }`
-                        );
-                    };
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.renderOrder = -1;
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
+                mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
+                mesh.position.y = -0.2;
+                mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
+                mesh.visible = terrainWireframeMode ? true : false; // Hidden until satellite imagery arrives
+                mapGroup.add(mesh);
 
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.renderOrder = -1;
-                    mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.x = ((tx + 0.5) - homeTileXFloat) * tileSize;
-                    mesh.position.z = ((ty + 0.5) - homeTileYFloat) * tileSize;
-                    mesh.position.y = -0.2;
-                    mesh.userData = { tx, ty, zoom: activeZoom, displaced: false, thisGen: thisGen };
-                    mesh.visible = terrainWireframeMode ? true : false; // Hidden until satellite imagery arrives
-                    mapGroup.add(mesh);
+                activeStreamingTiles++;
+                totalStreamingTiles++;
+                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
 
-                    activeStreamingTiles++;
-                    totalStreamingTiles++;
+                // 2. Apply 3D DEM elevation displacement IMMEDIATELY!
+                applyDemElevationToMesh(mesh, activeZoom, tx, ty);
+
+                // 3. Asynchronously load high-resolution satellite imagery texture
+                function applyTextureToMesh(texture) {
+                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
                     if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-
-                    // 2. Apply 3D DEM elevation displacement IMMEDIATELY!
-                    applyDemElevationToMesh(mesh, activeZoom, tx, ty);
-
-                    // 3. Asynchronously load high-resolution satellite imagery texture
-                    function applyTextureToMesh(texture) {
-                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                        if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
-                            texture.dispose();
-                            return;
-                        }
-                        const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
-                        texture.anisotropy = maxAniso;
-                        texture.generateMipmaps = true;
-                        texture.minFilter = THREE.LinearMipmapLinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
-                        texture.encoding = THREE.sRGBEncoding;
-                        mat.map = texture;
-                        if (!terrainWireframeMode) {
-                            mat.color.setHex(0xffffff);
-                        }
-                        mat.needsUpdate = true;
-                        mesh.visible = true; // Clean reveal once high-res imagery is decoded
+                    if (mesh.parent !== mapGroup || mesh.userData.thisGen !== mapGeneration) {
+                        texture.dispose();
+                        return;
                     }
+                    const maxAniso = (typeof renderer !== 'undefined' && renderer && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) ? renderer.capabilities.getMaxAnisotropy() : 16;
+                    texture.anisotropy = maxAniso;
+                    texture.generateMipmaps = true;
+                    texture.minFilter = THREE.LinearMipmapLinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.encoding = THREE.sRGBEncoding;
+                    mat.map = texture;
+                    if (!terrainWireframeMode) {
+                        mat.color.setHex(0xffffff);
+                    }
+                    mat.needsUpdate = true;
+                    mesh.visible = true; // Clean reveal once high-res imagery is decoded
+                }
 
-                    const loader = new THREE.TextureLoader();
-                    loader.setCrossOrigin('anonymous');
-
-                    loader.load(
-                        localUrl,
-                        (texture) => applyTextureToMesh(texture),
-                        undefined,
-                        () => {
-                            if (mapMode !== 'offline') {
-                                // Single retry with exact same provider - never mix providers
-                                setTimeout(() => {
-                                    if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
-                                        loader.load(
-                                            localUrl,
-                                            (texture) => applyTextureToMesh(texture),
-                                            undefined,
-                                            () => {
-                                                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                                // If texture load fails permanently, safely remove untextured mesh
-                                                if (mesh.parent === mapGroup && !terrainWireframeMode && !mat.map) {
-                                                    mapTiles.delete(key);
-                                                    mapGroup.remove(mesh);
-                                                    if (mesh.geometry) mesh.geometry.dispose();
-                                                    if (mesh.material) mesh.material.dispose();
-                                                }
+                sharedTextureLoader.load(
+                    localUrl,
+                    (texture) => applyTextureToMesh(texture),
+                    undefined,
+                    () => {
+                        if (mapMode !== 'offline') {
+                            setTimeout(() => {
+                                if (mesh.parent === mapGroup && mesh.userData.thisGen === mapGeneration) {
+                                    sharedTextureLoader.load(
+                                        localUrl,
+                                        (texture) => applyTextureToMesh(texture),
+                                        undefined,
+                                        () => {
+                                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                                            if (mesh.parent === mapGroup && !terrainWireframeMode && !mat.map) {
+                                                mapTiles.delete(key);
+                                                mapGroup.remove(mesh);
+                                                if (mesh.geometry) mesh.geometry.dispose();
+                                                if (mesh.material) mesh.material.dispose();
                                             }
-                                        );
-                                    } else {
-                                        activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                        if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                    }
-                                }, 600);
-                            } else {
-                                activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
-                                if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
-                                // In offline mode, if tile is missing from cache, remove blank mesh immediately
-                                if (mesh.parent === mapGroup && !terrainWireframeMode && !mat.map) {
-                                    mapTiles.delete(key);
-                                    mapGroup.remove(mesh);
-                                    if (mesh.geometry) mesh.geometry.dispose();
-                                    if (mesh.material) mesh.material.dispose();
+                                        }
+                                    );
+                                } else {
+                                    activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                                    if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
                                 }
+                            }, 600);
+                        } else {
+                            activeStreamingTiles = Math.max(0, activeStreamingTiles - 1);
+                            if (typeof updateTileStreamingBadge === 'function') updateTileStreamingBadge();
+                            if (mesh.parent === mapGroup && !terrainWireframeMode && !mat.map) {
+                                mapTiles.delete(key);
+                                mapGroup.remove(mesh);
+                                if (mesh.geometry) mesh.geometry.dispose();
+                                if (mesh.material) mesh.material.dispose();
                             }
                         }
-                    );
-                }
+                    }
+                );
+            };
+
+            const immediate3DCount = Math.min(36, terrainOffsets.length);
+            for (let i = 0; i < immediate3DCount; i++) {
+                const { dx, dy } = terrainOffsets[i];
+                create3DTileMesh(currentTileX + dx, currentTileY + dy);
+            }
+
+            if (terrainOffsets.length > immediate3DCount) {
+                let tIdx = immediate3DCount;
+                const thisGen = mapGeneration;
+                const processNext3DBatch = () => {
+                    if (mapGeneration !== thisGen) return;
+                    const end = Math.min(tIdx + 24, terrainOffsets.length);
+                    for (; tIdx < end; tIdx++) {
+                        const { dx, dy } = terrainOffsets[tIdx];
+                        create3DTileMesh(currentTileX + dx, currentTileY + dy);
+                    }
+                    if (tIdx < terrainOffsets.length) {
+                        setTimeout(processNext3DBatch, 10);
+                    }
+                };
+                setTimeout(processNext3DBatch, 10);
             }
 
             // Predictive Flight-Vector Lookahead Prefetch
@@ -12079,6 +12120,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         // ==========================================
         const TILE_SEGS = 40; // 40x40 segments per tile (1600 quads for buttery smooth 60 FPS performance)
         const demCache = new Map(); // key: `${demZ}_${demX}_${demY}` -> Uint8ClampedArray
+        const demPendingMap = new Map(); // key: `${demZ}_${demX}_${demY}` -> Array of waiting meshes
         let homeElevationMSL = null;
 
         function decodeTerrariumElev(raw, idx) {
@@ -12170,6 +12212,14 @@ body:not(.dark-mode) .msg-toast-ticker {
                 return;
             }
 
+            // Deduplicate in-flight DEM tile network requests across sibling meshes
+            if (demPendingMap.has(demKey)) {
+                demPendingMap.get(demKey).push({ mesh, zoomDiff, tx, ty });
+                return;
+            }
+
+            demPendingMap.set(demKey, [{ mesh, zoomDiff, tx, ty }]);
+
             const demUrl = `/dem/${demZ}/${demX}/${demY}.png`;
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -12181,10 +12231,23 @@ body:not(.dark-mode) .msg-toast-ticker {
                 ctx.drawImage(img, 0, 0);
                 const imgData = ctx.getImageData(0, 0, 256, 256).data;
                 demCache.set(demKey, imgData);
-                displaceMeshVertices(mesh, imgData, zoomDiff, tx, ty);
+
+                const waiters = demPendingMap.get(demKey) || [];
+                demPendingMap.delete(demKey);
+                for (const w of waiters) {
+                    if (w.mesh && w.mesh.geometry && w.mesh.parent) {
+                        displaceMeshVertices(w.mesh, imgData, w.zoomDiff, w.tx, w.ty);
+                    }
+                }
             };
             img.onerror = () => {
-                mesh.userData.displaced = true;
+                const waiters = demPendingMap.get(demKey) || [];
+                demPendingMap.delete(demKey);
+                for (const w of waiters) {
+                    if (w.mesh && w.mesh.userData) {
+                        w.mesh.userData.displaced = true;
+                    }
+                }
             };
             img.src = demUrl;
         }
@@ -13455,6 +13518,10 @@ body:not(.dark-mode) .msg-toast-ticker {
                 }
             } else if (data.type === 'ATTITUDE') {
                 rawTargetRot.set(data.pitch, -data.yaw, -data.roll);
+                currentPitchDeg = data.pitch * 180.0 / Math.PI;
+                currentRollDeg = data.roll * 180.0 / Math.PI;
+                window.currentPitchDeg = currentPitchDeg;
+                window.currentRollDeg = currentRollDeg;
                 // Convert MAVLink yaw (radians) to degrees [0..360)
                 let hdg = (data.yaw * 180 / Math.PI) % 360;
                 if (hdg < 0) hdg += 360;
@@ -14160,6 +14227,16 @@ body:not(.dark-mode) .msg-toast-ticker {
             }
 
             // Live Update LXNAV Rotary MFD Cockpit Gauge
+            if (typeof targetRot !== 'undefined' && (targetRot.x !== 0 || targetRot.z !== 0)) {
+                currentPitchDeg = targetRot.x * 180.0 / Math.PI;
+                currentRollDeg = -targetRot.z * 180.0 / Math.PI;
+            } else if (typeof rawTargetRot !== 'undefined' && (rawTargetRot.x !== 0 || rawTargetRot.z !== 0)) {
+                currentPitchDeg = rawTargetRot.x * 180.0 / Math.PI;
+                currentRollDeg = -rawTargetRot.z * 180.0 / Math.PI;
+            } else if (typeof vtolGroup !== 'undefined' && vtolGroup) {
+                currentPitchDeg = vtolGroup.rotation.x * 180.0 / Math.PI;
+                currentRollDeg = -vtolGroup.rotation.z * 180.0 / Math.PI;
+            }
             if (typeof updateLxnavHUD === 'function') {
                 updateLxnavHUD();
             }
