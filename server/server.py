@@ -18,6 +18,15 @@ import logging
 from PIL import Image
 from pymavlink import mavutil
 
+def sanitize_json(obj):
+    if isinstance(obj, float):
+        return None if math.isnan(obj) or math.isinf(obj) else obj
+    elif isinstance(obj, dict):
+        return {k: sanitize_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_json(v) for v in obj]
+    return obj
+
 class WebSocketHandshakeFilter(logging.Filter):
     """
     Suppresses aborted or non-compliant handshake tracebacks (e.g., bare TCP port probes or early disconnects)
@@ -1075,7 +1084,11 @@ async def mavlink_listener():
                 data['groundspeed'] = msg.groundspeed
                 data['heading'] = getattr(msg, 'heading', None)
                 data['climb'] = getattr(msg, 'climb', 0.0)
-                data['throttle'] = int(getattr(msg, 'throttle', 0))
+                raw_throttle = getattr(msg, 'throttle', 0)
+                try:
+                    data['throttle'] = int(raw_throttle) if raw_throttle is not None and not (isinstance(raw_throttle, float) and (math.isnan(raw_throttle) or math.isinf(raw_throttle))) else 0
+                except (ValueError, OverflowError):
+                    data['throttle'] = 0
             elif msg.get_type() == 'WIND':
                 data['wind_direction'] = getattr(msg, 'direction', 0)
                 data['wind_speed'] = getattr(msg, 'speed', 0.0)
@@ -1255,7 +1268,10 @@ async def mavlink_listener():
                 data['param_value'] = param_val
 
                 if param_id_str.upper() == 'BRD_TYPE':
-                    board_id = int(param_val)
+                    try:
+                        board_id = int(param_val) if not (math.isnan(param_val) or math.isinf(param_val)) else 0
+                    except (ValueError, OverflowError):
+                        board_id = 0
                     resolved = resolve_board_name(board_id, is_network_sitl=is_network_sitl)
                     if resolved and resolved not in ('Hardware FC', 'Unknown FC', 'Detecting FC...', 'Detecting...'):
                         detected_fc_hardware = resolved
@@ -1286,7 +1302,7 @@ async def mavlink_listener():
                 data['pos_vert_accuracy'] = getattr(msg, 'pos_vert_accuracy', 0.0)
                 
             if clients:
-                message = json.dumps(data)
+                message = json.dumps(sanitize_json(data))
                 for client in list(clients):
                     try:
                         await client.send(message)

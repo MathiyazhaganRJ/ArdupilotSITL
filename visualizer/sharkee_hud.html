@@ -9832,17 +9832,19 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (currentPlaneLat && currentPlaneLon && refLat && refLon) {
                 const rawMeters = calcGeodeticDistance(refLat, refLon, currentPlaneLat, currentPlaneLon);
                 const rawBearing = calcGeodeticBearing(refLat, refLon, currentPlaneLat, currentPlaneLon);
-                arduMeasuredDriftMeters = rawMeters;
-                arduMeasuredDriftBearing = rawBearing;
+                if (!isNaN(rawMeters) && isFinite(rawMeters)) {
+                    arduMeasuredDriftMeters = rawMeters;
+                    arduMeasuredDriftBearing = !isNaN(rawBearing) ? rawBearing : 0.0;
 
-                // 1st-Order Low-pass Filter on geodetic metrics to eliminate sub-meter sensor flutter
-                if (smoothDriftMeters === 0.0 || Math.abs(rawMeters - smoothDriftMeters) > 500) {
-                    smoothDriftMeters = rawMeters;
-                    smoothDriftBearing = rawBearing;
-                } else {
-                    smoothDriftMeters += (rawMeters - smoothDriftMeters) * 0.15;
-                    let diffAngle = ((rawBearing - smoothDriftBearing + 180) % 360 + 360) % 360 - 180;
-                    smoothDriftBearing = ((smoothDriftBearing + diffAngle * 0.15) % 360 + 360) % 360;
+                    // 1st-Order Low-pass Filter on geodetic metrics to eliminate sub-meter sensor flutter
+                    if (smoothDriftMeters === 0.0 || Math.abs(rawMeters - smoothDriftMeters) > 500 || isNaN(smoothDriftMeters)) {
+                        smoothDriftMeters = rawMeters;
+                        smoothDriftBearing = arduMeasuredDriftBearing;
+                    } else {
+                        smoothDriftMeters += (rawMeters - smoothDriftMeters) * 0.15;
+                        let diffAngle = ((rawBearing - smoothDriftBearing + 180) % 360 + 360) % 360 - 180;
+                        smoothDriftBearing = ((smoothDriftBearing + diffAngle * 0.15) % 360 + 360) % 360;
+                    }
                 }
             }
         }
@@ -10141,13 +10143,15 @@ body:not(.dark-mode) .msg-toast-ticker {
                 simTruthPosInitialized = false;
 
                 // Fix coordinates at current plane position
-                lastFixPosition.copy(vtolGroup.position);
-                const groundY = mapGroup.position.y;
-                lastFixMarker.position.set(lastFixPosition.x, groundY + 0.05, lastFixPosition.z);
-                lastFixDiamond.position.set(0, Math.max(1.0, lastFixPosition.y - groundY), 0);
+                if (typeof vtolGroup !== 'undefined' && vtolGroup && !isNaN(vtolGroup.position.x) && !isNaN(vtolGroup.position.y) && !isNaN(vtolGroup.position.z)) {
+                    lastFixPosition.copy(vtolGroup.position);
+                }
+                const groundY = (typeof mapGroup !== 'undefined' && mapGroup && !isNaN(mapGroup.position.y)) ? mapGroup.position.y : 0.0;
+                lastFixMarker.position.set(lastFixPosition.x || 0, groundY + 0.05, lastFixPosition.z || 0);
+                lastFixDiamond.position.set(0, Math.max(1.0, (lastFixPosition.y || 0) - groundY), 0);
                 beaconBeam.geometry.setFromPoints([
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, Math.max(30, (lastFixPosition.y - groundY) + 20), 0)
+                    new THREE.Vector3(0, Math.max(30, ((lastFixPosition.y || 0) - groundY) + 20), 0)
                 ]);
 
                 if (drFlag) drFlag.style.display = 'inline-block';
@@ -13443,7 +13447,14 @@ body:not(.dark-mode) .msg-toast-ticker {
             };
 
             ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (err) {
+                console.warn("[WebSocket] Telemetry skipped unparseable frame:", err);
+                return;
+            }
+            if (!data) return;
             if (data.type === 'SERIAL_PORTS_LIST') {
                 populateSerialPortsDropdown(data.ports);
                 showMavlinkModalNotification(`Found ${(data.ports || []).length} serial COM port(s)`, false);
@@ -14098,10 +14109,11 @@ body:not(.dark-mode) .msg-toast-ticker {
             // Time-delta ensures the filter is immune to monitor refresh rate and micro-stutters
             const dt = Math.min(clock.getDelta(), 0.1);
 
+            let lerpFactor = 0.15;
             if (window.isLogReplayActive) {
                 // Silky-smooth C1 continuous interpolation for log replay (25 Hz filter bandwidth eliminates 10 Hz GPS stepping)
                 const logFilterRate = 22.0;
-                const lerpFactor = 1.0 - Math.exp(-dt * logFilterRate);
+                lerpFactor = 1.0 - Math.exp(-dt * logFilterRate);
                 vtolGroup.position.lerp(rawTargetPos, lerpFactor);
 
                 const qRaw = new THREE.Quaternion().setFromEuler(rawTargetRot);
@@ -14110,7 +14122,7 @@ body:not(.dark-mode) .msg-toast-ticker {
             } else {
                 // Live SITL 2nd-order critically damped filter (only for live 10Hz WebSocket streaming)
                 const filterRate = 3.0;
-                const lerpFactor = 1.0 - Math.exp(-dt * filterRate);
+                lerpFactor = 1.0 - Math.exp(-dt * filterRate);
                 targetPos.lerp(rawTargetPos, lerpFactor);
                 vtolGroup.position.lerp(targetPos, lerpFactor);
 
@@ -14349,69 +14361,81 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (isDeadReckoning) {
                 let uncRadius = 4.0;
                 const displayDrift = (smoothDriftMeters > 0.5) ? smoothDriftMeters : arduMeasuredDriftMeters;
-                if (displayDrift > 0.5) {
+                if (displayDrift > 0.5 && !isNaN(displayDrift)) {
                     uncRadius = Math.max(4.0, Math.min(500.0, displayDrift));
-                } else if (arduEkfHorizAccuracy > 0) {
+                } else if (arduEkfHorizAccuracy > 0 && !isNaN(arduEkfHorizAccuracy)) {
                     uncRadius = Math.max(4.0, Math.min(500.0, arduEkfHorizAccuracy));
                 } else {
-                    const elapsedSec = (performance.now() - drStartTime) / 1000.0;
+                    const elapsedSec = (performance.now() - (drStartTime || performance.now())) / 1000.0;
                     uncRadius = Math.min(250.0, 4.0 + (elapsedSec * 1.2));
                 }
-                const groundY = (typeof getTerrainElevationAt === 'function') 
+                if (isNaN(uncRadius) || !isFinite(uncRadius)) uncRadius = 4.0;
+
+                const groundY = (typeof getTerrainElevationAt === 'function' && !isNaN(vtolGroup.position.x) && !isNaN(vtolGroup.position.z)) 
                     ? getTerrainElevationAt(vtolGroup.position.x, vtolGroup.position.z) 
-                    : mapGroup.position.y;
+                    : (mapGroup.position.y || 0.0);
 
-                uncertaintyGroup.position.set(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
-                uncDiscMesh.scale.set(uncRadius, uncRadius, uncRadius);
-                uncRingMesh.scale.set(uncRadius, uncRadius, uncRadius);
-                uncCrosshairs.scale.set(uncRadius, uncRadius, uncRadius);
+                if (!isNaN(vtolGroup.position.x) && !isNaN(vtolGroup.position.y) && !isNaN(vtolGroup.position.z)) {
+                    uncertaintyGroup.position.set(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
+                    uncDiscMesh.scale.set(uncRadius, uncRadius, uncRadius);
+                    uncRingMesh.scale.set(uncRadius, uncRadius, uncRadius);
+                    uncCrosshairs.scale.set(uncRadius, uncRadius, uncRadius);
 
-                // Calm, stable rotation without oscillating opacity flash
-                uncRingMesh.rotation.y += 0.005;
-                uncDiscMesh.material.opacity = 0.14;
+                    // Calm, stable rotation without oscillating opacity flash
+                    uncRingMesh.rotation.y += 0.005;
+                    uncDiscMesh.material.opacity = 0.14;
 
-                // Single-axis calm diamond yaw spin
-                lastFixDiamond.rotation.y += 0.008;
+                    // Single-axis calm diamond yaw spin
+                    lastFixDiamond.rotation.y += 0.008;
 
-                // Tether line from Last Fix 3D position to current plane position
-                tetherLine.geometry.setFromPoints([lastFixPosition, vtolGroup.position]);
-
-                // Plumb line dropping straight down from plane to uncertainty center
-                const planeGroundPt = new THREE.Vector3(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
-                plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
-
-                // 4. Update Actual Model Position (SITL Ground Truth) in Dead Reckoning with 2nd-order smooth filter
-                if (arduSimLat && Math.abs(arduSimLat) > 0.01) {
-                    simTruthGroup.visible = true;
-                    const truthAlt = (typeof vtolGroup !== 'undefined' && vtolGroup) ? vtolGroup.position.y : 30.0;
-                    const rawTruthPos = latLonToScene(arduSimLat, arduSimLon, truthAlt);
-
-                    if (!simTruthPosInitialized) {
-                        simTruthTargetPos.copy(rawTruthPos);
-                        simTruthCurrentPos.copy(rawTruthPos);
-                        simTruthPosInitialized = true;
-                    } else {
-                        simTruthTargetPos.lerp(rawTruthPos, lerpFactor);
-                        simTruthCurrentPos.lerp(simTruthTargetPos, lerpFactor);
+                    // Tether line from Last Fix 3D position to current plane position
+                    if (!isNaN(lastFixPosition.x) && !isNaN(lastFixPosition.y) && !isNaN(lastFixPosition.z)) {
+                        tetherLine.geometry.setFromPoints([lastFixPosition, vtolGroup.position]);
                     }
 
-                    simTruthDot.position.copy(simTruthCurrentPos);
-                    simTruthRing.rotation.y += 0.01;
+                    // Plumb line dropping straight down from plane to uncertainty center
+                    const planeGroundPt = new THREE.Vector3(vtolGroup.position.x, groundY + 0.1, vtolGroup.position.z);
+                    plumbLine.geometry.setFromPoints([planeGroundPt, vtolGroup.position]);
+                }
 
-                    const truthGroundY = (typeof getTerrainElevationAt === 'function') 
-                        ? getTerrainElevationAt(simTruthCurrentPos.x, simTruthCurrentPos.z) 
-                        : (mapGroup.position.y + 0.1);
+                // 4. Update Actual Model Position (SITL Ground Truth) in Dead Reckoning with 2nd-order smooth filter
+                if (arduSimLat && Math.abs(arduSimLat) > 0.01 && arduSimLon && Math.abs(arduSimLon) > 0.01) {
+                    simTruthGroup.visible = true;
+                    const truthAlt = (typeof vtolGroup !== 'undefined' && vtolGroup && !isNaN(vtolGroup.position.y)) ? vtolGroup.position.y : 30.0;
+                    const rawTruthPos = latLonToScene(arduSimLat, arduSimLon, truthAlt);
 
-                    simTruthGroundMarker.position.set(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z);
+                    if (!isNaN(rawTruthPos.x) && !isNaN(rawTruthPos.y) && !isNaN(rawTruthPos.z)) {
+                        if (!simTruthPosInitialized) {
+                            simTruthTargetPos.copy(rawTruthPos);
+                            simTruthCurrentPos.copy(rawTruthPos);
+                            simTruthPosInitialized = true;
+                        } else {
+                            const truthFilterRate = 3.0;
+                            const truthLerp = 1.0 - Math.exp(-dt * truthFilterRate);
+                            simTruthTargetPos.lerp(rawTruthPos, truthLerp);
+                            simTruthCurrentPos.lerp(simTruthTargetPos, truthLerp);
+                        }
 
-                    simTruthPlumbLine.geometry.setFromPoints([
-                        simTruthCurrentPos, 
-                        new THREE.Vector3(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z)
-                    ]);
+                        simTruthDot.position.copy(simTruthCurrentPos);
+                        simTruthRing.rotation.y += 0.01;
 
-                    simTruthDriftLine.geometry.setFromPoints([simTruthCurrentPos, vtolGroup.position]);
+                        const truthGroundY = (typeof getTerrainElevationAt === 'function' && !isNaN(simTruthCurrentPos.x) && !isNaN(simTruthCurrentPos.z)) 
+                            ? getTerrainElevationAt(simTruthCurrentPos.x, simTruthCurrentPos.z) 
+                            : ((mapGroup.position.y || 0.0) + 0.1);
 
-                    simTruthSprite.position.set(simTruthCurrentPos.x, simTruthCurrentPos.y + 2.8, simTruthCurrentPos.z);
+                        simTruthGroundMarker.position.set(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z);
+
+                        simTruthPlumbLine.geometry.setFromPoints([
+                            simTruthCurrentPos, 
+                            new THREE.Vector3(simTruthCurrentPos.x, truthGroundY + 0.05, simTruthCurrentPos.z)
+                        ]);
+
+                        if (!isNaN(vtolGroup.position.x)) {
+                            simTruthDriftLine.geometry.setFromPoints([simTruthCurrentPos, vtolGroup.position]);
+                        }
+
+                        simTruthSprite.position.set(simTruthCurrentPos.x, simTruthCurrentPos.y + 2.8, simTruthCurrentPos.z);
+                    }
                 } else {
                     simTruthGroup.visible = false;
                     simTruthPosInitialized = false;
