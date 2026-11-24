@@ -10060,17 +10060,24 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         // State Machine Controller for Dead Reckoning (Gated by Vehicle Arm State)
         function evaluateDeadReckoning() {
+            const hasGoodGps = (lastGpsFixType >= 3 && lastGpsSats > 0);
+
+            // If genuine 3D GPS fix has returned, clear simulated DR flag
+            if (hasGoodGps && simulatedDR) {
+                simulatedDR = false;
+            }
+
             if (simulatedDR) {
                 setDeadReckoningMode(true, 'SIMULATED DR');
                 return;
             }
 
-            const gpsLost = (lastGpsFixType < 3 || lastGpsSats === 0 || lastEkfPosAbs === false);
+            const gpsLost = !hasGoodGps;
 
             if (!isArmed) {
                 // Aircraft is DISARMED (e.g. sitting on the bench indoors without GPS):
                 // Dead reckoning must stay OFF.
-                const fixDesc = (lastGpsFixType >= 3 && lastGpsSats > 0)
+                const fixDesc = hasGoodGps
                     ? `${lastGpsFixName} (${lastGpsSats}S)`
                     : (lastGpsFixName || 'NO GPS');
                 setDeadReckoningMode(false, fixDesc);
@@ -10082,7 +10089,10 @@ body:not(.dark-mode) .msg-toast-ticker {
                 const lossReason = (lastEkfPosAbs === false) ? 'EKF DR (POS DENIED)' : `GPS LOST (${lastGpsFixName})`;
                 setDeadReckoningMode(true, lossReason);
             } else {
-                setDeadReckoningMode(false, `${lastGpsFixName} (${lastGpsSats}S)`);
+                const fixDesc = (lastEkfPosAbs === false)
+                    ? `${lastGpsFixName} (${lastGpsSats}S) [ACQ]`
+                    : `${lastGpsFixName} (${lastGpsSats}S)`;
+                setDeadReckoningMode(false, fixDesc);
             }
         }
 
@@ -10122,7 +10132,11 @@ body:not(.dark-mode) .msg-toast-ticker {
 
             if (isDeadReckoning === enable) {
                 if (reason) {
-                    if (navEl && !isDeadReckoning) navEl.innerText = reason;
+                    if (navEl && !isDeadReckoning) {
+                        navEl.innerText = reason;
+                        const isGoodFix = lastGpsFixType >= 3 && lastGpsSats > 0;
+                        navEl.style.color = isGoodFix ? 'var(--success)' : '#ff9f0a';
+                    }
                     if (annunNav) {
                         annunNav.innerText = reason;
                         if (!enable) {
@@ -10188,6 +10202,21 @@ body:not(.dark-mode) .msg-toast-ticker {
                 if (annunNav) {
                     annunNav.innerText = reason || (isGoodFix ? '3D FIX' : 'NO FIX');
                     annunNav.className = isGoodFix ? 'fma-val fma-nav-good' : 'fma-val fma-nav-standby';
+                }
+            }
+            const btmGps = document.getElementById('corv-btm-gps');
+            if (btmGps) {
+                const sats = (typeof lastGpsSats === 'number') ? lastGpsSats : 0;
+                const fix = (typeof lastGpsFixName === 'string') ? lastGpsFixName : (sats > 0 ? '3D Fix' : 'No GPS');
+                if (isDeadReckoning) {
+                    btmGps.innerText = `DR ACTIVE (${sats} sat)`;
+                    btmGps.style.color = '#ff9f0a';
+                } else if (lastGpsFixType >= 3 && sats > 0) {
+                    btmGps.innerText = `${fix} (${sats} sat)`;
+                    btmGps.style.color = 'var(--success, #00ff88)';
+                } else {
+                    btmGps.innerText = `${fix} (${sats} sat)`;
+                    btmGps.style.color = '#ff4d4d';
                 }
             }
             updateFmsCduLive();
@@ -10355,8 +10384,16 @@ body:not(.dark-mode) .msg-toast-ticker {
                     '3R': () => stageParam('EK3_SRC_OPTIONS', 1.0, 'FALLBACK SRC'),
                     '4L': () => { cduCurrentPage = 2; renderCduPage(); },
                     '4R': () => setCduScratchpad(`CRAB: ${crabAngleEl ? crabAngleEl.innerText : '0.0°'}`, false),
-                    '5L': () => stageParam('SIM_GPS1_ENABLE', 0.0, 'DROP GPS FIX'),
-                    '5R': () => stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS FIX'),
+                    '5L': () => {
+                        stageParam('SIM_GPS1_ENABLE', 0.0, 'DROP GPS FIX');
+                        sendSitlParam('GPS1_TYPE', 0.0);
+                    },
+                    '5R': () => {
+                        stageParam('SIM_GPS1_ENABLE', 1.0, 'RESTORE GPS FIX');
+                        sendSitlParam('GPS1_TYPE', 1.0);
+                        simulatedDR = false;
+                        evaluateDeadReckoning();
+                    },
                     '6L': () => {
                         const batch = `param set SIM_FLOW_ENABLE 1\nparam set EK3_FLOW_USE 1\nparam set EK3_SRC1_VELXY 5\nparam set EK3_SRC_OPTIONS 1\nparam set EK3_DRAG_BCOEF_X 25\nparam set EK3_DRAG_BCOEF_Y 25\nparam set FS_EKF_THRESH 0.8`;
                         copyText(batch);
@@ -10543,6 +10580,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         function toggleDeadReckoningSim() {
             simulatedDR = !simulatedDR;
             sendSitlParam('SIM_GPS1_ENABLE', simulatedDR ? 0.0 : 1.0);
+            sendSitlParam('GPS1_TYPE', simulatedDR ? 0.0 : 1.0);
             evaluateDeadReckoning();
         }
 
@@ -13937,6 +13975,10 @@ body:not(.dark-mode) .msg-toast-ticker {
                 lastGpsSats = sats;
                 lastGpsFixName = fixName;
 
+                if (lastGpsFixType >= 3 && lastGpsSats > 0 && simulatedDR) {
+                    simulatedDR = false;
+                }
+
                 evaluateDeadReckoning();
             }
             else if (data.type === 'SIMSTATE') {
@@ -15938,8 +15980,18 @@ body:not(.dark-mode) .msg-toast-ticker {
 
             const btmGps = document.getElementById('corv-btm-gps');
             if (btmGps) {
-                const sats = (typeof gpsSatellites !== 'undefined') ? gpsSatellites : 0;
-                btmGps.innerText = sats > 0 ? `GPS 3D Fix (${sats} sat)` : 'No GPS 0 sat';
+                const sats = (typeof lastGpsSats === 'number') ? lastGpsSats : 0;
+                const fix = (typeof lastGpsFixName === 'string') ? lastGpsFixName : (sats > 0 ? '3D Fix' : 'No GPS');
+                if (isDeadReckoning) {
+                    btmGps.innerText = `DR ACTIVE (${sats} sat)`;
+                    btmGps.style.color = '#ff9f0a';
+                } else if (lastGpsFixType >= 3 && sats > 0) {
+                    btmGps.innerText = `${fix} (${sats} sat)`;
+                    btmGps.style.color = 'var(--success, #00ff88)';
+                } else {
+                    btmGps.innerText = `${fix} (${sats} sat)`;
+                    btmGps.style.color = '#ff4d4d';
+                }
             }
 
             const tblAlt = document.getElementById('corv-tbl-alt');
