@@ -314,9 +314,28 @@ def send_hardware_identity_queries(conn):
     except Exception:
         pass
 
+def request_param_by_name(conn, param_name):
+    """Requests a single named MAVLink parameter from the connected flight controller."""
+    if not conn or not param_name:
+        return
+    try:
+        t_sys = getattr(conn, 'target_system', 1) or 1
+        t_comp = getattr(conn, 'target_component', 1) or 1
+        param_bytes = str(param_name).strip().upper().encode('utf-8')[:16]
+        conn.mav.param_request_read_send(t_sys, t_comp, param_bytes, -1)
+    except Exception:
+        pass
+
+def request_servo_function_params(conn):
+    """Requests SERVO1_FUNCTION through SERVO16_FUNCTION from the flight controller."""
+    if not conn:
+        return
+    for ch in range(1, 17):
+        request_param_by_name(conn, f'SERVO{ch}_FUNCTION')
+
 def switch_mavlink_target(raw_target, req_baud=115200):
     global connection, MAVLINK_DEVICE, MAVLINK_BAUD, MAVLINK_URL, heartbeat_received, is_auto_target
-    global is_network_sitl, detected_fc_hardware, last_version_req_time
+    global is_network_sitl, detected_fc_hardware, last_version_req_time, cached_vehicle_params
     new_dev, new_baud = normalize_mavlink_target(raw_target, req_baud)
     print(f"[MAVLink] Switching MAVLink connection to {new_dev} (baud={new_baud})...")
     try:
@@ -338,6 +357,7 @@ def switch_mavlink_target(raw_target, req_baud=115200):
         heartbeat_received = False
         is_auto_target = False
         last_version_req_time = 0
+        cached_vehicle_params.clear()
         is_network_sitl = is_ardupilot_sitl_target(new_dev)
         if is_network_sitl:
             detected_fc_hardware = "SITL"
@@ -733,10 +753,11 @@ heartbeat_received = False
 cached_home_position = None
 cached_statustext_messages = []
 cached_heartbeat = None
+cached_vehicle_params = {}
 mission_handler = MissionHandler(connection)
 
 async def mavlink_listener():
-    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat
+    global heartbeat_received, cached_home_position, cached_statustext_messages, cached_heartbeat, cached_vehicle_params
     global detected_firmware, detected_fc_hardware, last_version_req_time, connection, MAVLINK_URL, MAVLINK_DEVICE, is_network_sitl
     print(f"Waiting for MAVLink heartbeat on {MAVLINK_URL}...")
 
@@ -1000,6 +1021,7 @@ async def mavlink_listener():
                             connection.target_system, connection.target_component,
                             b'BRD_TYPE', -1
                         )
+                        request_servo_function_params(connection)
                     except Exception:
                         pass
 
@@ -1063,8 +1085,12 @@ async def mavlink_listener():
                 data['pitch'] = msg.pitch
                 data['yaw'] = msg.yaw
             elif msg.get_type() == 'SERVO_OUTPUT_RAW':
-                data['servos'] = [msg.servo1_raw, msg.servo2_raw, msg.servo3_raw, msg.servo4_raw,
-                                  msg.servo5_raw, msg.servo6_raw, msg.servo7_raw, msg.servo8_raw]
+                port = int(getattr(msg, 'port', 0) or 0)
+                data['port'] = port
+                if port == 0:
+                    data['servos'] = [int(getattr(msg, f'servo{i}_raw', 0) or 0) for i in range(1, 17)]
+                else:
+                    data['servos'] = [int(getattr(msg, f'servo{i}_raw', 0) or 0) for i in range(1, 9)]
             elif msg.get_type() == 'LOCAL_POSITION_NED':
                 data['x'] = msg.x
                 data['y'] = msg.y
@@ -1266,6 +1292,8 @@ async def mavlink_listener():
                 param_val = float(getattr(msg, 'param_value', 0.0))
                 data['param_id'] = param_id_str
                 data['param_value'] = param_val
+                if param_id_str and not (math.isnan(param_val) or math.isinf(param_val)):
+                    cached_vehicle_params[param_id_str.upper()] = param_val
 
                 if param_id_str.upper() == 'BRD_TYPE':
                     try:
@@ -1372,6 +1400,16 @@ async def ws_handler(websocket, path=None):
                 except Exception as e:
                     print(f"[Mission] Error sending cached waypoints: {e}")
         # Proactively trigger live vehicle sync on client connect
+        if cached_vehicle_params:
+            try:
+                await websocket.send(json.dumps(sanitize_json({
+                    "type": "PARAM_BATCH",
+                    "params": cached_vehicle_params
+                })))
+            except Exception:
+                pass
+        if heartbeat_received and 'SERVO1_FUNCTION' not in cached_vehicle_params:
+            request_servo_function_params(connection)
         if heartbeat_received and not mission_handler.is_fetching:
             mission_handler.start_fetch(force=False)
 
@@ -1396,6 +1434,12 @@ async def ws_handler(websocket, path=None):
                     except (ConnectionResetError, ConnectionError, OSError):
                         pass
                     print(f"[MAVLink] Sent PARAM_SET: {param_name} = {param_val} to Sys {target_sys}:{target_comp}")
+                elif action == "request_param":
+                    req_name = str(cmd.get("name", "")).strip()
+                    if req_name:
+                        request_param_by_name(connection, req_name)
+                elif action == "request_servo_params":
+                    request_servo_function_params(connection)
                 elif action == "fetch_waypoints":
                     force = bool(cmd.get("force", False))
                     # 1. Immediately send cached waypoints so the frontend has instantaneous display

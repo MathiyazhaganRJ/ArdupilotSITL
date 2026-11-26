@@ -997,8 +997,8 @@ body:not(.dark-mode) .msg-toast-ticker {
             bottom: 20px;
             left: 345px;
             width: fit-content;
-            min-width: 360px;
-            max-width: min(780px, calc(100vw - 370px));
+            min-width: 320px;
+            max-width: min(1040px, calc(100vw - 365px));
             height: 234px;
             box-sizing: border-box;
             overflow: hidden;
@@ -1040,7 +1040,7 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         .actuator-matrix-col {
             flex: 1;
-            min-width: 52px;
+            min-width: 48px;
             max-width: 82px;
             display: flex;
             flex-direction: column;
@@ -4908,7 +4908,7 @@ body:not(.dark-mode) .msg-toast-ticker {
     </div>
     <!-- Assigned Actuator & Servo Outputs Matrix (ArduPilot Canonical Mapping) -->
     <div id="actuators-panel-container" class="actuators-matrix-panel"
-        style="position: absolute; bottom: 20px; left: 345px; width: fit-content; min-width: 320px; max-width: min(780px, calc(100vw - 370px)); height: 238px; box-sizing: border-box; overflow: hidden !important; display: none; flex-direction: column; z-index: 1000; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
+        style="position: absolute; bottom: 20px; left: 345px; width: fit-content; min-width: 320px; max-width: min(1040px, calc(100vw - 365px)); height: 238px; box-sizing: border-box; overflow: hidden !important; display: none; flex-direction: column; z-index: 1000; pointer-events: auto; font-family: var(--font-mono); user-select: none;">
         
         <!-- Top Header Bar -->
         <div class="actuators-header">
@@ -4923,7 +4923,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         </div>
 
         <!-- Assigned Channels Grid Container -->
-        <div id="actuators-matrix-grid" style="display: flex; gap: 8px; flex: 1; align-items: stretch; justify-content: flex-start; padding-top: 6px; overflow: hidden !important; min-height: 0;">
+        <div id="actuators-matrix-grid" style="display: flex; gap: 6px; flex: 1; align-items: stretch; justify-content: flex-start; padding-top: 6px; overflow: hidden !important; min-height: 0;">
             <!-- Dynamically populated assigned channel columns -->
         </div>
     </div>
@@ -5833,6 +5833,9 @@ body:not(.dark-mode) .msg-toast-ticker {
         window.servoSpeeds = servoSpeeds;
         var currentVehicleParameters = {};
         window.currentVehicleParameters = currentVehicleParameters;
+        var liveVehicleParameters = {};
+        window.liveVehicleParameters = liveVehicleParameters;
+        var _lastServoParamReqTime = {};
         var actuatorFilterMode = 'assigned';
         window.actuatorFilterMode = actuatorFilterMode;
         var actuatorsPanelVisible = false;
@@ -10630,60 +10633,87 @@ body:not(.dark-mode) .msg-toast-ticker {
         // 16-CHANNEL ACTUATOR & SERVO OUTPUTS MATRIX ARCHITECTURE
         // ============================================================
         currentVehicleParameters = currentVehicleParameters || {};
+        liveVehicleParameters = liveVehicleParameters || {};
+        _lastServoParamReqTime = _lastServoParamReqTime || {};
         actuatorFilterMode = actuatorFilterMode || 'assigned'; // Only keep assigned outputs
         actuatorsPanelVisible = actuatorsPanelVisible || false;
 
         const ARDUPILOT_SERVO_FUNCTIONS = {
             0: 'Disabled', 1: 'RCPassThru', 2: 'Flap', 3: 'Flaperon', 4: 'Aileron',
-            6: 'mount_pan', 7: 'mount_tilt', 8: 'mount_roll', 9: 'camera_trigger', 10: 'camera_release',
-            12: 'mount2_pan', 13: 'mount2_tilt', 14: 'mount2_roll', 16: 'DiffSpoiler 1', 17: 'DiffSpoiler 2',
+            6: 'Mount1 Pan', 7: 'Mount1 Tilt', 8: 'Mount1 Roll', 9: 'Camera Trigger', 10: 'Camera Release',
+            12: 'Mount2 Pan', 13: 'Mount2 Tilt', 14: 'Mount2 Roll', 16: 'DiffSpoiler 1', 17: 'DiffSpoiler 2',
             18: 'Elevon Left', 19: 'Elevator', 20: 'Elevon Right', 21: 'Rudder', 22: 'DiffSpoiler 1',
             23: 'DiffSpoiler 2', 24: 'Flaperon Left', 25: 'Flaperon Right', 26: 'Ground Steering',
             27: 'Parachute', 28: 'Gripper', 29: 'Landing Gear', 30: 'Engine Run/Stop', 31: 'HeliRSC',
             32: 'HeliTailRSC', 33: 'Motor 1', 34: 'Motor 2', 35: 'Motor 3', 36: 'Motor 4',
             37: 'Motor 5', 38: 'Motor 6', 39: 'Motor 7', 40: 'Motor 8', 41: 'Motor Tilt',
-            51: 'RCIN 1', 52: 'RCIN 2', 53: 'RCIN 3', 54: 'RCIN 4', 55: 'RCIN 5', 56: 'RCIN 6',
-            57: 'RCIN 7', 58: 'RCIN 8', 59: 'RCIN 9', 60: 'RCIN 10', 61: 'RCIN 11', 62: 'RCIN 12',
-            63: 'RCIN 13', 64: 'RCIN 14', 65: 'RCIN 15', 66: 'RCIN 16', 70: 'Throttle',
+            51: 'RCIN1', 52: 'RCIN2', 53: 'RCIN3', 54: 'RCIN4', 55: 'RCIN5', 56: 'RCIN6',
+            57: 'RCIN7', 58: 'RCIN8', 59: 'RCIN9', 60: 'RCIN10', 61: 'RCIN11', 62: 'RCIN12',
+            63: 'RCIN13', 64: 'RCIN14', 65: 'RCIN15', 66: 'RCIN16', 70: 'Throttle',
             73: 'Throttle Left', 74: 'Throttle Right', 75: 'TiltMotor Left', 76: 'TiltMotor Right',
             77: 'Elevon Left', 78: 'Elevon Right', 79: 'V-Tail Left', 80: 'V-Tail Right',
             81: 'Motor 9', 82: 'Motor 10', 83: 'Motor 11', 84: 'Motor 12', 85: 'Motor 13',
-            86: 'Motor 14', 87: 'Motor 15', 88: 'Motor 16', 89: 'Airbrakes', 94: 'Scripting 1',
-            95: 'Scripting 2', 96: 'Scripting 3', 120: 'Scripting 1', 121: 'Scripting 2',
-            122: 'Scripting 3', 123: 'Scripting 4', 126: 'Scripting 5'
+            86: 'Motor 14', 87: 'Motor 15', 88: 'Motor 16', 89: 'Airbrakes',
+            90: 'Camera ISO', 91: 'Camera Aperture', 92: 'Camera Focus', 93: 'Camera Shutter',
+            94: 'Scripting 1', 95: 'Scripting 2', 96: 'Scripting 3', 97: 'Scripting 4',
+            98: 'Scripting 5', 99: 'Scripting 6', 100: 'Scripting 7', 101: 'Scripting 8',
+            102: 'Scripting 9', 103: 'Scripting 10', 104: 'Scripting 11', 105: 'Scripting 12',
+            106: 'Scripting 13', 107: 'Scripting 14', 108: 'Scripting 15', 109: 'Scripting 16',
+            120: 'Scripting 1', 121: 'Scripting 2', 122: 'Scripting 3', 123: 'Scripting 4',
+            124: 'Rate Roll', 125: 'Rate Pitch', 126: 'Rate Thrust', 127: 'Rate Yaw',
+            129: 'ProfiLED 1', 130: 'ProfiLED 2', 131: 'ProfiLED 3', 132: 'ProfiLED Clock',
+            133: 'Winch Clutch', 134: 'Winch Control', 140: 'Scripting 5'
         };
 
+        function requestMissingServoParam(chNum) {
+            const paramName = `SERVO${chNum}_FUNCTION`;
+            if (paramName in liveVehicleParameters) return;
+            const now = Date.now();
+            if (_lastServoParamReqTime[paramName] && (now - _lastServoParamReqTime[paramName] < 3000)) return;
+            _lastServoParamReqTime[paramName] = now;
+            if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                    ws.send(JSON.stringify({ action: 'request_param', name: paramName }));
+                } catch (e) {}
+            }
+        }
+
         function getServoFunctionInfo(chNum) {
+            const live = liveVehicleParameters || {};
             const p = currentVehicleParameters || {};
             const key = `SERVO${chNum}_FUNCTION`;
             const altKey = `RC${chNum}_FUNCTION`;
             let code = undefined;
-            if (p[key] !== undefined) code = parseInt(p[key], 10);
-            else if (p[altKey] !== undefined) code = parseInt(p[altKey], 10);
+            let isLiveParam = false;
+
+            if (live[key] !== undefined) { code = parseInt(live[key], 10); isLiveParam = true; }
+            else if (live[altKey] !== undefined) { code = parseInt(live[altKey], 10); isLiveParam = true; }
+            else if (p[key] !== undefined) { code = parseInt(p[key], 10); }
+            else if (p[altKey] !== undefined) { code = parseInt(p[altKey], 10); }
 
             // Canonical fallback if vehicle parameters have not arrived yet
             if (code === undefined || isNaN(code)) {
                 const defaultArduPilotMap = {
-                    1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                    2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                    3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                    4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true },
-                    5: { code: 33, name: 'Motor 1', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                    6: { code: 34, name: 'Motor 2', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                    7: { code: 35, name: 'Motor 3', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                    8: { code: 36, name: 'Motor 4', category: 'PROP', color: '#ff9f0a', isAssigned: true },
-                    9: { code: 41, name: 'Motor Tilt', category: 'TILT', color: '#bf5af2', isAssigned: true },
-                    10: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false },
-                    11: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false },
-                    12: { code: 120, name: 'Scripting 1', category: 'AUX', color: '#94a3b8', isAssigned: true }
+                    1: { code: 4, name: 'Aileron', category: 'AERO', color: '#00d2ff', isAssigned: true, isLiveParam: false },
+                    2: { code: 19, name: 'Elevator', category: 'AERO', color: '#00d2ff', isAssigned: true, isLiveParam: false },
+                    3: { code: 70, name: 'Throttle', category: 'PROP', color: '#ff9f0a', isAssigned: true, isLiveParam: false },
+                    4: { code: 21, name: 'Rudder', category: 'AERO', color: '#00d2ff', isAssigned: true, isLiveParam: false },
+                    5: { code: 33, name: 'Motor 1', category: 'PROP', color: '#ff9f0a', isAssigned: true, isLiveParam: false },
+                    6: { code: 34, name: 'Motor 2', category: 'PROP', color: '#ff9f0a', isAssigned: true, isLiveParam: false },
+                    7: { code: 35, name: 'Motor 3', category: 'PROP', color: '#ff9f0a', isAssigned: true, isLiveParam: false },
+                    8: { code: 36, name: 'Motor 4', category: 'PROP', color: '#ff9f0a', isAssigned: true, isLiveParam: false },
+                    9: { code: 41, name: 'Motor Tilt', category: 'TILT', color: '#bf5af2', isAssigned: true, isLiveParam: false },
+                    10: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false, isLiveParam: false },
+                    11: { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false, isLiveParam: false },
+                    12: { code: 120, name: 'Scripting 1', category: 'AUX', color: '#94a3b8', isAssigned: true, isLiveParam: false }
                 };
                 if (defaultArduPilotMap[chNum]) return defaultArduPilotMap[chNum];
-                return { code: -1, name: 'Unassigned', category: 'OFF', color: '#64748b', isAssigned: false };
+                return { code: -1, name: 'Unassigned', category: 'OFF', color: '#64748b', isAssigned: false, isLiveParam: false };
             }
             if (code === 0) {
-                return { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false };
+                return { code: 0, name: 'Disabled', category: 'OFF', color: '#64748b', isAssigned: false, isLiveParam };
             }
-            const name = ARDUPILOT_SERVO_FUNCTIONS[code] || `Servo ${code}`;
+            const name = ARDUPILOT_SERVO_FUNCTIONS[code] || `Func ${code}`;
             let category = 'AUX', color = '#94a3b8';
             if ((code >= 33 && code <= 40) || code === 70 || code === 73 || code === 74 || (code >= 81 && code <= 88)) {
                 category = 'PROP'; color = '#ff9f0a';
@@ -10694,7 +10724,28 @@ body:not(.dark-mode) .msg-toast-ticker {
             } else if (code === 1 || (code >= 51 && code <= 66)) {
                 category = 'RC'; color = '#30d158';
             }
-            return { code, name, category, color, isAssigned: true };
+            return { code, name, category, color, isAssigned: true, isLiveParam };
+        }
+
+        function resolveChannelPresentation(ch, pwm, hasTelemetry) {
+            const info = getServoFunctionInfo(ch);
+            // A channel is considered enabled/active if:
+            // 1. Live telemetry outputs pwm > 0 (ArduPilot sends 0 for genuinely disabled channels), OR
+            // 2. Live FC / log parameters explicitly assign SERVO{ch}_FUNCTION > 0, OR
+            // 3. No live telemetry has arrived yet and the static map marks it assigned.
+            const activeByPwm = (pwm > 0);
+            const activeByLiveParam = (info.isLiveParam && info.code > 0);
+            const isVisible = (actuatorFilterMode === 'all')
+                ? true
+                : (hasTelemetry ? (activeByPwm || activeByLiveParam) : info.isAssigned);
+
+            let displayLabel = info.name;
+            if (activeByPwm && info.code <= 0) {
+                // Live PWM is present even though SERVO{ch}_FUNCTION is missing or stale 0 from disk mav.parm.
+                displayLabel = `AUX ${ch}`;
+                requestMissingServoParam(ch);
+            }
+            return { info, isVisible, displayLabel };
         }
 
         if (!Array.isArray(actuatorMatrixCols)) actuatorMatrixCols = [];
@@ -10758,49 +10809,48 @@ body:not(.dark-mode) .msg-toast-ticker {
             if (!servos || !Array.isArray(servos)) return;
             const isDark = document.body.classList.contains('dark-mode');
             const textColor = isDark ? '#f8fafc' : '#0f172a';
+            const hasTelemetry = servos.some(p => typeof p === 'number' && p > 0);
 
             for (let i = 0; i < 16; i++) {
                 const ch = i + 1;
-                const pwm = (typeof servos[i] === 'number') ? Math.round(servos[i]) : 0;
+                const pwm = (typeof servos[i] === 'number' && !isNaN(servos[i])) ? Math.round(servos[i]) : 0;
                 const pct = Math.max(0, Math.min(100, ((pwm - 1000) / 1000.0) * 100));
 
                 let fillColor = '#30d158'; // Vivid green
                 if (pct > 85) fillColor = isDark ? '#ef4444' : '#b91c1c';
                 else if (pct > 65) fillColor = isDark ? '#f59e0b' : '#d97706';
 
-                const info = getServoFunctionInfo(ch);
-                // Channel is genuinely active/assigned if:
-                // 1. Explicit parameter function code > 0 (or fallback assigned)
-                // 2. AND live telemetry pwm > 0 (0 means unassigned / inactive on flight controller)
-                const isLiveAssigned = (info.code > 0) ? (pwm > 0) : (info.isAssigned && pwm > 0);
+                const { info, isVisible, displayLabel } = resolveChannelPresentation(ch, pwm, hasTelemetry);
 
                 if (actuatorMatrixCols[i]) {
-                    actuatorMatrixCols[i].colEl.style.display = (actuatorFilterMode === 'all' || isLiveAssigned) ? 'flex' : 'none';
-                    actuatorMatrixCols[i].pwmEl.textContent = pwm;
-                    actuatorMatrixCols[i].pwmEl.style.color = (pwm <= 1000) ? (isDark ? '#94a3b8' : '#64748b') : textColor;
-                    actuatorMatrixCols[i].fillEl.style.height = (pwm <= 1000) ? '0%' : (pct + '%');
-                    actuatorMatrixCols[i].fillEl.style.background = fillColor;
+                    const c = actuatorMatrixCols[i];
+                    c.colEl.style.display = isVisible ? 'flex' : 'none';
+                    if (c.fnEl.textContent !== displayLabel) {
+                        c.fnEl.textContent = displayLabel;
+                        c.fnEl.title = `CH ${ch}: ${displayLabel} (Code ${info.code})`;
+                    }
+                    c.pwmEl.textContent = pwm;
+                    c.pwmEl.style.color = (pwm <= 1000) ? (isDark ? '#94a3b8' : '#64748b') : textColor;
+                    c.fillEl.style.height = (pwm <= 1000) ? '0%' : (pct + '%');
+                    c.fillEl.style.background = fillColor;
                 }
             }
         }
 
         function updateActuatorLabelsFromParameters() {
-            const hasTelemetry = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && latestServos.some(p => p > 0)) ||
-                                 (typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds) && servoSpeeds.some(p => p > 0));
+            const activeServos = (typeof latestServos !== 'undefined' && Array.isArray(latestServos))
+                ? latestServos
+                : ((typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds)) ? servoSpeeds : null);
+            const hasTelemetry = !!(activeServos && activeServos.some(p => typeof p === 'number' && p > 0));
 
             for (let ch = 1; ch <= 16; ch++) {
-                const info = getServoFunctionInfo(ch);
-                const pwm = (typeof latestServos !== 'undefined' && Array.isArray(latestServos) && typeof latestServos[ch - 1] === 'number')
-                    ? latestServos[ch - 1]
-                    : ((typeof servoSpeeds !== 'undefined' && Array.isArray(servoSpeeds) && typeof servoSpeeds[ch - 1] === 'number') ? servoSpeeds[ch - 1] : 0);
-
-                const isLiveAssigned = (info.code > 0) ? (pwm > 0) : (info.isAssigned && pwm > 0);
-                const isVisible = (actuatorFilterMode === 'all') ? true : (hasTelemetry ? isLiveAssigned : info.isAssigned);
+                const pwm = (activeServos && typeof activeServos[ch - 1] === 'number') ? activeServos[ch - 1] : 0;
+                const { info, isVisible, displayLabel } = resolveChannelPresentation(ch, pwm, hasTelemetry);
 
                 if (actuatorMatrixCols[ch - 1]) {
                     const c = actuatorMatrixCols[ch - 1];
-                    c.fnEl.textContent = info.name;
-                    c.fnEl.title = `CH ${ch}: ${info.name} (Code ${info.code})`;
+                    c.fnEl.textContent = displayLabel;
+                    c.fnEl.title = `CH ${ch}: ${displayLabel} (Code ${info.code})`;
                     c.colEl.style.display = isVisible ? 'flex' : 'none';
                 }
             }
@@ -10840,10 +10890,16 @@ body:not(.dark-mode) .msg-toast-ticker {
 
         function loadFlightLogParameters(params) {
             if (!params) return;
-            currentVehicleParameters = params;
+            currentVehicleParameters = {};
+            liveVehicleParameters = {};
+            for (const [k, v] of Object.entries(params)) {
+                const key = String(k).toUpperCase();
+                currentVehicleParameters[key] = v;
+                liveVehicleParameters[key] = v;
+            }
             updateActuatorLabelsFromParameters();
 
-            const battCap = params['BATT_CAPACITY'] || params['BATT_CAPACITY_1'] || params['BATT_ARM_MAH'];
+            const battCap = currentVehicleParameters['BATT_CAPACITY'] || currentVehicleParameters['BATT_CAPACITY_1'] || currentVehicleParameters['BATT_ARM_MAH'];
             if (typeof battCap === 'number' && battCap >= 100 && battCap <= 100000) {
                 setBatteryPackCapacity(battCap, true);
             }
@@ -10853,7 +10909,7 @@ body:not(.dark-mode) .msg-toast-ticker {
         // Initialize 16-channel Actuators Matrix UI
         buildActuatorOutputsGrid();
 
-        // Asynchronously load ArduPilot parameters from SITL / server mav.parm if available
+        // Asynchronously load ArduPilot parameters from SITL / server mav.parm if available (fallback only)
         async function loadArduPilotParameters() {
             try {
                 let resp = await fetch('mav.parm');
@@ -10869,7 +10925,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                     if (parts.length >= 2) {
                         const name = parts[0].toUpperCase();
                         const val = parseFloat(parts[1]);
-                        if (!isNaN(val)) {
+                        if (!isNaN(val) && !(name in liveVehicleParameters)) {
                             currentVehicleParameters[name] = val;
                             count++;
                         }
@@ -13521,6 +13577,7 @@ body:not(.dark-mode) .msg-toast-ticker {
                         if (!vehicleConnected) {
                             vehicleConnected = true;
                             requestWaypoints(false);
+                            try { ws.send(JSON.stringify({ action: 'request_servo_params' })); } catch(e) {}
                             addAutopilotMessage({ text: `Connected to MAVLink (${data.url || 'Port 8766'})`, severity: 6 });
                         }
                     } else {
@@ -13543,21 +13600,32 @@ body:not(.dark-mode) .msg-toast-ticker {
                     modalHb.innerText = "Active (Receiving Heartbeats)";
                     modalHb.style.color = "var(--success)";
                 }
-                // Proactively request waypoints when vehicle connection is confirmed
+                // Proactively request waypoints & servo assignments when vehicle connection is confirmed
                 requestWaypoints(false);
+                try { ws.send(JSON.stringify({ action: 'request_servo_params' })); } catch(e) {}
                 addAutopilotMessage({ text: "Connected to MAVLink Telemetry Gateway (Port 8766)", severity: 6 });
             }
-            if (data.type === 'PARAM_VALUE') {
-                if (data.param_id) {
-                    currentVehicleParameters[data.param_id] = data.param_value;
-                    if (data.param_id.startsWith('SERVO') || data.param_id.startsWith('RC')) {
-                        updateActuatorLabelsFromParameters();
-                    }
+            const applySingleParam = (rawId, rawVal) => {
+                if (!rawId || rawVal === undefined || rawVal === null || isNaN(rawVal)) return false;
+                const pName = String(rawId).toUpperCase();
+                currentVehicleParameters[pName] = rawVal;
+                liveVehicleParameters[pName] = rawVal;
+                if (pName === 'BATT_CAPACITY' && rawVal > 0) {
+                    setBatteryPackCapacity(Math.round(rawVal), true);
+                } else if ((pName === 'BATT_SER_CELLS' || pName === 'BATT_CELLS') && rawVal > 0) {
+                    am32Telemetry.cell_count = Math.round(rawVal);
                 }
-                if (data.param_id === 'BATT_CAPACITY' && data.param_value > 0) {
-                    setBatteryPackCapacity(Math.round(data.param_value), true);
-                } else if ((data.param_id === 'BATT_SER_CELLS' || data.param_id === 'BATT_CELLS') && data.param_value > 0) {
-                    am32Telemetry.cell_count = Math.round(data.param_value);
+                return (pName.startsWith('SERVO') || pName.startsWith('RC'));
+            };
+            if (data.type === 'PARAM_BATCH' && data.params && typeof data.params === 'object') {
+                let servoUpdated = false;
+                for (const [k, v] of Object.entries(data.params)) {
+                    if (applySingleParam(k, v)) servoUpdated = true;
+                }
+                if (servoUpdated) updateActuatorLabelsFromParameters();
+            } else if (data.type === 'PARAM_VALUE') {
+                if (applySingleParam(data.param_id, data.param_value)) {
+                    updateActuatorLabelsFromParameters();
                 }
             } else if (data.type === 'STATUSTEXT') {
                 addAutopilotMessage(data);
@@ -14016,34 +14084,36 @@ body:not(.dark-mode) .msg-toast-ticker {
                 }
             }
             else if (data.type === 'SERVO_OUTPUT_RAW') {
-                servoSpeeds = data.servos;
-                latestServos = data.servos;
-                if (typeof updateActuatorOutputsUI === 'function') {
-                    updateActuatorOutputsUI(latestServos);
-                }
-                for (let i = 0; i < 8; i++) {
-                    let pwm = servoSpeeds[i];
-                    if (uiPwms && uiPwms[i]) uiPwms[i].innerText = pwm;
-                    let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
-                    if (uiFills && uiFills[i]) {
-                        uiFills[i].style.height = percent + '%';
-                        uiFills[i].style.background = (percent > 80) ? 'var(--danger)' : (percent > 10 ? 'var(--success)' : 'transparent');
+                if ((data.port === undefined || data.port === 0) && Array.isArray(data.servos)) {
+                    servoSpeeds = data.servos;
+                    latestServos = data.servos;
+                    if (typeof updateActuatorOutputsUI === 'function') {
+                        updateActuatorOutputsUI(latestServos);
                     }
+                    for (let i = 0; i < 8; i++) {
+                        let pwm = servoSpeeds[i] || 0;
+                        if (uiPwms && uiPwms[i]) uiPwms[i].innerText = pwm;
+                        let percent = Math.max(0, Math.min(100, ((pwm - 1000) / 1000) * 100));
+                        if (uiFills && uiFills[i]) {
+                            uiFills[i].style.height = percent + '%';
+                            uiFills[i].style.background = (percent > 80) ? 'var(--danger)' : (percent > 10 ? 'var(--success)' : 'transparent');
+                        }
+                    }
+
+                    // Calculate Cruise Pusher RPM based on PWM, Voltage, and KV
+                    // Shark Hawk E+ spec: 400KV on 6S (Fully Charged ~25.2V)
+                    const MOTOR_KV = 400;
+                    const BATTERY_VOLTAGE = 25.2;
+                    let throttlePwm = servoSpeeds[2] || 1000; // ArduPlane forward throttle is usually Servo 3
+                    let throttlePct = Math.max(0, Math.min(1.0, (throttlePwm - 1000) / 1000.0));
+
+                    // RPM = KV * V * Throttle%. (Multiplying by 0.90 matches real-world observation of ~4500 RPM at 50% throttle)
+                    let maxRpm = MOTOR_KV * BATTERY_VOLTAGE;
+                    let currentRpm = maxRpm * throttlePct * 0.90;
+                    window.simulatedCruiseRpm = Math.round(currentRpm);
+                    const pusherEl = document.getElementById('pusher-rpm');
+                    if (pusherEl) pusherEl.innerText = Math.round(currentRpm);
                 }
-
-                // Calculate Cruise Pusher RPM based on PWM, Voltage, and KV
-                // Shark Hawk E+ spec: 400KV on 6S (Fully Charged ~25.2V)
-                const MOTOR_KV = 400;
-                const BATTERY_VOLTAGE = 25.2;
-                let throttlePwm = servoSpeeds[2]; // ArduPlane forward throttle is usually Servo 3
-                let throttlePct = Math.max(0, Math.min(1.0, (throttlePwm - 1000) / 1000.0));
-
-                // RPM = KV * V * Throttle%. (Multiplying by 0.90 matches real-world observation of ~4500 RPM at 50% throttle)
-                let maxRpm = MOTOR_KV * BATTERY_VOLTAGE;
-                let currentRpm = maxRpm * throttlePct * 0.90;
-                window.simulatedCruiseRpm = Math.round(currentRpm);
-                const pusherEl = document.getElementById('pusher-rpm');
-                if (pusherEl) pusherEl.innerText = Math.round(currentRpm);
             }
             else if (data.type === 'MISSION_WAYPOINTS') {
                 if (Array.isArray(data.waypoints)) {
